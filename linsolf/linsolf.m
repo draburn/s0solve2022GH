@@ -170,32 +170,6 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 		% Get next projected vector...
 		vecW = funchMatAProd( vecV );
 		matW(:,numIter+1) = vecW;
-		if (0)
-		normW = sqrt(sum(vecW.^2));
-		if ( 0.0 >= normW )
-			msg_warn( verbLev, thisFile, __LINE__, sprintf( ...
-			  "Projected vector %d is zero.", numIter+1) );
-			retCode = RETCODE__ALGORITHM_BREAKDOWN;
-			linsolf__finish;
-			return;
-		end
-		%
-		% Get new solution.
-		% This can be done way, way more efficiently.
-		%  In particular (see s0solve20200104)...
-		%   1. Use a Cholesky factorization of W^T W;
-		%   2. Use of cholinsert() to update the factorization; and,
-		%   3. Use a more direct calculation of resFrac, like...
-		%    vecG(numIter+1,1) = vecW' * vecBeta;
-		%    vecZ = matR' \ vecG;
-		%    resFrac = sqrt(max([ 0.0, 1.0 - sum(vecZ.^2) ]));
-		%  Note that, when V is *always* the Krylov subspace,
-		%   there's an additional opportunity for speed-up from
-		%   (essentially) not having to orthonormalize both V and W.
-		%   But, I prefer to allow non-Krylov flexibility.
-		% But, premature optimization is the root of all evil.
-		vecY = matW \ vecB;
-		else
 		vecH = matW' * vecW;
 		normW = sqrt(vecH(numIter+1));
 		matH(1:numIter+1,numIter+1) = vecH;
@@ -218,7 +192,7 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 		%
 		vecG(numIter+1,1) = vecW' * vecB;
 		% Speed optimization note:
-		%  fracRes = sqrt( 1.0 - sum( (matR'\vecG).^2 ) );
+		%  fracRes = sqrt( 1.0 - (sum((matR'\vecG).^2)/(normB*normB)) );
 		% So, we could skip the other calculalations until __finish.
 		% But, premature optimization is the root of all evil.
 		% Another speed note:
@@ -227,7 +201,6 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 		%  (essentially) not having to orthonormalize both V and W.
 		% See s0solve20200104 and the original GMRes paper.
 		vecY = matR \ ( matR' \ vecG );
-		end
 		vecX = matV * vecY;
 		vecRho = (matW * vecY) - vecB;
 		res = sqrt(sum(vecRho.^2));
