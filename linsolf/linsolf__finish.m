@@ -25,6 +25,9 @@ datOut.numIter = numIter;
 datOut.matU = matU;
 datOut.matV = matV;
 datOut.matW = matW;
+datOut.matH = matH;
+datOut.matR = matR;
+datOut.vecG = vecG;
 datOut.vecX = vecX;
 datOut.fracRes = fracRes;
 %

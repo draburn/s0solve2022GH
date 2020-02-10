@@ -14,7 +14,7 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 	%
 	% Verbosity.
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
-	reportInterval = mygetfield( prm, "reportInterval", 1.0 );
+	reportInterval = mygetfield( prm, "reportInterval", 3.0 );
 	assert( isrealscalar(verbLev) );
 	assert( isrealscalar(reportInterval) );
 	assert( 0.0 <= reportInterval );
@@ -28,7 +28,7 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 	normB = sqrt(sum(vecB.^2));
 	%
 	% Stopping criteria.
-	fracResTol = mygetfield( prm, "fracResTol", 1.0e-1 ); % Success.
+	fracResTol = mygetfield( prm, "fracResTol", 0.1 ); % Success.
 	exeTimeLimit = mygetfield( prm, "exeTimeLimit", -1.0 ); % Imposed stop.
 	numIterLimit = mygetfield( prm, "numIterLimit", -1.0 ); % Imposed stop.
 	assert( isrealscalar(fracResTol) );
@@ -53,6 +53,9 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 	matU = zeros(sizeX,0);
 	matV = zeros(sizeX,0);
 	matW = zeros(sizeF,0);
+	matH = zeros(0,0);
+	matR = zeros(0,0);
+	vecG = zeros(0,1);
 	vecX = zeros(sizeX,1);
 	%
 	% Handle the "start is solution" case.
@@ -167,6 +170,7 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 		% Get next projected vector...
 		vecW = funchMatAProd( vecV );
 		matW(:,numIter+1) = vecW;
+		if (0)
 		normW = sqrt(sum(vecW.^2));
 		if ( 0.0 >= normW )
 			msg_warn( verbLev, thisFile, __LINE__, sprintf( ...
@@ -191,6 +195,39 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 		%   But, I prefer to allow non-Krylov flexibility.
 		% But, premature optimization is the root of all evil.
 		vecY = matW \ vecB;
+		else
+		vecH = matW' * vecW;
+		normW = sqrt(vecH(numIter+1));
+		matH(1:numIter+1,numIter+1) = vecH;
+		matH(numIter+1,1:numIter+1) = vecH';
+		if ( 0.0 >= normW )
+			msg_warn( verbLev, thisFile, __LINE__, sprintf( ...
+			  "Projected vector %d is zero.", numIter+1) );
+			retCode = RETCODE__ALGORITHM_BREAKDOWN;
+			linsolf__finish;
+			return;
+		end
+		[ matR, cholInfo ] = cholinsert( matR, numIter+1, vecH );
+		if ( 0 != cholInfo )
+			msg_warn( verbLev, thisFile, __LINE__, sprintf( ...
+			  "Cholesky factorization %d failed.",numIter+1) );
+			retCode = RETCODE__ALGORITHM_BREAKDOWN;
+			linsolf__finish;
+			return;
+		end
+		%
+		vecG(numIter+1,1) = vecW' * vecB;
+		% Speed optimization note:
+		%  fracRes = sqrt( 1.0 - sum( (matR'\vecG).^2 ) );
+		% So, we could skip the other calculalations until __finish.
+		% But, premature optimization is the root of all evil.
+		% Another speed note:
+		%  as long as we assume matV is always the Krylov subspace,
+		%  there's an additional opportunity for speed-up from
+		%  (essentially) not having to orthonormalize both V and W.
+		% See s0solve20200104 and the original GMRes paper.
+		vecY = matR \ ( matR' \ vecG );
+		end
 		vecX = matV * vecY;
 		vecRho = (matW * vecY) - vecB;
 		res = sqrt(sum(vecRho.^2));

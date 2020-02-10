@@ -134,7 +134,7 @@ assert( 1.1*(a0Size+1) >= datOut.numIter ); % A reasonable upper bound???
 msg( thisFile, __LINE__, "Finished non-invertible matrix test.\n" );
 %
 %
-if (0)
+if (1)
 clear;
 commondefs;
 thisFile = "test_linsolf";
