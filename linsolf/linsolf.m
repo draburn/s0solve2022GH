@@ -7,11 +7,6 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 	thisFile = "linsolf";
 	retCode = RETCODE__NOT_SET;
 	startTime = time();
-	datOut.funchMatAProd = funchMatAProd;
-	datOut.vecB = vecB;
-	datOut.prm = prm;
-	datOut.thisFile = thisFile;
-	datOut.startTime = startTime;
 	%
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -22,9 +17,8 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 	reportInterval = mygetfield( prm, "reportInterval", 1.0 );
 	assert( isrealscalar(verbLev) );
 	assert( isrealscalar(reportInterval) );
-	datOut.verbLev = verbLev;
-	datOut.reportInterval = reportInterval;
-	reportTimePrev = startTime - abs(reportInterval) - 1.0;
+	assert( 0.0 <= reportInterval );
+	reportTimePrev = startTime - reportInterval - 1.0;
 	%
 	% Problem description.
 	sizeF = size(vecB,1);
@@ -32,65 +26,46 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 	assert( isrealarray(vecB,[sizeF,1]) );
 	sizeX = sizeF;
 	normB = sqrt(sum(vecB.^2));
-	datOut.sizeF = sizeF;
-	datOut.sizeX = sizeX;
-	datOut.normB = normB;
 	%
 	% Stopping criteria.
-	fracResTol = mygetfield( prm, "fracResTol", 1.0e-2 ); % Success.
+	fracResTol = mygetfield( prm, "fracResTol", 1.0e-1 ); % Success.
 	exeTimeLimit = mygetfield( prm, "exeTimeLimit", -1.0 ); % Imposed stop.
-	numIterLimit = mygetfield( prm, "numIterLimit", 100 ); % Imposed stop.
+	numIterLimit = mygetfield( prm, "numIterLimit", -1.0 ); % Imposed stop.
 	assert( isrealscalar(fracResTol) );
 	assert( isrealscalar(exeTimeLimit) );
 	assert( isrealscalar(numIterLimit) );
-	datOut.fracResTol = fracResTol;
-	datOut.exeTimeLimit = exeTimeLimit;
-	datOut.numIterLimit = numIterLimit;
 	%
 	% Internal parameters.
-	orthonormThresh0 = mygetfield( prm, "orthonormThresh0", eps^0.75 );
-	orthonormThresh1 = mygetfield( prm, "orthonormThresh1", 0.5 );
-	assert( isrealscalar(orthonormThresh0) );
-	assert( 0.0 < orthonormThresh0 );
-	assert( 1.0 > orthonormThresh0 );
-	assert( isrealscalar(orthonormThresh1) );
-	assert( 0.0 < orthonormThresh1 );
-	assert( 1.0 > orthonormThresh1 );
-	datOut.orthonormThresh0 = orthonormThresh0;
-	datOut.orthonormThresh1 = orthonormThresh1;
+	gsThresh0 = mygetfield( prm, "gsThresh0", eps^0.75 );
+	gsThresh1 = mygetfield( prm, "gsThresh1", 0.5 );
+	assert( isrealscalar(gsThresh0) );
+	assert( 0.0 < gsThresh0 );
+	assert( 1.0 > gsThresh0 );
+	assert( isrealscalar(gsThresh1) );
+	assert( 0.0 < gsThresh1 );
+	assert( 1.0 > gsThresh1 );
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO PREPARATIONAL WORK
 	%
 	% Initialize iterates.
 	numIter = 0;
-	sizeK = 0;
 	matU = zeros(sizeX,0);
 	matV = zeros(sizeX,0);
 	matW = zeros(sizeF,0);
 	vecX = zeros(sizeX,1);
 	%
-	% Update datOut.
-	datOut.numIter = numIter;
-	datOut.sizeK = sizeK;
-	datOut.matU = matU;
-	datOut.matV = matV;
-	datOut.matW = matW;
-	datOut.vecX = vecX;
-	%
-	% Handle the corner case of vecB = 0.
+	% Handle the "start is solution" case.
 	if ( 0.0 >= normB )
+		fracRes = 0.0;
 		msg_notify( verbLev, thisFile, __LINE__, "Initial residual is already zero." );
 		retCode = RETCODE__SUCCESS;
+		linsolf__finish;
 		return;
 	end
 	fracRes = 1.0;
-	vecBeta = vecB / normB;
 	assert( sizeX == sizeF );
-	matU(:,1) = vecBeta;
-	datOut.fracRes = fracRes;
-	datOut.vecBeta = vecBeta;
-	datOut.matU = matU;
+	matU(:,1) = vecB / normB;
 	%
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -107,12 +82,7 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
 			  "Converged ( %e <= %e ).", fracRes, fracResTol ) );
 			retCode = RETCODE__SUCCESS;
-			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
-			  "Final:  %4d  %6.2f  %8.2e  %s", ...
-			   numIter, ...
-			   time()-startTime, ...
-			   fracRes, ...
-			   retcode2str(retCode) )  );
+			linsolf__finish;
 			return;
 		end
 		end
@@ -123,12 +93,7 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 			msg_notify( verbLev, thisFile, __LINE__, ...
 			  sprintf("Reached numIterLimit (%d).",numIterLimit) );
 			retCode = RETCODE__IMPOSED_STOP;
-			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
-			  "Final:  %4d  %6.2f  %8.2e  %s", ...
-			   numIter, ...
-			   time()-startTime, ...
-			   fracRes, ...
-			   retcode2str(retCode) )  );
+			linsolf__finish;
 			return;
 		end
 		end
@@ -138,12 +103,7 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 			msg_notify( verbLev, thisFile, __LINE__, ...
 			  sprintf("Reached exeTimeLimit (%g).",exeTimeLimit) );
 			retCode = RETCODE__IMPOSED_STOP;
-			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
-			  "Final:  %4d  %6.2f  %8.2e  %s", ...
-			   numIter, ...
-			   time()-startTime, ...
-			   fracRes, ...
-			   retcode2str(retCode) )  );
+			linsolf__finish;
 			return;
 		end
 		end
@@ -174,11 +134,73 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 		% DO WORK
 		%
 		% Get new basis vector.
-		msg_error( verbLev, thisFile, __LINE__, "ERROR: NOT IMPLEMENTED!" );
-		return;
+		vecV = matU(:,numIter+1);
+		assert( isrealarray(vecV,[sizeX,1]) );
+		assert( abs(1.0-sum(vecV.^2)) < eps^0.75 );
+		if ( 1 <= numIter )
+			vecV -= matV * ( matV' * vecV );
+			normV = sqrt(sum(vecV.^2));
+			if ( normV <= gsThresh0 )
+				msg_warn( verbLev, thisFile, __LINE__, sprintf( ...
+				  "Basis vector %d was destroyed during first pass (%e < %e).", ...
+				  numIter+1, normV, gsThresh0) );
+				retCode = RETCODE__ALGORITHM_BREAKDOWN;
+				linsolf__finish;
+				return;
+			end
+			vecV /= normV;
+			%
+			vecV -= matV * ( matV' * vecV );
+			normV = sqrt(sum(vecV.^2));
+			if ( normV <= gsThresh1 )
+				msg_warn( verbLev, thisFile, __LINE__, sprintf( ...
+				  "Basis vector %d is very small after second pass (%e < %e).", ...
+				  numIter+1, normV, gsThresh1) );
+				retCode = RETCODE__ALGORITHM_BREAKDOWN;
+				linsolf__finish;
+				return;
+			end
+			vecV /= normV;
+		end
+		matV(:,numIter+1) = vecV;
 		%
+		% Get next projected vector...
+		vecW = funchMatAProd( vecV );
+		matW(:,numIter+1) = vecW;
+		normW = sqrt(sum(vecW.^2));
+		if ( 0.0 >= normW )
+			msg_warn( verbLev, thisFile, __LINE__, sprintf( ...
+			  "Projected vector %d is zero.", numIter+1) );
+			retCode = RETCODE__ALGORITHM_BREAKDOWN;
+			linsolf__finish;
+			return;
+		end
+		%
+		% Get new solution.
+		% This can be done way, way more efficiently.
+		%  In particular (see s0solve20200104)...
+		%   1. Use a Cholesky factorization of W^T W;
+		%   2. Use of cholinsert() to update the factorization; and,
+		%   3. Use a more direct calculation of resFrac, like...
+		%    vecG(numIter+1,1) = vecW' * vecBeta;
+		%    vecZ = matR' \ vecG;
+		%    resFrac = sqrt(max([ 0.0, 1.0 - sum(vecZ.^2) ]));
+		%  Note that, when V is *always* the Krylov subspace,
+		%   there's an additional opportunity for speed-up from
+		%   (essentially) not having to orthonormalize both V and W.
+		%   But, I prefer to allow non-Krylov flexibility.
+		% But, premature optimization is the root of all evil.
+		vecY = matW \ vecB;
+		vecX = matV * vecY;
+		vecRho = (matW * vecY) - vecB;
+		res = sqrt(sum(vecRho.^2));
+		fracRes = res / normB;
+		%
+		% Prepare next iteration.
 		numIter++;
-		sizeK++;
+		assert( sizeX == sizeF );
+		assert( 0.0 < normW );
+		matU(:,numIter+1) = matW(:,numIter) / normW;
 	end
 	%
 return;
