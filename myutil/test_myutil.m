@@ -8,9 +8,9 @@ msg( thisFile, __LINE__, "Testing cent..." );
 test cent;
 msg( thisFile, __LINE__, "Finished testing cent.\n" );
 %
-msg( thisFile, __LINE__, "Testing checkstopsignal..." );
-test checkstopsignal;
-msg( thisFile, __LINE__, "Finished testing checkstopsignal.\n" );
+msg( thisFile, __LINE__, "Testing stopsignalpresent..." );
+test stopsignalpresent;
+msg( thisFile, __LINE__, "Finished testing stopsignalpresent.\n" );
 %
 msg( thisFile, __LINE__, "Testing fleq..." );
 test fleq;
