@@ -1,0 +1,67 @@
+%  Script...
+%    commondefs
+%  Overview...
+%    Part of my common module.
+%    This script does the following...
+%      1. Defines verbosity level (VERBLEV__) constants;
+%      2. Defines return code (RETCODE__) constants; and,
+%      3. Defines msg_threshold-family function handles
+%         such as msg_error() and msg_progress().
+%    See msg_thresh and msg for more information.
+
+% Verblev likely doesn't apply to built-in error handling;
+%  "quiet" may be equivalent to "error".
+% "Flagged" is for cases flagged during development: "Can this ever happen?".
+% "Notify" is for undesirable situations where likely nothing is wrong.
+% "Main" should be limited to one or two lines of output.
+% These levels are intended to be broadly suitable;
+%  more detailed control should probably be done in situ,
+%  perhaps by locally using verblevs between these values.
+VERBLEV__QUIET = 0;
+VERBLEV__ERROR = 100;
+VERBLEV__FLAGGED = 200;
+VERBLEV__WARN = 300;
+VERBLEV__NOTIFY = 400;
+VERBLEV__MAIN = 500;
+VERBLEV__PROGRESS = 600;
+VERBLEV__COPIOUS = 700;
+
+
+% How broadly "success" is defined depends on the program.
+% Using built-in error handling, the error return codes are probably moot.
+RETCODE__SUCCESS = 0;
+RETCODE__IMPOSED_STOP = 100;
+RETCODE__ALGORITHM_BREAKDOWN = 200;
+RETCODE__UNSPECIFIC_ERROR = 1000;
+RETCODE__BAD_INPUT = 1100;
+RETCODE__BAD_DEPENDENCY = 1200;
+RETCODE__INTERNAL_INCONSISTENCY = 1300;
+RETCODE__NOT_SET = 9999;
+
+msg_error = @( verbLev, fileName, lineNum, msgStr )( ...
+  msg_thresh( VERBLEV__ERROR, verbLev, fileName, lineNum, msgStr) );
+msg_flagged = @( verbLev, fileName, lineNum, msgStr )( ...
+  msg_thresh( VERBLEV__FLAGGED, verbLev, fileName, lineNum, msgStr) );
+msg_warn = @( verbLev, fileName, lineNum, msgStr )( ...
+  msg_thresh( VERBLEV__WARN, verbLev, fileName, lineNum, msgStr) );
+msg_notify = @( verbLev, fileName, lineNum, msgStr )( ...
+  msg_thresh( VERBLEV__NOTIFY, verbLev, fileName, lineNum, msgStr) );
+msg_main = @( verbLev, fileName, lineNum, msgStr )( ...
+  msg_thresh( VERBLEV__MAIN, verbLev, fileName, lineNum, msgStr) );
+msg_progress = @( verbLev, fileName, lineNum, msgStr )( ...
+  msg_thresh( VERBLEV__PROGRESS, verbLev, fileName, lineNum, msgStr) );
+msg_copious = @( verbLev, fileName, lineNum, msgStr )( ...
+  msg_thresh( VERBLEV__COPIOUS, verbLev, fileName, lineNum, msgStr) );
+
+%!test
+%!	commondefs
+%!	thisFile = "test commondefs";
+%!	verbLev = VERBLEV__MAIN;
+%!	disp( "" );
+%!	disp( "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" );
+%!	msg_error( verbLev, thisFile, __LINE__, "This should be displayed." );
+%!	msg_main( verbLev, thisFile, __LINE__, "This should also be displayed." );
+%!	msg_progress( verbLev, thisFile, __LINE__, "THIS SHOULD NOT BE DISPLAYED! ***" );
+%!	disp("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" );
+%!	disp( "*** Is the above text correct?  ***" );
+%!	disp( "" );
