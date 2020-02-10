@@ -1,0 +1,35 @@
+clear;
+commondefs;
+thisFile = "test_linsolf";
+msg( thisFile, __LINE__, "Performing WIP test..." );
+probSize = 800;
+randnstate_before = randn("state");
+randn("state",468);
+matA = eye(probSize,probSize) + (0.04 * randn(probSize,probSize));
+vecXSecret = randn(probSize,1);
+vecB = matA * vecXSecret;
+randn("state",randnstate_before);
+funchMatAProd = @(vecV)( matA * vecV );
+prm.verbLev = VERBLEV__COPIOUS;
+[ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm );
+msg( thisFile, __LINE__, sprintf("retCode = %s.", retcode2str(retCode)) );
+assert( RETCODE__NOT_SET == retCode );
+msg( thisFile, __LINE__, "Finished WIP test.\n" );
+%
+%
+clear;
+commondefs;
+thisFile = "test_linsolf";
+msg( thisFile, __LINE__, "Performing vecB = 0 test..." );
+probSize = 800;
+randnstate_before = randn("state");
+randn("state",468);
+matA = eye(probSize,probSize) + (0.04 * randn(probSize,probSize));
+vecXSecret = zeros(probSize,1);
+vecB = matA * vecXSecret;
+randn("state",randnstate_before);
+funchMatAProd = @(vecV)( matA * vecV );
+[ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB );
+assert( 0.0 == sum(vecX.^2) );
+assert( RETCODE__SUCCESS == retCode );
+msg( thisFile, __LINE__, "Finished vecB = 0 test.\n" );
