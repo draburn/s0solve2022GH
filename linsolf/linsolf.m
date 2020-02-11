@@ -1,3 +1,21 @@
+%  Function...
+%    function [ vecX, retCode, datOut ] ...
+%      = linsolf( funchMatAProd, vecB, prm=[], datIn=[] )
+%  Overview...
+%    Finds an (inexact) solution to the equation matA * vecX = vecB
+%    (essentially) using GMRes. The matrix A must be square, but
+%    does not need to be provided explicitly, making this suitable
+%    for JFNK.
+%  Input...
+%    funchMatAProd: A function handle like @(vecDummy)( matA * vecDummy ).
+%    vecB: A column vector of the appropriate size.
+%    prm: Input parameters.
+%    datIn: Input data.
+%  Output...
+%    vecX: The obtained solution vector.
+%    retCode: A standard return code, 0 indicates success.
+%    datOut: Output data.
+%  See source code for more information on prm, datIn, and datOut.
 function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn=[] )
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -36,7 +54,7 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 	assert( isrealscalar(numIterLimit) );
 	%
 	% Internal parameters.
-	gsThresh0 = mygetfield( prm, "gsThresh0", eps^0.75 );
+	gsThresh0 = mygetfield( prm, "gsThresh0", eps^0.50 );
 	gsThresh1 = mygetfield( prm, "gsThresh1", 0.5 );
 	assert( isrealscalar(gsThresh0) );
 	assert( 0.0 < gsThresh0 );
@@ -50,13 +68,11 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 	%
 	% Initialize iterates.
 	numIter = 0;
-	matU = zeros(sizeX,0);
 	matV = zeros(sizeX,0);
 	matW = zeros(sizeF,0);
 	matH = zeros(0,0);
 	matR = zeros(0,0);
 	vecG = zeros(0,1);
-	vecX = zeros(sizeX,1);
 	%
 	% Handle the "start is solution" case.
 	if ( 0.0 >= normB )
@@ -68,7 +84,7 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 	end
 	fracRes = 1.0;
 	assert( sizeX == sizeF );
-	matU(:,1) = vecB / normB;
+	vecBeta = vecB / normB;
 	%
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -137,10 +153,9 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 		% DO WORK
 		%
 		% Get new basis vector.
-		vecV = matU(:,numIter+1);
-		assert( isrealarray(vecV,[sizeX,1]) );
-		assert( abs(1.0-sum(vecV.^2)) < eps^0.75 );
-		if ( 1 <= numIter )
+		if ( 0 == numIter )
+			vecV = vecBeta;
+		else
 			vecV -= matV * ( matV' * vecV );
 			normV = sqrt(sum(vecV.^2));
 			if ( normV <= gsThresh0 )
@@ -169,11 +184,12 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 		%
 		% Get next projected vector...
 		vecW = funchMatAProd( vecV );
+		assert( isrealarray(vecW,[sizeF,1]) );
 		matW(:,numIter+1) = vecW;
 		vecH = matW' * vecW;
-		normW = sqrt(vecH(numIter+1));
 		matH(1:numIter+1,numIter+1) = vecH;
 		matH(numIter+1,1:numIter+1) = vecH';
+		normW = sqrt(vecH(numIter+1,1));
 		if ( 0.0 >= normW )
 			msg_warn( verbLev, thisFile, __LINE__, sprintf( ...
 			  "Projected vector %d is zero.", numIter+1) );
@@ -190,28 +206,20 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 			return;
 		end
 		%
-		vecG(numIter+1,1) = vecW' * vecB;
-		% Speed optimization note:
-		%  fracRes = sqrt( 1.0 - (sum((matR'\vecG).^2)/(normB*normB)) );
-		% So, we could skip the other calculalations until __finish.
-		% But, premature optimization is the root of all evil.
-		% Another speed note:
-		%  as long as we assume matV is always the Krylov subspace,
-		%  there's an additional opportunity for speed-up from
-		%  (essentially) not having to orthonormalize both V and W.
-		% See s0solve20200104 and the original GMRes paper.
-		vecY = matR \ ( matR' \ vecG );
-		vecX = matV * vecY;
-		vecRho = (matW * vecY) - vecB;
-		res = sqrt(sum(vecRho.^2));
-		fracRes = res / normB;
+		vecG(numIter+1,1) = vecW' * vecBeta;
+		vecZ = matR' \ vecG;
+		fracRes = sqrt(max([ 0.0, 1.0-sum(vecZ.^2) ]));
 		%
 		% Prepare next iteration.
 		numIter++;
 		assert( sizeX == sizeF );
 		assert( 0.0 < normW );
-		matU(:,numIter+1) = matW(:,numIter) / normW;
+		vecV = matW(:,numIter) / normW;
 	end
 	%
+	% Speed note:
+	%  As long as we assume matV is always the Krylov subspace,
+	%  we could get a speed-up by (essentially) reusing factorization
+	%  information for V and W.
 return;
 end
