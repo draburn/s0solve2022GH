@@ -36,7 +36,7 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 	assert( isrealscalar(verbLev) );
 	assert( isrealscalar(reportInterval) );
 	assert( 0.0 <= reportInterval );
-	reportTimePrev = startTime - reportInterval - 1.0;
+	reportTimePrev = startTime - 0.1;
 	%
 	% Problem description.
 	sizeF = size(vecB,1);
@@ -47,15 +47,18 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 	%
 	% Stopping criteria.
 	fracResTol = mygetfield( prm, "fracResTol", 0.1 ); % Success.
+	stopsigCheckInterval = mygetfield( prm, "stopsigCheckInterval", 1.0 ); % Imposed stop.
 	exeTimeLimit = mygetfield( prm, "exeTimeLimit", -1.0 ); % Imposed stop.
 	numIterLimit = mygetfield( prm, "numIterLimit", -1.0 ); % Imposed stop.
 	assert( isrealscalar(fracResTol) );
+	assert( isrealscalar(stopsigCheckInterval) );
 	assert( isrealscalar(exeTimeLimit) );
 	assert( isrealscalar(numIterLimit) );
+	stopsigCheckTimePrev = startTime;
 	%
 	% Internal parameters.
 	gsThresh0 = mygetfield( prm, "gsThresh0", eps^0.50 );
-	gsThresh1 = mygetfield( prm, "gsThresh1", 0.5 );
+	gsThresh1 = mygetfield( prm, "gsThresh1", eps^0.25 );
 	assert( isrealscalar(gsThresh0) );
 	assert( 0.0 < gsThresh0 );
 	assert( 1.0 > gsThresh0 );
@@ -127,20 +130,25 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 		end
 		end
 		%
-		if ( stopsignalpresent() )
-			msg_notify( verbLev, thisFile, __LINE__, ...
-			  sprintf("Found stop signal file in working directory.") );
-			retCode = RETCODE__IMPOSED_STOP;
-			linsolf__finish;
-			return;
+		if ( 0.0 <= stopsigCheckInterval )
+		if ( time() > stopsigCheckTimePrev + stopsigCheckInterval )
+			if ( stopsignalpresent() )
+				msg_notify( verbLev, thisFile, __LINE__, ...
+				  sprintf("Found stop signal file in working directory.") );
+				retCode = RETCODE__IMPOSED_STOP;
+				linsolf__finish;
+				return;
+			end
+			stopsigCheckTimePrev = time();
+		end
 		end
 		%
 		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		% REPORT
 		%
-		if ( verbLev >= VERBLEV__PROGRESS )
+		if ( 0.0 <= reportInterval )
 		if ( time() > reportTimePrev + reportInterval )
-			msg( thisFile, __LINE__, sprintf( ...
+			msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
 			  "  %4d  %6.2f  %8.2e", ...
 			   numIter, ...
 			   time()-startTime, ...

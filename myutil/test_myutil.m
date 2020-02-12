@@ -1,4 +1,4 @@
-thisFile = "test_myutil"
+thisFile = "test_myutil";
 %
 msg( thisFile, __LINE__, "Testing msg..." );
 test msg;

@@ -98,7 +98,7 @@ end
 %!	sizeX = 1500;
 %!	sizeF = 1200;
 %!	randnstate_before = randn("state");
-%!	randnstate = round(1E6*time());
+%!	randnstate = round(1E3*time());
 %!	msg( thisFile, __LINE__, sprintf("randnstate = %d.", randnstate) );
 %!	randn("state",randnstate);
 %!	matA = randn(sizeF,sizeX);
