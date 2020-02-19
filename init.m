@@ -3,4 +3,5 @@ addpath( "myutil" );
 addpath( "common" );
 addpath( "linsolf" );
 addpath( "demoFunc" );
+addpath( "groot" );
 commondefs;
