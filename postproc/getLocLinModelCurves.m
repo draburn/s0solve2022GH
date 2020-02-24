@@ -77,7 +77,8 @@ end
 %!	clear;
 %!	commondefs;
 %!	thisFile = "test getLocLinModelCurves";
-%!
+%!	tic();
+%!	%
 %!	randn("seed",0);
 %!	sizeF = 2;
 %!	sizeX = 2;
@@ -86,13 +87,13 @@ end
 %!	matV = eye(sizeX,sizeK);
 %!	matW = randn(sizeF,sizeK);
 %!	numPts = 100;
-%!
+%!	%
 %!	[ curveDat, retCode, datOut ] = getLocLinModelCurves( vecF, matV, matW, numPts );
 %!	assert( RETCODE__SUCCESS == retCode );
 %!	matDeltaG = curveDat.matDeltaG;
 %!	matDeltaF = curveDat.matDeltaF;
 %!	matDeltaN = curveDat.matDeltaN;
-%!
+%!	%
 %!	matF = repmat(vecF,[1,numPts]);
 %!	matFPG = matF + (matW * (matV'*matDeltaG));
 %!	matFPF = matF + (matW * (matV'*matDeltaF));
@@ -103,25 +104,18 @@ end
 %!	omegaGVals = 0.5*(sum(matFPG.^2,1));
 %!	omegaFVals = 0.5*(sum(matFPF.^2,1));
 %!	omegaNVals = 0.5*(sum(matFPN.^2,1));
-%!
+%!	%
 %!	numFigs = 0;
 %!	xn = 1;
 %!	yn = 2;
-%!
+%!	%
 %!	numFigs++; figure(numFigs);
 %!	plot( ...
-%!	  deltaGNormVals, omegaGVals, 'o-', ...
-%!	  deltaFNormVals, omegaFVals, 'x-', ...
-%!	  deltaNNormVals, omegaNVals, 's-' );
+%!	  deltaGNormVals, omegaGVals, 'ro-', ...
+%!	  deltaFNormVals, omegaFVals, 'gx-', ...
+%!	  deltaNNormVals, omegaNVals, 'bs-' );
 %!	grid on;
-%!
-%!	numFigs++; figure(numFigs);
-%!	plot( ...
-%!	  matDeltaG(xn,:), matDeltaG(yn,:), 'o-', ...
-%!	  matDeltaF(xn,:), matDeltaF(yn,:), 'x-', ...
-%!	  matDeltaN(xn,:), matDeltaN(yn,:), 's-' );
-%!	grid on;
-%!
+%!	%
 %!	xMin = max(min([ ...
 %!	  matDeltaG(xn,:), ...
 %!	  matDeltaF(xn,:), ...
@@ -138,34 +132,32 @@ end
 %!	  matDeltaG(yn,:), ...
 %!	  matDeltaF(yn,:), ...
 %!	  matDeltaN(yn,:) ]));
+%!	if (0)
+%!	aMin = min([xMin,yMin]);
+%!	aMax = max([xMax,yMax]);
+%!	xLo = aMin-0.3*abs(aMax-aMin);
+%!	xHi = aMax+0.3*abs(aMax-aMin);
+%!	yLo = xLo;
+%!	yHi = xHi;
+%!	else
 %!	xLo = xMin-0.3*abs(xMax-xMin);
 %!	xHi = xMax+0.3*abs(xMax-xMin);
 %!	yLo = yMin-0.3*abs(yMax-yMin);
 %!	yHi = yMax+0.3*abs(yMax-yMin);
+%!	end
+%!	%
 %!	numXVals = 50;
 %!	numYVals = 51;
 %!	xVals = xLo + ((xHi-xLo)*(0:numXVals-1)/(numXVals-1.0));
 %!	yVals = yLo + ((yHi-yLo)*(0:numYVals-1)/(numYVals-1.0));
 %!	[ xGrid, yGrid ] = meshgrid( xVals, yVals );
-%!
+%!	%
 %!	xv = 1;
 %!	yv = 2;
-%!	if (1)
-%!		for ix=1:numXVals
-%!		for iy=1:numYVals
-%!			vecR = zeros(sizeX,1);
-%!			vecR(xn) = xVals(ix);
-%!			vecR(yn) = yVals(iy);
-%!			vecRes = vecF + (matW*(matV'*vecR));
-%!			omegaGrid(iy,ix) = norm(vecRes);
-%!		end
-%!		end
-%!	else
 %!	omegaGrid = 0.5*( ...
-%!	   (( (vecF(xv)+(matW(xv,xn)*xGrid)) + (vecF(xv)+(matW(xv,yn)*yGrid)) ).^2) ...
-%!	 + (( (vecF(yv)+(matW(yv,xn)*xGrid)) + (vecF(yv)+(matW(yv,yn)*yGrid)) ).^2) );
-%!	end
-%!
+%!	   (( (vecF(xv) + (matW(xv,xn)*xGrid) + (matW(xv,yn)*yGrid)) ).^2) ...
+%!	 + (( (vecF(yv) + (matW(yv,xn)*xGrid) + (matW(yv,yn)*yGrid)) ).^2) );
+%!	%
 %!	numFigs++; figure(numFigs);
 %!	contour( xGrid, yGrid, sqrt(omegaGrid), 50 );
 %!	hold on;
@@ -174,4 +166,7 @@ end
 %!	  matDeltaF(xn,:), matDeltaF(yn,:), 'gx-', ...
 %!	  matDeltaN(xn,:), matDeltaN(yn,:), 'bs-' );
 %!	hold off;
+%!	%axis equal;
 %!	grid on;
+%!	%
+%!	toc();
