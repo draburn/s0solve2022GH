@@ -68,13 +68,21 @@ function [ curveDat, retCode, datOut ] = getLocLinModelCurves( ...
 	matI = hScale*eye(sizeK,sizeK);
 	funchYLev = @(mu_dummy)( -(matH+(mu_dummy*matI))\vecG );
 	funchFLev = @(mu_dummy)( sqrt(sum((funchYLev(mu_dummy)).^2)) );
-	muVals = flinspace( 0.0, numPts^2, numPts, funchFLev );
+	muValsLev = flinspace( 0.0, numPts^2, numPts, funchFLev );
 	% Compare flinspace to linspace to see merit of flinspace.
 	%%%muVals = linspace( 0.0, numPts^2, numPts );
-	for n=1:max(size(muVals))
-		curveDat.matDeltaL(:,n) = funchYLev(muVals(n));
+	for n=1:max(size(muValsLev))
+		curveDat.matDeltaL(:,n) = funchYLev(muValsLev(n));
 	end
+	%
 	%curveDat.matLevMarq = ...
+	funchYLevMarq = @(mu_dummy)( -(matH+(mu_dummy*matD))\vecG );
+	funchFLevMarq = @(mu_dummy)( sqrt(sum((funchYLevMarq(mu_dummy)).^2)) );
+	muValsLevMarq = flinspace( 0.0, numPts^2, numPts, funchFLevMarq );
+	for n=1:max(size(muValsLevMarq))
+		curveDat.matDeltaLM(:,n) = funchYLevMarq(muValsLevMarq(n));
+	end
+	%
 	%curveDat.matGradCurve = ...
 	%curveDat.matGradScurve = ...
 	%
@@ -96,7 +104,7 @@ end
 %!	vecF = randn(sizeF,1);
 %!	matV = eye(sizeX,sizeK);
 %!	matW = randn(sizeF,sizeK);
-%!	numPts = 50;
+%!	numPts = 100;
 %!	%
 %!	[ curveDat, retCode, datOut ] = getLocLinModelCurves( vecF, matV, matW, numPts );
 %!	assert( RETCODE__SUCCESS == retCode );
@@ -104,31 +112,41 @@ end
 %!	matDeltaF = curveDat.matDeltaF;
 %!	matDeltaN = curveDat.matDeltaN;
 %!	matDeltaL = curveDat.matDeltaL;
+%!	matDeltaLM = curveDat.matDeltaLM;
 %!	%
 %!	matF = repmat(vecF,[1,numPts]);
 %!	matFPG = matF + (matW * (matV'*matDeltaG));
 %!	matFPF = matF + (matW * (matV'*matDeltaF));
 %!	matFPN = matF + (matW * (matV'*matDeltaN));
 %!	matFPL = matF + (matW * (matV'*matDeltaL));
+%!	matFPLM = matF + (matW * (matV'*matDeltaLM));
 %!	deltaGNormVals = sqrt(sum(matDeltaG.^2,1));
 %!	deltaFNormVals = sqrt(sum(matDeltaF.^2,1));
 %!	deltaNNormVals = sqrt(sum(matDeltaN.^2,1));
 %!	deltaLNormVals = sqrt(sum(matDeltaL.^2,1));
+%!	deltaLMNormVals = sqrt(sum(matDeltaLM.^2,1));
 %!	omegaGVals = 0.5*(sum(matFPG.^2,1));
 %!	omegaFVals = 0.5*(sum(matFPF.^2,1));
 %!	omegaNVals = 0.5*(sum(matFPN.^2,1));
 %!	omegaLVals = 0.5*(sum(matFPL.^2,1));
+%!	omegaLMVals = 0.5*(sum(matFPLM.^2,1));
 %!	%
 %!	numFigs = 0;
 %!	xn = 1;
 %!	yn = 2;
+%!	colorG = [ 1.0, 0.0, 0.0 ];
+%!	colorF = [ 0.0, 0.0, 1.0 ];
+%!	colorN = [ 0.0, 0.8, 0.0 ];
+%!	colorL = [ 0.8, 0.8, 0.0 ];
+%!	colorLM = [ 0.8, 0.4, 1.0 ];
 %!	%
 %!	numFigs++; figure(numFigs);
 %!	plot( ...
-%!	  deltaGNormVals, omegaGVals, 'ro-', ...
-%!	  deltaFNormVals, omegaFVals, 'gx-', ...
-%!	  deltaNNormVals, omegaNVals, 'bs-', ...
-%!	  deltaLNormVals, omegaLVals, 'c^-'  );
+%!	  deltaGNormVals, omegaGVals, 'o-', 'color', colorG, ...
+%!	  deltaFNormVals, omegaFVals, 'x-', 'color', colorF, ...
+%!	  deltaNNormVals, omegaNVals, 's-', 'color', colorN, ...
+%!	  deltaLNormVals, omegaLVals, '^-', 'color', colorL, ...
+%!	  deltaLMNormVals, omegaLMVals, 'v-', 'color', colorLM  );
 %!	grid on;
 %!	%
 %!	xMin = max(min([ ...
@@ -177,10 +195,11 @@ end
 %!	contour( xGrid, yGrid, sqrt(omegaGrid), 50 );
 %!	hold on;
 %!	plot( ...
-%!	  matDeltaG(xn,:), matDeltaG(yn,:), 'ro-', ...
-%!	  matDeltaF(xn,:), matDeltaF(yn,:), 'gx-', ...
-%!	  matDeltaN(xn,:), matDeltaN(yn,:), 'bs-', ...
-%!	  matDeltaL(xn,:), matDeltaL(yn,:), 'c^-' );
+%!	  matDeltaG(xn,:), matDeltaG(yn,:), 'o-', 'color', colorG, ...
+%!	  matDeltaF(xn,:), matDeltaF(yn,:), 'x-', 'color', colorF, ...
+%!	  matDeltaN(xn,:), matDeltaN(yn,:), 's-', 'color', colorN, ...
+%!	  matDeltaL(xn,:), matDeltaL(yn,:), '^-', 'color', colorL, ...
+%!	  matDeltaLM(xn,:), matDeltaLM(yn,:), '^-', 'color', colorLM );
 %!	hold off;
 %!	%axis equal;
 %!	grid on;
