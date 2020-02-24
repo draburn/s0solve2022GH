@@ -37,6 +37,7 @@ function [ curveDat, retCode, datOut ] = getLocLinModelCurves( ...
 	matD = diag(diag(matH));
 	vecF = matD \ vecG;
 	vecN = matH \ vecG;
+	hScale = max(max(matD));
 	sVals = (0:numPts-1)/(numPts-1.0);
 	%
 	temp0 = vecG' * (matH * vecG);
@@ -64,6 +65,15 @@ function [ curveDat, retCode, datOut ] = getLocLinModelCurves( ...
 	%curveDat.matRiker = ...
 	%
 	%curveDat.matLevenberg = ...
+	matI = hScale*eye(sizeK,sizeK);
+	funchYLev = @(mu_dummy)( -(matH+(mu_dummy*matI))\vecG );
+	funchFLev = @(mu_dummy)( sqrt(sum((funchYLev(mu_dummy)).^2)) );
+	muVals = flinspace( 0.0, numPts^2, numPts, funchFLev );
+	% Compare flinspace to linspace to see merit of flinspace.
+	%%%muVals = linspace( 0.0, numPts^2, numPts );
+	for n=1:max(size(muVals))
+		curveDat.matDeltaL(:,n) = funchYLev(muVals(n));
+	end
 	%curveDat.matLevMarq = ...
 	%curveDat.matGradCurve = ...
 	%curveDat.matGradScurve = ...
@@ -86,24 +96,28 @@ end
 %!	vecF = randn(sizeF,1);
 %!	matV = eye(sizeX,sizeK);
 %!	matW = randn(sizeF,sizeK);
-%!	numPts = 100;
+%!	numPts = 50;
 %!	%
 %!	[ curveDat, retCode, datOut ] = getLocLinModelCurves( vecF, matV, matW, numPts );
 %!	assert( RETCODE__SUCCESS == retCode );
 %!	matDeltaG = curveDat.matDeltaG;
 %!	matDeltaF = curveDat.matDeltaF;
 %!	matDeltaN = curveDat.matDeltaN;
+%!	matDeltaL = curveDat.matDeltaL;
 %!	%
 %!	matF = repmat(vecF,[1,numPts]);
 %!	matFPG = matF + (matW * (matV'*matDeltaG));
 %!	matFPF = matF + (matW * (matV'*matDeltaF));
 %!	matFPN = matF + (matW * (matV'*matDeltaN));
+%!	matFPL = matF + (matW * (matV'*matDeltaL));
 %!	deltaGNormVals = sqrt(sum(matDeltaG.^2,1));
 %!	deltaFNormVals = sqrt(sum(matDeltaF.^2,1));
 %!	deltaNNormVals = sqrt(sum(matDeltaN.^2,1));
+%!	deltaLNormVals = sqrt(sum(matDeltaL.^2,1));
 %!	omegaGVals = 0.5*(sum(matFPG.^2,1));
 %!	omegaFVals = 0.5*(sum(matFPF.^2,1));
 %!	omegaNVals = 0.5*(sum(matFPN.^2,1));
+%!	omegaLVals = 0.5*(sum(matFPL.^2,1));
 %!	%
 %!	numFigs = 0;
 %!	xn = 1;
@@ -113,7 +127,8 @@ end
 %!	plot( ...
 %!	  deltaGNormVals, omegaGVals, 'ro-', ...
 %!	  deltaFNormVals, omegaFVals, 'gx-', ...
-%!	  deltaNNormVals, omegaNVals, 'bs-' );
+%!	  deltaNNormVals, omegaNVals, 'bs-', ...
+%!	  deltaLNormVals, omegaLVals, 'c^-'  );
 %!	grid on;
 %!	%
 %!	xMin = max(min([ ...
@@ -164,7 +179,8 @@ end
 %!	plot( ...
 %!	  matDeltaG(xn,:), matDeltaG(yn,:), 'ro-', ...
 %!	  matDeltaF(xn,:), matDeltaF(yn,:), 'gx-', ...
-%!	  matDeltaN(xn,:), matDeltaN(yn,:), 'bs-' );
+%!	  matDeltaN(xn,:), matDeltaN(yn,:), 'bs-', ...
+%!	  matDeltaL(xn,:), matDeltaL(yn,:), 'c^-' );
 %!	hold off;
 %!	%axis equal;
 %!	grid on;
