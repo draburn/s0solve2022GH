@@ -62,8 +62,8 @@ function [ curveDat, retCode, datOut ] = getLocLinModelCurves( ...
 	%
 	temp0 = vecN' * (matH * vecN);
 	assert( temp0 > 0.0 );
-	temp1 = (vecN' * vecG) / temp0;
-	assert( abs(temp1-1.0) < (sizeK^2) * 10.0 * eps );
+	temp1 = (vecN' * vecG) / temp0
+	assert( abs(temp1-1.0) < (sizeK^2) * (eps^0.75) );
 	vecDeltaN = -matV * vecN;
 	curveDat.matDeltaN = vecDeltaN * sVals;
 	%
@@ -89,8 +89,8 @@ function [ curveDat, retCode, datOut ] = getLocLinModelCurves( ...
 	%
 	%curveDat.matGradCurve = ...
 	[ matPsi, matLambda ] = eig( matH );
-	assert( sum(sum(abs(((matPsi')*matPsi)-matI))) < (sizeK^3)*10.0*eps );
-	assert( sum(sum(abs((matPsi*(matPsi'))-matI))) < (sizeK^3)*10.0*eps );
+	assert( sum(sum(abs(((matPsi')*matPsi)-matI))) < (sizeK^3)*(eps^0.75) );
+	assert( sum(sum(abs((matPsi*(matPsi'))-matI))) < (sizeK^3)*(eps^0.75) );
 	vecPsiTN = matPsi'*vecN;
 	lambdaMin = min(diag(matLambda));
 	matSigma = matLambda / lambdaMin;
@@ -116,7 +116,9 @@ end
 %!	thisFile = "test getLocLinModelCurves";
 %!	tic();
 %!	%
-%!	randn("seed",0);
+%!	%randnSeed = mod(round(1E6*time()),1E6)
+%!	randnSeed = 835470
+%!	randn("seed",randnSeed);
 %!	sizeF = 2;
 %!	sizeX = 2;
 %!	sizeK = 2;
@@ -190,7 +192,7 @@ end
 %!	  matDeltaG(yn,:), ...
 %!	  matDeltaF(yn,:), ...
 %!	  matDeltaN(yn,:) ]));
-%!	if (0)
+%!	if (1)
 %!	aMin = min([xMin,yMin]);
 %!	aMax = max([xMax,yMax]);
 %!	xLo = aMin-0.3*abs(aMax-aMin);
@@ -227,7 +229,7 @@ end
 %!	  matDeltaLM(xn,:), matDeltaLM(yn,:), '^-', 'color', colorLM, ...
 %!	  matDeltaGC(xn,:), matDeltaGC(yn,:), '*-', 'color', colorGC, 'markersize', 15 );
 %!	hold off;
-%!	%axis equal;
+%!	axis equal;
 %!	grid on;
 %!	%
 %!	toc();
