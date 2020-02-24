@@ -4,7 +4,7 @@
 %    Part of myutil module.
 %    Return true if the two inputs are equivalent to within tol.
 %  Note: If one (but not both) of the values is exactly zero,
-%    this will return FALSE.
+%    this will always return FALSE.
 function boo = fleq( x, y, tol=10.0*eps )
 	boo = ( abs(x-y) <= abs(tol)*(abs(x)+abs(y)) );
 return;
