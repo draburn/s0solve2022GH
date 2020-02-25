@@ -33,14 +33,13 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matJ, numPts, prm=[
 	  GETCURVES_CURVETYPE__NEWTON, ...
 	  GETCURVES_CURVETYPE__PICARD, ...
 	  GETCURVES_CURVETYPE__PICARD_SCALED, ...
-	  GETCURVES_CURVETYPE__GRADIENT, ...
-	  GETCURVES_CURVETYPE__GRADIENT_SCALED, ...
+	  GETCURVES_CURVETYPE__GRADDIR, ...
+	  GETCURVES_CURVETYPE__GRADDIR_SCALED, ...
 	  GETCURVES_CURVETYPE__LEVCURVE, ...
 	  GETCURVES_CURVETYPE__LEVCURVE_SCALED, ...
 	  GETCURVES_CURVETYPE__GRADCURVE, ...
 	  GETCURVES_CURVETYPE__GRADCURVE_SCALED ];
-	%%%curveTypes = mygetfield( prm, "curveTypes", curveTypes_default );
-	curveTypes = mygetfield( prm, "curveTypes", [GETCURVES_CURVETYPE__NEWTON] );
+	curveTypes = mygetfield( prm, "curveTypes", curveTypes_default );
 	numCurves = max(size(curveTypes));
 	assert( 1 <= numCurves );
 	%
@@ -50,6 +49,7 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matJ, numPts, prm=[
 	matI = eye(sizeX,sizeX);
 	vecG = matJ' * vecF;
 	matH = matJ' * matJ;
+	matD = diag(diag(matH));
 	sVals = (0:numPts-1)/(numPts-1.0);
 	%
 	for curveIndex = 1 : numCurves
@@ -57,6 +57,14 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matJ, numPts, prm=[
 		case {GETCURVES_CURVETYPE__NEWTON}
 			vecDeltaN = -matH\vecG
 			curveDat(curveIndex).matDelta = vecDeltaN * sVals;
+		case {GETCURVES_CURVETYPE__GRADDIR}
+			vecDeltaG = -vecG;
+			s0 = -(vecDeltaG'*vecG)/(vecDeltaG'*matH*vecDeltaG);
+			curveDat(curveIndex).matDelta = s0 * vecDeltaG * sVals;
+		case {GETCURVES_CURVETYPE__GRADDIR_SCALED}
+			vecDeltaGradScl = -matD\vecG;
+			s0 = -(vecDeltaGradScl'*vecG)/(vecDeltaGradScl'*matH*vecDeltaGradScl);
+			curveDat(curveIndex).matDelta = s0 * vecDeltaGradScl * sVals;
 		otherwise
 			error(sprintf( "Value of curveTypes(%g) is invalid (%g).", ...
 			  curveIndex, curveTypes(curveIndex) ));
@@ -69,9 +77,15 @@ return;
 end
 
 %!test
-%!	vecF = [1;2];
-%!	matJ = [1,2;3,5];
+%!	commondefs;
+%!	getLLMCurves_setCnsts;
+%!	thisFile = "test getLLMCurvs";
+%!	vecF = [1;2]
+%!	matJ = [1,2;3,5]
 %!	numPts = 20;
-%!	[ curveDat, retCode, datOut ] = getLLMCurves( vecF, matJ, numPts );
-%!	plot( curveDat(1).matDelta(1,:), curveDat(1).matDelta(2,:), 'o-' );
-%!	grid on;
+%!	curveTypes = [ ...
+%!	  GETCURVES_CURVETYPE__NEWTON, ...
+%!	  GETCURVES_CURVETYPE__GRADDIR, ...
+%!	  GETCURVES_CURVETYPE__GRADDIR_SCALED ];
+%!	prm.curveTypes = curveTypes;
+%!	[ curveDat, retCode, datOut ] = getLLMCurves( vecF, matJ, numPts, prm );
