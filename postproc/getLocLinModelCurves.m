@@ -62,13 +62,13 @@ function [ curveDat, retCode, datOut ] = getLocLinModelCurves( ...
 	%
 	temp0 = vecN' * (matH * vecN);
 	assert( temp0 > 0.0 );
-	temp1 = (vecN' * vecG) / temp0
+	temp1 = (vecN' * vecG) / temp0;
 	assert( abs(temp1-1.0) < (sizeK^2) * (eps^0.75) );
 	vecDeltaN = -matV * vecN;
 	curveDat.matDeltaN = vecDeltaN * sVals;
 	%
 	%curveDat.matPicard = ...
-	%curveDat.matRiker = ...
+	%curveDat.matSPicard = ...
 	%
 	%curveDat.matLevenberg = ...
 	matHScaleI = hScale*matI;
@@ -79,12 +79,17 @@ function [ curveDat, retCode, datOut ] = getLocLinModelCurves( ...
 		curveDat.matDeltaL(:,n) = -matV * funchYLev(muValsLev(n));
 	end
 	%
+	matDInvSqrt = diag(1./sqrt(diag(matD)));
+	matVScl = matV * matDInvSqrt;
+	matHScl = matDInvSqrt * matH * matDInvSqrt;
+	vecGScl = matDInvSqrt * vecG;
+	%
 	%curveDat.matLevMarq = ...
-	funchYLevMarq = @(mu_dummy)( (matH+(mu_dummy*matD))\vecG );
-	funchFLevMarq = @(mu_dummy)( sqrt(sum((funchYLevMarq(mu_dummy)).^2)) );
-	muValsLevMarq = flinspace( 0.0, numPts^2, numPts, funchFLevMarq );
-	for n=1:max(size(muValsLevMarq))
-		curveDat.matDeltaLM(:,n) = -matV * funchYLevMarq(muValsLevMarq(n));
+	funchYLevScl = @(mu_dummy)( (matHScl+(mu_dummy*matI))\vecGScl );
+	funchFLevScl = @(mu_dummy)( sqrt(sum((funchYLevScl(mu_dummy)).^2)) );
+	muValsLevScl = flinspace( 0.0, numPts^2, numPts, funchFLevScl );
+	for n=1:max(size(muValsLevScl))
+		curveDat.matDeltaLM(:,n) = -matVScl * funchYLevScl(muValsLevScl(n));
 	end
 	%
 	%curveDat.matGradCurve = ...
@@ -97,10 +102,10 @@ function [ curveDat, retCode, datOut ] = getLocLinModelCurves( ...
 	funchYGradCurve = @(nu_dummy)( ...
 	  vecPsiTN - (diag(nu_dummy.^diag(matSigma))*vecPsiTN) );
 	funchFGradCurve = @(nu_dummy)( sqrt(sum((funchYGradCurve(nu_dummy)).^2)) );
-	muValsGradCurve = flinspace( 0.0, 1.0, numPts, funchFGradCurve );
+	nuValsGradCurve = flinspace( 0.0, 1.0, numPts, funchFGradCurve );
 	%%%muValsGradCurve = ((0:numPts-1)/(numPts-1.0)).^2;
-	for n=1:max(size(muValsGradCurve))
-		curveDat.matDeltaGC(:,n) = -matV * (matPsi * funchYGradCurve(muValsGradCurve(n)));
+	for n=1:max(size(nuValsGradCurve))
+		curveDat.matDeltaGC(:,n) = -matV * (matPsi * funchYGradCurve(nuValsGradCurve(n)));
 	end
 	%
 	%curveDat.matGradScurve = ...
