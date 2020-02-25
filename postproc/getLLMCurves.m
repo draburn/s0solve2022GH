@@ -53,18 +53,39 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matJ, numPts, prm=[
 	sVals = (0:numPts-1)/(numPts-1.0);
 	%
 	for curveIndex = 1 : numCurves
+		clear vecTemp;
 		switch (curveTypes(curveIndex))
 		case {GETCURVES_CURVETYPE__NEWTON}
-			vecDeltaN = -matH\vecG
-			curveDat(curveIndex).matDelta = vecDeltaN * sVals;
+			vecTemp = -matH\vecG
+			s0 = -(vecTemp'*vecG)/(vecTemp'*matH*vecTemp);
+			assert( abs(s0-1.0) < (sizeX^3)*10.0*(eps^0.75) );
+			vecTemp *= s0;
+			curveDat(curveIndex).matDelta = vecTemp * sVals;
+			curveDat(curveIndex).strType = "Newt";
+		case {GETCURVES_CURVETYPE__PICARD}
+			vecTemp = -vecF;
+			s0 = -(vecTemp'*vecG)/(vecTemp'*matH*vecTemp);
+			vecTemp *= s0;
+			curveDat(curveIndex).matDelta = vecTemp * sVals;
+			curveDat(curveIndex).strType = "Pic";
+		case {GETCURVES_CURVETYPE__PICARD_SCALED}
+			vecTemp = -matD\vecF;
+			s0 = -(vecTemp'*vecG)/(vecTemp'*matH*vecTemp);
+			vecTemp *= s0;
+			curveDat(curveIndex).matDelta = vecTemp * sVals;
+			curveDat(curveIndex).strType = "PicScl";
 		case {GETCURVES_CURVETYPE__GRADDIR}
-			vecDeltaG = -vecG;
-			s0 = -(vecDeltaG'*vecG)/(vecDeltaG'*matH*vecDeltaG);
-			curveDat(curveIndex).matDelta = s0 * vecDeltaG * sVals;
+			vecTemp = -vecG;
+			s0 = -(vecTemp'*vecG)/(vecTemp'*matH*vecTemp);
+			vecTemp *= s0;
+			curveDat(curveIndex).matDelta = vecTemp * sVals;
+			curveDat(curveIndex).strType = "GradDir";
 		case {GETCURVES_CURVETYPE__GRADDIR_SCALED}
-			vecDeltaGradScl = -matD\vecG;
-			s0 = -(vecDeltaGradScl'*vecG)/(vecDeltaGradScl'*matH*vecDeltaGradScl);
-			curveDat(curveIndex).matDelta = s0 * vecDeltaGradScl * sVals;
+			vecTemp = -matD\vecG;
+			s0 = -(vecTemp'*vecG)/(vecTemp'*matH*vecTemp);
+			vecTemp *= s0;
+			curveDat(curveIndex).matDelta = vecTemp * sVals;
+			curveDat(curveIndex).strType = "GradDirScl";
 		otherwise
 			error(sprintf( "Value of curveTypes(%g) is invalid (%g).", ...
 			  curveIndex, curveTypes(curveIndex) ));
@@ -85,6 +106,8 @@ end
 %!	numPts = 20;
 %!	curveTypes = [ ...
 %!	  GETCURVES_CURVETYPE__NEWTON, ...
+%!	  GETCURVES_CURVETYPE__PICARD, ...
+%!	  GETCURVES_CURVETYPE__PICARD_SCALED, ...
 %!	  GETCURVES_CURVETYPE__GRADDIR, ...
 %!	  GETCURVES_CURVETYPE__GRADDIR_SCALED ];
 %!	prm.curveTypes = curveTypes;

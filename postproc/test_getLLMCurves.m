@@ -5,9 +5,11 @@ thisFile = "test_getLLMCurvs";
 %
 vecF = [-1;-1]
 matJ = [1,1;1,10]
-numPts = 20;
+numPts = 100;
 curveTypes = [ ...
   GETCURVES_CURVETYPE__NEWTON, ...
+  GETCURVES_CURVETYPE__PICARD, ...
+  GETCURVES_CURVETYPE__PICARD_SCALED, ...
   GETCURVES_CURVETYPE__GRADDIR, ...
   GETCURVES_CURVETYPE__GRADDIR_SCALED ];
 %
@@ -26,9 +28,12 @@ end
 %
 numFigs = 0;
 colMap = 0.8*jet(numCurves);
+strLegend = [ curveDat(1).strType ];
+for n=2:numCurves
+	strLegend = [ strLegend; curveDat(n).strType ];
+end
 %
 numFigs++; figure(numFigs);
-clf();
 plot( curveDat(1).matDelta(1,:), curveDat(1).matDelta(2,:), ...
   'o-', 'color', colMap(1,:) );
 hold on;
@@ -38,9 +43,9 @@ for n=2:numCurves
 end
 hold off;
 grid on;
+legend( strLegend );
 %
 numFigs++; figure(numFigs);
-clf();
 plot( myDat(1).deltaNorm, myDat(1).omega, ...
   'o-', 'color', colMap(1,:) );
 hold on;
@@ -50,3 +55,4 @@ for n=2:numCurves
 end
 hold off;
 grid on;
+legend( strLegend );
