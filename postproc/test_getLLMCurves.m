@@ -4,8 +4,8 @@ getLLMCurves_setCnsts;
 thisFile = "test_getLLMCurvs";
 %
 vecF = [-1;-1];
-matJ = [1,1;1,10];
-numPts = 100;
+matW = [1,1;1,2];
+numPts = 20;
 curveTypes = [ ...
   GETCURVES_CURVETYPE__NEWTON, ...
   GETCURVES_CURVETYPE__PICARD, ...
@@ -15,14 +15,14 @@ curveTypes = [ ...
   GETCURVES_CURVETYPE__LEVCURVE ];
 %
 prm.curveTypes = curveTypes;
-[ curveDat, retCode, datOut ] = getLLMCurves( vecF, matJ, numPts, prm );
+[ curveDat, retCode, datOut ] = getLLMCurves( vecF, matW, numPts, prm );
 %
 numCurves = max(size(curveTypes));
 for n=1:numCurves
-	matDelta = curveDat(n).matDelta;
-	numPts = size(matDelta,2);
-	matRes = repmat(vecF,[1,numPts]) + (matJ*matDelta);
-	myDat(n).deltaNorm = sqrt(sum(matDelta.^2,1));
+	matY = curveDat(n).matY;
+	numPts = size(matY,2);
+	matRes = repmat(vecF,[1,numPts]) + (matW*matY);
+	myDat(n).deltaNorm = sqrt(sum(matY.^2,1));
 	myDat(n).matRes = matRes;
 	myDat(n).omega = 0.5*sum(matRes.^2,1);
 end
@@ -35,11 +35,11 @@ for n=2:numCurves
 end
 %
 numFigs++; figure(numFigs);
-plot( curveDat(1).matDelta(1,:), curveDat(1).matDelta(2,:), ...
+plot( curveDat(1).matY(1,:), curveDat(1).matY(2,:), ...
   'o-', 'color', colMap(1,:) );
 hold on;
 for n=2:numCurves
-	plot( curveDat(n).matDelta(1,:), curveDat(n).matDelta(2,:), ...
+	plot( curveDat(n).matY(1,:), curveDat(n).matY(2,:), ...
 	  'o-', 'color', colMap(n,:) );
 end
 hold off;
