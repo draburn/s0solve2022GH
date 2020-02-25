@@ -3,8 +3,8 @@ commondefs;
 getLLMCurves_setCnsts;
 thisFile = "test_getLLMCurvs";
 %
-vecF = [-1;-1]
-matJ = [1,1;1,10]
+vecF = [-1;-1];
+matJ = [1,1;1,10];
 numPts = 100;
 curveTypes = [ ...
   GETCURVES_CURVETYPE__NEWTON, ...

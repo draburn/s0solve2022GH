@@ -54,9 +54,14 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matJ, numPts, prm=[
 	%
 	for curveIndex = 1 : numCurves
 		clear vecTemp;
+		clear s0;
+		clear funchDelta;
+		clear funchF;
+		clear muVals;
+		clear nuVals;
 		switch (curveTypes(curveIndex))
 		case {GETCURVES_CURVETYPE__NEWTON}
-			vecTemp = -matH\vecG
+			vecTemp = -matH\vecG;
 			s0 = -(vecTemp'*vecG)/(vecTemp'*matH*vecTemp);
 			assert( abs(s0-1.0) < (sizeX^3)*10.0*(eps^0.75) );
 			vecTemp *= s0;
