@@ -66,19 +66,19 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matJ, numPts, prm=[
 			assert( abs(s0-1.0) < (sizeX^3)*10.0*(eps^0.75) );
 			vecTemp *= s0;
 			curveDat(curveIndex).matDelta = vecTemp * sVals;
-			curveDat(curveIndex).strType = "Newt";
+			curveDat(curveIndex).strType = "Newton";
 		case {GETCURVES_CURVETYPE__PICARD}
 			vecTemp = -vecF;
 			s0 = -(vecTemp'*vecG)/(vecTemp'*matH*vecTemp);
 			vecTemp *= s0;
 			curveDat(curveIndex).matDelta = vecTemp * sVals;
-			curveDat(curveIndex).strType = "Pic";
+			curveDat(curveIndex).strType = "Picard";
 		case {GETCURVES_CURVETYPE__PICARD_SCALED}
 			vecTemp = -matD\vecF;
 			s0 = -(vecTemp'*vecG)/(vecTemp'*matH*vecTemp);
 			vecTemp *= s0;
 			curveDat(curveIndex).matDelta = vecTemp * sVals;
-			curveDat(curveIndex).strType = "PicScl";
+			curveDat(curveIndex).strType = "PicardScl";
 		case {GETCURVES_CURVETYPE__GRADDIR}
 			vecTemp = -vecG;
 			s0 = -(vecTemp'*vecG)/(vecTemp'*matH*vecTemp);
@@ -91,6 +91,18 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matJ, numPts, prm=[
 			vecTemp *= s0;
 			curveDat(curveIndex).matDelta = vecTemp * sVals;
 			curveDat(curveIndex).strType = "GradDirScl";
+		case {GETCURVES_CURVETYPE__LEVCURVE}
+			funchY = @(mu)( -(matH+(mu*matI))\vecG );
+			funchF = @(mu)( sqrt(sum((funchY(mu)).^2)) );
+			muMax = max(diag(matD))*numPts^2; % Close to "infinity"?
+			muVals = flinspace( 0.0, muMax, numPts, funchF );
+			for n=1:max(size(muVals))
+				curveDat(curveIndex).matDelta(:,n) = funchY(muVals(n));
+			end
+			curveDat(curveIndex).strType = "Leveneberg";
+			clear funchF;
+			clear funchY;
+			clear muVals;
 		otherwise
 			error(sprintf( "Value of curveTypes(%g) is invalid (%g).", ...
 			  curveIndex, curveTypes(curveIndex) ));
