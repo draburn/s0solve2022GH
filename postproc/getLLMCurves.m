@@ -1,3 +1,8 @@
+%
+
+% todo...
+%   o Change "delta" to "y"?
+
 function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matJ, numPts, prm=[], datIn=[] )	
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -92,17 +97,20 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matJ, numPts, prm=[
 			curveDat(curveIndex).matDelta = vecTemp * sVals;
 			curveDat(curveIndex).strType = "GradDirScl";
 		case {GETCURVES_CURVETYPE__LEVCURVE}
-			funchY = @(mu)( -(matH+(mu*matI))\vecG );
-			funchF = @(mu)( sqrt(sum((funchY(mu)).^2)) );
-			muMax = max(diag(matD))*numPts^2; % Close to "infinity"?
-			muVals = flinspace( 0.0, muMax, numPts, funchF );
-			for n=1:max(size(muVals))
-				curveDat(curveIndex).matDelta(:,n) = funchY(muVals(n));
+			matL = max(diag(matD)) * matI;
+			matA = matH-matL;
+			funchY = @(nu)( -nu*((matL+(nu*matA))\vecG) );
+			funchF = @(nu)( sqrt(sum((funchY(nu)).^2)) );
+			nuVals = flinspace( 0.0, 1.0, numPts, funchF );
+			for n=1:max(size(nuVals))
+				curveDat(curveIndex).matDelta(:,n) = funchY(nuVals(n));
 			end
 			curveDat(curveIndex).strType = "Leveneberg";
 			clear funchF;
 			clear funchY;
-			clear muVals;
+			clear nuVals;
+			clear matA;
+			clear matL;
 		otherwise
 			error(sprintf( "Value of curveTypes(%g) is invalid (%g).", ...
 			  curveIndex, curveTypes(curveIndex) ));
