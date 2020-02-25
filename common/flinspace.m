@@ -123,10 +123,13 @@ function [ xVals, retCode, datOut ] = flinspace( x0, x1, numValsRequested, funch
 	%
 	subIterLimit = mygetfield( prm, "subIterLimit", 50 );
 	linearityThresh = mygetfield( prm, "linearityThresh", 0.01 );
+	dfdxThreshCoeff = mygetfield( prm, "dfdxThreshCoeff", sqrt(eps) );
 	assert( isrealscalar(subIterLimit) );
 	assert( 1 <= subIterLimit );
 	assert( isrealscalar(linearityThresh) );
 	assert( 0.0 < linearityThresh );
+	assert( isrealscalar(dfdxThreshCoeff) );
+	assert( 0.0 <= dfdxThreshCoeff );
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% MAIN LOOP
@@ -188,23 +191,34 @@ function [ xVals, retCode, datOut ] = flinspace( x0, x1, numValsRequested, funch
 			dx = xHi - xLo;
 			if ( abs(fLo-fTrgt) < abs(fHi-fTrgt) )
 				dfdxLo = funchDFDX(xLo);
-				if ( dfdxLo <= 0.0 )
+				if ( dfdxLo < 0.0 )
+				if ( abs(dfdxLo) < (abs(fLo)+abs(fHi))*dfdxThreshCoeff )
+					dfdxLo = 0.0;
+				end
+				end
+				if ( dfdxLo < 0.0 )
 					errMsg = sprintf( ...
 					  "ERROR: Derivative has wrong sign (%g, %g, %g, %g).", ...
 					  f0, f1, xLo, dfdxLo );
 					error( errMsg );
 				end
-				assert( dfdxLo > 0.0 )
+				assert( dfdxLo >= 0.0 )
 				c1 = dfdxLo;
 				c2 = ( fHi - fLo - (dfdxLo*dx) )/( dx^2 );
 			else
 				dfdxHi = funchDFDX(xHi);
-				if ( dfdxHi <= 0.0 )
+				if ( dfdxHi < 0.0 )
+				if ( abs(dfdxHi) < (abs(fLo)+abs(fHi))*dfdxThreshCoeff )
+					dfdxHi = 0.0;
+				end
+				end
+				if ( dfdxHi < 0.0 )
 					errMsg = sprintf( ...
 					  "ERROR: Derivative has wrong sign (%g, %g, %g, %g).", ...
 					  f0, f1, xHi, dfdxHi );
 					error( errMsg );
 				end
+				assert( dfdxHi >= 0.0 );
 				c2 = ( dfdxHi - ((fHi-fLo)/dx) ) / dx;
 				c1 = dfdxHi - (2.0*c2*dx);
 			end

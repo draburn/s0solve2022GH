@@ -103,7 +103,7 @@ function [ curveDat, retCode, datOut ] = getLocLinModelCurves( ...
 	  vecPsiTN - (diag(nu_dummy.^diag(matSigma))*vecPsiTN) );
 	funchFGradCurve = @(nu_dummy)( sqrt(sum((funchYGradCurve(nu_dummy)).^2)) );
 	nuValsGradCurve = flinspace( 0.0, 1.0, numPts, funchFGradCurve );
-	%%%muValsGradCurve = ((0:numPts-1)/(numPts-1.0)).^2;
+	%%%nuValsGradCurve = ((0:numPts-1)/(numPts-1.0)).^2;
 	for n=1:max(size(nuValsGradCurve))
 		curveDat.matDeltaGC(:,n) = -matV * (matPsi * funchYGradCurve(nuValsGradCurve(n)));
 	end

@@ -4,8 +4,8 @@ thisFile = "test_getLocLinModelCurves";
 tic();
 %
 %%%randnSeed = mod(round(1E6*time()),1E6);
-randnSeed = 1365; % Non-monotonic LM.
-%%%randnSeed = 849761; % Causes GC flinspace to fail.
+%%%randnSeed = 1365; % Non-monotonic LM.
+randnSeed = 849761; % Difficult for GC flinspace.
 echo__randnSeed = randnSeed
 randn("seed",randnSeed);
 sizeF = 2;
