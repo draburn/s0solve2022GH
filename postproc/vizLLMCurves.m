@@ -287,7 +287,7 @@ end
 %!	echo_randnSeed = randnSeed
 %!	randn("seed",randnSeed);
 %!	vecF = [-2;-30];
-%!	matJ = [-1,1;1,100];
+%!	matJ = [-1,0.01;0.01,10];
 %!	funchF = @(v)( repmat(vecF,[1,size(v,2)]) + (matJ*v) );
 %!	matV = eye(2,2);
 %!	vecX = [0;0];
@@ -295,5 +295,5 @@ end
 %!	vecXSecret = -matJ \ vecF;
 %!	%
 %!	matW = matJ*matV;
-%!	matW += 2.0e0 * randn(size(matW));
+%!	matW += 1.0e-1 * randn(size(matW));
 %!	vizLLMCurves( funchF, vecX, matV, matW, numPts, vecXSecret );
