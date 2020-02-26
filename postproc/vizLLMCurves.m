@@ -60,21 +60,20 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 	end
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% DO "WORK".
-	%
+	% DO CALCULATIONS.
 	%
 	prm.curveTypes = curveTypes;
 	[ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts, prm );
-	vecXStarLLN = vecX - (matV*(matW'*matW)\(matW*vecF));
+	vecXStarLLN = vecX - (matV*(matW'*matW)\(matW'*vecF));
 	for n=1:numCurves
 		matY = curveDat(n).matY;
 		thisNumPts = size(matY,2);
 		matX = repmat(vecX,[1,thisNumPts]) + (matV*matY);
 		matResLLM = repmat(vecF,[1,thisNumPts]) + (matW*matY);
 		matRes = funchF( repmat(vecX,[1,thisNumPts]) + (matV*matY) );
-		matDTRLLN = repmat(vecXStarLLN,[1,thisNumPts]) - matX;
+		matDistLLMR = repmat(vecXStarLLN,[1,thisNumPts]) - matX;
 		myDat(n).deltaNorm = sqrt(sum(matY.^2,1));
-		myDat(n).dtrLLN = sqrt(sum(matDTRLLN.^2,1));
+		myDat(n).distLLMR = sqrt(sum(matDistLLMR.^2,1));
 		myDat(n).matResLLM = matResLLM;
 		myDat(n).omegaLLM = 0.5*sum(matResLLM.^2,1);
 		myDat(n).matRes = matRes;
@@ -93,6 +92,9 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 		strLegend = [ strLegend; curveDat(n).strType ];
 	end
 	%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% MAKE PLOTS
+	%
 	numFigs++; figure(numFigs+figsIndex0);
 	plot( ...
 	  myDat(1).deltaNorm, myDat(1).omegaLLM, ...
@@ -108,6 +110,53 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 		  'markerSize', mszList(n) );
 	end
 	hold off;
+	xlabel( "Step Size" );
+	ylabel( "OmegaLLM" );
+	title( "OmegaLLM vs Step Size" );
+	grid on;
+	legend( strLegend );
+	%
+	%
+	numFigs++; figure(numFigs+figsIndex0);
+	plot( ...
+	  myDat(1).deltaNorm, myDat(1).omega, ...
+	  'o-', 'color', colMap(1,:), ...
+	  'marker', mrkList(1), ...
+	  'markerSize', mszList(1) );
+	hold on;
+	for n=2:numCurves
+		plot( ...
+		  myDat(n).deltaNorm, myDat(n).omega, ...
+		  'o-', 'color', colMap(n,:), ...
+		  'marker', mrkList(n), ...
+		  'markerSize', mszList(n) );
+	end
+	hold off;
+	xlabel( "Step Size" );
+	ylabel( "Omega" );
+	title( "Omega vs Step Size" );
+	grid on;
+	legend( strLegend );
+	%
+	%
+	numFigs++; figure(numFigs+figsIndex0);
+	plot( ...
+	  myDat(1).deltaNorm, myDat(1).distLLMR, ...
+	  'o-', 'color', colMap(1,:), ...
+	  'marker', mrkList(1), ...
+	  'markerSize', mszList(1) );
+	hold on;
+	for n=2:numCurves
+		plot( ...
+		  myDat(n).deltaNorm, myDat(n).distLLMR, ...
+		  'o-', 'color', colMap(n,:), ...
+		  'marker', mrkList(n), ...
+		  'markerSize', mszList(n) );
+	end
+	hold off;
+	xlabel( "Step Size" );
+	ylabel( "Distance to LLM Root" );
+	title( "Step Size vs Dist LLMR" );
 	grid on;
 	legend( strLegend );
 	%
@@ -122,6 +171,9 @@ end
 %!	getLLMCurves_setCnsts;
 %!	thisFile = "test vizLLMCurvs";
 %!	%
+%!	randnSeed = 0;
+%!	echo_randnSeed = randnSeed
+%!	randn("seed",randnSeed);
 %!	vecF = [-2;-3];
 %!	matJ = [-1,1;1,5];
 %!	funchF = @(v)( repmat(vecF,[1,size(v,2)]) + (matJ*v) );
@@ -130,4 +182,5 @@ end
 %!	numPts = 20;
 %!	%
 %!	matW = matJ*matV;
+%!	matW += 1.0e-1 * randn(size(matW));
 %!	vizLLMCurves( funchF, vecX, matV, matW, numPts );
