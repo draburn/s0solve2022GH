@@ -15,18 +15,19 @@ funchF = @(vecXDummy)( demoFunc0101_eval( vecXDummy, funcPrm ) );
 prm.funchJ = @(vecXDummy)( demoFunc0101_evalJaco( vecXDummy, funcPrm ) );
 [ vecXEnd, retCode, datOut ] = groot( funchF, vecX0, prm );
 %
-return;
+%return;
 numIter = max(size(datOut.iterDat));
 numFigs = 0;
 matI = eye(sizeX,sizeX);
-for n=0:numIter
+vizNumPts = 100;
+for n=[0,round(1.0*numIter/3.0),round(2.0*numIter/3.0),numIter]
 	if (0==n)
 		vecX = vecX0;
 	else
 		vecX = datOut.iterDat(n).vecX;
 	end
 	matJ = demoFunc0101_evalJaco( vecX, funcPrm );
-	prm.numFigsOffset = numFigs;
-	numNewFigs = vizLLMCurves( funchF, vecX, matI, matJ, 20, funcPrm.x0, prm );
+	vizPrm.numFigsOffset = numFigs;
+	numNewFigs = vizLLMCurves( funchF, vecX, matI, matJ, vizNumPts, funcPrm.x0, vizPrm );
 	numFigs += numNewFigs;
 end
