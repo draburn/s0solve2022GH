@@ -191,7 +191,9 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 	if ( 2==sizeF && 2==sizeX && 2==sizeK )
 	numXVals = 50;
 	numYVals = 51;
-	forceSquare = false;
+	forceSquare = true;
+	%
+	funchFLLM = @(x)( repmat(vecF,[1,size(x,2)]) + (matW*x) );
 	%
 	xMin = min(myDat(1).matX(1,:));
 	xMax = max(myDat(1).matX(1,:));
@@ -221,7 +223,29 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 	yVals = yLo + ((yHi-yLo)*(0:numYVals-1)/(numYVals-1.0));
 	[ xGrid, yGrid ] = meshgrid( xVals, yVals );
 	zVals = [ reshape(xGrid,1,[]); reshape(yGrid,1,[]) ];
-	size(zVals)
+	%
+	%
+	fLLMVals = funchFLLM( zVals );
+	omegaLLMVals = 0.5*sum(fLLMVals.^2,1);
+	omegaLLMGrid = reshape( omegaLLMVals, numYVals, numXVals );
+	%
+	numFigs++; figure(numFigs+figsIndex0);
+	contour(xGrid,yGrid,sqrt(omegaLLMGrid),50);
+	if (forceSquare)
+		axis square;
+	end
+	hold on;
+	for n=1:numCurves
+		plot( ...
+		  myDat(n).matX(1,:), myDat(n).matX(2,:), ...
+		  'o-', 'color', colMap(n,:), ...
+		  'marker', mrkList(n), ...
+		  'markerSize', mszList(n) );
+	end
+	hold off;
+	grid on;
+	%
+	%
 	fVals = funchF( zVals );
 	omegaVals = 0.5*sum(fVals.^2,1);
 	omegaGrid = reshape( omegaVals, numYVals, numXVals );
@@ -262,8 +286,8 @@ end
 %!	%randnSeed = 44936; % Grad Dir is best.
 %!	echo_randnSeed = randnSeed
 %!	randn("seed",randnSeed);
-%!	vecF = [-2;-3];
-%!	matJ = [-1,1;1,10];
+%!	vecF = [-2;-30];
+%!	matJ = [-1,1;1,100];
 %!	funchF = @(v)( repmat(vecF,[1,size(v,2)]) + (matJ*v) );
 %!	matV = eye(2,2);
 %!	vecX = [0;0];
@@ -271,5 +295,5 @@ end
 %!	vecXSecret = -matJ \ vecF;
 %!	%
 %!	matW = matJ*matV;
-%!	matW += 0.0e0 * randn(size(matW));
+%!	matW += 2.0e0 * randn(size(matW));
 %!	vizLLMCurves( funchF, vecX, matV, matW, numPts, vecXSecret );
