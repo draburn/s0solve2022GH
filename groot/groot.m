@@ -106,6 +106,23 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 		end
 		end
 		%
+		if ( 1 <= numIter )
+		if ( omega >= omegaPrev )
+			msg_notify( verbLev, thisFile, __LINE__, ...
+			  sprintf("Failed to decrease omega (%g >= %g).",omega,omegaPrev) );
+			retCode = RETCODE__ALGORITHM_BREAKDOWN;
+			groot__finish;
+			return;
+		end
+		if ( omega >= omegaPrev*0.999 )
+			msg_notify( verbLev, thisFile, __LINE__, ...
+			  sprintf("Failed to decrease omega sufficiently (%g, %g).",omega,omegaPrev) );
+			retCode = RETCODE__ALGORITHM_BREAKDOWN;
+			groot__finish;
+			return;
+		end
+		end
+		%
 		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		% REPORT
 		%
@@ -127,9 +144,24 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 		matJ = funchJ( vecX );
 		vecDelta = - (matJ'*matJ) \ (matJ'*vecF);
 		%
-		vecX += vecDelta;
+		vecXPrev = vecX;
+		omegaPrev = omega;
+		%
+		vecX = vecXPrev + vecDelta;
 		vecF = funchF( vecX );
 		omega = sum(vecF.^2);
+		%
+		btIter = 0;
+		while (omega>omegaPrev)
+			if ( 10 < btIter )
+				break;
+			end
+			vecDelta/=10.0;
+			vecX = vecXPrev + vecDelta;
+			vecF = funchF( vecX );
+			omega = sum(vecF.^2);
+			btIter++;
+		end
 		%
 		% Prepare next iteration.
 		numIter++;

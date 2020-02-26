@@ -281,3 +281,6 @@ retCode = RETCODE__SUCCESS;
 datOut = [];
 return;
 end
+
+%!test
+%!	test_vizLLMCurves

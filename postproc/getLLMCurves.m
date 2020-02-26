@@ -214,17 +214,4 @@ return;
 end
 
 %!test
-%!	commondefs;
-%!	getLLMCurves_setCnsts;
-%!	thisFile = "test getLLMCurvs";
-%!	vecF = [1;2]
-%!	matW = [1,2;3,5]
-%!	numPts = 20;
-%!	curveTypes = [ ...
-%!	  GETCURVES_CURVETYPE__NEWTON, ...
-%!	  GETCURVES_CURVETYPE__PICARD, ...
-%!	  GETCURVES_CURVETYPE__PICARD_SCALED, ...
-%!	  GETCURVES_CURVETYPE__GRADDIR, ...
-%!	  GETCURVES_CURVETYPE__GRADDIR_SCALED ];
-%!	prm.curveTypes = curveTypes;
-%!	[ curveDat, retCode, datOut ] = getLLMCurves( vecF, matW, numPts, prm );
+%!	test_getLLMCurves

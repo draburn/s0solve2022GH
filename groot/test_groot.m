@@ -3,7 +3,8 @@ commondefs;
 thisFile = "test_groot";
 sizeX = 250;
 sizeF = sizeX;
-seedPrm = demoFunc0101_genSeedPrm("lin-easy");
+%seedPrm = demoFunc0101_genSeedPrm("lin-easy");
+seedPrm = demoFunc0101_genSeedPrm("moderate");
 seedPrm.sizeX = sizeX;
 seedPrm.sizeF = sizeF;
 funcPrm = demoFunc0101_genFuncPrm(seedPrm);
@@ -14,6 +15,7 @@ funchF = @(vecXDummy)( demoFunc0101_eval( vecXDummy, funcPrm ) );
 prm.funchJ = @(vecXDummy)( demoFunc0101_evalJaco( vecXDummy, funcPrm ) );
 [ vecXEnd, retCode, datOut ] = groot( funchF, vecX0, prm );
 %
+return;
 numIter = max(size(datOut.iterDat));
 numFigs = 0;
 matI = eye(sizeX,sizeX);
