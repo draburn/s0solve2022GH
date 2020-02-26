@@ -1,5 +1,5 @@
 function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
-  funchF, vecX, matV, matW, numPts, prm=[], datIn=[] );
+  funchF, vecX, matV, matW, numPts, vecXSecret, prm=[], datIn=[] );
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% BASIC INIT.
@@ -31,6 +31,7 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 	assert( isrealarray(vecX,[sizeX,1]) );
 	assert( isrealarray(matV,[sizeX,sizeK]) );
 	assert( isrealarray(matW,[sizeF,sizeK]) );
+	assert( isrealarray(vecXSecret,[sizeX,1]) );
 	%
 	vecF = funchF(vecX);
 	assert( isrealarray(vecF,[sizeF,1]) );
@@ -72,8 +73,10 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 		matResLLM = repmat(vecF,[1,thisNumPts]) + (matW*matY);
 		matRes = funchF( repmat(vecX,[1,thisNumPts]) + (matV*matY) );
 		matDistLLMR = repmat(vecXStarLLN,[1,thisNumPts]) - matX;
+		matDistSecret = repmat(vecXSecret,[1,thisNumPts]) - matX;
 		myDat(n).deltaNorm = sqrt(sum(matY.^2,1));
 		myDat(n).distLLMR = sqrt(sum(matDistLLMR.^2,1));
+		myDat(n).distSecret = sqrt(sum(matDistSecret.^2,1));
 		myDat(n).matResLLM = matResLLM;
 		myDat(n).omegaLLM = 0.5*sum(matResLLM.^2,1);
 		myDat(n).matRes = matRes;
@@ -160,6 +163,28 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 	grid on;
 	legend( strLegend );
 	%
+	%
+	numFigs++; figure(numFigs+figsIndex0);
+	plot( ...
+	  myDat(1).deltaNorm, myDat(1).distSecret, ...
+	  'o-', 'color', colMap(1,:), ...
+	  'marker', mrkList(1), ...
+	  'markerSize', mszList(1) );
+	hold on;
+	for n=2:numCurves
+		plot( ...
+		  myDat(n).deltaNorm, myDat(n).distSecret, ...
+		  'o-', 'color', colMap(n,:), ...
+		  'marker', mrkList(n), ...
+		  'markerSize', mszList(n) );
+	end
+	hold off;
+	xlabel( "Step Size" );
+	ylabel( "Distance to True Root" );
+	title( "Step Size vs Dist TR" );
+	grid on;
+	legend( strLegend );
+	%
 retCode = RETCODE__SUCCESS;
 datOut = [];
 return;
@@ -171,16 +196,20 @@ end
 %!	getLLMCurves_setCnsts;
 %!	thisFile = "test vizLLMCurvs";
 %!	%
+%!	%randnSeed = mod(round(1E6*time),1E6);
 %!	randnSeed = 0;
+%!	%randnSeed = 792958; % Newton is best.
+%!	%randnSeed = 44936; % Grad Dir is best.
 %!	echo_randnSeed = randnSeed
 %!	randn("seed",randnSeed);
 %!	vecF = [-2;-3];
-%!	matJ = [-1,1;1,5];
+%!	matJ = [-1,1;1,10];
 %!	funchF = @(v)( repmat(vecF,[1,size(v,2)]) + (matJ*v) );
 %!	matV = eye(2,2);
 %!	vecX = [0;0];
 %!	numPts = 20;
+%!	vecXSecret = -matJ \ vecF;
 %!	%
 %!	matW = matJ*matV;
-%!	matW += 1.0e-1 * randn(size(matW));
-%!	vizLLMCurves( funchF, vecX, matV, matW, numPts );
+%!	matW += 1.0e0 * randn(size(matW));
+%!	vizLLMCurves( funchF, vecX, matV, matW, numPts, vecXSecret );
