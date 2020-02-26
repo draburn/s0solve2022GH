@@ -133,7 +133,11 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 		%
 		% Prepare next iteration.
 		numIter++;
+		datOut.iterDat(numIter).vecX = vecX;
 	end
 	%
 return;
 end
+
+%!test
+%!	test_groot
