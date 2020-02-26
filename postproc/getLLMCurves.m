@@ -29,6 +29,7 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts,
 	assert( 1 <= sizeX );
 	assert( 1 <= sizeK );
 	assert( isrealarray(matV,[sizeX,sizeK]) );
+	assert( sum(abs(matV'*matV-eye(sizeK,sizeK))) < 10.0*(sizeK^3)*(eps^0.75) );
 	assert( isrealarray(matW,[sizeF,sizeK]) );
 	assert( 2 <= numPts );
 	%
@@ -130,6 +131,27 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts,
 			clear funchY;
 			clear matA;
 			clear matL;
+		case {GETCURVES_CURVETYPE__LEVCURVE_SCALED}
+			matDInvSqrt = diag(1./sqrt(diag(matD)));
+			matVScl = matV * matDInvSqrt;
+			matHScl = matDInvSqrt * matH * matDInvSqrt;
+			vecGScl = matDInvSqrt * vecG;
+			matAScl = matHScl-matI;
+			funchY = @(nu)( -nu*((matI+(nu*matAScl))\vecGScl) );
+			funchF = @(nu)( sqrt(sum((funchY(nu)).^2)) );
+			nuVals = flinspace( 0.0, 1.0, numPts, funchF );
+			for n=1:max(size(nuVals))
+				curveDat(curveIndex).matY(:,n) = matDInvSqrt * funchY(nuVals(n));
+			end
+			curveDat(curveIndex).strType = "LevMarq";
+			clear nuVals;
+			clear funchF;
+			clear funchY;
+			clear matAScl;
+			clear vecGScl;
+			clear matHScl;
+			clear matVScl
+			clear matDInvSqrt;
 		otherwise
 			error(sprintf( "Value of curveTypes(%g) is invalid (%g).", ...
 			  curveIndex, curveTypes(curveIndex) ));
