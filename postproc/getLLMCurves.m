@@ -5,7 +5,7 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts,
 	%
 	commondefs;
 	getLLMCurves_setCnsts;
-	thisFile = "getCurves";
+	thisFile = "getLLMCurves";
 	retCode = RETCODE__NOT_SET;
 	startTime = time();
 	%
