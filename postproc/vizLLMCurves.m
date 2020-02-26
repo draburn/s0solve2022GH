@@ -51,7 +51,7 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 	  GETCURVES_CURVETYPE__GRADDIR_SCALED ];
 	%
 	numCurves = max(size(curveTypes));
-	colMap = 0.8*jet(numCurves);
+	colMap = 0.7*jet(numCurves);
 	mrkList0 = ['+x^v<>sdpho'];
 	mrkList = mrkList0(1);
 	mszList = [ 5 ];
@@ -74,6 +74,7 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 		matRes = funchF( repmat(vecX,[1,thisNumPts]) + (matV*matY) );
 		matDistLLMR = repmat(vecXStarLLN,[1,thisNumPts]) - matX;
 		matDistSecret = repmat(vecXSecret,[1,thisNumPts]) - matX;
+		myDat(n).matX = matX;
 		myDat(n).deltaNorm = sqrt(sum(matY.^2,1));
 		myDat(n).distLLMR = sqrt(sum(matDistLLMR.^2,1));
 		myDat(n).distSecret = sqrt(sum(matDistSecret.^2,1));
@@ -185,6 +186,65 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 	grid on;
 	legend( strLegend );
 	%
+	%
+	%
+	if ( 2==sizeF && 2==sizeX && 2==sizeK )
+	numXVals = 50;
+	numYVals = 51;
+	forceSquare = false;
+	%
+	xMin = min(myDat(1).matX(1,:));
+	xMax = max(myDat(1).matX(1,:));
+	yMin = min(myDat(1).matX(2,:));
+	yMax = max(myDat(1).matX(2,:));
+	for n=2:numCurves
+		xMin = min([ xMin, min(myDat(n).matX(1,:)) ]);
+		xMax = max([ xMax, max(myDat(n).matX(1,:)) ]);
+		yMin = min([ yMin, min(myDat(n).matX(2,:)) ]);
+		yMax = max([ yMax, max(myDat(n).matX(2,:)) ]);
+	end
+	if (forceSquare)
+		xVar = max([ xMax-xMin, yMax-yMin ])/2.0;
+		yVar = max([ xMax-xMin, yMax-yMin ])/2.0;
+	else
+		xVar = (xMax-xMin)/2.0;
+		yVar = (yMax-yMin)/2.0;
+	end
+	xAvg = (xMin+xMax)/2.0;
+	yAvg = (yMin+yMax)/2.0;
+	xLo = xAvg - (1.5*xVar);
+	xHi = xAvg + (1.5*xVar);
+	yLo = yAvg - (1.5*yVar);
+	yHi = yAvg + (1.5*yVar);
+	%
+	xVals = xLo + ((xHi-xLo)*(0:numXVals-1)/(numXVals-1.0));
+	yVals = yLo + ((yHi-yLo)*(0:numYVals-1)/(numYVals-1.0));
+	[ xGrid, yGrid ] = meshgrid( xVals, yVals );
+	zVals = [ reshape(xGrid,1,[]); reshape(yGrid,1,[]) ];
+	size(zVals)
+	fVals = funchF( zVals );
+	omegaVals = 0.5*sum(fVals.^2,1);
+	omegaGrid = reshape( omegaVals, numYVals, numXVals );
+	%
+	numFigs++; figure(numFigs+figsIndex0);
+	contour(xGrid,yGrid,sqrt(omegaGrid),50);
+	if (forceSquare)
+		axis square;
+	end
+	hold on;
+	for n=1:numCurves
+		plot( ...
+		  myDat(n).matX(1,:), myDat(n).matX(2,:), ...
+		  'o-', 'color', colMap(n,:), ...
+		  'marker', mrkList(n), ...
+		  'markerSize', mszList(n) );
+	end
+	hold off;
+	grid on;
+	end
+	%
+	%
+	%
 retCode = RETCODE__SUCCESS;
 datOut = [];
 return;
@@ -211,5 +271,5 @@ end
 %!	vecXSecret = -matJ \ vecF;
 %!	%
 %!	matW = matJ*matV;
-%!	matW += 1.0e0 * randn(size(matW));
+%!	matW += 0.0e0 * randn(size(matW));
 %!	vizLLMCurves( funchF, vecX, matV, matW, numPts, vecXSecret );
