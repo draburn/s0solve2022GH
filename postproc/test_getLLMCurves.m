@@ -3,8 +3,8 @@ commondefs;
 getLLMCurves_setCnsts;
 thisFile = "test_getLLMCurvs";
 %
-vecF = [-1;-1];
-matJ = [-1,1;1,10];
+vecF = [-2;-3];
+matJ = [-1,1;1,5];
 matV = eye(2,2);
 matW = matJ*matV;
 numPts = 50;
@@ -32,18 +32,29 @@ end
 %
 numFigs = 0;
 colMap = 0.8*jet(numCurves);
+mrkList0 = ['o+xsd^v><ph'];
+%
+mrkList = ['o'];
+mszList = [ 3 ];
 strLegend = [ curveDat(1).strType ];
 for n=2:numCurves
+	mrkList = [ mrkList; mrkList0(mod(n,max(size(mrkList0)))) ];
+	mszList = [ mszList; 3+n ];
 	strLegend = [ strLegend; curveDat(n).strType ];
 end
+
 %
 numFigs++; figure(numFigs);
 plot( curveDat(1).matY(1,:), curveDat(1).matY(2,:), ...
-  'o-', 'color', colMap(1,:), 'markersize', 3 );
+  'o-', 'color', colMap(1,:), ...
+  'marker', mrkList(1), ...
+  'markerSize', mszList(1) );
 hold on;
 for n=2:numCurves
 	plot( curveDat(n).matY(1,:), curveDat(n).matY(2,:), ...
-	  'o-', 'color', colMap(n,:), 'markersize', 3*n );
+	  'o-', 'color', colMap(n,:), ...
+	  'marker', mrkList(n), ...
+	  'markerSize', mszList(n) );
 end
 hold off;
 grid on;
@@ -51,11 +62,15 @@ legend( strLegend );
 %
 numFigs++; figure(numFigs);
 plot( myDat(1).deltaNorm, myDat(1).omega, ...
-  'o-', 'color', colMap(1,:), 'markersize', 3 );
+  'o-', 'color', colMap(1,:), ...
+  'marker', mrkList(1), ...
+  'markerSize', mszList(1) );
 hold on;
 for n=2:numCurves
 	plot( myDat(n).deltaNorm, myDat(n).omega, ...
-	  'o-', 'color', colMap(n,:), 'markersize', 3*n );
+	  'o-', 'color', colMap(n,:), ...
+	  'marker', mrkList(n), ...
+	  'markerSize', mszList(n) );
 end
 hold off;
 grid on;
