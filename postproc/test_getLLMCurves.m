@@ -15,7 +15,8 @@ curveTypes = [ ...
   GETCURVES_CURVETYPE__GRADDIR, ...
   GETCURVES_CURVETYPE__GRADDIR_SCALED, ...
   GETCURVES_CURVETYPE__LEVCURVE, ...
-  GETCURVES_CURVETYPE__LEVCURVE_SCALED ];
+  GETCURVES_CURVETYPE__LEVCURVE_SCALED, ...
+  GETCURVES_CURVETYPE__GRADCURVE ];
 %
 prm.curveTypes = curveTypes;
 [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts, prm );
@@ -32,14 +33,14 @@ end
 %
 numFigs = 0;
 colMap = 0.8*jet(numCurves);
-mrkList0 = ['o+xsd^v><ph'];
+mrkList0 = ['+x^v<>sdpho'];
 %
-mrkList = ['o'];
-mszList = [ 3 ];
+mrkList = mrkList0(1);
+mszList = [ 5 ];
 strLegend = [ curveDat(1).strType ];
 for n=2:numCurves
 	mrkList = [ mrkList; mrkList0(mod(n,max(size(mrkList0)))) ];
-	mszList = [ mszList; 3+n ];
+	mszList = [ mszList; mszList(n-1)+1 ];
 	strLegend = [ strLegend; curveDat(n).strType ];
 end
 

@@ -152,6 +152,29 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts,
 			clear matHScl;
 			clear matVScl
 			clear matDInvSqrt;
+		case {GETCURVES_CURVETYPE__GRADCURVE}
+			[ matPsi, matLambda ] = eig( matH );
+			assert( sum(sum(abs(((matPsi')*matPsi)-matI))) < 10.0*(sizeK^3)*(eps^0.75) );
+			assert( sum(sum(abs((matPsi*(matPsi'))-matI))) < 10.0*(sizeK^3)*(eps^0.75) );
+			vecPsiTN = matPsi'*(matH\vecG);
+			lambdaMin = min(diag(matLambda));
+			matSigma = matLambda / lambdaMin;
+			funchY = @(nu)( ...
+			  vecPsiTN - (diag(nu.^diag(matSigma))*vecPsiTN) );
+			funchF = @(nu)( sqrt(sum((funchY(nu)).^2)) );
+			nuVals = flinspace( 0.0, 1.0, numPts, funchF );
+			for n=1:max(size(nuVals))
+				curveDat(curveIndex).matY(:,n) = -matPsi * funchY(nuVals(n));
+			end
+			curveDat(curveIndex).strType = "GradCurve";
+			clear nuVals;
+			clear funcF;
+			clear funcY;
+			clear matSigma;
+			clear lambdaMin;
+			clear vecPsiTN;
+			clear matPsi;
+			clear matLambda;
 		otherwise
 			error(sprintf( "Value of curveTypes(%g) is invalid (%g).", ...
 			  curveIndex, curveTypes(curveIndex) ));
