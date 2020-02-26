@@ -1,4 +1,4 @@
-function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matW, numPts, prm=[], datIn=[] )
+function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts, prm=[], datIn=[] )
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% BASIC INIT.
@@ -24,8 +24,11 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matW, numPts, prm=[
 	sizeF = size(vecF,1);
 	assert( 1 <= sizeF );
 	assert( isrealarray(vecF,[sizeF,1]) );
-	sizeK = size(matW,2);
+	sizeX = size(matV,1);
+	sizeK = size(matV,2);
+	assert( 1 <= sizeX );
 	assert( 1 <= sizeK );
+	assert( isrealarray(matV,[sizeX,sizeK]) );
 	assert( isrealarray(matW,[sizeF,sizeK]) );
 	assert( 2 <= numPts );
 	%
@@ -42,14 +45,6 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matW, numPts, prm=[
 	curveTypes = mygetfield( prm, "curveTypes", curveTypes_default );
 	numCurves = max(size(curveTypes));
 	assert( 1 <= numCurves );
-	%
-	matV = mygetfield( prm, "matV", [] );
-	if (isempty(matV))
-		matV = eye(sizeF,sizeK);
-	end
-	sizeX = size(matV,1);
-	assert( 1 <= sizeX );
-	assert( isrealarray(matV,[sizeX,sizeK]) );
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO WORK.
@@ -77,10 +72,6 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matW, numPts, prm=[
 			clear s0;
 			clear vecTemp;
 		case {GETCURVES_CURVETYPE__PICARD}
-			if (sizeF~=sizeK)
-				msg_warn( verbLev, thisFile, __LINE__, sprintf( ...
-				  "Is prm.matV set properly?" ) );
-			end
 			vecTemp = -matV' * vecF;
 			denom = vecTemp'*matH*vecTemp;
 			assert( denom > 0.0 );
@@ -92,10 +83,6 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matW, numPts, prm=[
 			clear s0;
 			clear vecTemp;
 		case {GETCURVES_CURVETYPE__PICARD_SCALED}
-			if (sizeF~=sizeK)
-				msg_warn( verbLev, thisFile, __LINE__, sprintf( ...
-				  "Is prm.matV set properly?" ) );
-			end
 			vecTemp = -matD\(matV'*vecF);
 			denom = vecTemp'*matH*vecTemp;
 			assert( denom > 0.0 );

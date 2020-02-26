@@ -4,7 +4,9 @@ getLLMCurves_setCnsts;
 thisFile = "test_getLLMCurvs";
 %
 vecF = [-1;-1];
-matW = [1,1;1,2];
+matJ = [1,1;1,2];
+matV = eye(2,2);
+matW = matJ*matV;
 numPts = 20;
 curveTypes = [ ...
   GETCURVES_CURVETYPE__NEWTON, ...
@@ -15,7 +17,7 @@ curveTypes = [ ...
   GETCURVES_CURVETYPE__LEVCURVE ];
 %
 prm.curveTypes = curveTypes;
-[ curveDat, retCode, datOut ] = getLLMCurves( vecF, matW, numPts, prm );
+[ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts, prm );
 %
 numCurves = max(size(curveTypes));
 for n=1:numCurves
