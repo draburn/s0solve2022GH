@@ -133,7 +133,6 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts,
 			clear matL;
 		case {GETCURVES_CURVETYPE__LEVCURVE_SCALED}
 			matDInvSqrt = diag(1./sqrt(diag(matD)));
-			matVScl = matV * matDInvSqrt;
 			matHScl = matDInvSqrt * matH * matDInvSqrt;
 			vecGScl = matDInvSqrt * vecG;
 			matAScl = matHScl-matI;
@@ -143,14 +142,13 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts,
 			for n=1:max(size(nuVals))
 				curveDat(curveIndex).matY(:,n) = matDInvSqrt * funchY(nuVals(n));
 			end
-			curveDat(curveIndex).strType = "LevMarq";
+			curveDat(curveIndex).strType = "LevenbergScl";
 			clear nuVals;
 			clear funchF;
 			clear funchY;
 			clear matAScl;
 			clear vecGScl;
 			clear matHScl;
-			clear matVScl
 			clear matDInvSqrt;
 		case {GETCURVES_CURVETYPE__GRADCURVE}
 			[ matPsi, matLambda ] = eig( matH );
@@ -175,6 +173,35 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts,
 			clear vecPsiTN;
 			clear matPsi;
 			clear matLambda;
+		case {GETCURVES_CURVETYPE__GRADCURVE_SCALED}
+			matDInvSqrt = diag(1./sqrt(diag(matD)));
+			matHScl = matDInvSqrt * matH * matDInvSqrt;
+			vecGScl = matDInvSqrt * vecG;
+			[ matPsi, matLambda ] = eig( matHScl );
+			assert( sum(sum(abs(((matPsi')*matPsi)-matI))) < 10.0*(sizeK^3)*(eps^0.75) );
+			assert( sum(sum(abs((matPsi*(matPsi'))-matI))) < 10.0*(sizeK^3)*(eps^0.75) );
+			vecPsiTN = matPsi'*(matHScl\vecGScl);
+			lambdaMin = min(diag(matLambda));
+			matSigma = matLambda / lambdaMin;
+			funchY = @(nu)( ...
+			  vecPsiTN - (diag(nu.^diag(matSigma))*vecPsiTN) );
+			funchF = @(nu)( sqrt(sum((funchY(nu)).^2)) );
+			nuVals = flinspace( 0.0, 1.0, numPts, funchF );
+			for n=1:max(size(nuVals))
+				curveDat(curveIndex).matY(:,n) = -matDInvSqrt * matPsi * funchY(nuVals(n));
+			end
+			curveDat(curveIndex).strType = "GradCurveScl";
+			clear nuVals;
+			clear funcF;
+			clear funcY;
+			clear matSigma;
+			clear lambdaMin;
+			clear vecPsiTN;
+			clear matPsi;
+			clear matLambda;
+			clear vecGScl;
+			clear matHScl;
+			clear matDInvSqrt;
 		otherwise
 			error(sprintf( "Value of curveTypes(%g) is invalid (%g).", ...
 			  curveIndex, curveTypes(curveIndex) ));
