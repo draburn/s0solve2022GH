@@ -45,10 +45,7 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 	  GETCURVES_CURVETYPE__NEWTON, ...
 	  GETCURVES_CURVETYPE__LEVCURVE, ...
 	  GETCURVES_CURVETYPE__GRADCURVE, ...
-	  GETCURVES_CURVETYPE__GRADDIR, ...
-	  GETCURVES_CURVETYPE__LEVCURVE_SCALED, ...
-	  GETCURVES_CURVETYPE__GRADCURVE_SCALED, ...
-	  GETCURVES_CURVETYPE__GRADDIR_SCALED ];
+	  GETCURVES_CURVETYPE__GRADDIR ];
 	%
 	numCurves = max(size(curveTypes));
 	colMap = 0.7*jet(numCurves);
@@ -65,7 +62,7 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 	%
 	prm.curveTypes = curveTypes;
 	[ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts, prm );
-	vecXStarLLN = vecX - (matV*(matW'*matW)\(matW'*vecF));
+	vecXStarLLN = vecX - (matV*((matW'*matW)\(matW'*vecF)));
 	for n=1:numCurves
 		matY = curveDat(n).matY;
 		thisNumPts = size(matY,2);
@@ -188,22 +185,24 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 	%
 	%
 	%
-	if ( 2==sizeF && 2==sizeX && 2==sizeK )
+	if ( 2==sizeK )
 	numXVals = 50;
 	numYVals = 51;
 	forceSquare = true;
+	cx = 1;
+	cy = 2;
 	%
-	funchFLLM = @(x)( repmat(vecF,[1,size(x,2)]) + (matW*x) );
+	funchFLLM = @(x)( repmat(vecF,[1,size(x,2)]) + (matW*(matV'*x)) );
 	%
-	xMin = min(myDat(1).matX(1,:));
-	xMax = max(myDat(1).matX(1,:));
-	yMin = min(myDat(1).matX(2,:));
-	yMax = max(myDat(1).matX(2,:));
+	xMin = min(myDat(1).matX(cx,:));
+	xMax = max(myDat(1).matX(cx,:));
+	yMin = min(myDat(1).matX(cy,:));
+	yMax = max(myDat(1).matX(cy,:));
 	for n=2:numCurves
-		xMin = min([ xMin, min(myDat(n).matX(1,:)) ]);
-		xMax = max([ xMax, max(myDat(n).matX(1,:)) ]);
-		yMin = min([ yMin, min(myDat(n).matX(2,:)) ]);
-		yMax = max([ yMax, max(myDat(n).matX(2,:)) ]);
+		xMin = min([ xMin, min(myDat(n).matX(cx,:)) ]);
+		xMax = max([ xMax, max(myDat(n).matX(cx,:)) ]);
+		yMin = min([ yMin, min(myDat(n).matX(cy,:)) ]);
+		yMax = max([ yMax, max(myDat(n).matX(cy,:)) ]);
 	end
 	if (forceSquare)
 		xVar = max([ xMax-xMin, yMax-yMin ])/2.0;
@@ -222,7 +221,9 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 	xVals = xLo + ((xHi-xLo)*(0:numXVals-1)/(numXVals-1.0));
 	yVals = yLo + ((yHi-yLo)*(0:numYVals-1)/(numYVals-1.0));
 	[ xGrid, yGrid ] = meshgrid( xVals, yVals );
-	zVals = [ reshape(xGrid,1,[]); reshape(yGrid,1,[]) ];
+	zVals = repmat(vecX,[1,numXVals*numYVals]);
+	zVals(cx,:) = reshape(xGrid,1,[]);
+	zVals(cy,:) = reshape(yGrid,1,[]);
 	%
 	%
 	fLLMVals = funchFLLM( zVals );
@@ -237,7 +238,7 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 	hold on;
 	for n=1:numCurves
 		plot( ...
-		  myDat(n).matX(1,:), myDat(n).matX(2,:), ...
+		  myDat(n).matX(cx,:), myDat(n).matX(cy,:), ...
 		  'o-', 'color', colMap(n,:), ...
 		  'marker', mrkList(n), ...
 		  'markerSize', mszList(n) );
@@ -258,13 +259,18 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 	hold on;
 	for n=1:numCurves
 		plot( ...
-		  myDat(n).matX(1,:), myDat(n).matX(2,:), ...
+		  myDat(n).matX(cx,:), myDat(n).matX(cy,:), ...
 		  'o-', 'color', colMap(n,:), ...
 		  'marker', mrkList(n), ...
 		  'markerSize', mszList(n) );
 	end
 	hold off;
 	grid on;
+	else
+	numFigs++; figure(numFigs+figsIndex0);
+	clf();
+	numFigs++; figure(numFigs+figsIndex0);
+	clf();
 	end
 	%
 	%
@@ -273,27 +279,3 @@ retCode = RETCODE__SUCCESS;
 datOut = [];
 return;
 end
-
-%!test
-%!	clear;
-%!	commondefs;
-%!	getLLMCurves_setCnsts;
-%!	thisFile = "test vizLLMCurvs";
-%!	%
-%!	%randnSeed = mod(round(1E6*time),1E6);
-%!	randnSeed = 0;
-%!	%randnSeed = 792958; % Newton is best.
-%!	%randnSeed = 44936; % Grad Dir is best.
-%!	echo_randnSeed = randnSeed
-%!	randn("seed",randnSeed);
-%!	vecF = [-2;-30];
-%!	matJ = [-1,0.01;0.01,10];
-%!	funchF = @(v)( repmat(vecF,[1,size(v,2)]) + (matJ*v) );
-%!	matV = eye(2,2);
-%!	vecX = [0;0];
-%!	numPts = 20;
-%!	vecXSecret = -matJ \ vecF;
-%!	%
-%!	matW = matJ*matV;
-%!	matW += 1.0e-1 * randn(size(matW));
-%!	vizLLMCurves( funchF, vecX, matV, matW, numPts, vecXSecret );
