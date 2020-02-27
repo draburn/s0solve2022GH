@@ -43,7 +43,9 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 	stopsigCheckTimePrev = startTime;
 	%
 	% Internal parameters.
-	stepTypeList = mygetfield( prm, "stepTypes", [STEPTYPE__NEWTON] );
+	%stepType_default = STEPTYPE__NEWTON;
+	stepType_default = STEPTYPE__LEVCURVE;
+	stepTypeList = mygetfield( prm, "stepTypes", [stepType_default] );
 	funchJ = prm.funchJ;
 	btIterLimit = 10;
 	fallThresh = 1.0e-4;
@@ -148,11 +150,18 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 		matJ = funchJ( vecX );
 		vecG = matJ' * vecF;
 		matH = matJ' * matJ;
+		matI = eye(sizeF,sizeX);
 		i0 = min([ numIter+1, max(size(stepTypeList)) ]);
 		switch( stepTypeList(i0) )
 		case {STEPTYPE__NEWTON}
 			vecT = -matH \ vecG;
 			funchDelta = @(nu)( nu*vecT);
+		case {STEPTYPE__LEVCURVE}
+			hScl = max(diag(matH));
+			assert( 0.0 < hScl );
+			matA = (matH/hScl) - matI;
+			vecT = -(vecG/hScl);
+			funchDelta = @(nu)( nu*( (matI+(nu*matA))\vecT ) );
 		otherwise
 			error(sprintf("Unsupported value of stepTypeList(%d) (%d).", ...
 			  i0, stepTypeList(i0) ));
