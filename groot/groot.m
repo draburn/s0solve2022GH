@@ -50,6 +50,7 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 	funchJ = prm.funchJ;
 	btIterLimit = 10;
 	fallThresh = 1.0e-4;
+	numFigs = 0;
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO PREPARATIONAL WORK
@@ -152,6 +153,60 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 		vecG = matJ' * vecF;
 		matH = matJ' * matJ;
 		matI = eye(sizeF,sizeX);
+		%
+		%
+		%if (0==mod(numIter,100))
+		if (0)
+			% HACK to look at curves.
+			hScl = max(diag(matH));
+			assert( 0.0 < hScl );
+			matA = (matH/hScl) - matI;
+			vecT = -(vecG/hScl);
+			funchDelta = @(nu)( nu*( (matI+(nu*matA))\vecT ) );
+			funchDeltaNorm = @(nu)( sqrt(sum((funchDelta(nu)).^2)) );
+			nuVals = flinspace( 0.0, 1.0, 100, funchDeltaNorm );
+			for n=1:max(size(nuVals))
+				matDeltaLev(:,n) = funchDelta(nuVals(n));
+				omegaLevVals(n) = funchOmegaOfF(funchF(vecX+matDeltaLev(:,n)));
+			end
+			clear nuVals;
+			clear funchDelta;
+			clear funchDeltaNorm;
+			clear matA;
+			clear hScl
+			%
+			nuVals = linspace(0.0,1.0,100);
+			for n=1:max(size(nuVals))
+				matDeltaNewt(:,n) = nuVals(n) * (-matH\vecG);
+				matDeltaGrad(:,n) = nuVals(n) * (-vecG);
+				omegaNewtVals(n) = funchOmegaOfF(funchF(vecX+matDeltaNewt(:,n)));
+				omegaGradVals(n) = funchOmegaOfF(funchF(vecX+matDeltaGrad(:,n)));
+			end
+			clear nuVals;
+			%
+			numFigs++;figure(numFigs);
+			plot( ...
+			  matDeltaLev(1,:),  matDeltaLev(2,:),  'o-', ...
+			  matDeltaNewt(1,:), matDeltaNewt(2,:), 'x-', ...
+			  matDeltaGrad(1,:), matDeltaGrad(2,:), 's-' );
+			grid on;
+			legend( "Levenberg", "Newton", "GradDir" );
+			%
+			numFigs++;figure(numFigs);
+			semilogy( ...
+			  sqrt(sum(matDeltaLev.^2,1)),  omegaLevVals,  'o-', ...
+			  sqrt(sum(matDeltaNewt.^2,1)), omegaNewtVals, 'x-', ...
+			  sqrt(sum(matDeltaGrad.^2,1)), omegaGradVals, 's-' );
+			grid on;
+			legend( "Levenberg", "Newton", "GradDir" );
+			%
+			clear matDeltaGrad;
+			clear matDeltaNewt;
+			clear matDeltaLev;
+			%return;
+		end
+		%
+		%
 		i0 = min([ numIter+1, max(size(stepTypeList)) ]);
 		switch( stepTypeList(i0) )
 		case {STEPTYPE__NEWTON}
@@ -178,6 +233,7 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 			  i0, stepTypeList(i0) ));
 		end
 		%
+		%
 		nuTrial = 1.0;
 		btIter = 0;
 		while (true)
@@ -190,7 +246,7 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 			elseif ( btIter > btIterLimit )
 				break;
 			else
-				nuTrial *= 0.1;
+				nuTrial *= 0.99;
 			end
 			btIter++;
 		end
