@@ -28,7 +28,8 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 	sizeF = size(vecF0,1);
 	assert( 1 <= sizeF );
 	assert( isrealarray(vecF0,[sizeX,1]) );
-	omega0 = sum(vecF0.^2);
+	funchOmegaOfF = @(f)( 0.5*(sum(f.^2)) );
+	omega0 = funchOmegaOfF(vecF0);
 	%
 	% Stopping criteria.
 	omegaTol = mygetfield( prm, "omegaTol", 1E-24 ); % Success.
@@ -42,6 +43,10 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 	stopsigCheckTimePrev = startTime;
 	%
 	% Internal parameters.
+	stepTypeList = mygetfield( prm, "stepTypes", [STEPTYPE__NEWTON] );
+	funchJ = prm.funchJ;
+	btIterLimit = 10;
+	fallThresh = 1.0e-4;
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO PREPARATIONAL WORK
@@ -114,7 +119,7 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 			groot__finish;
 			return;
 		end
-		if ( omega >= omegaPrev*0.999 )
+		if ( abs(omegaPrev-omega) <= abs(omegaPrev*fallThresh) )
 			msg_notify( verbLev, thisFile, __LINE__, ...
 			  sprintf("Failed to decrease omega sufficiently (%g, %g).",omega,omegaPrev) );
 			retCode = RETCODE__ALGORITHM_BREAKDOWN;
@@ -140,32 +145,48 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		% DO WORK
 		%
-		funchJ = prm.funchJ;
 		matJ = funchJ( vecX );
-		vecDelta = - (matJ'*matJ) \ (matJ'*vecF);
-		%
-		vecXPrev = vecX;
-		omegaPrev = omega;
-		%
-		vecX = vecXPrev + vecDelta;
-		vecF = funchF( vecX );
-		omega = sum(vecF.^2);
-		%
-		btIter = 0;
-		while (omega>omegaPrev)
-			if ( 10 < btIter )
-				break;
-			end
-			vecDelta/=10.0;
-			vecX = vecXPrev + vecDelta;
-			vecF = funchF( vecX );
-			omega = sum(vecF.^2);
-			btIter++;
+		vecG = matJ' * vecF;
+		matH = matJ' * matJ;
+		i0 = min([ numIter+1, max(size(stepTypeList)) ]);
+		switch( stepTypeList(i0) )
+		case {STEPTYPE__NEWTON}
+			vecT = -matH \ vecG;
+			funchDelta = @(nu)( nu*vecT);
+		otherwise
+			error(sprintf("Unsupported value of stepTypeList(%d) (%d).", ...
+			  i0, stepTypeList(i0) ));
 		end
 		%
-		% Prepare next iteration.
+		nuTrial = 1.0;
+		btIter = 0;
+		while (true)
+			vecDeltaTrial = funchDelta( nuTrial );
+			vecXTrial = vecX + vecDeltaTrial;
+			vecFTrial = funchF( vecXTrial );
+			omegaTrial = funchOmegaOfF( vecFTrial );
+			if ( omegaTrial < omega )
+				break;
+			elseif ( btIter > btIterLimit )
+				break;
+			else
+				nuTrial *= 0.1;
+			end
+		end
+		%
+		clear vecT;
+		clear funchDelta;
+		vecXPrev = vecX;
+		vecFPrev = vecF;
+		omegaPrev = omega;
+		%
 		numIter++;
-		datOut.iterDat(numIter).vecX = vecX;
+		vecX = vecXTrial;
+		vecF = vecFTrial;
+		omega = omegaTrial;
+		datOut.iterDat(numIter).vecX = vecXTrial;
+		datOut.iterDat(numIter).vecF = vecFTrial;
+		datOut.iterDat(numIter).omega = omegaTrial;
 	end
 	%
 return;
