@@ -4,7 +4,6 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts,
 	% BASIC INIT.
 	%
 	commondefs;
-	getLLMCurves_setCnsts;
 	thisFile = "getLLMCurves";
 	retCode = RETCODE__NOT_SET;
 	startTime = time();
@@ -34,15 +33,10 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts,
 	assert( 2 <= numPts );
 	%
 	curveTypes_default = [ ...
-	  GETCURVES_CURVETYPE__NEWTON, ...
-	  GETCURVES_CURVETYPE__PICARD, ...
-	  GETCURVES_CURVETYPE__PICARD_SCALED, ...
-	  GETCURVES_CURVETYPE__GRADDIR, ...
-	  GETCURVES_CURVETYPE__GRADDIR_SCALED, ...
-	  GETCURVES_CURVETYPE__LEVCURVE, ...
-	  GETCURVES_CURVETYPE__LEVCURVE_SCALED, ...
-	  GETCURVES_CURVETYPE__GRADCURVE, ...
-	  GETCURVES_CURVETYPE__GRADCURVE_SCALED ];
+	  STEPTYPE__NEWTON, ...
+	  STEPTYPE__GRADDIR, ...
+	  STEPTYPE__LEVCURVE, ...
+	  STEPTYPE__GRADCURVE ];
 	curveTypes = mygetfield( prm, "curveTypes", curveTypes_default );
 	numCurves = max(size(curveTypes));
 	assert( 1 <= numCurves );
@@ -60,7 +54,7 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts,
 	%
 	for curveIndex = 1 : numCurves
 		switch (curveTypes(curveIndex))
-		case {GETCURVES_CURVETYPE__NEWTON}
+		case {STEPTYPE__NEWTON}
 			vecTemp = -matH\vecG;
 			denom = vecTemp'*matH*vecTemp;
 			assert( denom > 0.0 );
@@ -68,55 +62,50 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts,
 			assert( abs(s0-1.0) < (sizeK^3)*10.0*(eps^0.75) );
 			vecTemp *= s0;
 			curveDat(curveIndex).matY = vecTemp * sVals;
-			curveDat(curveIndex).strType = "Newton";
 			clear denom;
 			clear s0;
 			clear vecTemp;
-		case {GETCURVES_CURVETYPE__PICARD}
+		case {STEPTYPE__PICARD}
 			vecTemp = -matV' * vecF;
 			denom = vecTemp'*matH*vecTemp;
 			assert( denom > 0.0 );
 			s0 = -(vecTemp'*vecG)/denom;
 			vecTemp *= s0;
 			curveDat(curveIndex).matY = vecTemp * sVals;
-			curveDat(curveIndex).strType = "Picard";
 			clear denom;
 			clear s0;
 			clear vecTemp;
-		case {GETCURVES_CURVETYPE__PICARD_SCALED}
+		case {STEPTYPE__PICARD_SCALED}
 			vecTemp = -matD\(matV'*vecF);
 			denom = vecTemp'*matH*vecTemp;
 			assert( denom > 0.0 );
 			s0 = -(vecTemp'*vecG)/denom;
 			vecTemp *= s0;
 			curveDat(curveIndex).matY = vecTemp * sVals;
-			curveDat(curveIndex).strType = "PicardScl";
 			clear denom;
 			clear s0;
 			clear vecTemp;
-		case {GETCURVES_CURVETYPE__GRADDIR}
+		case {STEPTYPE__GRADDIR}
 			vecTemp = -vecG;
 			denom = vecTemp'*matH*vecTemp;
 			assert( denom > 0.0 );
 			s0 = -(vecTemp'*vecG)/denom;
 			vecTemp *= s0;
 			curveDat(curveIndex).matY = vecTemp * sVals;
-			curveDat(curveIndex).strType = "GradDir";
 			clear denom;
 			clear s0;
 			clear vecTemp;
-		case {GETCURVES_CURVETYPE__GRADDIR_SCALED}
+		case {STEPTYPE__GRADDIR_SCALED}
 			vecTemp = -matD\vecG;
 			denom = vecTemp'*matH*vecTemp;
 			assert( denom > 0.0 );
 			s0 = -(vecTemp'*vecG)/denom;
 			vecTemp *= s0;
 			curveDat(curveIndex).matY = vecTemp * sVals;
-			curveDat(curveIndex).strType = "GradDirScl";
 			clear denom;
 			clear s0;
 			clear vecTemp;
-		case {GETCURVES_CURVETYPE__LEVCURVE}
+		case {STEPTYPE__LEVCURVE}
 			matL = max(vecD) * matI;
 			matA = matH-matL;
 			funchY = @(nu)( -nu*((matL+(nu*matA))\vecG) );
@@ -125,13 +114,12 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts,
 			for n=1:max(size(nuVals))
 				curveDat(curveIndex).matY(:,n) = funchY(nuVals(n));
 			end
-			curveDat(curveIndex).strType = "Leveneberg";
 			clear nuVals;
 			clear funchF;
 			clear funchY;
 			clear matA;
 			clear matL;
-		case {GETCURVES_CURVETYPE__LEVCURVE_SCALED}
+		case {STEPTYPE__LEVCURVE_SCALED}
 			matDInvSqrt = diag(1./sqrt(diag(matD)));
 			matHScl = matDInvSqrt * matH * matDInvSqrt;
 			vecGScl = matDInvSqrt * vecG;
@@ -142,7 +130,6 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts,
 			for n=1:max(size(nuVals))
 				curveDat(curveIndex).matY(:,n) = matDInvSqrt * funchY(nuVals(n));
 			end
-			curveDat(curveIndex).strType = "LevenbergScl";
 			clear nuVals;
 			clear funchF;
 			clear funchY;
@@ -150,7 +137,7 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts,
 			clear vecGScl;
 			clear matHScl;
 			clear matDInvSqrt;
-		case {GETCURVES_CURVETYPE__GRADCURVE}
+		case {STEPTYPE__GRADCURVE}
 			[ matPsi, matLambda ] = eig( matH );
 			assert( sum(sum(abs(((matPsi')*matPsi)-matI))) < 10.0*(sizeK^3)*(eps^0.75) );
 			assert( sum(sum(abs((matPsi*(matPsi'))-matI))) < 10.0*(sizeK^3)*(eps^0.75) );
@@ -164,7 +151,6 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts,
 			for n=1:max(size(nuVals))
 				curveDat(curveIndex).matY(:,n) = -matPsi * funchY(nuVals(n));
 			end
-			curveDat(curveIndex).strType = "GradCurve";
 			clear nuVals;
 			clear funcF;
 			clear funcY;
@@ -173,7 +159,7 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts,
 			clear vecPsiTN;
 			clear matPsi;
 			clear matLambda;
-		case {GETCURVES_CURVETYPE__GRADCURVE_SCALED}
+		case {STEPTYPE__GRADCURVE_SCALED}
 			matDInvSqrt = diag(1./sqrt(diag(matD)));
 			matHScl = matDInvSqrt * matH * matDInvSqrt;
 			vecGScl = matDInvSqrt * vecG;
@@ -190,7 +176,6 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts,
 			for n=1:max(size(nuVals))
 				curveDat(curveIndex).matY(:,n) = -matDInvSqrt * matPsi * funchY(nuVals(n));
 			end
-			curveDat(curveIndex).strType = "GradCurveScl";
 			clear nuVals;
 			clear funcF;
 			clear funcY;
@@ -206,6 +191,7 @@ function [ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts,
 			error(sprintf( "Value of curveTypes(%g) is invalid (%g).", ...
 			  curveIndex, curveTypes(curveIndex) ));
 		end
+		curveDat(curveIndex).curveType = curveTypes(curveIndex);
 	end
 	%
 	retCode = RETCODE__SUCCESS;

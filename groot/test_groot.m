@@ -3,8 +3,8 @@ commondefs;
 thisFile = "test_groot";
 sizeX = 250;
 sizeF = sizeX;
-%seedPrm = demoFunc0101_genSeedPrm("lin-easy");
-seedPrm = demoFunc0101_genSeedPrm("moderate");
+seedPrm = demoFunc0101_genSeedPrm("lin-easy");
+%seedPrm = demoFunc0101_genSeedPrm("moderate");
 seedPrm.sizeX = sizeX;
 seedPrm.sizeF = sizeF;
 funcPrm = demoFunc0101_genFuncPrm(seedPrm);
@@ -13,21 +13,4 @@ vecX0 = zeros(seedPrm.sizeX,1);
 vecF0 = demoFunc0101_eval( vecX0, funcPrm );
 funchF = @(vecXDummy)( demoFunc0101_eval( vecXDummy, funcPrm ) );
 prm.funchJ = @(vecXDummy)( demoFunc0101_evalJaco( vecXDummy, funcPrm ) );
-[ vecXEnd, retCode, datOut ] = groot( funchF, vecX0, prm );
-%
-%return;
-numIter = max(size(datOut.iterDat));
-numFigs = 0;
-matI = eye(sizeX,sizeX);
-vizNumPts = 100;
-for n=[0,round(1.0*numIter/3.0),round(2.0*numIter/3.0),numIter]
-	if (0==n)
-		vecX = vecX0;
-	else
-		vecX = datOut.iterDat(n).vecX;
-	end
-	matJ = demoFunc0101_evalJaco( vecX, funcPrm );
-	vizPrm.numFigsOffset = numFigs;
-	numNewFigs = vizLLMCurves( funchF, vecX, matI, matJ, vizNumPts, funcPrm.x0, vizPrm );
-	numFigs += numNewFigs;
-end
+[ vecXEnd, retCode, grootDatOut ] = groot( funchF, vecX0, prm );

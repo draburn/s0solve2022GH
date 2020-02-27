@@ -3,3 +3,4 @@ test retcode2str;
 test msg_retcode;
 test msg_thresh;
 test flinspace;
+test steptype2str;

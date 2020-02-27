@@ -5,7 +5,6 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 	% BASIC INIT.
 	%
 	commondefs;
-	getLLMCurves_setCnsts;
 	thisFile = "vizLLMCurve";
 	retCode = RETCODE__NOT_SET;
 	startTime = time();
@@ -41,26 +40,20 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 	%
 	numFigsOffset = mygetfield( prm, "numFigsOffset", 0 );
 	%
-	curveTypes = [ ...
-	  GETCURVES_CURVETYPE__NEWTON, ...
-	  GETCURVES_CURVETYPE__LEVCURVE, ...
-	  GETCURVES_CURVETYPE__GRADCURVE ];
-	%
-	numCurves = max(size(curveTypes));
-	colMap = 0.7*jet(numCurves);
 	mrkList0 = ['+x^v<>sdpho'];
 	mrkList = mrkList0(1);
 	mszList = [ 5 ];
-	for n=2:numCurves
-		mrkList = [ mrkList; mrkList0(mod(n,max(size(mrkList0)))) ];
-		mszList = [ mszList; mszList(n-1)+1 ];
-	end
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO CALCULATIONS.
 	%
-	prm.curveTypes = curveTypes;
-	[ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts, prm );
+	[ curveDat, retCode, datOut ] = getLLMCurves( vecF, matV, matW, numPts );
+	numCurves = max(size(curveDat));
+	colMap = 0.7*jet(numCurves);
+	for n=2:numCurves
+		mrkList = [ mrkList; mrkList0(mod(n,max(size(mrkList0)))) ];
+		mszList = [ mszList; mszList(n-1)+1 ];
+	end
 	vecXStarLLN = vecX - (matV*((matW'*matW)\(matW'*vecF)));
 	for n=1:numCurves
 		matY = curveDat(n).matY;
@@ -87,9 +80,9 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 	end
 	%
 	numFigs = 0;
-	strLegend = [ curveDat(1).strType ];
+	strLegend = [ steptype2str(curveDat(1).curveType) ];
 	for n=2:numCurves
-		strLegend = [ strLegend; curveDat(n).strType ];
+		strLegend = [ strLegend; steptype2str(curveDat(n).curveType) ];
 	end
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

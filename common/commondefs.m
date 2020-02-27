@@ -53,6 +53,16 @@ msg_progress = @( verbLev, fileName, lineNum, msgStr )( ...
 msg_copious = @( verbLev, fileName, lineNum, msgStr )( ...
   msg_thresh( VERBLEV__COPIOUS, verbLev, fileName, lineNum, msgStr) );
 
+STEPTYPE__NEWTON = 0;
+STEPTYPE__PICARD = 100;
+STEPTYPE__PICARD_SCALED = 101;
+STEPTYPE__GRADDIR = 200;
+STEPTYPE__GRADDIR_SCALED = 201;
+STEPTYPE__LEVCURVE = 300;
+STEPTYPE__LEVCURVE_SCALED = 301;
+STEPTYPE__GRADCURVE = 400;
+STEPTYPE__GRADCURVE_SCALED = 401;
+
 %!test
 %!	commondefs
 %!	thisFile = "test commondefs";
