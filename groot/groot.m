@@ -44,7 +44,8 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 	%
 	% Internal parameters.
 	%stepType_default = STEPTYPE__NEWTON;
-	stepType_default = STEPTYPE__LEVCURVE;
+	%stepType_default = STEPTYPE__LEVCURVE;
+	stepType_default = STEPTYPE__GRADDIR;
 	stepTypeList = mygetfield( prm, "stepTypes", [stepType_default] );
 	funchJ = prm.funchJ;
 	btIterLimit = 10;
@@ -156,6 +157,16 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 		case {STEPTYPE__NEWTON}
 			vecT = -matH \ vecG;
 			funchDelta = @(nu)( nu*vecT);
+		case {STEPTYPE__GRADDIR}
+			vecT = -vecG;
+			t0 = vecT' * matH * vecT;
+			if ( t0 > 0.0 )
+				s0 = -(vecT'*vecG)/t0;
+			else
+				s0 = 0.0;
+			end
+			vecT *= s0;
+			funchDelta = @(nu)( nu*vecT );
 		case {STEPTYPE__LEVCURVE}
 			hScl = max(diag(matH));
 			assert( 0.0 < hScl );
@@ -181,10 +192,13 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 			else
 				nuTrial *= 0.1;
 			end
+			btIter++;
 		end
 		%
 		clear vecT;
 		clear funchDelta;
+		clear matA;
+		clear hScl;
 		vecXPrev = vecX;
 		vecFPrev = vecF;
 		omegaPrev = omega;

@@ -1,10 +1,11 @@
 clear;
 commondefs;
 thisFile = "test_groot";
-sizeX = 250;
+%sizeX = 250;
+sizeX = 2;
 sizeF = sizeX;
-seedPrm = demoFunc0101_genSeedPrm("lin-easy");
-%seedPrm = demoFunc0101_genSeedPrm("moderate");
+%seedPrm = demoFunc0101_genSeedPrm("lin-easy");
+seedPrm = demoFunc0101_genSeedPrm("moderate");
 seedPrm.sizeX = sizeX;
 seedPrm.sizeF = sizeF;
 funcPrm = demoFunc0101_genFuncPrm(seedPrm);
