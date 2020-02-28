@@ -2,7 +2,7 @@ clear;
 commondefs;
 thisFile = "test_groot";
 %sizeX = 250;
-sizeX = 250;
+sizeX = 100;
 sizeF = sizeX;
 %seedPrm = demoFunc0101_genSeedPrm("lin-easy");
 seedPrm = demoFunc0101_genSeedPrm("moderate");

@@ -45,7 +45,8 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 	% Internal parameters.
 	%stepType_default = STEPTYPE__NEWTON;
 	%stepType_default = STEPTYPE__LEVCURVE;
-	stepType_default = STEPTYPE__GRADDIR;
+	%stepType_default = STEPTYPE__GRADDIR;
+	stepType_default = STEPTYPE__GRADCURVE;
 	stepTypeList = mygetfield( prm, "stepTypes", [stepType_default] );
 	funchJ = prm.funchJ;
 	btIterLimit = 10;
@@ -155,16 +156,40 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 		matI = eye(sizeF,sizeX);
 		%
 		%
-		%if (0==mod(numIter,100))
-		if (0)
+		if (0==mod(numIter,1))
+		%if (0)
 			% HACK to look at curves.
+			%
+			hackNumPts = 100;
+			[ matPsi, matLambda ] = eig( matH );
+			vecPsiTN = matPsi'*(-matH\vecG);
+			lambdaMin = min(diag(matLambda));
+			matSigma = matLambda / lambdaMin;
+			funchDelta = @(nu)( ...
+			  matPsi * ( vecPsiTN - (diag(nu.^diag(matSigma))*vecPsiTN) ) );
+			funchDeltaNorm = @(nu)( sqrt(sum((funchDelta(nu)).^2)) );
+			nuVals = flinspace( 0.0, 1.0, hackNumPts, funchDeltaNorm );
+			for n=1:max(size(nuVals))
+				matDeltaGradCurve(:,n) = funchDelta(nuVals(n));
+				omegaGradCurveVals(n) = funchOmegaOfF(funchF(vecX+matDeltaGradCurve(:,n)));
+			end
+			clear nuVals;
+			clear funchDeltaNorm;
+			clear funchDelta;
+			clear matSigma;
+			clear lambdaMin;
+			clear vecPsiTN;
+			clear matLambda;
+			clear matPsi;
+			%
+			%
 			hScl = max(diag(matH));
 			assert( 0.0 < hScl );
 			matA = (matH/hScl) - matI;
 			vecT = -(vecG/hScl);
 			funchDelta = @(nu)( nu*( (matI+(nu*matA))\vecT ) );
 			funchDeltaNorm = @(nu)( sqrt(sum((funchDelta(nu)).^2)) );
-			nuVals = flinspace( 0.0, 1.0, 100, funchDeltaNorm );
+			nuVals = flinspace( 0.0, 1.0, hackNumPts, funchDeltaNorm );
 			for n=1:max(size(nuVals))
 				matDeltaLev(:,n) = funchDelta(nuVals(n));
 				omegaLevVals(n) = funchOmegaOfF(funchF(vecX+matDeltaLev(:,n)));
@@ -175,7 +200,7 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 			clear matA;
 			clear hScl
 			%
-			nuVals = linspace(0.0,1.0,100);
+			nuVals = linspace(0.0,1.0,hackNumPts);
 			for n=1:max(size(nuVals))
 				matDeltaNewt(:,n) = nuVals(n) * (-matH\vecG);
 				matDeltaGrad(:,n) = nuVals(n) * (-vecG);
@@ -188,17 +213,19 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 			plot( ...
 			  matDeltaLev(1,:),  matDeltaLev(2,:),  'o-', ...
 			  matDeltaNewt(1,:), matDeltaNewt(2,:), 'x-', ...
-			  matDeltaGrad(1,:), matDeltaGrad(2,:), 's-' );
+			  matDeltaGrad(1,:), matDeltaGrad(2,:), 's-', ...
+			  matDeltaGradCurve(1,:), matDeltaGradCurve(2,:), '^-' );
 			grid on;
-			legend( "Levenberg", "Newton", "GradDir" );
+			legend( "Levenberg", "Newton", "GradDir", "GradCurve" );
 			%
 			numFigs++;figure(numFigs);
 			semilogy( ...
 			  sqrt(sum(matDeltaLev.^2,1)),  omegaLevVals,  'o-', ...
 			  sqrt(sum(matDeltaNewt.^2,1)), omegaNewtVals, 'x-', ...
-			  sqrt(sum(matDeltaGrad.^2,1)), omegaGradVals, 's-' );
+			  sqrt(sum(matDeltaGrad.^2,1)), omegaGradVals, 's-', ...
+			  sqrt(sum(matDeltaGradCurve.^2,1)), omegaGradCurveVals, '^-' );
 			grid on;
-			legend( "Levenberg", "Newton", "GradDir" );
+			legend( "Levenberg", "Newton", "GradDir", "GradCurve" );
 			%
 			clear matDeltaGrad;
 			clear matDeltaNewt;
@@ -228,6 +255,15 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 			matA = (matH/hScl) - matI;
 			vecT = -(vecG/hScl);
 			funchDelta = @(nu)( nu*( (matI+(nu*matA))\vecT ) );
+		case {STEPTYPE__GRADCURVE}
+			[ matPsi, matLambda ] = eig( matH );
+			assert( sum(sum(abs(((matPsi')*matPsi)-matI))) < 10.0*(sizeX^3)*(eps^0.75) );
+			assert( sum(sum(abs((matPsi*(matPsi'))-matI))) < 10.0*(sizeX^3)*(eps^0.75) );
+			vecPsiTN = matPsi'*(-matH\vecG);
+			lambdaMin = min(diag(matLambda));
+			matSigma = matLambda / lambdaMin;
+			funchDelta = @(nu)( ...
+			  matPsi * ( vecPsiTN - (diag(nu.^diag(matSigma))*vecPsiTN) ) );
 		otherwise
 			error(sprintf("Unsupported value of stepTypeList(%d) (%d).", ...
 			  i0, stepTypeList(i0) ));
