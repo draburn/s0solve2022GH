@@ -52,6 +52,9 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 	btIterLimit = 10;
 	fallThresh = 1.0e-4;
 	numFigs = 0;
+	searchIterLimit = 1;
+	numSearchVals = 200;
+	searchOmegaTol = 1.001;
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO PREPARATIONAL WORK
@@ -192,22 +195,59 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 		end
 		%
 		%
-		nuTrial = 1.0;
-		btIter = 0;
+		funchDeltaNorm = @(nu)( sqrt(sum((funchDelta(nu)).^2)) );
+		searchIter = 0;
+		nuMin = 0.0;
+		nuMax = 1.0;
 		while (true)
-			vecDeltaTrial = funchDelta( nuTrial );
-			vecXTrial = vecX + vecDeltaTrial;
-			vecFTrial = funchF( vecXTrial );
-			omegaTrial = funchOmegaOfF( vecFTrial );
-			if ( omegaTrial < omega )
-				break;
-			elseif ( btIter > btIterLimit )
-				break;
-			else
-				nuTrial *= 0.99;
+			echo__nuRange = [ nuMin, nuMax ]
+			nuVals = flinspace( nuMin, nuMax, numSearchVals, funchDeltaNorm );
+			numNuVals = max(size(nuVals));
+			assert( 5 <= numNuVals );
+			clear omegaVals;
+			clear deltaNormVals;
+			for k=1:numNuVals
+				vecDeltaTemp = vecX + funchDelta(nuVals(k));
+				deltaNormVals(k) = sqrt(sum(vecDeltaTemp.^2));
+				omegaVals(k) = funchOmegaOfF(funchF( vecDeltaTemp ));
+				clear vecDeltaTemp;
 			end
-			btIter++;
+			%
+			numFigs++; figure(numFigs);
+			plot( nuVals, deltaNormVals, 'o-' );
+			title(sprintf( "deltaNorm v nu %d x %d", numIter, searchIter ));
+			grid on;
+			%
+			numFigs++; figure(numFigs);
+			plot( deltaNormVals, omegaVals, 'o-' );
+			title(sprintf( "omega v deltaNorm %d x %d", numIter, searchIter ));
+			grid on;
+			%
+			[ omegaBest, kOfBest ] = min([ omegaVals ]);
+			nuOfBest = nuVals(kOfBest);
+			kOfBest = median([ 2, numNuVals-1, kOfBest ]);
+			nuMin = nuVals(kOfBest-1);
+			nuMax = nuVals(kOfBest+1);
+			searchIter++;
+			if ( searchIterLimit <= searchIter )
+				break;
+			elseif ( max(omegaVals) < searchOmegaTol*omegaBest )
+				break;
+			end
+			clear omegaVals;
+			clear deltaNormVals;
+			clear omegaBest;
+			clear kOfBest;
 		end
+		clear funchDeltaNorm;
+		clear nuMin;
+		clear nuMax;
+		%
+		echo__nuOfBest = nuOfBest
+		vecDelta = funchDelta(nuOfBest);
+		vecXTrial = vecX + vecDelta;
+		vecFTrial = funchF( vecXTrial );
+		omegaTrial = funchOmegaOfF( vecFTrial );
 		%
 		clear vecT;
 		clear funchDelta;

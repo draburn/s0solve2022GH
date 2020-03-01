@@ -1,8 +1,9 @@
 numIter = max(size(grootDatOut.iterDat));
 numFigs = 0;
 matI = eye(sizeX,sizeX);
-vizNumPts = 20;
-for n=[0,round(1.0*numIter/3.0),round(2.0*numIter/3.0),numIter]
+vizNumPts = 50;
+%for n=[0,round(1.0*numIter/3.0),round(2.0*numIter/3.0),numIter]
+for n=0:numIter
 	if (0==n)
 		vecX = vecX0;
 	else
