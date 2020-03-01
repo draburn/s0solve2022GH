@@ -28,7 +28,7 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 	sizeF = size(vecF0,1);
 	assert( 1 <= sizeF );
 	assert( isrealarray(vecF0,[sizeX,1]) );
-	funchOmegaOfF = @(f)( 0.5*(sum(f.^2)) );
+	funchOmegaOfF = @(f)( 0.5*(sum(f.^2,1)) );
 	omega0 = funchOmegaOfF(vecF0);
 	%
 	% Stopping criteria.
@@ -52,8 +52,8 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 	btIterLimit = 10;
 	fallThresh = 1.0e-4;
 	numFigs = 0;
-	searchIterLimit = 1;
-	numSearchVals = 200;
+	searchIterLimit = 10;
+	numSearchVals = 21;
 	searchOmegaTol = 1.001;
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -200,50 +200,52 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 		nuMin = 0.0;
 		nuMax = 1.0;
 		while (true)
-			echo__nuRange = [ nuMin, nuMax ]
-			nuVals = flinspace( nuMin, nuMax, numSearchVals, funchDeltaNorm );
-			numNuVals = max(size(nuVals));
-			assert( 5 <= numNuVals );
-			clear omegaVals;
-			clear deltaNormVals;
-			for k=1:numNuVals
-				vecDeltaTemp = vecX + funchDelta(nuVals(k));
-				deltaNormVals(k) = sqrt(sum(vecDeltaTemp.^2));
-				omegaVals(k) = funchOmegaOfF(funchF( vecDeltaTemp ));
-				clear vecDeltaTemp;
+			%echo__nuRange = [ nuMin, nuMax ]
+			rvecNu = linspace( nuMin, nuMax, numSearchVals );
+			clear matDelta;
+			for n=1:numSearchVals
+				matDelta(:,n) = funchDelta(rvecNu(n));
 			end
+			rvecDeltaNorm = sqrt(sum(matDelta.^2,1));
+			matF = funchF(repmat(vecX,[1,numSearchVals])+matDelta);
+			rvecOmega = funchOmegaOfF(matF);
+			%for n=1:numSearchVals
+			%	rvecDeltaNorm(n) = sqrt(sum(matDelta(:,n).^2,1));
+			%	vecF = funchF(vecX+matDelta(:,n));
+			%	rvecOmega(n) = funchOmegaOfF(vecF);
+			%end
 			%
+			if (0)
 			numFigs++; figure(numFigs);
-			plot( nuVals, deltaNormVals, 'o-' );
+			plot( rvecNu, rvecDeltaNorm, 'o-' );
 			title(sprintf( "deltaNorm v nu %d x %d", numIter, searchIter ));
 			grid on;
 			%
 			numFigs++; figure(numFigs);
-			plot( deltaNormVals, omegaVals, 'o-' );
+			plot( rvecDeltaNorm, rvecOmega, 'o-' );
 			title(sprintf( "omega v deltaNorm %d x %d", numIter, searchIter ));
 			grid on;
+			end
 			%
-			[ omegaBest, kOfBest ] = min([ omegaVals ]);
-			nuOfBest = nuVals(kOfBest);
-			kOfBest = median([ 2, numNuVals-1, kOfBest ]);
-			nuMin = nuVals(kOfBest-1);
-			nuMax = nuVals(kOfBest+1);
+			[ omegaBest, nOfBest ] = min([ rvecOmega ]);
+			nuOfBest = rvecNu(nOfBest);
 			searchIter++;
 			if ( searchIterLimit <= searchIter )
 				break;
-			elseif ( max(omegaVals) < searchOmegaTol*omegaBest )
+			elseif ( max(rvecOmega) < searchOmegaTol*omegaBest )
 				break;
 			end
-			clear omegaVals;
-			clear deltaNormVals;
-			clear omegaBest;
-			clear kOfBest;
+			if (1==nOfBest)
+				nuMax = rvecNu(3);
+			elseif (numSearchVals==nOfBest)
+				nuMin = rvecNu(numSearchVals-2);
+			else
+				nuMin = rvecNu(nOfBest-1);
+				nuMax = rvecNu(nOfBest+1);
+			end
 		end
-		clear funchDeltaNorm;
-		clear nuMin;
-		clear nuMax;
 		%
-		echo__nuOfBest = nuOfBest
+		%echo__nuOfBest = nuOfBest
 		vecDelta = funchDelta(nuOfBest);
 		vecXTrial = vecX + vecDelta;
 		vecFTrial = funchF( vecXTrial );
