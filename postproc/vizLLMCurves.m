@@ -60,7 +60,10 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 		thisNumPts = size(matY,2);
 		matX = repmat(vecX,[1,thisNumPts]) + (matV*matY);
 		matResLLM = repmat(vecF,[1,thisNumPts]) + (matW*matY);
-		matRes = funchF( repmat(vecX,[1,thisNumPts]) + (matV*matY) );
+		%matRes = funchF( repmat(vecX,[1,thisNumPts]) + (matV*matY) );
+		for j=1:thisNumPts
+			matRes(:,j) = funchF( vecX + (matV*matY(:,j)) );
+		end
 		matDistLLMR = repmat(vecXStarLLN,[1,thisNumPts]) - matX;
 		matDistSecret = repmat(vecXSecret,[1,thisNumPts]) - matX;
 		myDat(n).matX = matX;
@@ -212,20 +215,29 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 	yLo = yAvg - (1.5*yVar);
 	yHi = yAvg + (1.5*yVar);
 	%
+	matH = matW' * matW;
+	vecG = matW' * vecF;
+	vecXNStep = vecX - (matV*(matH\vecG));
+	clear vecG;
+	clear math;
+	%
 	xVals = xLo + ((xHi-xLo)*(0:numXVals-1)/(numXVals-1.0));
 	yVals = yLo + ((yHi-yLo)*(0:numYVals-1)/(numYVals-1.0));
 	[ xGrid, yGrid ] = meshgrid( xVals, yVals );
-	zVals = repmat(vecX,[1,numXVals*numYVals]);
+	zVals = repmat(vecXNStep,[1,numXVals*numYVals]);
 	zVals(cx,:) = reshape(xGrid,1,[]);
 	zVals(cy,:) = reshape(yGrid,1,[]);
 	%
-	%
-	fLLMVals = funchFLLM( zVals );
+	for n=1:size(zVals,2)
+		fVals(:,n) = funchF( zVals(:,n) );
+		fLLMVals(:,n) = funchFLLM( zVals(:,n) );
+	end
 	omegaLLMVals = 0.5*sum(fLLMVals.^2,1);
 	omegaLLMGrid = reshape( omegaLLMVals, numYVals, numXVals );
 	%
 	numFigs++; figure(numFigs+numFigsOffset);
 	contour(xGrid,yGrid,sqrt(omegaLLMGrid),50);
+	title( sprintf("OmegaLLM vs %g, %g", cx, cy) );
 	if (forceSquare)
 		axis square;
 	end
@@ -241,12 +253,12 @@ function [ numFigs, retCode, datOut ] = vizLLMCurves( ...
 	grid on;
 	%
 	%
-	fVals = funchF( zVals );
 	omegaVals = 0.5*sum(fVals.^2,1);
 	omegaGrid = reshape( omegaVals, numYVals, numXVals );
 	%
 	numFigs++; figure(numFigs+numFigsOffset);
 	contour(xGrid,yGrid,sqrt(omegaGrid),50);
+	title( sprintf("Omega vs %g, %g", cx, cy) );
 	if (forceSquare)
 		axis square;
 	end

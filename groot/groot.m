@@ -44,9 +44,9 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 	%
 	% Internal parameters.
 	%stepType_default = STEPTYPE__NEWTON;
-	%stepType_default = STEPTYPE__LEVCURVE;
+	stepType_default = STEPTYPE__LEVCURVE;
 	%stepType_default = STEPTYPE__GRADDIR;
-	stepType_default = STEPTYPE__GRADCURVE;
+	%stepType_default = STEPTYPE__GRADCURVE;
 	stepTypeList = mygetfield( prm, "stepTypes", [stepType_default] );
 	funchJ = prm.funchJ;
 	btIterLimit = 10;
@@ -156,8 +156,8 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 		matI = eye(sizeF,sizeX);
 		%
 		%
-		if (0==mod(numIter,1))
-		%if (0)
+		%if (0==mod(numIter,1))
+		if (0)
 			% HACK to look at curves.
 			%
 			hackNumPts = 100;
