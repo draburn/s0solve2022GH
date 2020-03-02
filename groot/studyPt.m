@@ -4,14 +4,13 @@ function [ vecXSuggested, retCode, datOut ] = studyPt( ...
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% COMMON INIT.
 	%
-	datOut.funchF = funchF;
-	datOut.vecX0 = vecX0;
-	datOut.prm = prm;
-	%
 	commondefs;
 	thisFile = "studyPt";
 	startTime = time();
-	%
+	retCode = RETCODE__NOT_SET;
+	datOut.funchF = funchF;
+	datOut.vecX0 = vecX0;
+	datOut.prm = prm;
 	datOut.startTime = startTime;
 	%
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
@@ -19,12 +18,9 @@ function [ vecXSuggested, retCode, datOut ] = studyPt( ...
 	assert( isrealscalar(verbLev) );
 	assert( isrealscalar(reportInterval) );
 	assert( 0.0 <= reportInterval );
-	%
+	reportTimePrev = startTime - 0.1;
 	datOut.verbLev = verbLev;
 	datOut.reportInterval = reportInterval;
-	%
-	reportTimePrev = startTime - 0.1;
-	%
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% SPECIFIC INIT.
@@ -37,30 +33,17 @@ function [ vecXSuggested, retCode, datOut ] = studyPt( ...
 	funchJ = prm.funchJ;
 	matJ0 = funchJ(vecX0);
 	assert( isrealarray(matJ0,[sizeF,sizeX]) );
-	%
 	datOut.sizeX = sizeX;
 	datOut.sizeF = sizeF;
-	datOut.vecX0 = vecX0;
 	datOut.vecF0 = vecF0;
 	datOut.matJ0 = matJ0;
-	%
-	%
-	%
-	vecXSecret = prm.vecXSecret;
-	assert( isrealarray(vecXSecret,[sizeX,1]) );
-	%
-	datOut.vecXSecret = vecXSecret;
-	%
-	%
 	%
 	considerPicard = mygetfield( prm, "considerPicard", true );
 	considerScl = mygetfield( prm, "considerScl", true );
 	considerGradCurve = mygetfield( prm, "considerGradCurve", true );
-	%
 	datOut.considerPicard = considerPicard;
 	datOut.considerScl = considerScl;
 	datOut.considerGradCurve = considerGradCurve;
-	%
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% PREP WORK.
@@ -71,13 +54,12 @@ function [ vecXSuggested, retCode, datOut ] = studyPt( ...
 	matD0 = diag(vecD0);
 	matI0 = eye(sizeX,sizeX);
 	matXF = eye(sizeF,sizeX);
-	%
 	datOut.vecG0 = vecG0;
 	datOut.matH0 = matH0;
-	datOut.vecD0 = vecD0; % Drop this?
-	datOut.matD0 = matD0; % Drop this?
-	datOut.matI0 = matI0; % Drop this?
-	datOut.matXF = matXF; % Drop this?
+	datOut.vecD0 = vecD0;
+	datOut.matD0 = matD0;
+	datOut.matI0 = matI0;
+	datOut.matXF = matXF;
 	%
 	%
 	%
@@ -181,21 +163,21 @@ function [ vecXSuggested, retCode, datOut ] = studyPt( ...
 		%vecXPicardOmega = ...
 	end
 	%
-	if (consdierPicard&&considerScl)
+	if (considerPicard&&considerScl)
 		%vecXPicardSclOmega = ...
 	end
 	%
 	%vecXLevenbergOmega = ...
 	%
-	if (consdierScl)
+	if (considerScl)
 		%vecXLevenbergSclOmega = ...
 	end
 	%
-	if (consdierGradCurve)
+	if (considerGradCurve)
 		%vecXGradCurveOmega = ...
 	end
 	%
-	if (consdierGradCurve&&considerScl)
+	if (considerGradCurve&&considerScl)
 		%vecXGradCurveSclOmega = ...
 	end
 	%
