@@ -168,16 +168,16 @@ function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
 		vecDiagLambda = diag(matLambda);
 		lambdaMin = min(vecDiagLambda);
 		assert( 0.0 < lambdaMin );
-		matSigma = diag( vecDiagLambda / lambdaMin );
+		vecDiagSigma = vecDiagLambda / lambdaMin;
 		funchDelta_gradCurveScl = @(s)( ...
-		  matPsi*( vecPsiTN - (diag((1.0-s).^diag(matSigma))*vecPsiTN) ) );
+		  vecDelta_newton - (matPsi*( ((1.0-s).^vecDiagSigma) .* vecPsiTN))  );
 		minScanPrm.funchDeltaSupportsMultiArg = false;
 		% But, could probably modify to make funchDeltaSupportsMultiArg true.
 		minScanPrm.numPts1 = 201;
 		s_gradCurveScl_omegaMin = minScan( ...
 		  funchF, vecX0, funchDelta_gradCurveScl, minScanPrm );
 		vecDelta_gradCurveScl_omegaMin = funchDelta_gradCurveScl(s_gradCurveScl_omegaMin);
-		clear matSigma;
+		clear vecDiagSigma;
 		clear lambdaMin;
 		clear vecDiagLambda;
 		clear vecPsiTN;
