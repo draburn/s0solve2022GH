@@ -8,10 +8,6 @@ function [ vecXSuggested, retCode, datOut ] = studyPt( ...
 	thisFile = "studyPt";
 	startTime = time();
 	retCode = RETCODE__NOT_SET;
-	datOut.funchF = funchF;
-	datOut.vecX0 = vecX0;
-	datOut.prm = prm;
-	datOut.startTime = startTime;
 	%
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
 	reportInterval = mygetfield( prm, "reportInterval", 0.0 );
@@ -19,8 +15,6 @@ function [ vecXSuggested, retCode, datOut ] = studyPt( ...
 	assert( isrealscalar(reportInterval) );
 	assert( 0.0 <= reportInterval );
 	reportTimePrev = startTime - 0.1;
-	datOut.verbLev = verbLev;
-	datOut.reportInterval = reportInterval;
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% SPECIFIC INIT.
@@ -33,17 +27,10 @@ function [ vecXSuggested, retCode, datOut ] = studyPt( ...
 	funchJ = prm.funchJ;
 	matJ0 = funchJ(vecX0);
 	assert( isrealarray(matJ0,[sizeF,sizeX]) );
-	datOut.sizeX = sizeX;
-	datOut.sizeF = sizeF;
-	datOut.vecF0 = vecF0;
-	datOut.matJ0 = matJ0;
 	%
 	considerPicard = mygetfield( prm, "considerPicard", true );
 	considerScl = mygetfield( prm, "considerScl", true );
 	considerGradCurve = mygetfield( prm, "considerGradCurve", true );
-	datOut.considerPicard = considerPicard;
-	datOut.considerScl = considerScl;
-	datOut.considerGradCurve = considerGradCurve;
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% PREP WORK.
@@ -54,12 +41,6 @@ function [ vecXSuggested, retCode, datOut ] = studyPt( ...
 	matD0 = diag(vecD0);
 	matI0 = eye(sizeX,sizeX);
 	matXF = eye(sizeF,sizeX);
-	datOut.vecG0 = vecG0;
-	datOut.matH0 = matH0;
-	datOut.vecD0 = vecD0;
-	datOut.matD0 = matD0;
-	datOut.matI0 = matI0;
-	datOut.matXF = matXF;
 	%
 	%
 	%
@@ -69,9 +50,6 @@ function [ vecXSuggested, retCode, datOut ] = studyPt( ...
 	%vecXNewtonSclLin  = vecXNewtonLin; % FWIW;
 	%
 	%vecXNewtonOmega = ...
-	%
-	datOut.vecDeltaNewton = vecDeltaNewton;
-	datOut.vecXNewtonLin = vecXNewtonLin;
 	%
 	%
 	%
@@ -185,6 +163,49 @@ function [ vecXSuggested, retCode, datOut ] = studyPt( ...
 	vecXSuggested = vecXNewtonLin;
 	%
 	%
+	%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% COPY TO DATOUT.
+	%
+	datOut.funchF = funchF;
+	datOut.vecX0 = vecX0;
+	datOut.prm = prm;
+	datOut.startTime = startTime;
+	%
+	datOut.verbLev = verbLev;
+	datOut.reportInterval = reportInterval;
+	%
+	datOut.sizeX = sizeX;
+	datOut.sizeF = sizeF;
+	datOut.vecF0 = vecF0;
+	datOut.matJ0 = matJ0;
+	%
+	datOut.considerPicard = considerPicard;
+	datOut.considerScl = considerScl;
+	datOut.considerGradCurve = considerGradCurve;
+	%
+	datOut.vecG0 = vecG0;
+	datOut.matH0 = matH0;
+	datOut.vecD0 = vecD0;
+	datOut.matD0 = matD0;
+	datOut.matI0 = matI0;
+	datOut.matXF = matXF;
+	%
+	datOut.vecDeltaNewton = vecDeltaNewton;
+	datOut.vecDeltaGradDir = vecDeltaGradDir;
+	datOut.vecDeltaGradDirScl = vecDeltaGradDirScl;
+	datOut.vecDeltaPicard = vecDeltaPicard;
+	datOut.vecDeltaPicardScl = vecDeltaPicardScl;
+	%
+	datOut.vecDeltaNewtonOmegaMin = vecDeltaNewtonOmegaMin;
+	datOut.vecDeltaGradDirOmegaMin = vecDeltaGradDirOmegaMin;
+	datOut.vecDeltaGradDirSclOmegaMin = vecDeltaGradDirSclOmegaMin;
+	datOut.vecDeltaLevOmegaMin = vecDeltaLevSclOmegaMin;
+	datOut.vecDeltaLevSclOmegaMin = vecDeltaLevSclOmegaMin;
+	datOut.vecDeltaGradCurveOmegaMin = vecDeltaGradCurveSclOmegaMin;
+	datOut.vecDeltaGradCurveSclOmegaMin = vecDeltaGradCurveSclOmegaMin;
+	datOut.vecDeltaPicardOmegaMin = vecDeltaPicardOmegaMin;
+	datOut.vecDeltaPicardSclOmegaMin = vecDeltaPicardSclOmegaMin;
 return;
 end
 

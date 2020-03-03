@@ -1,6 +1,6 @@
 clear;
 commondefs;
-thisFile = "test_getSOmegaMin";
+thisFile = "test_minScan";
 sizeX = 250;
 %sizeX = 100;
 sizeF = sizeX;
@@ -20,4 +20,4 @@ vecF0 = funchF(vecX0);
 matJ0 = funchJ(vecX0);
 vecDeltaNewton = -matJ0\vecF0;
 funchDeltaOfS = @(s)( s*vecDeltaNewton );
-[ SOmegaMin, retCode, datOut ] = getSOmegaMin( funchF, vecX0, funchDeltaOfS, prm );
+[ sOfMin, retCode, datOut ] = minScan( funchF, vecX0, funchDeltaOfS, prm );

@@ -1,5 +1,5 @@
 %  Function...
-%    [ sOmegaMin, retCode, datOut ] = getSOmegaMin( ...
+%    [ sOfMin, retCode, datOut ] = minScan( ...
 %      funchFOfX, vecX0, funchDeltaOfS, prm=[], datIn=[] )
 %  Overview...
 %    Tries to find the value of s which minimizes the norm of F( vecX0 + delta(s) ).
@@ -10,18 +10,18 @@
 %    prm: Structure of optional parameters.
 %    datIn: Structure of additional input data.
 %  Output values...
-%    sOmegaMin: The value of s in [0.0,1.0] which minimizes the norm.
+%    sOfMin: The value of s in [0.0,1.0] which minimizes the norm.
 %    retCode: A common return code, RETCODE__SUCCESS (0) on success.
 %    datOut: Additional output data.
 %  See source code for more information on prm, datIn, and datOut.
-function [ sOmegaMin, retCode, datOut ] = getSOmegaMin( ...
+function [ sOfMin, retCode, datOut ] = minScan( ...
   funchFOfX, vecX0, funchDeltaOfS, prm=[], datIn=[] )
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% COMMON INIT.
 	%
 	commondefs;
-	thisFile = "getSOmegaMin";
+	thisFile = "minScan";
 	startTime = time();
 	retCode = RETCODE__NOT_SET;
 	%
@@ -120,7 +120,7 @@ function [ sOmegaMin, retCode, datOut ] = getSOmegaMin( ...
 		%
 		[ omegaMin, nOmegaMin ] = min( omegaVals );
 		omegaLocalMax = max( omegaVals );
-		sOmegaMin = sVals(nOmegaMin);
+		sOfMin = sVals(nOmegaMin);
 		%
 		numIter++;
 		%
@@ -130,7 +130,7 @@ function [ sOmegaMin, retCode, datOut ] = getSOmegaMin( ...
 			  "  %4d  %6.2f  %15.12f  %15.12f  %15.12f  %19.12e", ...
 			   numIter, ...
 			   time()-startTime, ...
-			   sLo, sOmegaMin, sHi, ...
+			   sLo, sOfMin, sHi, ...
 			   omegaMin )  );
 			reportTimePrev = time();
 		end
@@ -182,4 +182,4 @@ return;
 end
 
 %!test
-%!	test_getSOmegaMin;
+%!	test_minScan;
