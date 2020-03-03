@@ -9,7 +9,7 @@ function [ sOmegaMin, retCode, datOut ] = getSOmegaMin( ...
 	startTime = time();
 	retCode = RETCODE__NOT_SET;
 	%
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__NOTIFY );
 	reportInterval = mygetfield( prm, "reportInterval", 0.0 );
 	assert( isrealscalar(verbLev) );
 	assert( isrealscalar(reportInterval) );
@@ -30,8 +30,8 @@ function [ sOmegaMin, retCode, datOut ] = getSOmegaMin( ...
 	numPts1 = mygetfield( prm, "numPts1", 201 );
 	numPtsX = mygetfield( prm, "numPtsX", 21 );
 	numIterLimit = mygetfield( prm, "numIterLimit", 10 );
-	sTol = mygetfield( prm, "sTol", 1.0E-8 );
-	omegaVarTol = mygetfield( prm, "omegaVarTol", 1.0E-4 );
+	sTol = mygetfield( prm, "sTol", eps^0.5 );
+	omegaRelTol = mygetfield( prm, "omegaRelTol", eps^0.5 );
 	omegaTol = mygetfield( prm, "omegaTol", eps^1.5 );
 	assert( isrealscalar(sLo) );
 	assert( isrealscalar(sHi) );
@@ -39,7 +39,7 @@ function [ sOmegaMin, retCode, datOut ] = getSOmegaMin( ...
 	assert( isrealscalar(numPtsX) );
 	assert( isrealscalar(numIterLimit) );
 	assert( isrealscalar(sTol) );
-	assert( isrealscalar(omegaVarTol) );
+	assert( isrealscalar(omegaRelTol) );
 	assert( sLo < sHi );
 	assert( 4 <= numPts1 );
 	assert( 4 <= numPtsX );
@@ -54,6 +54,10 @@ function [ sOmegaMin, retCode, datOut ] = getSOmegaMin( ...
 	funchFSupportsMultiArg = mygetfield( prm, "funchFSupportsMultiArg", true );
 	funchOmegaSupportsMultiArg = mygetfield( prm, "funchOmegaSupportsMultiArg", true );
 	%
+	omega0 = funchOmegaOfF( vecF0 );
+	assert( isrealscalar(omega0) );
+	msg_progress( verbLev, thisFile, __LINE__, sprintf( "  omega0 = %g", omega0 ) );
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% PREP WORK.
 	%
@@ -65,7 +69,6 @@ function [ sOmegaMin, retCode, datOut ] = getSOmegaMin( ...
 		else
 			numPtsDesired = numPtsX;
 		end
-		%echo__sRange = [ sLo, sHi ]
 		sVals = linspace( sLo, sHi, numPtsDesired );
 		numPts = size(sVals,2);
 		%
@@ -104,18 +107,47 @@ function [ sOmegaMin, retCode, datOut ] = getSOmegaMin( ...
 		sOmegaMin = sVals(nOmegaMin);
 		%
 		numIter++;
+		%
+		if ( 0.0 <= reportInterval )
+		if ( time() > reportTimePrev + reportInterval )
+			msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
+			  "  %4d  %6.2f  %15.12f  %15.12f  %15.12f  %19.12e", ...
+			   numIter, ...
+			   time()-startTime, ...
+			   sLo, sOmegaMin, sHi, ...
+			   omegaMin )  );
+			reportTimePrev = time();
+		end
+		end
+		%
 		if ( omegaMin <= omegaTol )
 			retCode = RETCODE__SUCCESS;
+			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
+			  "Converged to absolute omega tolerance (%g <= %g). %s", ...
+			  omegaMin, omegaTol, retcode2str(retCode) ) );
 			break;
-		elseif ( (omegaLocalMax-omegaMin) <= omegaVarTol )
+		elseif ( (omegaLocalMax-omegaMin) <= omegaRelTol*(omega0-omegaMin) )
 			retCode = RETCODE__SUCCESS;
+			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
+			  "Converged to relative omega tolerance ( %g <= %g * ( %g - %g ) ). %s", ...
+			 omegaLocalMax - omegaMin, ...
+			 omegaRelTol, ...
+			 omega0, ...
+			 omegaMin, ...
+			 retcode2str(retCode) ) );
 			break;
 		elseif (abs(sHi-sLo)<=sTol)
 			retCode = RETCODE__IMPOSED_STOP;
 			% Arguably __SUCCESS or __ALGORITHM_BREAKDOWN.
+			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
+			  "Reached step size interval tolerance ( abs(%g - %g) <= %g).", ...
+			  sHi, sLo, sTol ) );
 			break;
 		elseif (numIter>=numIterLimit)
 			retCode = RETCODE__IMPOSED_STOP;
+			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
+			  "Reached limit on number of iterations (%d >= %d).", ...
+			  numIter, numIterLimit ) );
 			break;
 		else
 			if (1==nOmegaMin)
