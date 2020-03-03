@@ -116,7 +116,7 @@ function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
 		minScanPrm.numPts1 = 201;
 		s_levenbergScl_omegaMin = minScan( ...
 		  funchF, vecX0, funchDelta_levenbergScl, minScanPrm );
-		vecDelta_levenbergScl_omegaMin = funchDelta_levenberg(s_levenbergScl_omegaMin);
+		vecDelta_levenbergScl_omegaMin = funchDelta_levenbergScl(s_levenbergScl_omegaMin);
 		clear minScanPrm;
 		clear matL0;
 		clear matA0;
@@ -143,8 +143,9 @@ function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
 		minScanPrm.numPts1 = 201;
 		s_gradCurve_omegaMin = minScan( ...
 		  funchF, vecX0, funchDelta_gradCurve, minScanPrm );
-		vecDelta_gradCurve_omegaMin = funchDelta_levenberg(s_gradCurve_omegaMin);
+		vecDelta_gradCurve_omegaMin = funchDelta_gradCurve(s_gradCurve_omegaMin);
 		clear matSigma;
+		clear lambdaMin;
 		clear vecPsiTN;
 		clear matLambda;
 		clear matPsi;
@@ -156,10 +157,34 @@ function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
 	%
 	%
 	if (considerGradCurve&&considerScl)
-		%assert(0);
-		funcDelta_gradCirveScl = [];
-		s_gradCurveScl_omegaMin = -1.0;
-		vecDelta_gradCurveScl_omegaMin = [];
+		matD0InvSqrt = diag(1./sqrt(vecDiagH0));
+		matH0Scl = matD0InvSqrt * matH0 * matD0InvSqrt;
+		vecG0Scl = matD0InvSqrt * vecG0;
+		[ matPsi, matLambda ] = eig( matH0Scl );
+		assert( sum(sum(abs(((matPsi')*matPsi)-matI0))) < 10.0*(sizeX^3)*(eps^0.75) );
+		assert( sum(sum(abs((matPsi*(matPsi'))-matI0))) < 10.0*(sizeX^3)*(eps^0.75) );
+		% Is (sizeX^3) correct?
+		vecPsiTN = matPsi'*(matH0Scl\vecG0Scl);
+		vecDiagLambda = diag(matLambda);
+		lambdaMin = min(vecDiagLambda);
+		matSigma = diag( vecDiagLambda / lambdaMin );
+		funchDelta_gradCurveScl = @(s)( ...
+		  matPsi*( vecPsiTN - (diag(s.^diag(matSigma))*vecPsiTN) ) );
+		minScanPrm.funchDeltaSupportsMultiArg = false;
+		% But, could probably modify to make funchDeltaSupportsMultiArg true.
+		minScanPrm.numPts1 = 201;
+		s_gradCurveScl_omegaMin = minScan( ...
+		  funchF, vecX0, funchDelta_gradCurveScl, minScanPrm );
+		vecDelta_gradCurveScl_omegaMin = funchDelta_gradCurveScl(s_gradCurveScl_omegaMin);
+		clear matSigma;
+		clear lambdaMin;
+		clear vecDiagLambda;
+		clear vecPsiTN;
+		clear matLambda;
+		clear matPsi;
+		clear vecG0Scl;
+		clear matH0Scl;
+		clear matD0InvSqrt;
 	else
 		funcDelta_gradCirveScl = [];
 		s_gradCurveScl_omegaMin = -1.0;
