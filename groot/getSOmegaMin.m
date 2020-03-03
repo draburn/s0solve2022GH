@@ -30,11 +30,16 @@ function [ sOmegaMin, retCode, datOut ] = getSOmegaMin( ...
 	numPts1 = mygetfield( prm, "numPts1", 201 );
 	numPtsX = mygetfield( prm, "numPtsX", 21 );
 	numIterLimit = mygetfield( prm, "numIterLimit", 10 );
+	sTol = mygetfield( prm, "sTol", 1.0E-8 );
+	omegaVarTol = mygetfield( prm, "omegaVarTol", 1.0E-4 );
+	omegaTol = mygetfield( prm, "omegaTol", eps^1.5 );
 	assert( isrealscalar(sLo) );
 	assert( isrealscalar(sHi) );
 	assert( isrealscalar(numPts1) );
 	assert( isrealscalar(numPtsX) );
 	assert( isrealscalar(numIterLimit) );
+	assert( isrealscalar(sTol) );
+	assert( isrealscalar(omegaVarTol) );
 	assert( sLo < sHi );
 	assert( 4 <= numPts1 );
 	assert( 4 <= numPtsX );
@@ -53,15 +58,14 @@ function [ sOmegaMin, retCode, datOut ] = getSOmegaMin( ...
 	% PREP WORK.
 	%
 	%
-	doMainLoop = true;
 	numIter = 0;
-	while (doMainLoop)
+	while (true)
 		if (0==numIter)
 			numPtsDesired = numPts1;
 		else
 			numPtsDesired = numPtsX;
 		end
-		echo__sRange = [ sLo, sHi ]
+		%echo__sRange = [ sLo, sHi ]
 		sVals = linspace( sLo, sHi, numPtsDesired );
 		numPts = size(sVals,2);
 		%
@@ -96,11 +100,23 @@ function [ sOmegaMin, retCode, datOut ] = getSOmegaMin( ...
 		assert( isrealarray(omegaVals,[1,numPts]) );
 		%
 		[ omegaMin, nOmegaMin ] = min( omegaVals );
+		omegaLocalMax = max( omegaVals );
 		sOmegaMin = sVals(nOmegaMin);
 		%
 		numIter++;
-		if (numIter>=numIterLimit)
-			doMainLoop = false;
+		if ( omegaMin <= omegaTol )
+			retCode = RETCODE__SUCCESS;
+			break;
+		elseif ( (omegaLocalMax-omegaMin) <= omegaVarTol )
+			retCode = RETCODE__SUCCESS;
+			break;
+		elseif (abs(sHi-sLo)<=sTol)
+			retCode = RETCODE__IMPOSED_STOP;
+			% Arguably __SUCCESS or __ALGORITHM_BREAKDOWN.
+			break;
+		elseif (numIter>=numIterLimit)
+			retCode = RETCODE__IMPOSED_STOP;
+			break;
 		else
 			if (1==nOmegaMin)
 				sHi = sVals(3);
@@ -113,7 +129,6 @@ function [ sOmegaMin, retCode, datOut ] = getSOmegaMin( ...
 		end
 	end
 	%
-	sOmegaMin = [];
 	datOut = [];
 return;
 end
