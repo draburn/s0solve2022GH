@@ -137,7 +137,7 @@ function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
 		lambdaMin = min(diag(matLambda));
 		matSigma = matLambda / lambdaMin;
 		funchDelta_gradCurve = @(s)( ...
-		  matPsi * ( vecPsiTN - (diag(s.^diag(matSigma))*vecPsiTN) ) );
+		  matPsi * ( vecPsiTN - (diag((1.0-s).^diag(matSigma))*vecPsiTN) ) );
 		minScanPrm.funchDeltaSupportsMultiArg = false;
 		% But, could probably modify to make funchDeltaSupportsMultiArg true.
 		minScanPrm.numPts1 = 201;
@@ -164,12 +164,13 @@ function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
 		assert( sum(sum(abs(((matPsi')*matPsi)-matI0))) < 10.0*(sizeX^3)*(eps^0.75) );
 		assert( sum(sum(abs((matPsi*(matPsi'))-matI0))) < 10.0*(sizeX^3)*(eps^0.75) );
 		% Is (sizeX^3) correct?
-		vecPsiTN = matPsi'*(matH0Scl\vecG0Scl);
+		vecPsiTN = -matPsi'*(matH0Scl\vecG0Scl);
 		vecDiagLambda = diag(matLambda);
 		lambdaMin = min(vecDiagLambda);
+		assert( 0.0 < lambdaMin );
 		matSigma = diag( vecDiagLambda / lambdaMin );
 		funchDelta_gradCurveScl = @(s)( ...
-		  matPsi*( vecPsiTN - (diag(s.^diag(matSigma))*vecPsiTN) ) );
+		  matPsi*( vecPsiTN - (diag((1.0-s).^diag(matSigma))*vecPsiTN) ) );
 		minScanPrm.funchDeltaSupportsMultiArg = false;
 		% But, could probably modify to make funchDeltaSupportsMultiArg true.
 		minScanPrm.numPts1 = 201;

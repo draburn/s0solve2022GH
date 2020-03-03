@@ -3,12 +3,13 @@ commondefs;
 thisFile = "test_studyPt";
 tic();
 %
-sizeX = 250;
+%sizeX = 250;
 %sizeX = 100;
+sizeX = 2;
 sizeF = sizeX;
-%seedPrm = demoFunc0101_genSeedPrm("lin-easy");
+seedPrm = demoFunc0101_genSeedPrm("lin-easy");
 %seedPrm = demoFunc0101_genSeedPrm("easy");
-seedPrm = demoFunc0101_genSeedPrm("moderate");
+%seedPrm = demoFunc0101_genSeedPrm("moderate");
 seedPrm.sizeX = sizeX;
 seedPrm.sizeF = sizeF;
 funcPrm = demoFunc0101_genFuncPrm(seedPrm);
