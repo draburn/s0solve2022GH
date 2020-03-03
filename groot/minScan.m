@@ -124,6 +124,8 @@ function [ sOfMin, retCode, datOut ] = minScan( ...
 		[ omegaMin, nOmegaMin ] = min( omegaVals );
 		omegaLocalMax = max( omegaVals );
 		sOfMin = sVals(nOmegaMin);
+		vecDeltaOfMin = matDelta(:,nOmegaMin);
+		vecFOfMin = matF(:,nOmegaMin);
 		%
 		numIter++;
 		%
@@ -180,7 +182,10 @@ function [ sOfMin, retCode, datOut ] = minScan( ...
 		end
 	end
 	%
-	datOut = [];
+	datOut.sOfMin = sOfMin;
+	datOut.vecDeltaOfMin = vecDeltaOfMin;
+	datOut.vecFOfMin = vecFOfMin;
+	datOut.omegaMin = omegaMin;
 return;
 end
 
