@@ -41,11 +41,13 @@ function [ sOmegaMin, retCode, datOut ] = getSOmegaMin( ...
 	assert( 1 <= numIterLimit );
 	%
 	funchOmegaOfF_default = @(f)( 0.5*sum(f.^2,1) );
-	funchNormOfDelta_default = @(delta)( sqrt(sum(delta.^2,1)) );
 	funchOmegaOfF = mygetfield( prm, "funchOmegaOfF", funchOmegaOfF_default );
-	funchNormOfDelta = mygetfield( prm, "funchOmegaOfF", funchNormOfDelta_default );
+	%funchNormOfDelta_default = @(delta)( sqrt(sum(delta.^2,1)) );
+	%funchNormOfDelta = mygetfield( prm, "funchOmegaOfF", funchNormOfDelta_default );
 	%
 	funchDeltaSupportsMultiArg = mygetfield( prm, "funchDeltaSupportsMultiArg", false );
+	funchFSupportsMultiArg = mygetfield( prm, "funchFSupportsMultiArg", true );
+	funchOmegaSupportsMultiArg = mygetfield( prm, "funchOmegaSupportsMultiArg", true );
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% PREP WORK.
@@ -53,26 +55,61 @@ function [ sOmegaMin, retCode, datOut ] = getSOmegaMin( ...
 	%
 	doMainLoop = true;
 	numIter = 0;
-	numPtsDesired = numPts1;
 	while (doMainLoop)
+		if (0==numIter)
+			numPtsDesired = numPts1;
+		else
+			numPtsDesired = numPtsX;
+		end
+		echo__sRange = [ sLo, sHi ]
 		sVals = linspace( sLo, sHi, numPtsDesired );
 		numPts = size(sVals,2);
+		%
 		if (funchDeltaSupportsMultiArg)
 			matDelta = funchDeltaOfS(sVals);
 		else
 			clear matDelta;
-			for n=1:numPts1
+			for n=1:numPts
 				matDelta(:,n) = funchDeltaOfS(sVals(n));
 			end
 		end
 		assert( isrealarray(matDelta,[sizeX,numPts]) );
 		%
-		normVals = funchNormOfDelta(matDelta);
-		assert( isrealarray(normVals,[1,numPts]) );
+		if (funchFSupportsMultiArg)
+			matF = funchFOfX( repmat(vecX0,[1,numPts]) + matDelta );
+		else
+			clear matF;
+			for n=1:numPts
+				matF(:,n) = funchFOfX( vecX0 + matDelta(:,n) );
+			end
+		end
+		assert( isrealarray(matF,[sizeF,numPts]) );
+		%
+		if (funchOmegaSupportsMultiArg)
+			omegaVals = funchOmegaOfF( matF );
+		else
+			clear omegaVals;
+			for n=1:numPts
+				omegaVals(n) = funchOmegaOfF( matF(:,n) );
+			end
+		end
+		assert( isrealarray(omegaVals,[1,numPts]) );
+		%
+		[ omegaMin, nOmegaMin ] = min( omegaVals );
+		sOmegaMin = sVals(nOmegaMin);
 		%
 		numIter++;
 		if (numIter>=numIterLimit)
 			doMainLoop = false;
+		else
+			if (1==nOmegaMin)
+				sHi = sVals(3);
+			elseif (numPts==nOmegaMin)
+				sLo = sVals(numPts-2);
+			else
+				sLo = sVals(nOmegaMin-1);
+				sHi = sVals(nOmegaMin+1);
+			end
 		end
 	end
 	%
