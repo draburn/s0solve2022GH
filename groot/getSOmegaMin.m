@@ -1,3 +1,19 @@
+%  Function...
+%    [ sOmegaMin, retCode, datOut ] = getSOmegaMin( ...
+%      funchFOfX, vecX0, funchDeltaOfS, prm=[], datIn=[] )
+%  Overview...
+%    Tries to find the value of s which minimizes the norm of F( vecX0 + delta(s) ).
+%  Input values...
+%    funchFOfX: A function handle from R^sizeX -> R^sizeF.
+%    vecX0: A vector in R^sizeX.
+%    funchDeltaOfS: A function handle from [0.0,1.0] -> R^sizeX.
+%    prm: Structure of optional parameters.
+%    datIn: Structure of additional input data.
+%  Output values...
+%    sOmegaMin: The value of s in [0.0,1.0] which minimizes the norm.
+%    retCode: A common return code, RETCODE__SUCCESS (0) on success.
+%    datOut: Additional output data.
+%  See source code for more information on prm, datIn, and datOut.
 function [ sOmegaMin, retCode, datOut ] = getSOmegaMin( ...
   funchFOfX, vecX0, funchDeltaOfS, prm=[], datIn=[] )
 	%
