@@ -83,7 +83,7 @@ function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
 		clear vecTemp;
 	else
 		vecDelta_gradDirScl = [];
-		funcDelta_gradDirScl = [];
+		funcDelta_gradDirScl = -1.0;
 		s_gradDirScl_omegaMin = [];
 		vecDelta_gradDirScl_omegaMin = [];
 	end
@@ -94,6 +94,8 @@ function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
 	matL0 = mu0 * matI0;
 	funchDelta_levenberg = @(s)( -s * (( matA0 - (s*matL0))\vecG0) );
 	minScanPrm.funchDeltaSupportsMultiArg = false;
+	% But, could probably modify to make funchDeltaSupportsMultiArg true,
+	% assuming we perform eig().
 	minScanPrm.numPts1 = 201;
 	s_levenberg_omegaMin = minScan( ...
 	  funchF, vecX0, funchDelta_levenberg, minScanPrm );
@@ -109,6 +111,8 @@ function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
 		matL0 = matD0;
 		funchDelta_levenbergScl = @(s)( -s * (( matA0 - (s*matL0))\vecG0) );
 		minScanPrm.funchDeltaSupportsMultiArg = false;
+		% But, could probably modify to make funchDeltaSupportsMultiArg true,
+		% assuming we perform eig().
 		minScanPrm.numPts1 = 201;
 		s_levenbergScl_omegaMin = minScan( ...
 		  funchF, vecX0, funchDelta_levenbergScl, minScanPrm );
@@ -119,22 +123,47 @@ function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
 		clear mu0;
 	else
 		funchDelta_levenbergScl = [];
-		s_levenbergScl_omegaMin = [];
+		s_levenbergScl_omegaMin = -1.0;
 		vecDelta_levenbergScl_omegaMin = [];
 	end
 	%
 	%
-	%
 	if (considerGradCurve)
-		%funchDeltaGradCurve = @(s)( ... );
-		%vecXGradCurveLin = vecXNewtonLin;  % FWIW;
+		[ matPsi, matLambda ] = eig( matH0 );
+		assert( sum(sum(abs(((matPsi')*matPsi)-matI0))) < 10.0*(sizeX^3)*(eps^0.75) );
+		assert( sum(sum(abs((matPsi*(matPsi'))-matI0))) < 10.0*(sizeX^3)*(eps^0.75) );
+		% Is (sizeX^3) correct?
+		vecPsiTN = matPsi'*(-matH0\vecG0);
+		lambdaMin = min(diag(matLambda));
+		matSigma = matLambda / lambdaMin;
+		funchDelta_gradCurve = @(s)( ...
+		  matPsi * ( vecPsiTN - (diag(s.^diag(matSigma))*vecPsiTN) ) );
+		minScanPrm.funchDeltaSupportsMultiArg = false;
+		% But, could probably modify to make funchDeltaSupportsMultiArg true.
+		minScanPrm.numPts1 = 201;
+		s_gradCurve_omegaMin = minScan( ...
+		  funchF, vecX0, funchDelta_gradCurve, minScanPrm );
+		vecDelta_gradCurve_omegaMin = funchDelta_levenberg(s_gradCurve_omegaMin);
+		clear matSigma;
+		clear vecPsiTN;
+		clear matLambda;
+		clear matPsi;
+	else
+		funchDelta_gradCurve = [];
+		s_gradCurve_omgeaMin = -1.0;
+		vecDelta_gradCurve_omegaMin = [];
 	end
 	%
 	%
-	%
 	if (considerGradCurve&&considerScl)
-		%funchDeltaGradCurveScl = @(s)( ... );
-		%vecXGradCurveSclLin = vecXNewtonLin; % FWIW;
+		%assert(0);
+		funcDelta_gradCirveScl = [];
+		s_gradCurveScl_omegaMin = -1.0;
+		vecDelta_gradCurveScl_omegaMin = [];
+	else
+		funcDelta_gradCirveScl = [];
+		s_gradCurveScl_omegaMin = -1.0;
+		vecDelta_gradCurveScl_omegaMin = [];
 	end
 	%
 	%
@@ -174,24 +203,38 @@ function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
 	datOut.vecDelta_levenbergScl_omegaMin = vecDelta_levenbergScl_omegaMin;
 	datOut.vecDelta_gradDir_omegaMin = vecDelta_gradDir_omegaMin;
 	datOut.vecDelta_gradDirScl_omegaMin = vecDelta_gradDirScl_omegaMin;
-	%datOut.vecDelta_gradCurve_omegaMin = vecDelta_gradCurve_omegaMin;
-	%datOut.vecDelta_gradCurveScl_omegaMin = vecDelta_gradCurveScl_omegaMin;
+	datOut.vecDelta_gradCurve_omegaMin = vecDelta_gradCurve_omegaMin;
+	datOut.vecDelta_gradCurveScl_omegaMin = vecDelta_gradCurveScl_omegaMin;
 	%
 	datOut.s_newton_omegaMin = s_newton_omegaMin;
 	datOut.s_levenberg_omegaMin = s_levenberg_omegaMin;
 	datOut.s_levenbergScl_omegaMin = s_levenbergScl_omegaMin;
 	datOut.s_gradDir_omegaMin = s_gradDir_omegaMin;
 	datOut.s_gradDirScl_omegaMin = s_gradDirScl_omegaMin;
-	%datOut.s_gradCurve_omegaMin = s_gradCurve_omegaMin;
-	%datOut.s_gradCurveScl_omegaMin = s_gradCurveScl_omegaMin;
+	datOut.s_gradCurve_omegaMin = s_gradCurve_omegaMin;
+	datOut.s_gradCurveScl_omegaMin = s_gradCurveScl_omegaMin;
 	%
 	msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
-	 "S values: %g, %g, %g, %g, %g.", ...
+	 "Norm delta values: %g, %g, %g; %g, %g, %g, %g, %g, %g, %g.", ...
+	 norm(vecDelta_newton), ...
+	 norm(vecDelta_gradDir), ...
+	 norm(vecDelta_gradDirScl), ...
+	 norm(vecDelta_newton_omegaMin), ...
+	 norm(vecDelta_gradDir_omegaMin), ...
+	 norm(vecDelta_gradDirScl_omegaMin), ...
+	 norm(vecDelta_levenberg_omegaMin), ...
+	 norm(vecDelta_levenbergScl_omegaMin), ...
+	 norm(vecDelta_gradCurve_omegaMin), ...
+	 norm(vecDelta_gradCurveScl_omegaMin) ));
+	msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
+	 "S values: %g, %g, %g, %g, %g, %g, %g.", ...
 	 s_newton_omegaMin, ...
+	 s_gradDir_omegaMin, ...
+	 s_gradDirScl_omegaMin, ...
 	 s_levenberg_omegaMin, ...
 	 s_levenbergScl_omegaMin, ...
-	 s_gradDir_omegaMin, ...
-	 s_gradDirScl_omegaMin ));
+	 s_gradCurve_omegaMin, ...
+	 s_gradCurveScl_omegaMin ));
 	%
 return;
 end
