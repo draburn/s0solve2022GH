@@ -1,4 +1,4 @@
-function [ vecXSuggested, retCode, datOut ] = studyPt( ...
+function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
   funchF, vecX0, prm=[], datIn=[] )
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -28,7 +28,6 @@ function [ vecXSuggested, retCode, datOut ] = studyPt( ...
 	matJ0 = funchJ(vecX0);
 	assert( isrealarray(matJ0,[sizeF,sizeX]) );
 	%
-	considerPicard = mygetfield( prm, "considerPicard", true );
 	considerScl = mygetfield( prm, "considerScl", true );
 	considerGradCurve = mygetfield( prm, "considerGradCurve", true );
 	%
@@ -37,70 +36,56 @@ function [ vecXSuggested, retCode, datOut ] = studyPt( ...
 	%
 	vecG0 = matJ0'*vecF0;
 	matH0 = matJ0'*matJ0;
-	vecD0 = diag(matH0);
-	matD0 = diag(vecD0);
+	vecDiagH0 = diag(matH0);
+	matD0 = diag(vecDiagH0);
 	matI0 = eye(sizeX,sizeX);
-	matXF = eye(sizeF,sizeX);
 	%
 	%
-	%
-	vecDeltaNewton = -( matH0 \ vecG0 );
-	vecXNewtonLin  = vecX0 + vecDeltaNewton;
-	%vecDeltaNewtonScl = vecDeltaNewton; % FWIW
-	%vecXNewtonSclLin  = vecXNewtonLin; % FWIW;
-	%
-	%vecXNewtonOmega = ...
-	%
+	vecDelta_newton = -( matH0 \ vecG0 );
+	funchDelta_newton = @(s)( vecDelta_newton * s );
+	minScanPrm.numPts1 = 21;
+	minScanPrm.funchDeltaSupportsMultiArg = true;
+	s_newton_omegaMin = minScan( ...
+	  funchF, vecX0, funchDelta_newton, minScanPrm );
+	vecDelta_newton_omegaMin = funchDelta_newton(s_newton_omegaMin);
+	clear minScanPrm;
 	%
 	%
 	vecTemp = -vecG0;
 	fTemp = vecTemp' * matH0 * vecTemp;
 	assert( 0.0 < fTemp );
-	vecDeltaGradDir = vecTemp * (-(vecTemp'*vecG0)/fTemp);
-	vecXGradDirLin = vecX0 + vecDeltaGradDir;
-	%
-	%
-	%
-	datOut.vecDeltaGradDir = vecDeltaGradDir;
-	datOut.vecXGradDirLin = vecXGradDirLin;
-	%
+	vecDelta_gradDir = vecTemp * (-(vecTemp'*vecG0)/fTemp);
+	funchDelta_gradDir = @(s)( vecDelta_gradDir * s );
+	minScanPrm.numPts1 = 21;
+	minScanPrm.funchDeltaSupportsMultiArg = true;
+	s_gradDir_omegaMin = minScan( ...
+	  funchF, vecX0, funchDelta_gradDir, minScanPrm );
+	vecDelta_gradDir_omegaMin = funchDelta_gradDir(s_gradDir_omegaMin);
+	clear minScanPrm;
+	clear fTemp;
+	clear vecTemp;
 	%
 	%
 	if (considerScl)
 		vecTemp = -( matD0 \ vecG0 );
 		fTemp = vecTemp' * matH0 * vecTemp;
 		assert( 0.0 < fTemp );
-		vecDeltaGradDirScl = vecTemp * (-(vecTemp'*vecG0)/fTemp);
-		vecXGradDirSclLin = vecX0 + vecDeltaGradDirScl;
-		%
-		datOut.vecDeltaGradDirScl = vecDeltaGradDirScl;
-		datOut.vecXGradDirSclLin = vecXGradDirSclLin;
+		vecDelta_gradDirScl = vecTemp * (-(vecTemp'*vecG0)/fTemp);
+		funchDelta_gradDirScl = @(s)( vecDelta_gradDirScl * s );
+		minScanPrm.numPts1 = 21;
+		minScanPrm.funchDeltaSupportsMultiArg = true;
+		s_gradDirScl_omegaMin = minScan( ...
+		  funchF, vecX0, funchDelta_gradDirScl, minScanPrm );
+		vecDelta_gradDirScl_omegaMin = funchDelta_gradDirScl(s_gradDirScl_omegaMin);
+		clear minScanPrm
+		clear fTemp;
+		clear vecTemp;
+	else
+		vecDelta_gradDirScl = [];
+		funcDelta_gradDirScl = [];
+		s_gradDirScl_omegaMin = [];
+		vecDelta_gradDirScl_omegaMin = [];
 	end
-	%
-	if (considerPicard)
-		vecTemp = -( matXF * vecF0 );
-		fTemp = vecTemp' * matH0 * vecTemp;
-		assert( 0.0 < fTemp );
-		vecDeltaPicard = vecTemp * (-(vecTemp'*vecG0)/fTemp);
-		vecXPicardLin  = vecX0 + vecDeltaPicard;
-		%
-		datOut.vecDeltaPicard = vecDeltaPicard;
-		datOut.vecXPicardLin = vecXPicardLin;
-	end
-	%
-	if (considerPicard&&considerScl)
-		vecTemp = -( matD0 \ (matXF * vecF0) );
-		fTemp = vecTemp' * matH0 * vecTemp;
-		assert( 0.0 < fTemp );
-		vecDeltaPicardScl = vecTemp * (-(vecTemp'*vecG0)/fTemp);
-		vecXPicardSclLin  = vecX0 + vecDeltaPicardScl;
-		%
-		datOut.vecDeltaPicardScl = vecDeltaPicardScl;
-		datOut.vecXPicardSclLin = vecXPicardSclLin;
-	end
-	%
-	clear fTemp;
-	clear vecTemp;
 	%
 	%
 	%
@@ -137,14 +122,6 @@ function [ vecXSuggested, retCode, datOut ] = studyPt( ...
 		%vecXGradDirSclOmega = ...
 	end
 	%
-	if (considerPicard)
-		%vecXPicardOmega = ...
-	end
-	%
-	if (considerPicard&&considerScl)
-		%vecXPicardSclOmega = ...
-	end
-	%
 	%vecXLevenbergOmega = ...
 	%
 	if (considerScl)
@@ -160,12 +137,12 @@ function [ vecXSuggested, retCode, datOut ] = studyPt( ...
 	end
 	%
 	%
-	vecXSuggested = vecXNewtonLin;
+	vecDelta_suggested = vecDelta_newton_omegaMin;
 	%
 	%
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% COPY TO DATOUT.
+	% POPULATE DATOUT.
 	%
 	datOut.funchF = funchF;
 	datOut.vecX0 = vecX0;
@@ -180,32 +157,34 @@ function [ vecXSuggested, retCode, datOut ] = studyPt( ...
 	datOut.vecF0 = vecF0;
 	datOut.matJ0 = matJ0;
 	%
-	datOut.considerPicard = considerPicard;
 	datOut.considerScl = considerScl;
 	datOut.considerGradCurve = considerGradCurve;
 	%
 	datOut.vecG0 = vecG0;
 	datOut.matH0 = matH0;
-	datOut.vecD0 = vecD0;
+	datOut.vecDiagH0 = vecDiagH0;
 	datOut.matD0 = matD0;
 	datOut.matI0 = matI0;
-	datOut.matXF = matXF;
 	%
-	datOut.vecDeltaNewton = vecDeltaNewton;
-	datOut.vecDeltaGradDir = vecDeltaGradDir;
-	datOut.vecDeltaGradDirScl = vecDeltaGradDirScl;
-	datOut.vecDeltaPicard = vecDeltaPicard;
-	datOut.vecDeltaPicardScl = vecDeltaPicardScl;
+	datOut.vecDelta_newton = vecDelta_newton;
+	datOut.vecDelta_gradDir = vecDelta_gradDir;
+	datOut.vecDelta_gradDirScl = vecDelta_gradDirScl;
 	%
-	datOut.vecDeltaNewtonOmegaMin = vecDeltaNewtonOmegaMin;
-	datOut.vecDeltaGradDirOmegaMin = vecDeltaGradDirOmegaMin;
-	datOut.vecDeltaGradDirSclOmegaMin = vecDeltaGradDirSclOmegaMin;
-	datOut.vecDeltaLevOmegaMin = vecDeltaLevSclOmegaMin;
-	datOut.vecDeltaLevSclOmegaMin = vecDeltaLevSclOmegaMin;
-	datOut.vecDeltaGradCurveOmegaMin = vecDeltaGradCurveSclOmegaMin;
-	datOut.vecDeltaGradCurveSclOmegaMin = vecDeltaGradCurveSclOmegaMin;
-	datOut.vecDeltaPicardOmegaMin = vecDeltaPicardOmegaMin;
-	datOut.vecDeltaPicardSclOmegaMin = vecDeltaPicardSclOmegaMin;
+	datOut.vecDelta_newton_omegaMin = vecDelta_newton_omegaMin;
+	%datOut.vecDelta_levenberg_omegaMin = vecDelta_levenberg_omegaMin;
+	%datOut.vecDelta_levenbergScl_omegaMin = vecDelta_levenbergScl_omegaMin;
+	datOut.vecDelta_gradDir_omegaMin = vecDelta_gradDir_omegaMin;
+	datOut.vecDelta_gradDirScl_omegaMin = vecDelta_gradDirScl_omegaMin;
+	%datOut.vecDelta_gradCurve_omegaMin = vecDelta_gradCurve_omegaMin;
+	%datOut.vecDelta_gradCurveScl_omegaMin = vecDelta_gradCurveScl_omegaMin;
+	%
+	datOut.s_newton_omegaMin = s_newton_omegaMin;
+	%datOut.s_levenberg_omegaMin = s_levenberg_omegaMin;
+	%datOut.s_levenbergScl_omegaMin = s_levenbergScl_omegaMin;
+	datOut.s_gradDir_omegaMin = s_gradDir_omegaMin;
+	datOut.s_gradDirScl_omegaMin = s_gradDirScl_omegaMin;
+	%datOut.s_gradCurve_omegaMin = s_gradCurve_omegaMin;
+	%datOut.s_gradCurveScl_omegaMin = s_gradCurveScl_omegaMin;
 return;
 end
 

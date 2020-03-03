@@ -3,6 +3,9 @@
 %      funchFOfX, vecX0, funchDeltaOfS, prm=[], datIn=[] )
 %  Overview...
 %    Tries to find the value of s which minimizes the norm of F( vecX0 + delta(s) ).
+%    This function uses a brute-force "scan" method.
+%    Faster methods exists, but this method is simple, robust,
+%     and perhaps more accurate.
 %  Input values...
 %    funchFOfX: A function handle from R^sizeX -> R^sizeF.
 %    vecX0: A vector in R^sizeX.
