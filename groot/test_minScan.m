@@ -1,6 +1,8 @@
 clear;
 commondefs;
 thisFile = "test_minScan";
+tic();
+%
 sizeX = 250;
 %sizeX = 100;
 sizeF = sizeX;
@@ -21,3 +23,5 @@ matJ0 = funchJ(vecX0);
 vecDeltaNewton = -matJ0\vecF0;
 funchDeltaOfS = @(s)( s*vecDeltaNewton );
 [ sOfMin, retCode, datOut ] = minScan( funchF, vecX0, funchDeltaOfS, prm );
+%
+toc();

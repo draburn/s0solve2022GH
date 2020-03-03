@@ -37,14 +37,15 @@ function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
 	vecG0 = matJ0'*vecF0;
 	matH0 = matJ0'*matJ0;
 	vecDiagH0 = diag(matH0);
+	assert( 0.0 < min(vecDiagH0) );
 	matD0 = diag(vecDiagH0);
 	matI0 = eye(sizeX,sizeX);
 	%
 	%
 	vecDelta_newton = -( matH0 \ vecG0 );
 	funchDelta_newton = @(s)( vecDelta_newton * s );
-	minScanPrm.numPts1 = 21;
 	minScanPrm.funchDeltaSupportsMultiArg = true;
+	minScanPrm.numPts1 = 21;
 	s_newton_omegaMin = minScan( ...
 	  funchF, vecX0, funchDelta_newton, minScanPrm );
 	vecDelta_newton_omegaMin = funchDelta_newton(s_newton_omegaMin);
@@ -56,8 +57,8 @@ function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
 	assert( 0.0 < fTemp );
 	vecDelta_gradDir = vecTemp * (-(vecTemp'*vecG0)/fTemp);
 	funchDelta_gradDir = @(s)( vecDelta_gradDir * s );
-	minScanPrm.numPts1 = 21;
 	minScanPrm.funchDeltaSupportsMultiArg = true;
+	minScanPrm.numPts1 = 21;
 	s_gradDir_omegaMin = minScan( ...
 	  funchF, vecX0, funchDelta_gradDir, minScanPrm );
 	vecDelta_gradDir_omegaMin = funchDelta_gradDir(s_gradDir_omegaMin);
@@ -72,8 +73,8 @@ function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
 		assert( 0.0 < fTemp );
 		vecDelta_gradDirScl = vecTemp * (-(vecTemp'*vecG0)/fTemp);
 		funchDelta_gradDirScl = @(s)( vecDelta_gradDirScl * s );
-		minScanPrm.numPts1 = 21;
 		minScanPrm.funchDeltaSupportsMultiArg = true;
+		minScanPrm.numPts1 = 21;
 		s_gradDirScl_omegaMin = minScan( ...
 		  funchF, vecX0, funchDelta_gradDirScl, minScanPrm );
 		vecDelta_gradDirScl_omegaMin = funchDelta_gradDirScl(s_gradDirScl_omegaMin);
@@ -88,6 +89,19 @@ function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
 	end
 	%
 	%
+	mu0 = max(vecDiagH0);
+	matA0 = matH0 + (mu0*matI0);
+	matL0 = (mu0*matI0);
+	funchDelta_levenberg = @(s)( -s * (( matA0 - (s*matL0))\vecG0) );
+	minScanPrm.funchDeltaSupportsMultiArg = false;
+	minScanPrm.numPts1 = 201;
+	s_levenberg_omegaMin = minScan( ...
+	  funchF, vecX0, funchDelta_levenberg, minScanPrm );
+	vecDelta_levenberg_omegaMin = funchDelta_levenberg(s_levenberg_omegaMin);
+	clear minScanPrm;
+	clear matL0;
+	clear matA0;
+	clear mu0;
 	%
 	%funchDeltaLevenberg = @(s)( -s*( matH0 + 
 	%vecXLevenbergLin = vecXNewtonLin;  % FWIW;
@@ -171,7 +185,7 @@ function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
 	datOut.vecDelta_gradDirScl = vecDelta_gradDirScl;
 	%
 	datOut.vecDelta_newton_omegaMin = vecDelta_newton_omegaMin;
-	%datOut.vecDelta_levenberg_omegaMin = vecDelta_levenberg_omegaMin;
+	datOut.vecDelta_levenberg_omegaMin = vecDelta_levenberg_omegaMin;
 	%datOut.vecDelta_levenbergScl_omegaMin = vecDelta_levenbergScl_omegaMin;
 	datOut.vecDelta_gradDir_omegaMin = vecDelta_gradDir_omegaMin;
 	datOut.vecDelta_gradDirScl_omegaMin = vecDelta_gradDirScl_omegaMin;
@@ -179,7 +193,7 @@ function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
 	%datOut.vecDelta_gradCurveScl_omegaMin = vecDelta_gradCurveScl_omegaMin;
 	%
 	datOut.s_newton_omegaMin = s_newton_omegaMin;
-	%datOut.s_levenberg_omegaMin = s_levenberg_omegaMin;
+	datOut.s_levenberg_omegaMin = s_levenberg_omegaMin;
 	%datOut.s_levenbergScl_omegaMin = s_levenbergScl_omegaMin;
 	datOut.s_gradDir_omegaMin = s_gradDir_omegaMin;
 	datOut.s_gradDirScl_omegaMin = s_gradDirScl_omegaMin;

@@ -1,12 +1,14 @@
 clear;
 commondefs;
 thisFile = "test_studyPt";
-%sizeX = 250;
-sizeX = 100;
+tic();
+%
+sizeX = 250;
+%sizeX = 100;
 sizeF = sizeX;
 %seedPrm = demoFunc0101_genSeedPrm("lin-easy");
-seedPrm = demoFunc0101_genSeedPrm("easy");
-%seedPrm = demoFunc0101_genSeedPrm("moderate");
+%seedPrm = demoFunc0101_genSeedPrm("easy");
+seedPrm = demoFunc0101_genSeedPrm("moderate");
 seedPrm.sizeX = sizeX;
 seedPrm.sizeF = sizeF;
 funcPrm = demoFunc0101_genFuncPrm(seedPrm);
@@ -18,3 +20,5 @@ funchF = @(vecXDummy)( demoFunc0101_eval( vecXDummy, funcPrm ) );
 funchJ = @(vecXDummy)( demoFunc0101_evalJaco( vecXDummy, funcPrm ) );
 studyPtPrm.funchJ = funchJ;
 [ vecXSuggested, retCode, studyPtDatOut ] = studyPt( funchF, vecX0, studyPtPrm );
+%
+toc();

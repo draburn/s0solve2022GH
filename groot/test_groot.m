@@ -1,6 +1,8 @@
 clear;
 commondefs;
 thisFile = "test_groot";
+tic();
+%
 %sizeX = 250;
 sizeX = 100;
 sizeF = sizeX;
@@ -16,3 +18,5 @@ vecF0 = demoFunc0101_eval( vecX0, funcPrm );
 funchF = @(vecXDummy)( demoFunc0101_eval( vecXDummy, funcPrm ) );
 prm.funchJ = @(vecXDummy)( demoFunc0101_evalJaco( vecXDummy, funcPrm ) );
 [ vecXEnd, retCode, grootDatOut ] = groot( funchF, vecX0, prm );
+%
+toc();
