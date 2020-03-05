@@ -1,4 +1,4 @@
-function [ vecV1, vecV2, matX, rvecD1, rvecD2 ] = spanspace( ...
+function [ vecV1, vecV2, matX, rvecD1, rvecD2, numD1Vals, numD2Vals ] = spanspace( ...
   vecX0, vecU1, vecU2, prm=[] )
 	%
 	sizeX = size(vecX0,1);
@@ -66,14 +66,13 @@ end
 
 
 %!test
+%!	tic();
 %!	sizeX = 3;
 %!	vecX0 = zeros(sizeX,1);
 %!	vecU1 = randn(sizeX,1);
 %!	vecU2 = randn(sizeX,1);
-%!	[ vecV1, vecV2, matX, rvecD1, rvecD2 ] = spanspace( vecX0, vecU1, vecU2 );
+%!	[ vecV1, vecV2, matX, rvecD1, rvecD2, numD1Vals, numD2Vals ] = spanspace( vecX0, vecU1, vecU2 );
 %!	numPts = size(matX,2);
-%!	numD1Vals = 51;
-%!	numD2Vals = 53;
 %!	assert( numD1Vals*numD2Vals == numPts );
 %!	for n=1:numPts
 %!		rvecZ(n) = sqrt(min([ ...
@@ -85,5 +84,10 @@ end
 %!	gridX = reshape( rvecD1, numD2Vals, numD1Vals );
 %!	gridY = reshape( rvecD2, numD2Vals, numD1Vals );
 %!	contour( gridX, gridY, sqrt(gridZ), 31 );
-%!	axis equal;
+%!	hold on;
+%!	plot( [ 0.0, vecV1'*vecU1 ], [ 0.0, vecV2'*vecU1 ], 'ko-' );
+%!	plot( [ 0.0, vecV1'*vecU2 ], [ 0.0, vecV2'*vecU2 ], 'kx-' );
+%!	%axis equal;
 %!	grid on;
+%!	hold off;
+%!	toc;
