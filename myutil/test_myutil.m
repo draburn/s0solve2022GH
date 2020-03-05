@@ -31,7 +31,3 @@ msg( thisFile, __LINE__, "Finished testing issize.\n" );
 msg( thisFile, __LINE__, "Testing mygetfield..." );
 test mygetfield;
 msg( thisFile, __LINE__, "Finished testing mygetfield.\n" );
-%
-msg( thisFile, __LINE__, "Testing fdjaco..." );
-test fdjaco;
-msg( thisFile, __LINE__, "Finished testing fdjaco.\n" );
