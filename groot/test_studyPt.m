@@ -10,6 +10,10 @@ sizeF = sizeX;
 %seedPrm = demoFunc0101_genSeedPrm("lin-easy");
 %seedPrm = demoFunc0101_genSeedPrm("easy");
 seedPrm = demoFunc0101_genSeedPrm("moderate");
+%randState = mod(round(time),1E6)
+%randState = 448932 % Newton better then Lev.
+randState = 448959 % All bad, but gradient least bad.
+seedPrm.randState = randState;
 seedPrm.sizeX = sizeX;
 seedPrm.sizeF = sizeF;
 funcPrm = demoFunc0101_genFuncPrm(seedPrm);
@@ -20,7 +24,7 @@ studyPtPrm = [];
 funchF = @(vecXDummy)( demoFunc0101_eval( vecXDummy, funcPrm ) );
 funchJ = @(vecXDummy)( demoFunc0101_evalJaco( vecXDummy, funcPrm ) );
 studyPtPrm.funchJ = funchJ;
-[ vecXSuggested, retCode, datOut ] = studyPt( funchF, vecX0, studyPtPrm );
+[ vecDelta_suggested, retCode, datOut ] = studyPt( funchF, vecX0, studyPtPrm );
 %
 if (1)
 	hold off;
