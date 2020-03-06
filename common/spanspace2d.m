@@ -1,4 +1,4 @@
-function [ vecV1, vecV2, matX, rvecD1, rvecD2, numD1Vals, numD2Vals ] = spanspace( ...
+function [ vecV1, vecV2, matX, rvecD1, rvecD2, numD1Vals, numD2Vals ] = spanspace2d( ...
   vecX0, vecU1, vecU2, prm=[] )
 	%
 	sizeX = size(vecX0,1);
@@ -71,7 +71,7 @@ end
 %!	vecX0 = zeros(sizeX,1);
 %!	vecU1 = randn(sizeX,1);
 %!	vecU2 = randn(sizeX,1);
-%!	[ vecV1, vecV2, matX, rvecD1, rvecD2, numD1Vals, numD2Vals ] = spanspace( vecX0, vecU1, vecU2 );
+%!	[ vecV1, vecV2, matX, rvecD1, rvecD2, numD1Vals, numD2Vals ] = spanspace2d( vecX0, vecU1, vecU2 );
 %!	numPts = size(matX,2);
 %!	assert( numD1Vals*numD2Vals == numPts );
 %!	for n=1:numPts

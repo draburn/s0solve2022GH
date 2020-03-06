@@ -58,7 +58,7 @@ if (1)
 	%vecU2 = datOut.vecDelta_levenberg_omegaMin;
 	vecU2 = datOut.vecDelta_newton;
 	[ vecV1, vecV2, matX, rvecD1, rvecD2, numD1Vals, numD2Vals ] ...
-	  = spanspace( vecX0, vecU1, vecU2 );
+	  = spanspace2d( vecX0, vecU1, vecU2 );
 	numPts = size(matX,2);
 	assert( numD1Vals*numD2Vals == numPts );
 	matF = funchF(matX);
