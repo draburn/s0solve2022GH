@@ -2,8 +2,9 @@ clear;
 tic();
 sizeX = 5;
 sizeK = 2;
-randnState = mod(round(time),1E6)
+randnState = mod(round(time),1E6);
 %randnState = 0;
+randnState = 470733;
 echo_randnState = randnState
 randn( "state", randnState );
 matU = randn(sizeX,sizeK);

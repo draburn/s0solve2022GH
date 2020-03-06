@@ -8,24 +8,33 @@ function [ matV, matX, matS ] = spanspace( matU, rvecN, prm=[] )
 	assert( rvecN(:) >= 1 );
 	assert( round(rvecN(:)), rvecN(:), -(eps^0.75) );
 	%
+	marginSize = mygetfield( prm, "marginSize", 0.5 );
+	%
 	matV = myorth(matU);
 	assert( isrealarray(matV,[sizeX,sizeK]) );
 	assert( matV'*matV, eye(sizeK), (eps^0.75)*(sizeK^2) );
 	matVTU = matV'*matU;
 	%
 	for k=1:sizeK
-		sA = min([ 0.0, matVTU(k,1:k) ]);
-		sB = max([ 0.0, matVTU(k,1:k) ]);
+		sA = min([ 0.0, matVTU(k,k) ]);
+		sB = max([ 0.0, matVTU(k,k) ]);
 		s0 = min([ 0.0, matVTU(k,:) ]);
 		s1 = max([ 0.0, matVTU(k,:) ]);
 		% Want values to span s0 ~ s1 plus some margin,
 		% but, want the points sA and sB to be among the exact values.
-		sMinIsh = s0 - (0.2*(s1-s0));
-		sMaxIsh = s1 + (0.2*(s1-s0));
+		sMinIsh = s0 - (marginSize*(s1-s0));
+		sMaxIsh = s1 + (marginSize*(s1-s0));
 		numSVals = rvecN(k);
 		vA = ceil(  numSVals*(sA-sMinIsh)/(sMaxIsh-sMinIsh) );
 		vB = floor( numSVals*(sB-sMinIsh)/(sMaxIsh-sMinIsh) );
-		assert( vB > vA );
+		if (vB<=vA)
+			% We'll have to *force* things to be decent.
+			vB = round( (vB+vA+1.0)/0.5 );
+			vA = vB - 1;
+		end
+		assert( 1 <= vA );
+		assert( vA < vB );
+		assert( vB <= numSVals );
 		dsdv = (sB-sA)/(vB-vA);
 		sMin = sA - (dsdv*(vA-1));
 		sMax = sB + (dsdv*(numSVals-vB));
