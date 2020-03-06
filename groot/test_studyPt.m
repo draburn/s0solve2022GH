@@ -5,7 +5,7 @@ tic();
 %
 %sizeX = 250;
 %sizeX = 100;
-sizeX = 2;
+sizeX = 10;
 sizeF = sizeX;
 %seedPrm = demoFunc0101_genSeedPrm("lin-easy");
 %seedPrm = demoFunc0101_genSeedPrm("easy");
@@ -55,7 +55,8 @@ end
 %
 if (1)
 	vecU1 = funcPrm.x0 - vecX0;
-	vecU2 = datOut.vecDelta_levenberg_omegaMin;
+	%vecU2 = datOut.vecDelta_levenberg_omegaMin;
+	vecU2 = datOut.vecDelta_newton;
 	[ vecV1, vecV2, matX, rvecD1, rvecD2, numD1Vals, numD2Vals ] ...
 	  = spanspace( vecX0, vecU1, vecU2 );
 	numPts = size(matX,2);
@@ -64,6 +65,30 @@ if (1)
 	rvecOmega = 0.5*sum( matF.^2, 1 );
 	%
 	gridZ = reshape( rvecOmega, numD2Vals, numD1Vals );
+	gridX = reshape( rvecD1, numD2Vals, numD1Vals );
+	gridY = reshape( rvecD2, numD2Vals, numD1Vals );
+	%
+	numFigs++; figure(numFigs);
+	hold off;
+	contour( gridX, gridY, gridZ.^0.2, 31 );
+	hold on;
+	plot( [ 0.0, vecV1'*vecU1 ], [ 0.0, vecV2'*vecU1 ], 'ko-', 'linewidth', 4 );
+	plot( [ 0.0, vecV1'*vecU2 ], [ 0.0, vecV2'*vecU2 ], 'bx-', 'linewidth', 4 );
+	[ c, normR ] = decompose( datOut.vecDelta_newton_omegaMin, [vecV1, vecV2] )
+	plot( [ 0.0, c(1) ], [ 0.0, c(2) ], 'k-' );
+	[ c, normR ] = decompose( datOut.vecDelta_gradDir_omegaMin, [vecV1, vecV2] )
+	plot( [ 0.0, c(1) ], [ 0.0, c(2) ], 'k-' );
+	grid on;
+	axis equal;
+	%
+	%
+	%
+	matF0 = funchF( vecX0 );
+	matJ0 = funchJ( vecX0 );
+	matFLM = repmat(matF0,[1,numPts]) + ( matJ0*matX );
+	rvecOLM = 0.5*sum( matFLM.^2, 1 );
+	%
+	gridZ = reshape( rvecOLM, numD2Vals, numD1Vals );
 	gridX = reshape( rvecD1, numD2Vals, numD1Vals );
 	gridY = reshape( rvecD2, numD2Vals, numD1Vals );
 	%
