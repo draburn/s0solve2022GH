@@ -13,6 +13,7 @@ seedPrm = demoFunc0101_genSeedPrm("moderate");
 %randState = mod(round(time),1E6)
 %randState = 448932 % Newton better then Lev.
 randState = 448959 % All bad, but gradient least bad.
+%randState = 454940 % A less bad example with sizeX = 100.
 seedPrm.randState = randState;
 seedPrm.sizeX = sizeX;
 seedPrm.sizeF = sizeF;
@@ -70,8 +71,12 @@ if (1)
 	hold off;
 	contour( gridX, gridY, gridZ.^0.2, 31 );
 	hold on;
-	plot( [ 0.0, vecV1'*vecU1 ], [ 0.0, vecV2'*vecU1 ], 'ko-' );
-	plot( [ 0.0, vecV1'*vecU2 ], [ 0.0, vecV2'*vecU2 ], 'kx-' );
+	plot( [ 0.0, vecV1'*vecU1 ], [ 0.0, vecV2'*vecU1 ], 'ko-', 'linewidth', 4 );
+	plot( [ 0.0, vecV1'*vecU2 ], [ 0.0, vecV2'*vecU2 ], 'bx-', 'linewidth', 4 );
+	[ c, normR ] = decompose( datOut.vecDelta_newton_omegaMin, [vecV1, vecV2] )
+	plot( [ 0.0, c(1) ], [ 0.0, c(2) ], 'k-' );
+	[ c, normR ] = decompose( datOut.vecDelta_gradDir_omegaMin, [vecV1, vecV2] )
+	plot( [ 0.0, c(1) ], [ 0.0, c(2) ], 'k-' );
 	grid on;
 	axis equal;
 end
