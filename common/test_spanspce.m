@@ -3,14 +3,14 @@ tic();
 numFigs = 0;
 %
 sizeX = 5;
-sizeK = 3;
-randnState = mod(round(time),1E6);
+sizeK = 4;
+randnState = mod(round(1E6*time),1E6);
 %randnState = 0;
 %randnState = 470733;
 echo_randnState = randnState
 randn( "state", randnState );
 matU = randn(sizeX,sizeK);
-rvecN = [ 15, 17, 19 ];
+rvecN = [ 15, 17, 19, 7 ];
 %
 [ matV, matX, matS ] = spanspace( matU, rvecN );
 numPts = rvecN(1)*rvecN(2);

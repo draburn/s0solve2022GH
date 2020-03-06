@@ -57,12 +57,20 @@ function [ matV, matX, matS ] = spanspace( matU, rvecN, prm=[] )
 		matS(1,:) = reshape( t1, [1, numPts] );
 		matS(2,:) = reshape( t2, [1, numPts] );
 	case {3}
-		[ matS1, matS2, matS3 ] = ndgrid( dimDat(1).sVals, dimDat(2).sVals, dimDat(3).sVals );
+		[ matS1, matS2, matS3 ] = ndgrid( ...
+		  dimDat(1).sVals, dimDat(2).sVals, dimDat(3).sVals );
 		matS(1,:) = reshape( matS1, [1, numPts] );
 		matS(2,:) = reshape( matS2, [1, numPts] );
 		matS(3,:) = reshape( matS3, [1, numPts] );
+	case {4}
+		[ matS1, matS2, matS3, matS4 ] = ndgrid( ...
+		  dimDat(1).sVals, dimDat(2).sVals, dimDat(3).sVals, dimDat(4).sVals );
+		matS(1,:) = reshape( matS1, [1, numPts] );
+		matS(2,:) = reshape( matS2, [1, numPts] );
+		matS(3,:) = reshape( matS3, [1, numPts] );
+		matS(4,:) = reshape( matS4, [1, numPts] );
 	otherwise
-		error(sprintf( "4+ dimensional case not supported." ));
+		error(sprintf( "5+ dimensional case not supported." ));
 	end
 	%
 	matX = matV * matS;
