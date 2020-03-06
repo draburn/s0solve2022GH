@@ -59,5 +59,5 @@ end
 %!	matU = randn(sizeX,sizeK);
 %!	matV = myorth(matU);
 %!	assert( isrealarray(matV,[sizeX,sizeK]) );
-%!	assert( abs( (matV'*matV) - eye(sizeK,sizeK) ) < (eps^0.75 * (sizeK^3)) );
+%!	assert( matV'*matV, eye(sizeK), (eps^0.75)*(sizeK^2) );
 %!	toc();
