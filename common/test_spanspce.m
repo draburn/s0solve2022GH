@@ -22,9 +22,9 @@ for n=1:numPts
 end
 matS1 = matS(1,1:numPts);
 matS2 = matS(2,1:numPts);
-gridZ = reshape( rvecZ, rvecN(2), rvecN(1) );
-gridX = reshape( matS1, rvecN(2), rvecN(1) );
-gridY = reshape( matS2, rvecN(2), rvecN(1) );
+gridZ = reshape( rvecZ, rvecN(1), rvecN(2) );
+gridX = reshape( matS1, rvecN(1), rvecN(2) );
+gridY = reshape( matS2, rvecN(1), rvecN(2) );
 %
 numFigs++; figure(numFigs);
 hold off;

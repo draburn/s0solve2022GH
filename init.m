@@ -5,4 +5,5 @@ addpath( "linsolf" );
 addpath( "demoFunc" );
 addpath( "groot" );
 addpath( "postproc" );
+addpath( "misc" );
 commondefs;

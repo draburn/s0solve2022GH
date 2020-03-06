@@ -53,19 +53,14 @@ function [ matV, matX, matS ] = spanspace( matU, rvecN, prm=[] )
 	case {1}
 		matS(1,:) = dimDat(1).sVals;
 	case {2}
-		[ t1, t2 ] = meshgrid( dimDat(1).sVals, dimDat(2).sVals );
+		[ t1, t2 ] = ndgrid( dimDat(1).sVals, dimDat(2).sVals );
 		matS(1,:) = reshape( t1, [1, numPts] );
 		matS(2,:) = reshape( t2, [1, numPts] );
 	case {3}
-		numSubPts = rvecN(1)*rvecN(2);
-		for j=1:rvecN(3)
-			[ t1, t2 ] = meshgrid( dimDat(1).sVals, dimDat(2).sVals );
-			p0 = 1+(numSubPts*(j-1));
-			p1 = numSubPts*j;
-			matS(1,p0:p1) = reshape( t1, [1, numSubPts] );
-			matS(2,p0:p1) = reshape( t2, [1, numSubPts] );
-			matS(3,p0:p1) = dimDat(3).sVals(j);
-		end
+		[ matS1, matS2, matS3 ] = ndgrid( dimDat(1).sVals, dimDat(2).sVals, dimDat(3).sVals );
+		matS(1,:) = reshape( matS1, [1, numPts] );
+		matS(2,:) = reshape( matS2, [1, numPts] );
+		matS(3,:) = reshape( matS3, [1, numPts] );
 	otherwise
 		error(sprintf( "4+ dimensional case not supported." ));
 	end
