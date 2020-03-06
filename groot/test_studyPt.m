@@ -26,7 +26,10 @@ funchJ = @(vecXDummy)( demoFunc0101_evalJaco( vecXDummy, funcPrm ) );
 studyPtPrm.funchJ = funchJ;
 [ vecDelta_suggested, retCode, datOut ] = studyPt( funchF, vecX0, studyPtPrm );
 %
+numFigs = 0;
+%
 if (1)
+	numFigs++; figure(numFigs);
 	hold off;
 	plot( [0,1], [0,0], 'ko-', 'linewidth', 7, 'markersize', 20 );
 	hold on;
@@ -48,5 +51,30 @@ if (1)
 	hold off;
 	axpand;
 end
+%
+if (1)
+	vecU1 = funcPrm.x0 - vecX0;
+	vecU2 = datOut.vecDelta_levenberg_omegaMin;
+	[ vecV1, vecV2, matX, rvecD1, rvecD2, numD1Vals, numD2Vals ] ...
+	  = spanspace( vecX0, vecU1, vecU2 );
+	numPts = size(matX,2);
+	assert( numD1Vals*numD2Vals == numPts );
+	matF = funchF(matX);
+	rvecOmega = 0.5*sum( matF.^2, 1 );
+	%
+	gridZ = reshape( rvecOmega, numD2Vals, numD1Vals );
+	gridX = reshape( rvecD1, numD2Vals, numD1Vals );
+	gridY = reshape( rvecD2, numD2Vals, numD1Vals );
+	%
+	numFigs++; figure(numFigs);
+	hold off;
+	contour( gridX, gridY, gridZ.^0.2, 31 );
+	hold on;
+	plot( [ 0.0, vecV1'*vecU1 ], [ 0.0, vecV2'*vecU1 ], 'ko-' );
+	plot( [ 0.0, vecV1'*vecU2 ], [ 0.0, vecV2'*vecU2 ], 'kx-' );
+	grid on;
+	axis equal;
+end
+
 %
 toc();
