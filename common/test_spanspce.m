@@ -1,25 +1,33 @@
 clear;
 tic();
+numFigs = 0;
+%
 sizeX = 5;
-sizeK = 2;
+sizeK = 3;
 randnState = mod(round(time),1E6);
 %randnState = 0;
-randnState = 470733;
+%randnState = 470733;
 echo_randnState = randnState
 randn( "state", randnState );
 matU = randn(sizeX,sizeK);
-rvecN = [ 51, 53 ];
+rvecN = [ 15, 17, 19 ];
+%
 [ matV, matX, matS ] = spanspace( matU, rvecN );
-numPts = size(matX,2);
+numPts = rvecN(1)*rvecN(2);
 for n=1:numPts
 	rvecZ(n) = sqrt(min([ ...
 	  sum((matX(:,n)).^2), ...
 	  sum((matX(:,n)-matU(:,1)).^2), ...
 	  sum((matX(:,n)-matU(:,2)).^2) ]));
 end
+matS1 = matS(1,1:numPts);
+matS2 = matS(2,1:numPts);
 gridZ = reshape( rvecZ, rvecN(2), rvecN(1) );
-gridX = reshape( matS(1,:), rvecN(2), rvecN(1) );
-gridY = reshape( matS(2,:), rvecN(2), rvecN(1) );
+gridX = reshape( matS1, rvecN(2), rvecN(1) );
+gridY = reshape( matS2, rvecN(2), rvecN(1) );
+%
+numFigs++; figure(numFigs);
+hold off;
 contour( gridX, gridY, sqrt(gridZ), 31 );
 hold on;
 vecU1 = matU(:,1);
@@ -32,3 +40,4 @@ plot( [ 0.0, vecV1'*vecU2 ], [ 0.0, vecV2'*vecU2 ], 'kx-' );
 grid on;
 hold off;
 toc;
+%
