@@ -46,7 +46,7 @@ function [ matV, matX, matS ] = spanspace( matU, rvecN, prm=[] )
 		dimDat(k).sVals = sVals;
 	end
 	%
-	% We could probably instead use ndgrid... If I understood how it worked.
+	% Crib from ndgrid to handle arbitrary case?
 	numPts = prod( rvecN );
 	matS = zeros( sizeK, numPts );
 	switch (sizeK)
