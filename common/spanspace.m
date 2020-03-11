@@ -29,7 +29,7 @@ function [ matV, matX, matS ] = spanspace( matU, rvecN, prm=[] )
 		vB = floor( numSVals*(sB-sMinIsh)/(sMaxIsh-sMinIsh) );
 		if (vB<=vA)
 			% We'll have to *force* things to be decent.
-			vB = round( (vB+vA+1.0)/0.5 );
+			vB = round( (vB+vA+0.5)/2.0 );
 			vA = vB - 1;
 		end
 		assert( 1 <= vA );
