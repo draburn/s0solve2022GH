@@ -1,4 +1,4 @@
-function [ aryX ] = spangrid( matV, matSLoHi, rvecN, prm=[] )
+function [ aryX, aryS ] = spangrid( matV, matSLoHi, rvecN, prm=[] )
 	sizeX = size(matV,1);
 	sizeK = size(matV,2);
 	assert( isrealarray(matV,[sizeX,sizeK]) );
