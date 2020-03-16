@@ -19,43 +19,69 @@ for indexK=1:sizeK
 	matSLoHi(1,indexK) = min([ 0.0, matVTU(indexK,:) ]);
 	matSLoHi(2,indexK) = max([ 0.0, matVTU(indexK,:) ]);
 end
+for indexK=1:2
+	% Add border for first two dims only.
+	sLo = matSLoHi(1,indexK);
+	sHi = matSLoHi(2,indexK);
+	matSLoHi(1,indexK) = sLo - 0.1*(sHi-sLo);
+	matSLoHi(2,indexK) = sHi + 0.1*(sHi-sLo);
+end
 rvecN = [ 15, 7, 3 ];
 [ aryX, aryS ] = spangrid( matV, matSLoHi, rvecN );
 maxX = max(max(max(max(aryX))));
 minX = min(min(min(min(aryX))));
 sizeC = 256;
 colmapFull = 0.2+(0.8*jet(sizeC));
+%
 for indexZ = 1 : rvecN(3);
 gridX = reshape(aryS(1,:,:,indexZ),rvecN(1:2))';
 gridY = reshape(aryS(2,:,:,indexZ),rvecN(1:2))';
-for indexXC = 1 : sizeX
+for indexXC = 1 : 1
 	%valsX = aryS(1,:,1,1);
 	%valsY = aryS(2,1,:,1);
-	gridT = ( reshape(aryX(indexXC,:,:,indexZ),rvecN(1:2))' - minX ) / ( maxX - minX );
+	gridT = reshape(aryX(indexXC,:,:,indexZ),rvecN(1:2))';
 	numFigs++; figure(numFigs);
 	hold off;
 	%image( valsX, valsY, 1+(63*gridT) );
 	%set(get(gcf,"children"),"ydir","normal")
-	contourf( gridX, gridY, gridT );
+	contourf( gridX, gridY, gridT, 32 );
 	minT = min(min(gridT));
 	maxT = max(max(gridT));
-	cLo = floor(1+((sizeC-1)*minT));
-	cHi = ceil(1+((sizeC-1)*maxT));
+	cLo = floor(1+((sizeC-1)*(minT-minX)/(maxX-minX)));
+	cHi = ceil(1+((sizeC-1)*(maxT-minX)/(maxX-minX)));
 	colormap(colmapFull(cLo:cHi,:));
 	%image( valsY, valsX, 1+(63*gridT) );
 	title(sprintf( "X(%d) at Z = %f.", indexXC, aryS(3,1,1,indexZ) ));
 	axis equal;
-	if (1==indexZ)
 		hold on;
-		plot( [0.0, matVTU(1,1)-0.0], [0.0, 0.0], 'ko-', 'linewidth', 3 );
-		plot( [0.0, matVTU(1,2)-0.0], [0.0, matVTU(2,2)-0.0], 'kx-', 'linewidth', 3 );
+	if (1==indexZ)
+		plot( [0.0, matVTU(1,1)], [0.0, matVTU(2,1)], 'ko-', 'linewidth', 3, 'markersize', 10 );
+		plot( [0.0, matVTU(1,2)], [0.0, matVTU(2,2)], 'kx-', 'linewidth', 3, 'markersize', 10 );
+	else
+		plot( [0.0, matVTU(1,1)], [0.0, matVTU(2,1)], 'ko:', 'linewidth', 1, 'markersize', 10 );
+		plot( [0.0, matVTU(1,2)], [0.0, matVTU(2,2)], 'kx:', 'linewidth', 1, 'markersize', 10 );
 	end
+	plot( [0.0, matVTU(1,3)], [0.0, matVTU(2,3)], 'ks:', 'linewidth', 1, 'markersize', 10 );
+	sScaled = aryS(3,1,1,indexZ)/aryS(3,1,1,end);
+	plot( matVTU(1,3)*sScaled, matVTU(2,3)*sScaled, 'ks', 'linewidth', 3, 'markersize', 12 );
+	hold off;
 	grid on;
 end
 end
 %
-
-
+%
+numFigs++; figure(numFigs);
+%gridX = repmat(linspace(minX,maxX,sizeC), [sizeC, 1]);
+gridX = repmat(linspace(0,1,2),[sizeC,1]);
+gridY = repmat(linspace(minX,maxX,sizeC), [2, 1])';
+gridT = repmat(linspace(minX,maxX,sizeC), [2, 1])';
+contourf( gridX, gridY, gridT, 32 );
+set(get(gcf,"children"),"xtick",[])
+colormap(colmapFull);
+title(sprintf( "Color scale (%g to %g)", minX, maxX ));
+grid on;
+%
+%
 return;
 %
 %
