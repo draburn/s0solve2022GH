@@ -2,8 +2,8 @@ clear;
 tic();
 numFigs = 0;
 %randnState = mod(round(1E6*time),1E6);
-randnState = 0;
-%randnState = 470733;
+%randnState = 0;
+randnState = 712625;
 echo_randnState = randnState
 randn( "state", randnState );
 rand( "state", randnState );
@@ -30,10 +30,14 @@ end
 %rvecN = [ 15, 7, 3 ];
 rvecN = [ 51, 51, 5 ];
 [ aryX, aryS ] = spangrid( matV, matSLoHi, rvecN );
-sizeC = 256;
+sizeC = 64;
 colmapFull = 0.2+(0.8*jet(sizeC));
+colmapFull(1,:) *= 0.2;
+colmapFull(1,:) += 0.8;
+colmapFull(end,:) *= 0.2;
+colmapFull(end,:) += 0.8;
 %
-numPts = prod(rvecN)
+numPts = prod(rvecN);
 matX = reshape(aryX,[sizeX,numPts]);
 sizeF = sizeX;
 matJ = randn(sizeF,sizeX);
@@ -50,7 +54,7 @@ for indexZ = 1 : rvecN(3);
 	gridT = reshape(aryOmega(:,:,indexZ),rvecN(1:2))';
 	numFigs++; figure(numFigs);
 	hold off;
-	contourf( gridX, gridY, gridT, 32 );
+	contourf( gridX, gridY, gridT, min([round(sizeC/2.0), 32]) );
 	minT = min(min(gridT));
 	maxT = max(max(gridT));
 	cLo = floor(1+((sizeC-1)*(minT-minOmega)/(maxOmega-minOmega)));
@@ -80,7 +84,7 @@ numFigs++; figure(numFigs);
 gridX = repmat(linspace(0,1,2),[sizeC,1]);
 gridY = repmat(linspace(minOmega,maxOmega,sizeC), [2, 1])';
 gridT = repmat(linspace(minOmega,maxOmega,sizeC), [2, 1])';
-contourf( gridX, gridY, gridT, 32 );
+contourf( gridX, gridY, gridT, min([sizeC,64]) );
 set(get(gcf,"children"),"xtick",[])
 colormap(colmapFull);
 title(sprintf( "Color scale (%g to %g)", minOmega, maxOmega ));
