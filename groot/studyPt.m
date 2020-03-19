@@ -210,6 +210,7 @@ function [ vecDelta_suggested, retCode, datOut ] = studyPt( ...
 	datOut.sizeF = sizeF;
 	datOut.vecF0 = vecF0;
 	datOut.matJ0 = matJ0;
+	datOut.funchOmega = @(matDummy)( 0.5 * sum(funchF(matDummy).^2,1) );
 	%
 	datOut.considerScl = considerScl;
 	datOut.considerGradCurve = considerGradCurve;

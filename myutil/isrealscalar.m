@@ -5,6 +5,7 @@
 %    Checks whether or not x is a real scalar.
 %    See isrealarray(), size(), and issize() for more information.
 function boo = isrealscalar( x );
+	assert( 1 == nargin );
 	boo = isrealarray( x, [1,1] );
 return;
 end

@@ -27,6 +27,10 @@ funchJ = @(vecXDummy)( demoFunc0101_evalJaco( vecXDummy, funcPrm ) );
 studyPtPrm.funchJ = funchJ;
 [ vecDelta_suggested, retCode, datOut ] = studyPt( funchF, vecX0, studyPtPrm );
 %
+return
+
+
+%
 numFigs = 0;
 %
 if (1)

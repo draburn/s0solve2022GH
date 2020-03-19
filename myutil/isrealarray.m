@@ -41,3 +41,4 @@ end
 %!	assert( isrealarray( 1 ) );
 %!	assert( ~isrealarray( [1,Inf] ) );
 %!	assert( ~isrealarray( [1,NaN] ) );
+%!	assert( isrealarray( [1,0.5], [1,2] ) );
