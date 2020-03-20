@@ -4,8 +4,8 @@ thisFile = "test_genStepFunch";
 tic();
 numFigs = 0;
 %
-sizeX = 101;
-sizeF = 100;
+sizeX = 9;
+sizeF = 7;
 sizeK = 5;
 %
 seedPrm = demoFunc0101_genSeedPrm("moderate");
@@ -41,6 +41,7 @@ funchOmegaLin = @(vecXDummy)( 0.5*sum(funchFLin(vecXDummy).^2,1) );
 numCurves = size(studyPtDat.curveDat,2);
 %
 numFigs++; figure(numFigs);
+hold off;
 for n=1:numCurves
 	if (studyPtDat.curveDat(n).funchYSupportsMultiArg)
 		matY = studyPtDat.curveDat(n).funchYOfNu(rvecNuVals);
@@ -68,6 +69,7 @@ grid on;
 hold off;
 %
 numFigs++; figure(numFigs);
+hold off;
 for n=1:numCurves
 	if (studyPtDat.curveDat(n).funchYSupportsMultiArg)
 		matY = studyPtDat.curveDat(n).funchYOfNu(rvecNuVals);

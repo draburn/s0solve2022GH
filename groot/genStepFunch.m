@@ -32,8 +32,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 	%
 	if ( ~isempty(matV) )
 		assert( isrealarray(matV,[sizeX,sizeK]) );
-		matVTV = matV'*matV;
-		assert( matVTV, eye(sizeK,sizeK), (eps^0.75)*max(max(abs(matVTV))) );
+		assert( matV'*matV, eye(sizeK,sizeK), eps^0.75 );
 	end
 	%
 	vecXSecret = mygetfield( prm, "vecXSecret", [] );
@@ -63,7 +62,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 	curveIndex = 0;
 	%
 	%
-	if (1)
+	if (0)
 		vecYN = matH \ vecG;
 		%
 		curveIndex++;
@@ -163,7 +162,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 	end
 	%
 	%
-	if (1)
+	if (0)
 		muSclA = max(vecDiagH);
 		muSclB = min(vecDiagH(vecDiagH>0.0));
 		powA = 1.0;
@@ -186,7 +185,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 	end
 	%
 	%
-	if (1)
+	if (0)
 		matA = matH - matD;
 		%
 		curveIndex++;
@@ -198,6 +197,85 @@ function [ retCode, datOut ] = genStepFunch( ...
 		% But, could use eig() to support multiArg.
 		%
 		clear matA;
+	end
+	%
+	%
+	if (0)
+		[ matPsi, matLambda ] = eig( matH );
+		assert( matPsi'*matPsi, matI, eps^0.75 );
+		assert( matPsi*(matPsi'), matI, eps^0.75 );
+		vecPsiTN = matPsi'*(matH\vecG);
+		vecLambdaDiag = diag(matLambda);
+		lambdaScale = min(vecLambdaDiag(vecLambdaDiag>0.0));
+		assert( lambdaScale > 0.0 );
+		vecSigma = vecLambdaDiag/lambdaScale;
+		%
+		curveIndex++;
+		datOut.curveDat(curveIndex).stepType = STEPTYPE__GRADCURVE;
+		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( ...
+		  matPsi * ( vecPsiTN - (diag((1.0-nuDummy).^vecSigma)*vecPsiTN) )  );
+		datOut.curveDat(curveIndex).funchYIsLinear = false;
+		datOut.curveDat(curveIndex).funchYSupportsMultiArg = false;
+		% Could probably modify to support multiArg, but, not worthwhile.
+		%
+		clear vecSigma;
+		clear lambdaScale;
+		clear vecLambdaDiag;
+		clear vecPsiTN;
+		clear matPsi;
+		clear matLambda;
+	end
+	%
+	%
+	if (1)
+		%vecDiagHMod = vecDiagH + ( (eps*max(vecDiagH)) * (vecDiagH==0.0) );
+		%matDModInvSqrt = diag(1.0/sqrt(vecDiagHMod));
+		matDModInvSqrt = diag(1.0/sqrt(vecDiagH));
+		matHScl = matDModInvSqrt * matH * matDModInvSqrt;
+		vecGScl = matDModInvSqrt * vecG;
+		[ matPsi, matLambda ] = eig( matHScl );
+		assert( matPsi'*matPsi, matI, eps^0.75 );
+		assert( matPsi*(matPsi'), matI, eps^0.75 );
+		vecPsiTN = matPsi'*(matHScl\vecGScl);
+		vecLambdaDiag = diag(matLambda);
+		lambdaScaleA = min(vecLambdaDiag(vecLambdaDiag>0.0));
+		lambdaScaleB = max(vecLambdaDiag);
+		powA = 1.0;
+		powB = 0.0;
+		lambdaScale = ((lambdaScaleA^powA)*(lambdaScaleB^powB))^(1.0/(powA+powB));
+		assert( lambdaScale > 0.0 );
+		vecSigma = vecLambdaDiag/lambdaScale;
+		matDMISPsi = matDModInvSqrt * matPsi;
+		%
+		vecYN = (matH\vecG);
+		%
+		curveIndex++;
+		datOut.curveDat(curveIndex).stepType = STEPTYPE__GRADCURVE_SCALED;
+		%datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( ...
+		%  vecYN - (matDMISPsi*( ((1.0-(nuDummy/1E3)).^vecSigma) .* vecPsiTN ))  );
+		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( ...
+		  vecYN - (matDMISPsi*( ((1.0-(nuDummy/1E3)).^vecSigma) .* vecPsiTN ))  );
+		%datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( ...
+		%  matDMISPsi * ( vecPsiTN - (diag((1.0-nuDummy).^vecSigma)*vecPsiTN) )  );
+		%datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( ...
+		%  matDMISPsi * ( vecPsiTN * nuDummy )  );
+		%datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( ...
+		%  matDMISPsi * ( diag(vecSigma)*vecPsiTN * nuDummy )  );
+		datOut.curveDat(curveIndex).funchYIsLinear = false;
+		datOut.curveDat(curveIndex).funchYSupportsMultiArg = false;
+		% Could probably modify to support multiArg, but, not worthwhile.
+		%
+		clear matDMISPsi;
+		clear vecSigma;
+		clear lambdaScale;
+		clear vecLambdaDiag;
+		clear vecPsiTN;
+		clear matPsi;
+		clear matLambda;
+		clear vecGScl;
+		clear matHScl;
+		clear matDModInvSqrt;
+		clear vecDiagHMod;
 	end
 	%
 	%
@@ -247,9 +325,9 @@ function [ retCode, datOut ] = genStepFunch( ...
 	case {STEPTYPE__LEVCURVE_SCALED}
 		datOut.curveDat(n).col = [ 0.5, 0.5, 0.0 ];
 	case {STEPTYPE__GRADCURVE}
-		datOut.curveDat(n).col = [ 0.0, 0.0, 0.0 ];
+		datOut.curveDat(n).col = [ 0.0, 0.0, 1.0 ];
 	case {STEPTYPE__GRADCURVE_SCALED}
-		datOut.curveDat(n).col = [ 0.0, 0.0, 0.0 ];
+		datOut.curveDat(n).col = [ 0.0, 0.0, 0.5 ];
 	case {STEPTYPE__SECRET}
 		datOut.curveDat(n).col = [ 0.5, 0.5, 0.5 ];
 	otherwise
