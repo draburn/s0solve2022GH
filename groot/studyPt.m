@@ -36,9 +36,21 @@ function [ retCode, datOut ] = studyPt( ...
 		assert( matV'*matV, eye(sizeK,sizeK), eps^0.75 );
 	end
 	%
+	stepTypeList_default = [ ...
+	  STEPTYPE__NEWTON, ...
+	  STEPTYPE__GRADDIR, ...
+	  STEPTYPE__GRADDIR_SCALED, ...
+	  STEPTYPE__LEVCURVE, ...
+	  STEPTYPE__GRADCURVE ];
+	% When sizeK < sizeX, full-space delta is not a "step",
+	% considering "steps" to be restricted to matV.
+	% So, handle it separately.
+	%
 	genStepFunchPrm = mygetfield( prm, "genStepFunchPrm", [] );
-	genStepFunchDatIn = mygetfield( datIn, "genStepFunchDatIn", [] );
 	numNuVals = mygetfield( prm, "numNuVals", 100 );
+	stepTypeList = mygetfield( prm, "stepTypeList", stepTypeList_default );
+	%
+	genStepFunchDatIn = mygetfield( datIn, "genStepFunchDatIn", [] );
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO WORK.
@@ -46,24 +58,29 @@ function [ retCode, datOut ] = studyPt( ...
 	[ retCodeTemp, stepFunchDat ] = genStepFunch( ...
 	  funchF, vecX0, matW, matV, vecXSecret, genStepFunchPrm, genStepFunchDatIn );
 	msg_retcode( verbLev, thisFile, __LINE__, retCodeTemp );
-	vecG = stepFunchDat.vecG;
-	matH = stepFunchDat.matH;
+	datOut.vecG = stepFunchDat.vecG;
+	datOut.matH = stepFunchDat.matH;
+	datOut.stepFunchDat_raw = stepFunchDat;
+	numCurves_raw = size(stepFunchDat.curveDat,2);
+	assert( issize(stepFunchDat.curveDat,[1,numCurves_raw]) );
 	%
-	numCurves = size(stepFunchDat.curveDat,2);
-	assert( issize(stepFunchDat.curveDat,[1,numCurves]) );
+	numCurves = 0;
+	for n=1:numCurves_raw
+	if (ismember(stepFunchDat.curveDat(n).stepType,stepTypeList))
+		numCurves++;
+		datOut.curveDat(numCurves) = stepFunchDat.curveDat(n);
+	end
+	end
 	%
-	datOut.curveDat = stepFunchDat.curveDat;
-	for n=1:numCurves
-		%
+	parfor n=1:numCurves
+		datOut.curveDat(n).funchDNorm = @(nuDummy)(sqrt(sum( ...
+		  (stepFunchDat.curveDat(n).matS * ...
+		  stepFunchDat.curveDat(n).funchYOfNu(nuDummy)).^2, 1 )));
 		if (stepFunchDat.curveDat(n).funchYIsLinear)
 			datOut.curveDat(n).rvecNuVals = linspace( 0.0, 1.0, numNuVals );
 		else
-			funchDNorm = @(nuDummy)(sqrt(sum( ...
-			  (stepFunchDat.curveDat(n).matS * ...
-			  stepFunchDat.curveDat(n).funchYOfNu(nuDummy)).^2, 1 )));
-			[ rvecNuVals, retCodeTemp ] = flinspace( 0.0, 1.0, numNuVals, funchDNorm );
-			msg_retcode( verbLev, thisFile, __LINE__, retCodeTemp );
-			datOut.curveDat(n).rvecNuVals = rvecNuVals;
+			datOut.curveDat(n).rvecNuVals = flinspace( ...
+			  0.0, 1.0, numNuVals, datOut.curveDat(n).funchDNorm );
 		end
 	end
 	%

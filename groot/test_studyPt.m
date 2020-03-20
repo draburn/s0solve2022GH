@@ -39,6 +39,7 @@ vecXSecret = funcPrm.x0;
 %
 prm = [];
 [ retCode, studyPtDat ] = studyPt( funchF, vecX0, matW, matV, vecXSecret );
+toc();
 %studyPtDat.curveDat = studyPtDat.curveDat([8]);
 %
 numCurves = size(studyPtDat.curveDat,2);
