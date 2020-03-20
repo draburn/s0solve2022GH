@@ -277,8 +277,6 @@ function [ retCode, datOut ] = genStepFunch( ...
 		clear vecYSSS;
 	end
 	%
-	numCurves = curveIndex;
-	%
 	%
 	datOut.funchF = funchF;
 	datOut.vecX0 = vecX0;
@@ -291,35 +289,6 @@ function [ retCode, datOut ] = genStepFunch( ...
 	datOut.vecDiagH = vecDiagH;
 	datOut.matD = matD;
 	datOut.matI = matI;
-	%
-	datOut.numCurves = numCurves;
-	%
-	for n=1:numCurves
-	switch (datOut.curveDat(n).stepType)
-	case {STEPTYPE__NEWTON}
-		datOut.curveDat(n).col = [ 0.7, 0.0, 0.0 ];
-	case {STEPTYPE__PICARD}
-		datOut.curveDat(n).col = [ 1.0, 0.0, 1.0 ];
-	case {STEPTYPE__PICARD_SCALED}
-		datOut.curveDat(n).col = [ 0.5, 0.0, 0.5 ];
-	case {STEPTYPE__GRADDIR}
-		datOut.curveDat(n).col = [ 0.0, 0.9, 0.0 ];
-	case {STEPTYPE__GRADDIR_SCALED}
-		datOut.curveDat(n).col = [ 0.0, 0.5, 0.0 ];
-	case {STEPTYPE__LEVCURVE}
-		datOut.curveDat(n).col = [ 0.9, 0.9, 0.0 ];
-	case {STEPTYPE__LEVCURVE_SCALED}
-		datOut.curveDat(n).col = [ 0.5, 0.5, 0.0 ];
-	case {STEPTYPE__GRADCURVE}
-		datOut.curveDat(n).col = [ 0.0, 0.0, 1.0 ];
-	case {STEPTYPE__GRADCURVE_SCALED}
-		datOut.curveDat(n).col = [ 0.0, 0.0, 0.5 ];
-	case {STEPTYPE__SECRET}
-		datOut.curveDat(n).col = [ 0.5, 0.5, 0.5 ];
-	otherwise
-		datOut.curveDat(n).col = [ 0.0, 0.0, 0.0 ];
-	end
-	end
 	%
 return;
 end
