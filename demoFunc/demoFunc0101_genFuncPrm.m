@@ -1,5 +1,9 @@
 function funcPrm = demoFunc0101_genFuncPrm( seedPrm )	
 	randState_bkup  = rand("state");
+	randnState_bkup  = randn("state");
+	randeState_bkup  = rande("state");
+	randgState_bkup  = randg("state");
+	randpState_bkup  = randp("state");
 	rand( "state", seedPrm.randState );
 	%
 	sizeX = seedPrm.sizeX;
@@ -30,6 +34,10 @@ function funcPrm = demoFunc0101_genFuncPrm( seedPrm )
 	      + diag( cgfWrap( minSize, 1,     seedPrm.coeffSeed_m3Diag ), sizeF, sizeX );
 	%
 	rand("state",randState_bkup);
+	randn("state",randnState_bkup);
+	rande("state",randeState_bkup);
+	randg("state",randgState_bkup);
+	randp("state",randpState_bkup);
 return;
 end
 

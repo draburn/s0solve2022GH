@@ -100,9 +100,9 @@ function [ xVals, retCode, datOut ] = flinspace( x0, x1, numValsRequested, funch
 	%
 	deltaFTrgtOriginal = (f1-f0)/(numValsRequested-1.0);
 	deltaFTrgtMinCoeff = mygetfield( prm, "deltaFTrgtMinCoeff", 0.6 );
-	deltaFTrgtMaxCoeff = mygetfield( prm, "deltaFTrgtMinCoeff", 2.0 );
-	deltaFMinCoeff = mygetfield( prm, "deltaFTrgtMinCoeff", 0.4 );
-	deltaFMaxCoeff = mygetfield( prm, "deltaFTrgtMinCoeff", 3.0 );
+	deltaFTrgtMaxCoeff = mygetfield( prm, "deltaFTrgtMaxCoeff", 2.0 );
+	deltaFMinCoeff = mygetfield( prm, "deltaFMinCoeff", 0.4 );
+	deltaFMaxCoeff = mygetfield( prm, "deltaFMaxCoeff", 3.0 );
 	fTolCoeff = mygetfield( prm, "fTolCoeff", 0.01 );
 	assert( isrealscalar(deltaFTrgtMinCoeff) );
 	assert( isrealscalar(deltaFTrgtMaxCoeff) );
