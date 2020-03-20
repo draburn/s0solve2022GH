@@ -25,9 +25,10 @@ vecF0 = funchF(vecX0);
 matJ = funchJ(vecX0);
 matV = eye( sizeX, sizeK );
 matW = matJ * matV;
+vecXSecret = funcPrm.x0;
 %
 prm = [];
-prm.vecXSecret = funcPrm.x0;
+prm.vecXSecret = vecXSecret;
 [ retCode, studyPtDat ] = genStepFunch( funchF, vecX0, matW, matV, prm );
 %
 rvecNuVals = linspace(0.0,1.0,100);
@@ -40,7 +41,11 @@ funchOmega = @(vecXDummy)( 0.5*sum(funchF(vecXDummy).^2,1) );
 numCurves = size(studyPtDat.curveDat,2);
 %
 numFigs++; figure(numFigs);
-hold off;
+matDelta = (vecXSecret-vecX0)*rvecNuVals;
+rvecDeltaNormVals = sqrt(sum( matDelta.^2, 1 ));
+rvecOmegaVals = funchOmega( matX0 + matDelta );
+plot( rvecDeltaNormVals, rvecOmegaVals, 'o-', 'color', [0.0,0.0,0.0] );
+hold on;
 for n=1:numCurves
 	if (studyPtDat.curveDat(n).funchYSupportsMultiArg)
 		matY = studyPtDat.curveDat(n).funchYOfNu(rvecNuVals);
@@ -53,10 +58,10 @@ for n=1:numCurves
 	matDelta = matV * matY;
 	rvecDeltaNormVals = sqrt(sum( matDelta.^2, 1 ));
 	rvecOmegaVals = funchOmega( matX0 + matDelta );
-	plot( rvecDeltaNormVals, rvecOmegaVals, 'o-' );
-	hold on;
-	grid on;
+	col = studyPtDat.curveDat(n).col;
+	plot( rvecDeltaNormVals, rvecOmegaVals, 'o-', 'color', col );
 end
+grid on;
 hold off;
 %
 return

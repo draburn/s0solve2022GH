@@ -69,8 +69,9 @@ function [ retCode, datOut ] = genStepFunch( ...
 		curveIndex++;
 		datOut.curveDat(curveIndex).stepType = STEPTYPE__NEWTON;
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYN * nuDummy );
-		datOut.curveDat(curveIndex).funchYIsLinear = true;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
+		datOut.curveDat(curveIndex).funchYIsLinear = true;
+		datOut.curveDat(curveIndex).col = [ 0.8, 0.0, 0.0 ];
 		%
 		clear vecYN;
 	end
@@ -96,6 +97,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYP * nuDummy );
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
+		datOut.curveDat(curveIndex).col = [ 0.0, 0.0, 0.6 ];
 		%
 		clear vecYP;
 		clear fTemp;
@@ -114,6 +116,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYG * nuDummy );
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
+		datOut.curveDat(curveIndex).col = [ 0.0, 0.8, 0.0 ];
 		%
 		clear vecYG;
 		clear fTemp,
@@ -136,6 +139,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 		  nuDummy*( (matL+(nuDummy*matA)) \ vecG )  );
 		datOut.curveDat(curveIndex).funchYIsLinear = false;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = false;
+		datOut.curveDat(curveIndex).col = [ 0.7, 0.7, 0.0 ];
 		% But, could use eig() to support multiArg.
 		%
 		clear matA;
@@ -152,6 +156,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYSSS * nuDummy );
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
+		datOut.curveDat(curveIndex).col = [ 0.5, 0.5, 0.5 ];
 		%
 		clear vecYSSS;
 	end
