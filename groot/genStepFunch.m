@@ -71,13 +71,12 @@ function [ retCode, datOut ] = genStepFunch( ...
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYN * nuDummy );
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
-		datOut.curveDat(curveIndex).col = [ 0.7, 0.0, 0.0 ];
 		%
 		clear vecYN;
 	end
 	%
 	%
-	if (1)
+	if (0)
 		if (isempty(matV))
 			vecTemp = eye(sizeK,sizeF)*vecF0;
 		else
@@ -95,7 +94,6 @@ function [ retCode, datOut ] = genStepFunch( ...
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYP * nuDummy );
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
-		datOut.curveDat(curveIndex).col = [ 1.0, 0.0, 1.0 ];
 		%
 		clear vecYP;
 		clear fTemp;
@@ -103,7 +101,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 	end
 	%
 	%
-	if (1)
+	if (0)
 		if (isempty(matV))
 			vecTemp = eye(sizeK,sizeF)*vecF0;
 		else
@@ -122,7 +120,6 @@ function [ retCode, datOut ] = genStepFunch( ...
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYP * nuDummy );
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
-		datOut.curveDat(curveIndex).col = [ 0.5, 0.0, 0.5 ];
 		%
 		clear vecYP;
 		clear fTemp;
@@ -141,7 +138,6 @@ function [ retCode, datOut ] = genStepFunch( ...
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYG * nuDummy );
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
-		datOut.curveDat(curveIndex).col = [ 0.0, 0.9, 0.0 ];
 		%
 		clear vecYG;
 		clear fTemp,
@@ -160,7 +156,6 @@ function [ retCode, datOut ] = genStepFunch( ...
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYGScl * nuDummy );
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
-		datOut.curveDat(curveIndex).col = [ 0.0, 0.5, 0.0 ];
 		%
 		clear vecYGScl;
 		clear fTemp,
@@ -183,7 +178,6 @@ function [ retCode, datOut ] = genStepFunch( ...
 		  nuDummy*( (matL+(nuDummy*matA)) \ vecG )  );
 		datOut.curveDat(curveIndex).funchYIsLinear = false;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = false;
-		datOut.curveDat(curveIndex).col = [ 0.9, 0.9, 0.0 ];
 		% But, could use eig() to support multiArg.
 		%
 		clear matA;
@@ -201,14 +195,13 @@ function [ retCode, datOut ] = genStepFunch( ...
 		  nuDummy*( (matD+(nuDummy*matA)) \ vecG )  );
 		datOut.curveDat(curveIndex).funchYIsLinear = false;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = false;
-		datOut.curveDat(curveIndex).col = [ 0.5, 0.5, 0.0 ];
 		% But, could use eig() to support multiArg.
 		%
 		clear matA;
 	end
 	%
 	%
-	if (1)
+	if (0)
 		vecYSSS = matV' * (vecXSecret-vecX0);
 		%
 		curveIndex++;
@@ -216,10 +209,11 @@ function [ retCode, datOut ] = genStepFunch( ...
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYSSS * nuDummy );
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
-		datOut.curveDat(curveIndex).col = [ 0.5, 0.5, 0.5 ];
 		%
 		clear vecYSSS;
 	end
+	%
+	numCurves = curveIndex;
 	%
 	%
 	datOut.funchF = funchF;
@@ -233,6 +227,36 @@ function [ retCode, datOut ] = genStepFunch( ...
 	datOut.vecDiagH = vecDiagH;
 	datOut.matD = matD;
 	datOut.matI = matI;
+	%
+	datOut.numCurves = numCurves;
+	%
+	for n=1:numCurves
+	switch (datOut.curveDat(n).stepType)
+	case {STEPTYPE__NEWTON}
+		datOut.curveDat(n).col = [ 0.7, 0.0, 0.0 ];
+	case {STEPTYPE__PICARD}
+		datOut.curveDat(n).col = [ 1.0, 0.0, 1.0 ];
+	case {STEPTYPE__PICARD_SCALED}
+		datOut.curveDat(n).col = [ 0.5, 0.0, 0.5 ];
+	case {STEPTYPE__GRADDIR}
+		datOut.curveDat(n).col = [ 0.0, 0.9, 0.0 ];
+	case {STEPTYPE__GRADDIR_SCALED}
+		datOut.curveDat(n).col = [ 0.0, 0.5, 0.0 ];
+	case {STEPTYPE__LEVCURVE}
+		datOut.curveDat(n).col = [ 0.9, 0.9, 0.0 ];
+	case {STEPTYPE__LEVCURVE_SCALED}
+		datOut.curveDat(n).col = [ 0.5, 0.5, 0.0 ];
+	case {STEPTYPE__GRADCURVE}
+		datOut.curveDat(n).col = [ 0.0, 0.0, 0.0 ];
+	case {STEPTYPE__GRADCURVE_SCALED}
+		datOut.curveDat(n).col = [ 0.0, 0.0, 0.0 ];
+	case {STEPTYPE__SECRET}
+		datOut.curveDat(n).col = [ 0.5, 0.5, 0.5 ];
+	otherwise
+		datOut.curveDat(n).col = [ 0.0, 0.0, 0.0 ];
+	end
+	end
+	%
 return;
 end
 
