@@ -31,7 +31,7 @@ prm = [];
 prm.vecXSecret = vecXSecret;
 [ retCode, studyPtDat ] = genStepFunch( funchF, vecX0, matW, matV, prm );
 %
-rvecNuVals = linspace(0.0,1.0,100);
+rvecNuVals = linspace(0.0,1.0,20);
 matX0 = repmat( vecX0, size(rvecNuVals) );
 matF0 = repmat( vecF0, size(rvecNuVals) );
 funchFLin = @(vecXDummy)( matF0 + (matJ*vecXDummy) );

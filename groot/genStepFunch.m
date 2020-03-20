@@ -62,7 +62,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 	curveIndex = 0;
 	%
 	%
-	if (0)
+	if (1)
 		vecYN = matH \ vecG;
 		%
 		curveIndex++;
@@ -70,12 +70,13 @@ function [ retCode, datOut ] = genStepFunch( ...
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYN * nuDummy );
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
+		datOut.curveDat(curveIndex).scaleMat = matI; % Doesn't matter because linear.
 		%
 		clear vecYN;
 	end
 	%
 	%
-	if (0)
+	if (1)
 		if (isempty(matV))
 			vecTemp = eye(sizeK,sizeF)*vecF0;
 		else
@@ -93,6 +94,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYP * nuDummy );
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
+		datOut.curveDat(curveIndex).scaleMat = matI; % Doesn't matter because linear.
 		%
 		clear vecYP;
 		clear fTemp;
@@ -100,7 +102,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 	end
 	%
 	%
-	if (0)
+	if (1)
 		if (isempty(matV))
 			vecTemp = eye(sizeK,sizeF)*vecF0;
 		else
@@ -119,6 +121,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYP * nuDummy );
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
+		datOut.curveDat(curveIndex).scaleMat = matD; % Doesn't matter because linear.
 		%
 		clear vecYP;
 		clear fTemp;
@@ -137,6 +140,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYG * nuDummy );
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
+		datOut.curveDat(curveIndex).scaleMat = matI; % Doesn't matter because linear.
 		%
 		clear vecYG;
 		clear fTemp,
@@ -155,6 +159,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYGScl * nuDummy );
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
+		datOut.curveDat(curveIndex).scaleMat = matD; % Doesn't matter because linear.
 		%
 		clear vecYGScl;
 		clear fTemp,
@@ -162,7 +167,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 	end
 	%
 	%
-	if (0)
+	if (1)
 		muSclA = max(vecDiagH);
 		muSclB = min(vecDiagH(vecDiagH>0.0));
 		powA = 1.0;
@@ -177,7 +182,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 		  nuDummy*( (matL+(nuDummy*matA)) \ vecG )  );
 		datOut.curveDat(curveIndex).funchYIsLinear = false;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = false;
-		% But, could use eig() to support multiArg.
+		datOut.curveDat(curveIndex).scaleMat = matI;
 		%
 		clear matA;
 		clear matL;
@@ -185,7 +190,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 	end
 	%
 	%
-	if (0)
+	if (1)
 		matA = matH - matD;
 		%
 		curveIndex++;
@@ -194,13 +199,13 @@ function [ retCode, datOut ] = genStepFunch( ...
 		  nuDummy*( (matD+(nuDummy*matA)) \ vecG )  );
 		datOut.curveDat(curveIndex).funchYIsLinear = false;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = false;
-		% But, could use eig() to support multiArg.
+		datOut.curveDat(curveIndex).scaleMat = matD;
 		%
 		clear matA;
 	end
 	%
 	%
-	if (0)
+	if (1)
 		[ matPsi, matLambda ] = eig( matH );
 		assert( matPsi'*matPsi, matI, eps^0.75 );
 		assert( matPsi*(matPsi'), matI, eps^0.75 );
@@ -216,7 +221,7 @@ function [ retCode, datOut ] = genStepFunch( ...
 		  matPsi * ( vecPsiTN - (diag((1.0-nuDummy).^vecSigma)*vecPsiTN) )  );
 		datOut.curveDat(curveIndex).funchYIsLinear = false;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = false;
-		% Could probably modify to support multiArg, but, not worthwhile.
+		datOut.curveDat(curveIndex).scaleMat = matI;
 		%
 		clear vecSigma;
 		clear lambdaScale;
@@ -228,44 +233,26 @@ function [ retCode, datOut ] = genStepFunch( ...
 	%
 	%
 	if (1)
-		%vecDiagHMod = vecDiagH + ( (eps*max(vecDiagH)) * (vecDiagH==0.0) );
-		%matDModInvSqrt = diag(1.0/sqrt(vecDiagHMod));
-		matDModInvSqrt = diag(1.0/sqrt(vecDiagH));
-		matHScl = matDModInvSqrt * matH * matDModInvSqrt;
-		vecGScl = matDModInvSqrt * vecG;
+		matDInvSqrt = diag(1.0./sqrt(vecDiagH));
+		matHScl = matDInvSqrt * matH * matDInvSqrt;
+		vecGScl = matDInvSqrt * vecG;
 		[ matPsi, matLambda ] = eig( matHScl );
 		assert( matPsi'*matPsi, matI, eps^0.75 );
 		assert( matPsi*(matPsi'), matI, eps^0.75 );
 		vecPsiTN = matPsi'*(matHScl\vecGScl);
 		vecLambdaDiag = diag(matLambda);
-		lambdaScaleA = min(vecLambdaDiag(vecLambdaDiag>0.0));
-		lambdaScaleB = max(vecLambdaDiag);
-		powA = 1.0;
-		powB = 0.0;
-		lambdaScale = ((lambdaScaleA^powA)*(lambdaScaleB^powB))^(1.0/(powA+powB));
+		lambdaScale = min(vecLambdaDiag(vecLambdaDiag>0.0));
 		assert( lambdaScale > 0.0 );
 		vecSigma = vecLambdaDiag/lambdaScale;
-		matDMISPsi = matDModInvSqrt * matPsi;
-		%
-		vecYN = (matH\vecG);
 		%
 		curveIndex++;
 		datOut.curveDat(curveIndex).stepType = STEPTYPE__GRADCURVE_SCALED;
-		%datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( ...
-		%  vecYN - (matDMISPsi*( ((1.0-(nuDummy/1E3)).^vecSigma) .* vecPsiTN ))  );
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( ...
-		  vecYN - (matDMISPsi*( ((1.0-(nuDummy/1E3)).^vecSigma) .* vecPsiTN ))  );
-		%datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( ...
-		%  matDMISPsi * ( vecPsiTN - (diag((1.0-nuDummy).^vecSigma)*vecPsiTN) )  );
-		%datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( ...
-		%  matDMISPsi * ( vecPsiTN * nuDummy )  );
-		%datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( ...
-		%  matDMISPsi * ( diag(vecSigma)*vecPsiTN * nuDummy )  );
+		  matDInvSqrt * matPsi * ( vecPsiTN - (diag((1.0-nuDummy).^vecSigma)*vecPsiTN) )  );
 		datOut.curveDat(curveIndex).funchYIsLinear = false;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = false;
-		% Could probably modify to support multiArg, but, not worthwhile.
+		datOut.curveDat(curveIndex).scaleMat = matD;
 		%
-		clear matDMISPsi;
 		clear vecSigma;
 		clear lambdaScale;
 		clear vecLambdaDiag;
@@ -274,12 +261,11 @@ function [ retCode, datOut ] = genStepFunch( ...
 		clear matLambda;
 		clear vecGScl;
 		clear matHScl;
-		clear matDModInvSqrt;
-		clear vecDiagHMod;
+		clear matDInvSqrt;
 	end
 	%
 	%
-	if (0)
+	if (1)
 		vecYSSS = matV' * (vecXSecret-vecX0);
 		%
 		curveIndex++;
