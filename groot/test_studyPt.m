@@ -12,7 +12,8 @@ seedPrm = demoFunc0101_genSeedPrm("moderate");
 %randState = mod(round(time),1E6);
 %randState = 0;
 %randState = 677832;
-randState = 686206;
+%randState = 686206;
+randState = 687437;
 echo__randState = randState
 randn("seed",randState);
 rand("seed",randState);
@@ -37,8 +38,7 @@ matW = matJ * matV;
 vecXSecret = funcPrm.x0;
 %
 prm = [];
-[ retCode, studyPtDat ] = studyPt( ...
-  funchF, vecX0, matW, matV, vecXSecret );
+[ retCode, studyPtDat ] = studyPt( funchF, vecX0, matW, matV, vecXSecret );
 %studyPtDat.curveDat = studyPtDat.curveDat([8]);
 %
 numCurves = size(studyPtDat.curveDat,2);
@@ -172,4 +172,5 @@ end
 grid on;
 hold off;
 %
+toc();
 return

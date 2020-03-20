@@ -55,15 +55,15 @@ function [ retCode, datOut ] = studyPt( ...
 	datOut.curveDat = stepFunchDat.curveDat;
 	for n=1:numCurves
 		%
-		funchDNorm = @(nuDummy)(sqrt(sum( ...
-		  (stepFunchDat.curveDat(n).matS * ...
-		  stepFunchDat.curveDat(n).funchYOfNu(nuDummy)).^2, 1 )));
-		[ rvecNuVals, retCodeTemp ] = flinspace( 0.0, 1.0, numNuVals, funchDNorm );
-		msg_retcode( verbLev, thisFile, __LINE__, retCodeTemp );
-		if ( RETCODE__SUCCESS == retCodeTemp )
-			datOut.curveDat(n).rvecNuVals = rvecNuVals;
-		else
+		if (stepFunchDat.curveDat(n).funchYIsLinear)
 			datOut.curveDat(n).rvecNuVals = linspace( 0.0, 1.0, numNuVals );
+		else
+			funchDNorm = @(nuDummy)(sqrt(sum( ...
+			  (stepFunchDat.curveDat(n).matS * ...
+			  stepFunchDat.curveDat(n).funchYOfNu(nuDummy)).^2, 1 )));
+			[ rvecNuVals, retCodeTemp ] = flinspace( 0.0, 1.0, numNuVals, funchDNorm );
+			msg_retcode( verbLev, thisFile, __LINE__, retCodeTemp );
+			datOut.curveDat(n).rvecNuVals = rvecNuVals;
 		end
 	end
 	%
