@@ -48,15 +48,38 @@ function [ retCode, datOut ] = genStepFunch( ...
 	%
 	%
 	if (1)
-		vecDN = matH \ vecG;
+		vecYN = matH \ vecG;
 		%
 		curveIndex++;
 		datOut.curveDat(curveIndex).stepType = STEPTYPE__NEWTON;
-		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecDN * nuDummy );
+		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYN * nuDummy );
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
 		%
-		clear vecDeltaN;
+		clear vecYN;
+	end
+	%
+	%
+	if (1)
+		assert( ~isempty(matV) );
+		assert( sizeX == sizeF );
+		vecTemp = matV' * vecF0;
+		fTemp = vecTemp' * matH * vecTemp;
+		if ( fTemp > 0.0 )
+			vecYP = vecTemp * ((vecTemp'*vecG)/fTemp);
+		else
+			vecYP = 0.0*vecTemp;
+		end
+		%
+		curveIndex++;
+		datOut.curveDat(curveIndex).stepType = STEPTYPE__PICARD;
+		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYP * nuDummy );
+		datOut.curveDat(curveIndex).funchYIsLinear = true;
+		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
+		%
+		clear vecYP;
+		clear fTemp;
+		clear vecTemp;
 	end
 	%
 	%
@@ -64,36 +87,40 @@ function [ retCode, datOut ] = genStepFunch( ...
 		vecTemp = vecG;
 		fTemp = vecTemp' * matH * vecTemp;
 		assert( 0.0 < fTemp );
-		vecDG = vecTemp * ((vecTemp'*vecG)/fTemp);
+		vecYG = vecTemp * ((vecTemp'*vecG)/fTemp);
 		%
 		curveIndex++;
 		datOut.curveDat(curveIndex).stepType = STEPTYPE__GRADDIR;
-		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecDG * nuDummy );
+		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYG * nuDummy );
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
 		%
-		clear vecTemp;
+		clear vecYG;
 		clear fTemp,
-		clear vecDG;
+		clear vecTemp;
 	end
 	%
 	%
 	if (1)
-		muScl = min(vecDiagH(vecDiagH>0.0));
+		muSclA = max(vecDiagH);
+		muSclB = min(vecDiagH(vecDiagH>0.0));
+		powA = 1.0;
+		powB = 1.0;
+		muScl = ( (muSclA^powA) * (muSclB^powB) )^(1.0/(powA+powB));
 		matL = muScl * matI;
-		matA = matH + matL;
+		matA = matH - matL;
 		%
 		curveIndex++;
 		datOut.curveDat(curveIndex).stepType = STEPTYPE__LEVCURVE;
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( ...
-		  nuDummy*( (matA-(nuDummy*matL)) \ vecG )  );
+		  nuDummy*( (matL+(nuDummy*matA)) \ vecG )  );
 		datOut.curveDat(curveIndex).funchYIsLinear = false;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = false;
 		% But, could use eig() to support multiArg.
 		%
-		clear muScl;
-		clear matL;
 		clear matA;
+		clear matL;
+		clear muScl;
 	end
 	%
 	%
