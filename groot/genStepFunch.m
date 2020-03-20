@@ -71,15 +71,13 @@ function [ retCode, datOut ] = genStepFunch( ...
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYN * nuDummy );
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
-		datOut.curveDat(curveIndex).col = [ 0.8, 0.0, 0.0 ];
+		datOut.curveDat(curveIndex).col = [ 0.7, 0.0, 0.0 ];
 		%
 		clear vecYN;
 	end
 	%
 	%
 	if (1)
-		%assert( ~isempty(matV) );
-		%assert( sizeX == sizeF );
 		if (isempty(matV))
 			vecTemp = eye(sizeK,sizeF)*vecF0;
 		else
@@ -97,7 +95,34 @@ function [ retCode, datOut ] = genStepFunch( ...
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYP * nuDummy );
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
-		datOut.curveDat(curveIndex).col = [ 0.0, 0.0, 0.6 ];
+		datOut.curveDat(curveIndex).col = [ 1.0, 0.0, 1.0 ];
+		%
+		clear vecYP;
+		clear fTemp;
+		clear vecTemp;
+	end
+	%
+	%
+	if (1)
+		if (isempty(matV))
+			vecTemp = eye(sizeK,sizeF)*vecF0;
+		else
+			vecTemp = matV' * (eye(sizeX,sizeF)*vecF0);
+		end
+		vecTemp = matD\vecTemp;
+		fTemp = vecTemp' * matH * vecTemp;
+		if ( fTemp > 0.0 )
+			vecYP = vecTemp * ((vecTemp'*vecG)/fTemp);
+		else
+			vecYP = 0.0*vecTemp;
+		end
+		%
+		curveIndex++;
+		datOut.curveDat(curveIndex).stepType = STEPTYPE__PICARD_SCALED;
+		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYP * nuDummy );
+		datOut.curveDat(curveIndex).funchYIsLinear = true;
+		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
+		datOut.curveDat(curveIndex).col = [ 0.5, 0.0, 0.5 ];
 		%
 		clear vecYP;
 		clear fTemp;
@@ -116,9 +141,28 @@ function [ retCode, datOut ] = genStepFunch( ...
 		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYG * nuDummy );
 		datOut.curveDat(curveIndex).funchYIsLinear = true;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
-		datOut.curveDat(curveIndex).col = [ 0.0, 0.8, 0.0 ];
+		datOut.curveDat(curveIndex).col = [ 0.0, 0.9, 0.0 ];
 		%
 		clear vecYG;
+		clear fTemp,
+		clear vecTemp;
+	end
+	%
+	%
+	if (1)
+		vecTemp = matD \ vecG;
+		fTemp = vecTemp' * matH * vecTemp;
+		assert( 0.0 < fTemp );
+		vecYGScl = vecTemp * ((vecTemp'*vecG)/fTemp);
+		%
+		curveIndex++;
+		datOut.curveDat(curveIndex).stepType = STEPTYPE__GRADDIR_SCALED;
+		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYGScl * nuDummy );
+		datOut.curveDat(curveIndex).funchYIsLinear = true;
+		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
+		datOut.curveDat(curveIndex).col = [ 0.0, 0.5, 0.0 ];
+		%
+		clear vecYGScl;
 		clear fTemp,
 		clear vecTemp;
 	end
@@ -139,12 +183,28 @@ function [ retCode, datOut ] = genStepFunch( ...
 		  nuDummy*( (matL+(nuDummy*matA)) \ vecG )  );
 		datOut.curveDat(curveIndex).funchYIsLinear = false;
 		datOut.curveDat(curveIndex).funchYSupportsMultiArg = false;
-		datOut.curveDat(curveIndex).col = [ 0.7, 0.7, 0.0 ];
+		datOut.curveDat(curveIndex).col = [ 0.9, 0.9, 0.0 ];
 		% But, could use eig() to support multiArg.
 		%
 		clear matA;
 		clear matL;
 		clear muScl;
+	end
+	%
+	%
+	if (1)
+		matA = matH - matD;
+		%
+		curveIndex++;
+		datOut.curveDat(curveIndex).stepType = STEPTYPE__LEVCURVE_SCALED;
+		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( ...
+		  nuDummy*( (matD+(nuDummy*matA)) \ vecG )  );
+		datOut.curveDat(curveIndex).funchYIsLinear = false;
+		datOut.curveDat(curveIndex).funchYSupportsMultiArg = false;
+		datOut.curveDat(curveIndex).col = [ 0.5, 0.5, 0.0 ];
+		% But, could use eig() to support multiArg.
+		%
+		clear matA;
 	end
 	%
 	%

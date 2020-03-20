@@ -4,8 +4,8 @@ thisFile = "test_genStepFunch";
 tic();
 numFigs = 0;
 %
-sizeX = 9;
-sizeF = 10;
+sizeX = 101;
+sizeF = 100;
 sizeK = 5;
 %
 seedPrm = demoFunc0101_genSeedPrm("moderate");
@@ -36,16 +36,11 @@ matX0 = repmat( vecX0, size(rvecNuVals) );
 matF0 = repmat( vecF0, size(rvecNuVals) );
 funchFLin = @(vecXDummy)( matF0 + (matJ*vecXDummy) );
 funchOmega = @(vecXDummy)( 0.5*sum(funchF(vecXDummy).^2,1) );
-%funchOmega = @(vecXDummy)( 0.5*sum(funchFLin(vecXDummy).^2,1) );
+funchOmegaLin = @(vecXDummy)( 0.5*sum(funchFLin(vecXDummy).^2,1) );
 %
 numCurves = size(studyPtDat.curveDat,2);
 %
 numFigs++; figure(numFigs);
-matDelta = (vecXSecret-vecX0)*rvecNuVals;
-rvecDeltaNormVals = sqrt(sum( matDelta.^2, 1 ));
-rvecOmegaVals = funchOmega( matX0 + matDelta );
-plot( rvecDeltaNormVals, rvecOmegaVals, 'o-', 'color', [0.0,0.0,0.0] );
-hold on;
 for n=1:numCurves
 	if (studyPtDat.curveDat(n).funchYSupportsMultiArg)
 		matY = studyPtDat.curveDat(n).funchYOfNu(rvecNuVals);
@@ -60,6 +55,41 @@ for n=1:numCurves
 	rvecOmegaVals = funchOmega( matX0 + matDelta );
 	col = studyPtDat.curveDat(n).col;
 	plot( rvecDeltaNormVals, rvecOmegaVals, 'o-', 'color', col );
+	hold on;
+end
+if (0)
+	matDelta = (vecXSecret-vecX0)*rvecNuVals;
+	rvecDeltaNormVals = sqrt(sum( matDelta.^2, 1 ));
+	rvecOmegaVals = funchOmega( matX0 + matDelta );
+	plot( rvecDeltaNormVals, rvecOmegaVals, 'o-', 'color', [0.0,0.0,0.0] );
+	hold on;
+end
+grid on;
+hold off;
+%
+numFigs++; figure(numFigs);
+for n=1:numCurves
+	if (studyPtDat.curveDat(n).funchYSupportsMultiArg)
+		matY = studyPtDat.curveDat(n).funchYOfNu(rvecNuVals);
+	else
+		clear matY;
+		for m=1:size(rvecNuVals,2)
+			matY(:,m) = studyPtDat.curveDat(n).funchYOfNu(rvecNuVals(m));
+		end
+	end
+	matDelta = matV * matY;
+	rvecDeltaNormVals = sqrt(sum( matDelta.^2, 1 ));
+	rvecOmegaVals = funchOmegaLin( matX0 + matDelta );
+	col = studyPtDat.curveDat(n).col;
+	plot( rvecDeltaNormVals, rvecOmegaVals, 'o-', 'color', col );
+	hold on;
+end
+if (0)
+	matDelta = (vecXSecret-vecX0)*rvecNuVals;
+	rvecDeltaNormVals = sqrt(sum( matDelta.^2, 1 ));
+	rvecOmegaVals = funchOmegaLin( matX0 + matDelta );
+	plot( rvecDeltaNormVals, rvecOmegaVals, 'o-', 'color', [0.0,0.0,0.0] );
+	hold on;
 end
 grid on;
 hold off;
