@@ -23,6 +23,9 @@ function [ retCode, datOut ] = genStepFunch( ...
 	sizeX = size(vecX0,1);
 	sizeF = size(vecF0,1);
 	sizeK = size(matW,2);
+	assert( 1 <= sizeK );
+	assert( sizeK <= sizeX );
+	assert( sizeK <= sizeF );
 	assert( isrealarray(vecX0,[sizeX,1]) );
 	assert( isrealarray(vecF0,[sizeF,1]));
 	assert( isrealarray(matW,[sizeF,sizeK]) );
@@ -33,13 +36,26 @@ function [ retCode, datOut ] = genStepFunch( ...
 		assert( matVTV, eye(sizeK,sizeK), (eps^0.75)*max(max(abs(matVTV))) );
 	end
 	%
+	vecXSecret = mygetfield( prm, "vecXSecret", [] );
+	if ( ~isempty(vecXSecret) )
+		assert( isrealarray(vecXSecret,[sizeX,1]) );
+	end
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO WORK.
 	%
 	vecG = -matW'*vecF0;
 	matH = matW'*matW;
 	vecDiagH = diag(matH);
-	assert( 0.0 < min(vecDiagH) );
+	assert( 0.0 < max(vecDiagH) );
+	if ( 0.0 == min(vecDiagH) )
+		msg_warn( verbLev, thisFile, __LINE__, "Warning: matW has a zero vector." );
+	end
+	rcondH = rcond(matH);
+	if ( eps^0.75 > rcondH )
+		msg_warn( verbLev, thisFile, __LINE__, sprintf( ...
+		  "Warning: rcond(matH) is very small (%g).", rcondH ) );
+	end
 	matD = diag(vecDiagH);
 	matI = eye(sizeK,sizeK);
 	%
@@ -61,9 +77,13 @@ function [ retCode, datOut ] = genStepFunch( ...
 	%
 	%
 	if (1)
-		assert( ~isempty(matV) );
-		assert( sizeX == sizeF );
-		vecTemp = matV' * vecF0;
+		%assert( ~isempty(matV) );
+		%assert( sizeX == sizeF );
+		if (isempty(matV))
+			vecTemp = eye(sizeK,sizeF)*vecF0;
+		else
+			vecTemp = matV' * (eye(sizeX,sizeF)*vecF0);
+		end
 		fTemp = vecTemp' * matH * vecTemp;
 		if ( fTemp > 0.0 )
 			vecYP = vecTemp * ((vecTemp'*vecG)/fTemp);
@@ -124,6 +144,30 @@ function [ retCode, datOut ] = genStepFunch( ...
 	end
 	%
 	%
+	if (1)
+		vecYSSS = matV' * (vecXSecret-vecX0);
+		%
+		curveIndex++;
+		datOut.curveDat(curveIndex).stepType = STEPTYPE__SECRET;
+		datOut.curveDat(curveIndex).funchYOfNu = @(nuDummy)( vecYSSS * nuDummy );
+		datOut.curveDat(curveIndex).funchYIsLinear = true;
+		datOut.curveDat(curveIndex).funchYSupportsMultiArg = true;
+		%
+		clear vecYSSS;
+	end
+	%
+	%
+	datOut.funchF = funchF;
+	datOut.vecX0 = vecX0;
+	datOut.vecF0 = vecF0;
+	datOut.matW = matW;
+	datOut.matV = matV;
+	%
+	datOut.vecG = vecG;
+	datOut.matH = matH;
+	datOut.vecDiagH = vecDiagH;
+	datOut.matD = matD;
+	datOut.matI = matI;
 return;
 end
 

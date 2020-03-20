@@ -4,9 +4,9 @@ thisFile = "test_genStepFunch";
 tic();
 numFigs = 0;
 %
-sizeX = 10;
+sizeX = 9;
 sizeF = 10;
-sizeK = 10;
+sizeK = 5;
 %
 seedPrm = demoFunc0101_genSeedPrm("moderate");
 %randState = mod(round(time),1E6)
@@ -27,16 +27,17 @@ matV = eye( sizeX, sizeK );
 matW = matJ * matV;
 %
 prm = [];
+prm.vecXSecret = funcPrm.x0;
 [ retCode, studyPtDat ] = genStepFunch( funchF, vecX0, matW, matV, prm );
 %
 rvecNuVals = linspace(0.0,1.0,100);
 matX0 = repmat( vecX0, size(rvecNuVals) );
 matF0 = repmat( vecF0, size(rvecNuVals) );
 funchFLin = @(vecXDummy)( matF0 + (matJ*vecXDummy) );
-%funchOmega = @(vecXDummy)( 0.5*sum(funchF(vecXDummy).^2,1) );
-funchOmega = @(vecXDummy)( 0.5*sum(funchFLin(vecXDummy).^2,1) );
+funchOmega = @(vecXDummy)( 0.5*sum(funchF(vecXDummy).^2,1) );
+%funchOmega = @(vecXDummy)( 0.5*sum(funchFLin(vecXDummy).^2,1) );
 %
-numCurves = size(studyPtDat.curveDat,2)
+numCurves = size(studyPtDat.curveDat,2);
 %
 numFigs++; figure(numFigs);
 hold off;
