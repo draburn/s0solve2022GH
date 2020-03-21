@@ -64,6 +64,19 @@ STEPTYPE__GRADCURVE = 400;
 STEPTYPE__GRADCURVE_SCALED = 401;
 STEPTYPE__SECRET = 900;
 
+% ValLev: Validation level, qualitative amount of time (and other resources)
+%  to spend on validation checks.
+%  _ZERO: None. (May not be fully supported.)
+%  _LOW: Allow up to +0.1% run time at most.
+%  _MEDIUM: Allow up to +10% run time typically.
+%  _HIGH: Allow up to x2 run time for some cases.
+%  _UNLIMITED: Do any and all validations.
+VALLEV__ZERO = 0;
+VALLEV__LOW = 100;
+VALLEV__MEDIUM = 200;
+VALLEV__HIGH = 300;
+VALLEV__UNLIMITED = 400;
+
 %!test
 %!	commondefs
 %!	thisFile = "test commondefs";

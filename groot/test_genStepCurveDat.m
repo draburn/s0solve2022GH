@@ -1,6 +1,6 @@
 clear;
 commondefs;
-thisFile = "test_genStepFunch";
+thisFile = "test_genStepCurveDat";
 tic();
 numFigs = 0;
 %
@@ -27,11 +27,16 @@ vecF0 = funchF(vecX0);
 matJ = funchJ(vecX0);
 matV = eye( sizeX, sizeK );
 matW = matJ * matV;
+matH = matW' * matW;
+vecG = -matW' * vecF0;
 vecXSecret = funcPrm.x0;
 %
 prm = [];
-[ retCode, stepFunchDat ] = genStepFunch( ...
-  funchF, vecX0, matW, matV, vecXSecret );
+[ curveDat, retCode, datOut ] = genStepCurveDat( ...
+  funchF, vecX0, matV, matH, vecG, STEPTYPE__NEWTON, prm );
+toc;
+%
+return;
 %
 numCurves = size(stepFunchDat.curveDat,2);
 assert( issize(stepFunchDat.curveDat,[1,numCurves]) );
