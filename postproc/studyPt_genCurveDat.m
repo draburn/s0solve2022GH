@@ -57,8 +57,17 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		end
 	end
 	%
+	numNuValsDesired = mygetfield( prm, "numNuValsDesired", 100 );
+	%
+	curveDat.vecX0 = vecX0;
+	curveDat.vecF0 = vecF0;
+	curveDat.matV = matV;
+	curveDat.matH = matH;
+	curveDat.vecG = vecG;
+	curveDat.stepType = stepType;
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% DO WORK.
+	% DO PRE-WORK.
 	%
 	vecDiagH = diag(matH);
 	assert( 0.0 < max(vecDiagH) );
@@ -76,6 +85,15 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	matI = eye(sizeK,sizeK);
 	vecN = matH \ vecG;
 	vecP = matV' * (eye(sizeX,sizeF) * vecF0);
+	%
+	curveDat.vecDiagH = vecDiagH;
+	curveDat.matD = matD;
+	curveDat.vecN = vecN;
+	curveDat.vecP = vecP;
+	%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% DO MAIN WORK.
+	%
 	%
 	switch( stepType )
 	case {STEPTYPE__LEVCURVE}
@@ -147,12 +165,17 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		curveDat.funchYSupportsMultiArg = true;
 		curveDat.matS = matS; % Doesn't matter because linear.
 	end
-	curveDat.vecX0 = vecX0;
-	curveDat.vecF0 = vecF0;
-	curveDat.matV = matV;
-	curveDat.matH = matH;
-	curveDat.matG = vecG;
-	curveDat.stepType = stepType;
+	%
+	%
+	if (curveDat.funchYIsLinear)
+		curveDat.rvecNuVals = linspace( 0.0, 1.0, numNuValsDesired );
+	else
+		funchYNormOfNu = @(nuDummy)( sqrt(sum(curveDat.funchYOfNu(nuDummy).^2,1)) );
+		curveDat.rvecNuVals = flinspace( 0.0, 1.0, numNuValsDesired, funchYNormOfNu );
+	end
+	curveDat.numNuVals = size(curveDat.rvecNuVals,2);
+	assert( 1 <= curveDat.numNuVals );
+	assert(isrealarray(curveDat.rvecNuVals,[1,curveDat.numNuVals]));
 	%
 	%
 return;
