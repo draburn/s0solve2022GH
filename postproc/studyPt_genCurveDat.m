@@ -1,7 +1,6 @@
 function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
-  funchF, vecX0, matV, matH, vecG, stepType, prm=[], datIn=[] )
+  funchF, vecX0, matV, matW, matH, vecG, stepType, prm=[], datIn=[] )
 	%
-	warning("Work-in-progress!");
 	% Expect...
 	%   matV has orthonormal columns: matV' * matV = eye(sizeK,sizeK);
 	%   matW = matJ * matV;
@@ -41,23 +40,16 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	assert( isrealarray(vecX0,[sizeX,1]) );
 	assert( isrealarray(vecF0,[sizeF,1]));
 	assert( isrealarray(matV,[sizeX,sizeK]) );
+	assert( isrealarray(matW,[sizeF,sizeK]) );
 	if (VALLEV__HIGH<= valLev)
 		assert( matV'*matV, eye(sizeK,sizeK), eps^0.75 );
+		%
+		wSqScale = max(max(matW.^2));
+		wScale = sqrt(wSqScale);
+		fScale = sqrt(max(vecF0.^2));
+		assert( ( (matW'*matW)-matH ) < (eps^0.75)*wSqScale );
+		assert( ( (matW'*vecF0) + vecG ) < (eps^0.75)*wScale*fScale );
 	end
-	%
-	matW = mygetfield( prm, "matW", [] );
-	if (~isempty(matW))
-		assert( isrealarray(matW,[sizeF,sizeK]) );
-		if (VALLEV__HIGH<= valLev)
-			wSqScale = max(max(matW.^2));
-			wScale = sqrt(wSqScale);
-			fScale = sqrt(max(vecF0.^2));
-			assert( ( (matW'*matW)-matH ) < (eps^0.75)*wSqScale );
-			assert( ( (matW'*vecF0) + vecG ) < (eps^0.75)*wScale*fScale );
-		end
-	end
-	%
-	numNuValsDesired = mygetfield( prm, "numNuValsDesired", 100 );
 	%
 	curveDat.vecX0 = vecX0;
 	curveDat.vecF0 = vecF0;
@@ -83,13 +75,6 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	end
 	matD = diag(vecDiagH);
 	matI = eye(sizeK,sizeK);
-	vecN = matH \ vecG;
-	vecP = matV' * (eye(sizeX,sizeF) * vecF0);
-	%
-	curveDat.vecDiagH = vecDiagH;
-	curveDat.matD = matD;
-	curveDat.vecN = vecN;
-	curveDat.vecP = vecP;
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO MAIN WORK.
@@ -118,6 +103,7 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		curveDat.funchYIsLinear = false;
 		curveDat.funchYSupportsMultiArg = false;
 		curveDat.matS = matD;
+		warning("curveDat.matS may be wrong!");
 		%
 		%
 	case {STEPTYPE__GRADCURVE}
@@ -132,7 +118,7 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		% Handle all linear cases here...
 		switch (stepType)
 		case {STEPTYPE__NEWTON}
-			vecTemp = vecN;
+			vecTemp = matH \ vecG;
 			matS = matI;
 		case {STEPTYPE__GRADDIR}
 			vecTemp = vecG;
@@ -140,12 +126,14 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		case {STEPTYPE__GRADDIR_SCALED}
 			vecTemp = matD \ vecG;
 			matS = matD; % Is this right???
+			warning("curveDat.matS may be wrong, not that it matters.");
 		case {STEPTYPE__PICARD}
-			vecTemp = vecP;
+			vecTemp = matV' * (eye(sizeX,sizeF) * vecF0);
 			matS = matI;
 		case {STEPTYPE__PICARD_SCALED}
-			vecTemp = matD \ vecP;
+			vecTemp = matD \ (matV' * (eye(sizeX,sizeF) * vecF0));
 			matS = matD; %Is this right???
+			warning("curveDat.matS may be wrong, not that it matters.");
 		otherwise
 			error(sprintf( "Invalid value of stepType (%d).", stepType ));
 		end
@@ -167,17 +155,45 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	end
 	%
 	%
+	numNuValsDesired = mygetfield( prm, "numNuValsDesired", 100 );
 	if (curveDat.funchYIsLinear)
 		curveDat.rvecNuVals = linspace( 0.0, 1.0, numNuValsDesired );
 	else
-		funchYNormOfNu = @(nuDummy)( sqrt(sum(curveDat.funchYOfNu(nuDummy).^2,1)) );
-		curveDat.rvecNuVals = flinspace( 0.0, 1.0, numNuValsDesired, funchYNormOfNu );
+		funchStepOfNu = @(nuDummy)( curveDat.matS * curveDat.funchYOfNu(nuDummy) );
+		funchStepNormNu = @(nuDummy)( sqrt(sum(funchStepOfNu(nuDummy).^2,1)) );
+		curveDat.rvecNuVals = flinspace( 0.0, 1.0, numNuValsDesired, funchStepNormNu );
 	end
-	curveDat.numNuVals = size(curveDat.rvecNuVals,2);
-	assert( 1 <= curveDat.numNuVals );
-	assert(isrealarray(curveDat.rvecNuVals,[1,curveDat.numNuVals]));
+	numNuVals = size(curveDat.rvecNuVals,2)
+	assert( 1 <= numNuVals );
+	assert(isrealarray(curveDat.rvecNuVals,[1,numNuVals]));
 	%
 	%
+	if (curveDat.funchYSupportsMultiArg)
+		curveDat.matY = curveDat.funchYOfNu(curveDat.rvecNuVals);
+	else
+		for n=1:numNuVals
+			curveDat.matY(:,n) = curveDat.funchYOfNu(curveDat.rvecNuVals(n));
+		end
+	end
+	assert(isrealarray(curveDat.matY,[sizeK,numNuVals]));
+	curveDat.matDelta = matV * curveDat.matY;
+	curveDat.matX = repmat(vecX0,[1,numNuVals]) + curveDat.matDelta;
+	assert(isrealarray(curveDat.matX,[sizeX,numNuVals]));
+	%
+	curveDat.matFLin = repmat(vecF0,[1,numNuVals]) + (matW * curveDat.matY);
+	funchFSupportsMultiArg = mygetfield( prm, "funchFSupportsMultiArg", true );
+	if (funchFSupportsMultiArg)
+		curveDat.matF = funchF(curveDat.matX);
+	else
+		for n=1:numNuVals
+			curveDat.matF(:,n) = funchF(curveDat.matX(:,n));
+		end
+	end
+	assert(isrealarray(curveDat.matF,[sizeF,numNuVals]));
+	%
+	curveDat.rvecDeltaNorm = sqrt(sum(curveDat.matDelta.^2,1));
+	curveDat.rvecOmegaLin = 0.5*sum(curveDat.matFLin.^2,1);
+	curveDat.rvecOmega = 0.5*sum(curveDat.matF.^2,1);
 return;
 end
 

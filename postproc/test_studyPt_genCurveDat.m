@@ -10,10 +10,11 @@ sizeX = 9;
 sizeF = 7;
 sizeK = 5;
 %
-seedPrm = demoFunc0101_genSeedPrm("moderate");
+%seedPrm = demoFunc0101_genSeedPrm("moderate");
+seedPrm = demoFunc0101_genSeedPrm("easy");
 %randState = mod(round(time),1E6);
-%randState = 0;
-randState = 677832;
+randState = 0;
+%randState = 677832;
 echo__randStat = randState
 seedPrm.randState = randState;
 seedPrm.sizeX = sizeX;
@@ -35,8 +36,26 @@ vecXSecret = funcPrm.x0;
 %
 prm = [];
 [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
-  funchF, vecX0, matV, matH, vecG, STEPTYPE__NEWTON, prm );
+  funchF, vecX0, matV, matW, matH, vecG, STEPTYPE__LEVCURVE, prm );
 toc;
+%
+numFigs++; figure(numFigs);
+plot( curveDat.rvecNuVals, curveDat.rvecDeltaNorm, 'o-' );
+xlabel( "nu" );
+ylabel( "deltaNorm" );
+grid on;
+%
+numFigs++; figure(numFigs);
+plot( ...
+  curveDat.rvecDeltaNorm, curveDat.rvecOmegaLin, 'o-', ...
+  curveDat.rvecDeltaNorm, curveDat.rvecOmega, 'x-' );
+xlabel( "deltaNorm" );
+ylabel( "omega" );
+legend( ...
+  "lin", ...
+  "actual", ...
+  "location", "northeast" );
+grid on;
 %
 return;
 %
