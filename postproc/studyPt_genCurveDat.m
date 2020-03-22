@@ -194,6 +194,9 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	curveDat.rvecDeltaNorm = sqrt(sum(curveDat.matDelta.^2,1));
 	curveDat.rvecOmegaLin = 0.5*sum(curveDat.matFLin.^2,1);
 	curveDat.rvecOmega = 0.5*sum(curveDat.matF.^2,1);
+	%
+	% Find nuOfOmegaMin. ... minscan()?
+	% Add this nu to rvecNu?
 return;
 end
 
