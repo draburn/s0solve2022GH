@@ -26,6 +26,7 @@ end
 %!		%disp([ vecCX(n), xExpected, xTol ]);
 %!		assert( abs( vecCX(n) - xExpected ) <= xTol )
 %!	end
+%!	figure(gcf+1);
 %!	plot( ...
 %!	  (1:sizeX), vecX, 'o-', ...
 %!	  (1:sizeX-1)+0.5, vecCX, 'x' );

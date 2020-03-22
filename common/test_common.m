@@ -1,6 +1,9 @@
 test commondefs;
-test retcode2str;
+test fdjaco;
+test flinspace;
+test minscan;
 test msg_retcode;
 test msg_thresh;
-test flinspace;
+test myorth;
+test retcode2str;
 test steptype2str;

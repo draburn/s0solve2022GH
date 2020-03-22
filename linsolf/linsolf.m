@@ -231,3 +231,6 @@ function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn
 	%  information for V and W.
 return;
 end
+
+%!test
+%!	test_linsolf

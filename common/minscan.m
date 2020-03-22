@@ -1,5 +1,5 @@
 %  Function...
-%    [ sOfMin, retCode, datOut ] = minScan( ...
+%    [ sOfMin, retCode, datOut ] = minscan( ...
 %      funchFOfX, vecX0, funchDeltaOfS, prm=[], datIn=[] )
 %  Overview...
 %    Tries to find the value of s which minimizes the norm of F( vecX0 + delta(s) ).
@@ -17,14 +17,14 @@
 %    retCode: A common return code, RETCODE__SUCCESS (0) on success.
 %    datOut: Additional output data.
 %  See source code for more information on prm, datIn, and datOut.
-function [ sOfMin, retCode, datOut ] = minScan( ...
+function [ sOfMin, retCode, datOut ] = minscan( ...
   funchFOfX, vecX0, funchDeltaOfS, prm=[], datIn=[] )
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% COMMON INIT.
 	%
 	commondefs;
-	thisFile = "minScan";
+	thisFile = "minscan";
 	startTime = time();
 	retCode = RETCODE__NOT_SET;
 	%
@@ -190,4 +190,4 @@ return;
 end
 
 %!test
-%!	test_minScan;
+%!	test_minscan;

@@ -1,6 +1,7 @@
-function [ scDat, retCode, datOut ] = genStepCurveDat( ...
+function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
   funchF, vecX0, matV, matH, vecG, stepType, prm=[], datIn=[] )
 	%
+	warning("Work-in-progress!");
 	% Expect...
 	%   matV has orthonormal columns: matV' * matV = eye(sizeK,sizeK);
 	%   matW = matJ * matV;
@@ -12,7 +13,7 @@ function [ scDat, retCode, datOut ] = genStepCurveDat( ...
 	% COMMON INIT.
 	%
 	commondefs;
-	thisFile = "genStepCurveDat";
+	thisFile = "studyPt_genCurveDat";
 	startTime = time();
 	retCode = RETCODE__NOT_SET;
 	datOut = [];
@@ -86,19 +87,19 @@ function [ scDat, retCode, datOut ] = genStepCurveDat( ...
 		matL = muScl * matI;
 		matA = matH - matL;
 		%
-		scDat.funchYOfNu = @(nuDummy)( nuDummy*( (matL+(nuDummy*matA)) \ vecG )  );
-		scDat.funchYIsLinear = false;
-		scDat.funchYSupportsMultiArg = false;
-		scDat.matS = matI;
+		curveDat.funchYOfNu = @(nuDummy)( nuDummy*( (matL+(nuDummy*matA)) \ vecG )  );
+		curveDat.funchYIsLinear = false;
+		curveDat.funchYSupportsMultiArg = false;
+		curveDat.matS = matI;
 		%
 		%
 	case {STEPTYPE__LEVCURVE_SCALED}
 		matA = matH - matD;
 		%
-		scDat.funchYOfNu = @(nuDummy)( nuDummy*( (matD+(nuDummy*matA)) \ vecG )  );
-		scDat.funchYIsLinear = false;
-		scDat.funchYSupportsMultiArg = false;
-		scDat.matS = matD;
+		curveDat.funchYOfNu = @(nuDummy)( nuDummy*( (matD+(nuDummy*matA)) \ vecG )  );
+		curveDat.funchYIsLinear = false;
+		curveDat.funchYSupportsMultiArg = false;
+		curveDat.matS = matD;
 		%
 		%
 	case {STEPTYPE__GRADCURVE}
@@ -141,20 +142,21 @@ function [ scDat, retCode, datOut ] = genStepCurveDat( ...
 			vecY = vecTemp * 0.0;
 		end
 		%
-		scDat.funchYOfNu = @(nuDummy)( vecY * nuDummy );
-		scDat.funchYIsLinear = true;
-		scDat.funchYSupportsMultiArg = true;
-		scDat.matS = matS; % Doesn't matter because linear.
+		curveDat.funchYOfNu = @(nuDummy)( vecY * nuDummy );
+		curveDat.funchYIsLinear = true;
+		curveDat.funchYSupportsMultiArg = true;
+		curveDat.matS = matS; % Doesn't matter because linear.
 	end
-	scDat.vecX0 = vecX0;
-	scDat.vecF0 = vecF0;
-	scDat.matV = matV;
-	scDat.matH = matH;
-	scDat.matG = vecG;
-	scDat.stepType = stepType;
+	curveDat.vecX0 = vecX0;
+	curveDat.vecF0 = vecF0;
+	curveDat.matV = matV;
+	curveDat.matH = matH;
+	curveDat.matG = vecG;
+	curveDat.stepType = stepType;
+	%
 	%
 return;
 end
 
 %!test
-%!	test_studyPt_genscDat;
+%!	test_studyPt_genCurveDat;

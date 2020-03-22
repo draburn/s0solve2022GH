@@ -1,6 +1,7 @@
 function [ retCode, datOut ] = studyPt( ...
   funchF, vecX0, matW, matV=[], vecXSecret=[], prm=[], datIn=[] )
 	%
+	error("Under renovation!");
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% COMMON INIT.
 	%
