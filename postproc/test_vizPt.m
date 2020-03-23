@@ -1,6 +1,7 @@
 
 clear;
 commondefs;
+vizPt_init;
 thisFile = "test_vizPt";
 tic();
 numFigs = 0;
@@ -40,9 +41,13 @@ matH = matW' * matW;
 vecG = -matW' * vecF0;
 vecXSecret = funcPrm.x0;
 %
-prm = [];
-prm.vecXSecret = funcPrm.x0;
+prm_studyPt = [];
+prm_studyPt.vecXSecret = funcPrm.x0;
 [ studyPtDat, retCode, datOut ] = studyPt( ...
-  funchF, vecX0, matV, matW, prm );
+  funchF, vecX0, matV, matW, prm_studyPt );
 toc;
-vizPt( studyPtDat );
+%
+plotList = [ ...
+  VIZPT_PLOT__OMEGA_VS_DELTANORM, ...
+  VIZPT_PLOT__Y1_Y2 ];
+vizPt( studyPtDat, plotList );
