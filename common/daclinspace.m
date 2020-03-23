@@ -102,7 +102,13 @@ function [ rvecX, retCode, datOut ] = daclinspace( ...
 			return;
 		end
 		%
-		% There has got to be a better way to do this...
+		%
+		rvecX_old = rvecX;
+		% We're going to calculate a new rvecX.
+		% This means we're going to throw out all of the matF,
+		% and re-evaluate everything; it's inefficient, but easy to code.
+		% We'll use simple linear interpolation between rvecDAC and
+		% rvecDACDesired to get new values of rvecX.
 		clear rvecN;
 		n = 1;
 		epsDAC = (eps^0.75)*fullDAC;
@@ -112,16 +118,11 @@ function [ rvecX, retCode, datOut ] = daclinspace( ...
 			end
 			rvecN(m) = n;
 		end
-		%
 		rvecS = rvecDACDesired - rvecDAC(rvecN);
 		rvecA = rvecS .* rvecDeltaX(rvecN) ./ rvecDeltaDAC(rvecN);
-		%
-		rvecX_old = rvecX;
 		rvecX = rvecX_old(rvecN) + rvecA;
 		rvecX(1) = x0;
 		rvecX(end) = x1;
-		% Yes, we're going to re-evaluate funcF at all of the points;
-		% this is very inefficient, but easy to code.
 		%
 		%
 		numIter++;
