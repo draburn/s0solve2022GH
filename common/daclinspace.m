@@ -42,9 +42,13 @@ function [ rvecX, retCode, datOut ] = daclinspace( ...
 	end
 	assert( 3 <= numValsRequested );
 	%
-	tol = mygetfield(prm,"tolMin",0.5);
-	assert( isrealscalar(tol) );
-	assert( 0.0 < tol );
+	coeffMin = mygetfield(prm,"coeffMin",0.8);
+	coeffMax = mygetfield(prm,"coeffMax",1.2);
+	assert( isrealscalar(coeffMin) );
+	assert( isrealscalar(coeffMax) );
+	assert( 0.0 < coeffMin );
+	assert( coeffMin < 1.0 );
+	assert( 1.0 < coeffMax );
 	%
 	numIterLimit = mygetfield(prm,"numIterLimit",10);
 	assert( isposintscalar(numIterLimit+1) );
@@ -82,8 +86,10 @@ function [ rvecX, retCode, datOut ] = daclinspace( ...
 		assert( fullDAC > 0.0 );
 		%
 		rvecDACDesired = linspace( 0.0, fullDAC, numValsRequested );
+		deltaDACDesired = fullDAC / (numValsRequested-1.0);
 		%
-		if ( max(rvecDeltaDAC) <= min(rvecDeltaDAC) * (1.0+tol) )
+		if ( max(rvecDeltaDAC) <= deltaDACDesired * coeffMax ...
+		  && min(rvecDeltaDAC) >= deltaDACDesired * coeffMin )
 			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
 			  "Converged in %d iterations ( %g ~ %g ).", ...
 			  numIter, ...

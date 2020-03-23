@@ -37,6 +37,13 @@ prm = [];
   funchF, vecX0, matV, matW, matH, vecG, STEPTYPE__LEVCURVE, prm );
 toc;
 %
+rvecDAC = sqrt(sum((curveDat.matY(:,2:end)-curveDat.matY(:,1:end-1)).^2,1));
+numFigs++; figure(numFigs);
+plot( rvecDAC, 'o-', [0], '.' );
+xlabel( "point index" );
+ylabel( "distance between points" );
+grid on;
+%
 numFigs++; figure(numFigs);
 plot( curveDat.rvecNuVals, curveDat.rvecDeltaNorm, 'o-' );
 xlabel( "nu" );

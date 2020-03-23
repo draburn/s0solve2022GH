@@ -51,6 +51,8 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		assert( ( (matW'*vecF0) + vecG ) < (eps^0.75)*wScale*fScale );
 	end
 	%
+	numNuValsDesired = mygetfield( prm, "numNuValsDesired", 20 );
+	%
 	curveDat.vecX0 = vecX0;
 	curveDat.vecF0 = vecF0;
 	curveDat.matV = matV;
@@ -155,15 +157,15 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	end
 	%
 	%
-	numNuValsDesired = mygetfield( prm, "numNuValsDesired", 100 );
 	if (curveDat.funchYIsLinear)
 		curveDat.rvecNuVals = linspace( 0.0, 1.0, numNuValsDesired );
 	else
-		funchStepOfNu = @(nuDummy)( curveDat.matS * curveDat.funchYOfNu(nuDummy) );
-		funchStepNormNu = @(nuDummy)( sqrt(sum(funchStepOfNu(nuDummy).^2,1)) );
-		curveDat.rvecNuVals = flinspace( 0.0, 1.0, numNuValsDesired, funchStepNormNu );
+		msg( thisFile, __LINE__, "Hey! Listen!" );
+		prm_daclinspace.verbLev = VERBLEV__COPIOUS;
+		curveDat.rvecNuVals = daclinspace( ...
+		  0.0, 1.0, numNuValsDesired, curveDat.funchYOfNu, prm_daclinspace );
 	end
-	numNuVals = size(curveDat.rvecNuVals,2)
+	numNuVals = size(curveDat.rvecNuVals,2);
 	assert( 1 <= numNuVals );
 	assert(isrealarray(curveDat.rvecNuVals,[1,numNuVals]));
 	%
