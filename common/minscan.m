@@ -58,7 +58,7 @@ function [ xBest, retCode, datOut ] = minscan( x0, x1, funchOmega, prm=[], datIn
 		if (funchOmegaSupportsMultiArg)
 			rvecOmega = funchOmega(rvecX);
 		else
-			for n=1:numPtsPerIter
+			parfor n=1:numPtsPerIter
 				rvecOmega(n) = funchOmega(rvecX(n));
 			end
 		end

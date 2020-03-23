@@ -56,6 +56,7 @@ function matJ = fdjaco( funchF, vecX0, prm=[] )
 	%
 	matJ = zeros(sizeF,sizeX);
 	loopStartTime = time();
+	% Rewrite as parfor loop?
 	for n = 1 : sizeX
 		if ( 1==fdOrder )
 			vecXP = vecX0;

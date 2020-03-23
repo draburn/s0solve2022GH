@@ -13,6 +13,6 @@ reportTimePrev = startTime - 0.1;
 valLev = mygetfield( prm, "valLev", VALLEV__HIGH );
 assert( isrealscalar(valLev) );
 %
-numFigs0 = mygetfield( prm, "numFigs0", 0 );
-assert( isposintscalar(numFigs0+1) );
-numFigs = numFigs0;
+figIndex0 = mygetfield( prm, "figIndex0", 0 );
+assert( isposintscalar(figIndex0+1) );
+figIndex = figIndex0;

@@ -74,7 +74,7 @@ function [ rvecX, retCode, datOut ] = daclinspace( ...
 			matY = funchY(rvecX);
 		else
 			clear matY;
-			for n=1:size(rvecX,2)
+			parfor n=1:size(rvecX,2)
 				matY(:,n) = funchY(rvecX(n));
 			end
 		end
