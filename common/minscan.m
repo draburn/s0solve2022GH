@@ -1,3 +1,21 @@
+%  Function...
+%    [ xBest, retCode, datOut ] = minscan( x0, x1, funchOmega, prm=[], datIn=[] )
+%  Overview...
+%    Searches for the minimum of funchOmega between x0 and x1.
+%  Input values...
+%    x0, x1: The bounding values in the argument for funchOmega.
+%    funchOmega: A function handle from R^1 to R^1.
+%      Negative values are probably allowed.
+%    prm: Structure of parameters for the calculation.
+%    datIn: Structure of additional input data.
+%  Output values...
+%    xBest: The value of x that best minimizes oemga.
+%    retCode: A common return code, RETCODE__SUCCESS (0) on success.
+%    datOut: Structure of additional output data.
+%  See source code for more information on prm, datIn, and datOut.
+%
+%  This function is intended for use with postprocessing visualiation,
+%   and may be inefficient and imprecise.
 function [ xBest, retCode, datOut ] = minscan( x0, x1, funchOmega, prm=[], datIn=[] )
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

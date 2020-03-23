@@ -52,6 +52,7 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	end
 	%
 	numNuValsDesired = mygetfield( prm, "numNuValsDesired", 20 );
+	funchFSupportsMultiArg = mygetfield( prm, "funchFSupportsMultiArg", true );
 	%
 	curveDat.vecX0 = vecX0;
 	curveDat.vecF0 = vecF0;
@@ -177,12 +178,14 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	assert(isrealarray(curveDat.rvecNuVals,[1,numNuVals]));
 	assert(isrealarray(curveDat.matY,[sizeK,numNuVals]));
 	%
+	msg_notify( verbLev, thisFile, __LINE__, ...
+	  "It would be nice to have a check that scaled Y is properly monotonic." );
+	%
+	%
 	curveDat.matDelta = matV * curveDat.matY;
 	curveDat.matX = repmat(vecX0,[1,numNuVals]) + curveDat.matDelta;
 	assert(isrealarray(curveDat.matX,[sizeX,numNuVals]));
 	%
-	curveDat.matFLin = repmat(vecF0,[1,numNuVals]) + (matW * curveDat.matY);
-	funchFSupportsMultiArg = mygetfield( prm, "funchFSupportsMultiArg", true );
 	if (funchFSupportsMultiArg)
 		curveDat.matF = funchF(curveDat.matX);
 	else
@@ -191,13 +194,40 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		end
 	end
 	assert(isrealarray(curveDat.matF,[sizeF,numNuVals]));
-	%
-	curveDat.rvecDeltaNorm = sqrt(sum(curveDat.matDelta.^2,1));
-	curveDat.rvecOmegaLin = 0.5*sum(curveDat.matFLin.^2,1);
 	curveDat.rvecOmega = 0.5*sum(curveDat.matF.^2,1);
 	%
-	% Find nuOfOmegaMin. ... minscan()?
-	% Add this nu to rvecNu?
+	% Find nuOfMin...
+	funchXOfNu = @(nu)( repmat(vecX0,size(nu)) + (matV*curveDat.funchYOfNu(nu)) );
+	funchOmegaOfNu = @(nu)( 0.5*sum((funchF(funchXOfNu(nu))).^2,1) );
+	[ dummy, indexOfMin ] = min(curveDat.rvecOmega);
+	if (1==indexOfMin)
+		nu0 = curveDat.rvecNuVals(1);
+		nu1 = curveDat.rvecNuVals(3);
+	elseif (numNuVals==indexOfMin)
+		nu0 = curveDat.rvecNuVals(end-2);
+		nu1 = curveDat.rvecNuVals(end);
+	else
+		nu0 = curveDat.rvecNuVals(indexOfMin-1);
+		nu1 = curveDat.rvecNuVals(indexOfMin+1);
+	end
+	prm_minscan.funchOmegaSupportsMultiArg = ...
+	  ( funchFSupportsMultiArg && curveDat.funchYSupportsMultiArg );
+	curveDat.nuOfMin = minscan( nu0, nu1, funchOmegaOfNu, prm_minscan );
+	curveDat.vecYOfMin = curveDat.funchYOfNu(curveDat.nuOfMin);
+	curveDat.vecDeltaOfMin = matV * curveDat.vecYOfMin;
+	curveDat.vecXOfMin = vecX0 + curveDat.vecDeltaOfMin;
+	curveDat.vecFOfMin = funchF(curveDat.vecXOfMin);
+	curveDat.omegaOfMin = 0.5*sum(curveDat.vecFOfMin.^2);
+	%
+	msg_notify( verbLev, thisFile, __LINE__, ...
+	  "Add 'ofMin' to data here?" );
+	%
+	%
+	curveDat.rvecDeltaNorm = sqrt(sum((curveDat.matDelta).^2,1));
+	curveDat.matFLin = repmat(vecF0,[1,numNuVals]) + (matW * curveDat.matY);
+	curveDat.rvecOmegaLin = 0.5*sum(curveDat.matFLin.^2,1);
+	%
+retCode = RETCODE__SUCCESS;
 return;
 end
 
