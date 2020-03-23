@@ -171,7 +171,7 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		[ curveDat.rvecNuVals, retCode_dac, datOut_dac ] = daclinspace( ...
 		  0.0, 1.0, numNuValsDesired, curveDat.funchYOfNu );
 		numNuVals = size(curveDat.rvecNuVals,2);
-		curveDat.matY = datOut_dac.matF;
+		curveDat.matY = datOut_dac.matY;
 	end
 	assert( 1 <= numNuVals );
 	assert(isrealarray(curveDat.rvecNuVals,[1,numNuVals]));

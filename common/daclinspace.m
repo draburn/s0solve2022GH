@@ -1,16 +1,16 @@
 %  Function...
-%    [ xVals, retCode, datOut ] = daclinspace( x0, x1, numValsRequested, funchF, prm=[] )
+%    [ xVals, retCode, datOut ] = daclinspace( x0, x1, numValsRequested, funchY, prm=[] )
 %  Overview...
 %    Attempts to return a row vector with numValsRequested elements which produce
 %     values of funcF which have an evenly spaced distance along the curve (DAC).
 %    Compare to the built-in functions linspace() and logspace().
 %  Input values...
-%    x0, x1: The bounding values in the argument for funchF.
+%    x0, x1: The bounding values in the argument for funchY.
 %    numValsRequested: The desired number of argument values, counting x0 and x1.
-%    funchF: A function handle from R^1 to R^sizeF.
+%    funchY: A function handle from R^1 to R^sizeY.
 %    prm: Structure of parameters for the calculation.
 %  Output values...
-%    xVals: The output row vector of arguments to funchF.
+%    xVals: The output row vector of arguments to funchY.
 %    retCode: A common return code, RETCODE__SUCCESS (0) on success.
 %    datOut: Additional output data.
 %  See source code for more information on prm and datOut.
@@ -18,7 +18,7 @@
 %  This function is intended for use with postprocessing visualiation,
 %   and may be inefficient and imprecise.
 function [ rvecX, retCode, datOut ] = daclinspace( ...
-  x0, x1, numValsRequested, funchF, prm=[], datIn )
+  x0, x1, numValsRequested, funchY, prm=[], datIn )
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% INIT.
@@ -32,16 +32,16 @@ function [ rvecX, retCode, datOut ] = daclinspace( ...
 	assert( isposintscalar(numValsRequested) );
 	if ( 0 >= numValsRequested )
 		rvecX = [];
-		datOut.matF = [];
+		datOut.matY = [];
 		return;
 	elseif ( 1 == numValsRequested )
 		rvecX = (x0+x1)/2.0;
-		datOut.matF = funchF(rvecX);
+		datOut.matY = funchY(rvecX);
 		return;
 	elseif ( 2 == numValsRequested )
 		rvecX = [ x0, x1 ];
-		datOut.matF(:,1) = funchF(x0);
-		datOut.matF(:,2) = funchF(x1);
+		datOut.matY(:,1) = funchY(x0);
+		datOut.matY(:,2) = funchY(x1);
 		return;
 	end
 	assert( 3 <= numValsRequested );
@@ -70,20 +70,20 @@ function [ rvecX, retCode, datOut ] = daclinspace( ...
 		rvecDeltaX = rvecX(2:end)-rvecX(1:end-1);
 		assert( (x1-x0)*rvecDeltaX(:) > 0.0 );
 		%
-		if (mygetfield(prm,"funchFSupportsMultiArg",false))
-			matF = funchF(rvecX);
+		if (mygetfield(prm,"funchYSupportsMultiArg",false))
+			matY = funchY(rvecX);
 		else
-			clear matF;
+			clear matY;
 			for n=1:size(rvecX,2)
-				matF(:,n) = funchF(rvecX(n));
+				matY(:,n) = funchY(rvecX(n));
 			end
 		end
-		sizeF = size(matF,1);
-		assert( isrealarray(matF,[sizeF,numVals]) );
+		sizeY = size(matY,1);
+		assert( isrealarray(matY,[sizeY,numVals]) );
 		%
 		% Note that these deltaDAC values are simply linear estimates;
 		% something like a spline would be more accurate.
-		rvecDeltaDAC = sqrt(sum( (matF(:,2:end)-matF(:,1:end-1)).^2, 1 ));
+		rvecDeltaDAC = sqrt(sum( (matY(:,2:end)-matY(:,1:end-1)).^2, 1 ));
 		assert( rvecDeltaDAC(:) > 0.0 );
 		rvecDAC = [ 0.0, cumsum(rvecDeltaDAC) ];
 		fullDAC = rvecDAC(end);
@@ -100,7 +100,7 @@ function [ rvecX, retCode, datOut ] = daclinspace( ...
 			  min(rvecDeltaDAC), ...
 			  max(rvecDeltaDAC) ) );
 		  	retCode = RETCODE__SUCCESS;
-			datOut.matF = matF;
+			datOut.matY = matY;
 		  	return;
 		end
 		if ( numIter >= numIterLimit )
@@ -110,14 +110,14 @@ function [ rvecX, retCode, datOut ] = daclinspace( ...
 			  min(rvecDeltaDAC), ...
 			  max(rvecDeltaDAC) ) );
 			retCode = RETCODE__IMPOSED_STOP;
-			datOut.matF = matF;
+			datOut.matY = matY;
 			return;
 		end
 		%
 		%
 		rvecX_old = rvecX;
 		% We're going to calculate a new rvecX.
-		% This means we're going to throw out all of the matF,
+		% This means we're going to throw out all of the matY,
 		% and re-evaluate everything; it's inefficient, but easy to code.
 		% We'll use simple linear interpolation between rvecDAC and
 		% rvecDACDesired to get new values of rvecX.
