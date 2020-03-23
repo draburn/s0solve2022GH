@@ -11,21 +11,9 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% COMMON INIT.
 	%
-	commondefs;
+	commoninit;
 	thisFile = "studyPt_genCurveDat";
-	startTime = time();
-	retCode = RETCODE__NOT_SET;
-	datOut = [];
 	%
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
-	reportInterval = mygetfield( prm, "reportInterval", 0.0 );
-	assert( isrealscalar(verbLev) );
-	assert( isrealscalar(reportInterval) );
-	assert( 0.0 <= reportInterval );
-	reportTimePrev = startTime - 0.1;
-	%
-	valLev = mygetfield( prm, "valLev", VALLEV__HIGH );
-	assert( isrealscalar(valLev) );
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% SPECIFIC INIT.
@@ -104,8 +92,9 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		funchYOfNu = @(nuDummy)( nuDummy*( (matD+(nuDummy*matA)) \ vecG )  );
 		funchYIsLinear = false;
 		funchYSupportsMultiArg = false;
-		matS = matD;
-		warning("matS may be wrong!");
+		matS = matD.^0.5;
+		msg_notify( verbLev, thisFile, __LINE__, ...
+		  "matS for scaled monotonicity check may be wrong." );
 		%
 		%
 	case {STEPTYPE__GRADCURVE}
@@ -127,15 +116,17 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 			matS = matI;
 		case {STEPTYPE__GRADDIR_SCALED}
 			vecTemp = matD \ vecG;
-			matS = matD; % Is this right???
-			warning("matS may be wrong, not that it matters.");
+			matS = matD.^0.5;
+		msg_notify( verbLev, thisFile, __LINE__, ...
+		  "matS for scaled monotonicity check may be wrong, not that it matters." );
 		case {STEPTYPE__PICARD}
 			vecTemp = matV' * (eye(sizeX,sizeF) * vecF0);
 			matS = matI;
 		case {STEPTYPE__PICARD_SCALED}
 			vecTemp = matD \ (matV' * (eye(sizeX,sizeF) * vecF0));
-			matS = matD; %Is this right???
-			warning("matS may be wrong, not that it matters.");
+			matS = matD.^0.5;
+		msg_notify( verbLev, thisFile, __LINE__, ...
+		  "matS for scaled monotonicity check may be wrong, not that it matters." );
 		otherwise
 			error(sprintf( "Invalid value of stepType (%d).", stepType ));
 		end
@@ -153,7 +144,6 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		funchYOfNu = @(nuDummy)( vecY * nuDummy );
 		funchYIsLinear = true;
 		funchYSupportsMultiArg = true;
-		matS = matS; % Doesn't matter because linear.
 	end
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -179,8 +169,18 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	assert(isrealarray(rvecNu,[1,numNuVals]));
 	assert(isrealarray(matY,[sizeK,numNuVals]));
 	%
-	msg_notify( verbLev, thisFile, __LINE__, ...
-	  "It would be nice to have a check that scaled Y is properly monotonic." );
+	if (VALLEV__HIGH<= valLev)
+		rvecSYNorm = sqrt(sum((matS*matY).^2,1));
+		assert( isrealarray(rvecSYNorm,[1,numNuVals]) );
+		assert( rvecSYNorm(2:end) - rvecSYNorm(1:end-1) > 0.0 );
+		%msg_notify( verbLev, thisFile, __LINE__, ...
+		%  "Scaled Y passed monotonicity check." );
+		%rvecYNorm = sqrt(sum(matY.^2,1));
+		%plot( ...
+		%  rvecNu, rvecSYNorm, 'o-', ...
+		%  rvecNu, rvecYNorm, 'x-' );
+		%grid on;
+	end
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Get matDelta, matX, matF, and rvecOmega.

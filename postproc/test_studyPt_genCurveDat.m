@@ -8,11 +8,15 @@ sizeK = 100;
 sizeX = 100;
 sizeF = 100;
 %
+%seedPrm = demoFunc0101_genSeedPrm("lin-easy");
 seedPrm = demoFunc0101_genSeedPrm("moderate");
 %seedPrm = demoFunc0101_genSeedPrm("easy");
 %randState = mod(round(time),1E6);
-randState = 0;
+%randState = 0;
 %randState = 677832;
+%randState = 952523; % Try with 5x100x100xSTEPTYPE__GRADDIR.
+%randState = 88; % Try with 100x100x100x"moderate" STEPTYPE__LEVCURVE_SCALED.
+randState = 953150; % Try with 100x100x100x"moderate" STEPTYPE__LEVCURVE_SCALED.
 echo__randStat = randState
 seedPrm.randState = randState;
 seedPrm.sizeX = sizeX;
@@ -34,8 +38,9 @@ vecXSecret = funcPrm.x0;
 %
 prm = [];
 [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
-  funchF, vecX0, matV, matW, matH, vecG, STEPTYPE__LEVCURVE, prm );
-indexOfMin = curveDat.indexOfMin;
+  funchF, vecX0, matV, matW, matH, vecG, STEPTYPE__LEVCURVE_SCALED, prm );
+indexOfMin = curveDat.indexOfMin
+minResultIsIncluded = curveDat.minResultIsIncluded
 numNuVals = size(curveDat.rvecNu,2);
 toc;
 %
