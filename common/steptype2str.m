@@ -6,23 +6,23 @@
 function str = steptype2str( stepType )
 	commondefs;
 	if ( STEPTYPE__NEWTON == stepType )
-		str = "Newton";
+		str = "Newt";
 	elseif ( STEPTYPE__PICARD == stepType )
-		str = "Picard";
+		str = "Pic";
 	elseif ( STEPTYPE__PICARD_SCALED == stepType )
-		str = "PicardScl";
+		str = "PicS";
 	elseif ( STEPTYPE__GRADDIR == stepType )
-		str = "GradDir";
+		str = "Grad";
 	elseif ( STEPTYPE__GRADDIR_SCALED == stepType )
-		str = "GradDirScl";
+		str = "GradS";
 	elseif ( STEPTYPE__LEVCURVE == stepType )
-		str = "LevCurve";
+		str = "Lev";
 	elseif ( STEPTYPE__LEVCURVE_SCALED == stepType )
-		str = "LevCurveScl";
+		str = "LevS";
 	elseif ( STEPTYPE__GRADCURVE == stepType )
-		str = "GradCurve";
+		str = "GCur";
 	elseif ( STEPTYPE__GRADCURVE_SCALED == stepType )
-		str = "GradCurveScl";
+		str = "GCurS";
 	else
 		str = sprintf("??? (%g)",stepType);
 	end

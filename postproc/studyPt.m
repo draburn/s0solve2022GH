@@ -49,15 +49,24 @@ function [ studyPtDat, retCode, datOut ] = studyPt( ...
 	vecG = -matW' * vecF0;
 	%
 	numCurves = max(size(stepTypeList));
-	parfor n=1:numCurves
+	curveColMap = jet(numCurves);
+	%
+	for n=1:numCurves
 		stepType = stepTypeList(n);
 		if (STEPTYPE__SPECIFIED_VECTOR==stepType)
 			genCurveDat_prm.vecY = matV' * ( vecXSecret - vecX0 );
+			curveName = "Oracle";
 		else
 			genCurveDat_prm.vecY = [];
+			curveName = steptype2str(stepType);
 		end
-		curveDat(n) = studyPt_genCurveDat( ...
+		% Do I *really* need "curveDat0" as an intermediate?
+		% I *really* can't do curveDat(n).curveName = curveName???
+		curveDat0 = studyPt_genCurveDat( ...
 		  funchF, vecX0, matV, matW, matH, vecG, stepType, genCurveDat_prm );
+		curveDat0.curveName = curveName;
+		curveDat0.col = curveColMap(n,:);
+		curveDat(n) = curveDat0;
 	end
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
