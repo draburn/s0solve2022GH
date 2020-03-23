@@ -97,19 +97,6 @@ grid on;
 %
 viz_matV = eye(sizeK,sizeK);
 viz_matY = viz_matV' * curveDat.matY;
-
-for n=1:floor(sizeK/2)
-numFigs++; figure(numFigs);
-i1 = (2*n)-1; i2 = 2*n;
-plot( ...
-  viz_matY(i1,:), viz_matY(i2,:), 'o-', ...
-  [0], [0], 'k+', 'linewidth', 3, 'markersize', 20, ...
-  viz_matY(i1,indexOfMin), viz_matY(i2,indexOfMin), 's', 'linewidth', 3, 'markersize', 10 );
-grid on;
-end
-return
-
-
 %
 numFigs++; figure(numFigs);
 i1 = 1; i2 = 2;
@@ -121,14 +108,6 @@ grid on;
 %
 numFigs++; figure(numFigs);
 i1 = 3; i2 = 4;
-plot( ...
-  viz_matY(i1,:), viz_matY(i2,:), 'o-', ...
-  [0], [0], 'k+', 'linewidth', 3, 'markersize', 20, ...
-  viz_matY(i1,indexOfMin), viz_matY(i2,indexOfMin), 's', 'linewidth', 3, 'markersize', 10 );
-grid on;
-%
-numFigs++; figure(numFigs);
-i1 = 1; i2 = 4;
 plot( ...
   viz_matY(i1,:), viz_matY(i2,:), 'o-', ...
   [0], [0], 'k+', 'linewidth', 3, 'markersize', 20, ...
