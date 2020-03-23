@@ -18,7 +18,7 @@
 %  This function is intended for use with postprocessing visualiation,
 %   and may be inefficient and imprecise.
 function [ rvecX, retCode, datOut ] = daclinspace( ...
-  x0, x1, numValsRequested, funchY, prm=[], datIn )
+  x0, x1, numValsRequested, funchY, prm=[], datIn=[] )
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% INIT.
