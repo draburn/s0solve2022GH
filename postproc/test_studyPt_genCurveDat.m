@@ -36,8 +36,6 @@ prm = [];
 [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
   funchF, vecX0, matV, matW, matH, vecG, STEPTYPE__LEVCURVE, prm );
 toc;
-echo__nuOfMin = curveDat.nuOfMin
-echo__omegaOfMin = curveDat.omegaOfMin
 %
 rvecDAC = sqrt(sum((curveDat.matY(:,2:end)-curveDat.matY(:,1:end-1)).^2,1));
 numFigs++; figure(numFigs);
@@ -47,7 +45,7 @@ ylabel( "distance between points" );
 grid on;
 %
 numFigs++; figure(numFigs);
-plot( curveDat.rvecNuVals, curveDat.rvecDeltaNorm, 'o-' );
+plot( curveDat.rvecNu, curveDat.rvecDeltaNorm, 'o-' );
 xlabel( "nu" );
 ylabel( "deltaNorm" );
 grid on;

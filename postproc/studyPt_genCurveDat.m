@@ -54,13 +54,6 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	numNuValsDesired = mygetfield( prm, "numNuValsDesired", 20 );
 	funchFSupportsMultiArg = mygetfield( prm, "funchFSupportsMultiArg", true );
 	%
-	curveDat.vecX0 = vecX0;
-	curveDat.vecF0 = vecF0;
-	curveDat.matV = matV;
-	curveDat.matH = matH;
-	curveDat.vecG = vecG;
-	curveDat.stepType = stepType;
-	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO PRE-WORK.
 	%
@@ -82,6 +75,8 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO MAIN WORK.
 	%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Set funchY.
 	%
 	switch( stepType )
 	case {STEPTYPE__LEVCURVE}
@@ -93,20 +88,20 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		matL = muScl * matI;
 		matA = matH - matL;
 		%
-		curveDat.funchYOfNu = @(nuDummy)( nuDummy*( (matL+(nuDummy*matA)) \ vecG )  );
-		curveDat.funchYIsLinear = false;
-		curveDat.funchYSupportsMultiArg = false;
-		curveDat.matS = matI;
+		funchYOfNu = @(nuDummy)( nuDummy*( (matL+(nuDummy*matA)) \ vecG )  );
+		funchYIsLinear = false;
+		funchYSupportsMultiArg = false;
+		matS = matI;
 		%
 		%
 	case {STEPTYPE__LEVCURVE_SCALED}
 		matA = matH - matD;
 		%
-		curveDat.funchYOfNu = @(nuDummy)( nuDummy*( (matD+(nuDummy*matA)) \ vecG )  );
-		curveDat.funchYIsLinear = false;
-		curveDat.funchYSupportsMultiArg = false;
-		curveDat.matS = matD;
-		warning("curveDat.matS may be wrong!");
+		funchYOfNu = @(nuDummy)( nuDummy*( (matD+(nuDummy*matA)) \ vecG )  );
+		funchYIsLinear = false;
+		funchYSupportsMultiArg = false;
+		matS = matD;
+		warning("matS may be wrong!");
 		%
 		%
 	case {STEPTYPE__GRADCURVE}
@@ -129,14 +124,14 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		case {STEPTYPE__GRADDIR_SCALED}
 			vecTemp = matD \ vecG;
 			matS = matD; % Is this right???
-			warning("curveDat.matS may be wrong, not that it matters.");
+			warning("matS may be wrong, not that it matters.");
 		case {STEPTYPE__PICARD}
 			vecTemp = matV' * (eye(sizeX,sizeF) * vecF0);
 			matS = matI;
 		case {STEPTYPE__PICARD_SCALED}
 			vecTemp = matD \ (matV' * (eye(sizeX,sizeF) * vecF0));
 			matS = matD; %Is this right???
-			warning("curveDat.matS may be wrong, not that it matters.");
+			warning("matS may be wrong, not that it matters.");
 		otherwise
 			error(sprintf( "Invalid value of stepType (%d).", stepType ));
 		end
@@ -151,81 +146,129 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 			vecY = vecTemp * 0.0;
 		end
 		%
-		curveDat.funchYOfNu = @(nuDummy)( vecY * nuDummy );
-		curveDat.funchYIsLinear = true;
-		curveDat.funchYSupportsMultiArg = true;
-		curveDat.matS = matS; % Doesn't matter because linear.
+		funchYOfNu = @(nuDummy)( vecY * nuDummy );
+		funchYIsLinear = true;
+		funchYSupportsMultiArg = true;
+		matS = matS; % Doesn't matter because linear.
 	end
 	%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Get rvecNu and matY.
 	%
-	if (curveDat.funchYIsLinear)
-		curveDat.rvecNuVals = linspace( 0.0, 1.0, numNuValsDesired );
-		numNuVals = size(curveDat.rvecNuVals,2);
-		if (curveDat.funchYSupportsMultiArg)
-			curveDat.matY = curveDat.funchYOfNu(curveDat.rvecNuVals);
+	if (funchYIsLinear)
+		rvecNu = linspace( 0.0, 1.0, numNuValsDesired );
+		numNuVals = size(rvecNu,2);
+		if (funchYSupportsMultiArg)
+			matY = funchYOfNu(rvecNu);
 		else
 			for n=1:numNuVals
-				curveDat.matY(:,n) = curveDat.funchYOfNu(curveDat.rvecNuVals(n));
+				matY(:,n) = funchYOfNu(rvecNu(n));
 			end
 		end
 	else
-		[ curveDat.rvecNuVals, retCode_dac, datOut_dac ] = daclinspace( ...
-		  0.0, 1.0, numNuValsDesired, curveDat.funchYOfNu );
-		numNuVals = size(curveDat.rvecNuVals,2);
-		curveDat.matY = datOut_dac.matY;
+		[ rvecNu, retCode_dac, datOut_dac ] = daclinspace( ...
+		  0.0, 1.0, numNuValsDesired, funchYOfNu );
+		numNuVals = size(rvecNu,2);
+		matY = datOut_dac.matY;
 	end
 	assert( 1 <= numNuVals );
-	assert(isrealarray(curveDat.rvecNuVals,[1,numNuVals]));
-	assert(isrealarray(curveDat.matY,[sizeK,numNuVals]));
+	assert(isrealarray(rvecNu,[1,numNuVals]));
+	assert(isrealarray(matY,[sizeK,numNuVals]));
 	%
 	msg_notify( verbLev, thisFile, __LINE__, ...
 	  "It would be nice to have a check that scaled Y is properly monotonic." );
 	%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Get matDelta, matX, matF, and rvecOmega.
 	%
-	curveDat.matDelta = matV * curveDat.matY;
-	curveDat.matX = repmat(vecX0,[1,numNuVals]) + curveDat.matDelta;
-	assert(isrealarray(curveDat.matX,[sizeX,numNuVals]));
-	%
+	matDelta = matV * matY;
+	matX = repmat(vecX0,[1,numNuVals]) + matDelta;
 	if (funchFSupportsMultiArg)
-		curveDat.matF = funchF(curveDat.matX);
+		matF = funchF(matX);
 	else
 		for n=1:numNuVals
-			curveDat.matF(:,n) = funchF(curveDat.matX(:,n));
+			matF(:,n) = funchF(matX(:,n));
 		end
 	end
-	assert(isrealarray(curveDat.matF,[sizeF,numNuVals]));
-	curveDat.rvecOmega = 0.5*sum(curveDat.matF.^2,1);
+	assert(isrealarray(matF,[sizeF,numNuVals]));
+	rvecOmega = 0.5*sum(matF.^2,1);
 	%
-	% Find nuOfMin...
-	funchXOfNu = @(nu)( repmat(vecX0,size(nu)) + (matV*curveDat.funchYOfNu(nu)) );
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Get nuOfMin.
+	%
+	funchXOfNu = @(nu)( repmat(vecX0,size(nu)) + (matV*funchYOfNu(nu)) );
 	funchOmegaOfNu = @(nu)( 0.5*sum((funchF(funchXOfNu(nu))).^2,1) );
-	[ dummy, indexOfMin ] = min(curveDat.rvecOmega);
-	if (1==indexOfMin)
-		nu0 = curveDat.rvecNuVals(1);
-		nu1 = curveDat.rvecNuVals(3);
-	elseif (numNuVals==indexOfMin)
-		nu0 = curveDat.rvecNuVals(end-2);
-		nu1 = curveDat.rvecNuVals(end);
+	[ omegaTemp, indexTemp ] = min(rvecOmega);
+	if (1==indexTemp)
+		nu0 = rvecNu(1);
+		nu1 = rvecNu(3);
+	elseif (numNuVals==indexTemp)
+		nu0 = rvecNu(end-2);
+		nu1 = rvecNu(end);
 	else
-		nu0 = curveDat.rvecNuVals(indexOfMin-1);
-		nu1 = curveDat.rvecNuVals(indexOfMin+1);
+		nu0 = rvecNu(indexTemp-1);
+		nu1 = rvecNu(indexTemp+1);
 	end
 	prm_minscan.funchOmegaSupportsMultiArg = ...
-	  ( funchFSupportsMultiArg && curveDat.funchYSupportsMultiArg );
-	curveDat.nuOfMin = minscan( nu0, nu1, funchOmegaOfNu, prm_minscan );
-	curveDat.vecYOfMin = curveDat.funchYOfNu(curveDat.nuOfMin);
-	curveDat.vecDeltaOfMin = matV * curveDat.vecYOfMin;
-	curveDat.vecXOfMin = vecX0 + curveDat.vecDeltaOfMin;
-	curveDat.vecFOfMin = funchF(curveDat.vecXOfMin);
-	curveDat.omegaOfMin = 0.5*sum(curveDat.vecFOfMin.^2);
+	  ( funchFSupportsMultiArg && funchYSupportsMultiArg );
+	nuOfMin = minscan( nu0, nu1, funchOmegaOfNu, prm_minscan );
+	clear nu0;
+	clear nu1;
+	clear omegaTemp;
+	clear indexTemp;
+	clear funchOmegaOfNu;
+	clear funchXOfNu;
 	%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Get other ofMin quantities and insert.
+	%
+	vecYOfMin = funchYOfNu(nuOfMin);
+	vecDeltaOfMin = matV * vecYOfMin;
+	vecXOfMin = vecX0 + vecDeltaOfMin;
+	vecFOfMin = funchF(vecXOfMin);
+	omegaOfMin = 0.5*sum(vecFOfMin.^2);
+	%
+	indexOfMin = 0;
 	msg_notify( verbLev, thisFile, __LINE__, ...
 	  "Add 'ofMin' to data here?" );
 	%
 	%
-	curveDat.rvecDeltaNorm = sqrt(sum((curveDat.matDelta).^2,1));
-	curveDat.matFLin = repmat(vecF0,[1,numNuVals]) + (matW * curveDat.matY);
-	curveDat.rvecOmegaLin = 0.5*sum(curveDat.matFLin.^2,1);
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Calculate other quantiies.
+	%
+	rvecDeltaNorm = sqrt(sum((matDelta).^2,1));
+	matFLin = repmat(vecF0,[1,numNuVals]) + (matW * matY);
+	rvecOmegaLin = 0.5*sum(matFLin.^2,1);
+	%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% COPY TO CURVEDAT.
+	%
+	%
+	curveDat.vecX0 = vecX0;
+	curveDat.vecF0 = vecF0;
+	curveDat.matV = matV;
+	curveDat.matH = matH;
+	curveDat.vecG = vecG;
+	curveDat.stepType = stepType;
+	curveDat.prm = prm;
+	%
+	curveDat.funchYOfNu = funchYOfNu;
+	curveDat.funchYIsLinear = funchYIsLinear;
+	curveDat.funchYSupportsMultiArg = funchYSupportsMultiArg;
+	curveDat.matS = matS;
+	%
+	curveDat.indexOfMin = indexOfMin;
+	%
+	curveDat.rvecNu = rvecNu;
+	curveDat.matY = matY;
+	curveDat.matDelta = matDelta;
+	curveDat.matX = matX;
+	curveDat.matF = matF;
+	curveDat.rvecOmega = rvecOmega;
+	%
+	curveDat.rvecDeltaNorm = rvecDeltaNorm;
+	curveDat.matFLin = matFLin;
+	curveDat.rvecOmegaLin = rvecOmegaLin;
 	%
 retCode = RETCODE__SUCCESS;
 return;
