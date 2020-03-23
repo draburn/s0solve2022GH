@@ -1,6 +1,7 @@
 test commondefs;
 test daclinspace;
 test fdjaco;
+test minscan;
 test msg_retcode;
 test msg_thresh;
 test myorth;
