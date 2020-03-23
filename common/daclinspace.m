@@ -1,3 +1,22 @@
+%  Function...
+%    [ xVals, retCode, datOut ] = daclinspace( x0, x1, numValsRequested, funchF, prm=[] )
+%  Overview...
+%    Attempts to return a row vector with numValsRequested elements which produce
+%     values of funcF which have an evenly spaced distance along the curve (DAC).
+%    Compare to the built-in functions linspace() and logspace().
+%  Input values...
+%    x0, x1: The bounding values in the argument for funchF.
+%    numValsRequested: The desired number of argument values, counting x0 and x1.
+%    funchF: A function handle from R^1 to R^sizeF.
+%    prm: Structure of parameters for the calculation.
+%  Output values...
+%    xVals: The output row vector of arguments to funchF.
+%    retCode: A common return code, RETCODE__SUCCESS (0) on success.
+%    datOut: Additional output data.
+%  See source code for more information on prm and datOut.
+%
+%  This function is intended for use with postprocessing visualiation,
+%   and may be inefficient and imprecise.
 function [ rvecX, retCode, datOut ] = daclinspace( ...
   x0, x1, numValsRequested, funchF, prm=[], datIn )
 	%
@@ -23,13 +42,9 @@ function [ rvecX, retCode, datOut ] = daclinspace( ...
 	end
 	assert( 3 <= numValsRequested );
 	%
-	tolMin = mygetfield(prm,"tolMin",0.6);
-	tolMax = mygetfield(prm,"tolMax",1.4);
-	assert( isrealscalar(tolMin) );
-	assert( isrealscalar(tolMax) );
-	assert( 0.0 < tolMin );
-	assert( tolMin < 1.0 );
-	assert( 1.0 < tolMax );
+	tol = mygetfield(prm,"tolMin",0.5);
+	assert( isrealscalar(tol) );
+	assert( 0.0 < tol );
 	%
 	numIterLimit = mygetfield(prm,"numIterLimit",10);
 	assert( isposintscalar(numIterLimit+1) );
@@ -58,6 +73,8 @@ function [ rvecX, retCode, datOut ] = daclinspace( ...
 		sizeF = size(matF,1);
 		assert( isrealarray(matF,[sizeF,numVals]) );
 		%
+		% Note that these deltaDAC values are simply linear estimates;
+		% something like a spline would be more accurate.
 		rvecDeltaDAC = sqrt(sum( (matF(:,2:end)-matF(:,1:end-1)).^2, 1 ));
 		assert( rvecDeltaDAC(:) > 0.0 );
 		rvecDAC = [ 0.0, cumsum(rvecDeltaDAC) ];
@@ -65,17 +82,22 @@ function [ rvecX, retCode, datOut ] = daclinspace( ...
 		assert( fullDAC > 0.0 );
 		%
 		rvecDACDesired = linspace( 0.0, fullDAC, numValsRequested );
-		%numFigs++; figure(numFigs);
-		%plot( rvecDACDesired, rvecDAC, 'o-' );
-		%grid on;
 		%
-		if ( min(rvecDeltaDAC) >= tolMin * fullDAC / numValsRequested ...
-		  && max(rvecDeltaDAC) <= tolMax * fullDAC / numValsRequested )
+		if ( max(rvecDeltaDAC) <= min(rvecDeltaDAC) * (1.0+tol) )
+			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
+			  "Converged in %d iterations ( %g ~ %g ).", ...
+			  numIter, ...
+			  min(rvecDeltaDAC), ...
+			  max(rvecDeltaDAC) ) );
 		  	retCode = RETCODE__SUCCESS;
-		  	echo__numIter = numIter
 		  	return;
 		end
 		if ( numIter >= numIterLimit )
+			msg_notify( verbLev, thisFile, __LINE__, sprintf( ...
+			  "Failed to converge after %d iterations ( %g ~ %g ).", ...
+			  numIter, ...
+			  min(rvecDeltaDAC), ...
+			  max(rvecDeltaDAC) ) );
 			retCode = RETCODE__IMPOSED_STOP;
 			return;
 		end
@@ -90,6 +112,7 @@ function [ rvecX, retCode, datOut ] = daclinspace( ...
 			end
 			rvecN(m) = n;
 		end
+		%
 		rvecS = rvecDACDesired - rvecDAC(rvecN);
 		rvecA = rvecS .* rvecDeltaX(rvecN) ./ rvecDeltaDAC(rvecN);
 		%
@@ -97,6 +120,8 @@ function [ rvecX, retCode, datOut ] = daclinspace( ...
 		rvecX = rvecX_old(rvecN) + rvecA;
 		rvecX(1) = x0;
 		rvecX(end) = x1;
+		% Yes, we're going to re-evaluate funcF at all of the points;
+		% this is very inefficient, but easy to code.
 		%
 		%
 		numIter++;

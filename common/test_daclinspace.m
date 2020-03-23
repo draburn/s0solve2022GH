@@ -11,6 +11,7 @@ x1 = 1.0;
 numValsRequested = 30;
 %
 prm.funchFSupportsMultiArg = true;
+%prm.verbLev = VERBLEV__PROGRESS;
 rvecXDACLin = daclinspace( x0, x1, numValsRequested, funchF, prm );
 rvecXLin = linspace( x0, x1, numValsRequested );
 %
