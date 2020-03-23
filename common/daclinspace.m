@@ -32,12 +32,16 @@ function [ rvecX, retCode, datOut ] = daclinspace( ...
 	assert( isposintscalar(numValsRequested) );
 	if ( 0 >= numValsRequested )
 		rvecX = [];
+		datOut.matF = [];
 		return;
 	elseif ( 1 == numValsRequested )
 		rvecX = (x0+x1)/2.0;
+		datOut.matF = funchF(rvecX);
 		return;
 	elseif ( 2 == numValsRequested )
 		rvecX = [ x0, x1 ];
+		datOut.matF(:,1) = funchF(x0);
+		datOut.matF(:,2) = funchF(x1);
 		return;
 	end
 	assert( 3 <= numValsRequested );
@@ -96,6 +100,7 @@ function [ rvecX, retCode, datOut ] = daclinspace( ...
 			  min(rvecDeltaDAC), ...
 			  max(rvecDeltaDAC) ) );
 		  	retCode = RETCODE__SUCCESS;
+			datOut.matF = matF;
 		  	return;
 		end
 		if ( numIter >= numIterLimit )
@@ -105,6 +110,7 @@ function [ rvecX, retCode, datOut ] = daclinspace( ...
 			  min(rvecDeltaDAC), ...
 			  max(rvecDeltaDAC) ) );
 			retCode = RETCODE__IMPOSED_STOP;
+			datOut.matF = matF;
 			return;
 		end
 		%

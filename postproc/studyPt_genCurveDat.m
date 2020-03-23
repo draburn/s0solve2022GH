@@ -159,25 +159,24 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	%
 	if (curveDat.funchYIsLinear)
 		curveDat.rvecNuVals = linspace( 0.0, 1.0, numNuValsDesired );
+		numNuVals = size(curveDat.rvecNuVals,2);
+		if (curveDat.funchYSupportsMultiArg)
+			curveDat.matY = curveDat.funchYOfNu(curveDat.rvecNuVals);
+		else
+			for n=1:numNuVals
+				curveDat.matY(:,n) = curveDat.funchYOfNu(curveDat.rvecNuVals(n));
+			end
+		end
 	else
-		msg( thisFile, __LINE__, "Hey! Listen!" );
-		prm_daclinspace.verbLev = VERBLEV__COPIOUS;
-		curveDat.rvecNuVals = daclinspace( ...
-		  0.0, 1.0, numNuValsDesired, curveDat.funchYOfNu, prm_daclinspace );
+		[ curveDat.rvecNuVals, retCode_dac, datOut_dac ] = daclinspace( ...
+		  0.0, 1.0, numNuValsDesired, curveDat.funchYOfNu );
+		numNuVals = size(curveDat.rvecNuVals,2);
+		curveDat.matY = datOut_dac.matF;
 	end
-	numNuVals = size(curveDat.rvecNuVals,2);
 	assert( 1 <= numNuVals );
 	assert(isrealarray(curveDat.rvecNuVals,[1,numNuVals]));
-	%
-	%
-	if (curveDat.funchYSupportsMultiArg)
-		curveDat.matY = curveDat.funchYOfNu(curveDat.rvecNuVals);
-	else
-		for n=1:numNuVals
-			curveDat.matY(:,n) = curveDat.funchYOfNu(curveDat.rvecNuVals(n));
-		end
-	end
 	assert(isrealarray(curveDat.matY,[sizeK,numNuVals]));
+	%
 	curveDat.matDelta = matV * curveDat.matY;
 	curveDat.matX = repmat(vecX0,[1,numNuVals]) + curveDat.matDelta;
 	assert(isrealarray(curveDat.matX,[sizeX,numNuVals]));

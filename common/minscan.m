@@ -35,6 +35,8 @@ function [ sOfMin, retCode, datOut ] = minscan( ...
 	assert( 0.0 <= reportInterval );
 	reportTimePrev = startTime - 0.1;
 	%
+	msg_warn( verbLev, thisFile, __LINE__, "WARNING: This function planned for deprecation." );
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% SPECIFIC INIT.
 	%
