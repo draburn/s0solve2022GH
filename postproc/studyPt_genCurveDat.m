@@ -117,25 +117,32 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		case {STEPTYPE__GRADDIR_SCALED}
 			vecTemp = matD \ vecG;
 			matS = matD.^0.5;
-		msg_notify( verbLev, thisFile, __LINE__, ...
-		  "matS for scaled monotonicity check may be wrong, not that it matters." );
+			msg_notify( verbLev, thisFile, __LINE__, ...
+			  "matS for scaled monotonicity check may be wrong, not that it matters." );
 		case {STEPTYPE__PICARD}
 			vecTemp = matV' * (eye(sizeX,sizeF) * vecF0);
 			matS = matI;
 		case {STEPTYPE__PICARD_SCALED}
 			vecTemp = matD \ (matV' * (eye(sizeX,sizeF) * vecF0));
 			matS = matD.^0.5;
-		msg_notify( verbLev, thisFile, __LINE__, ...
-		  "matS for scaled monotonicity check may be wrong, not that it matters." );
+			msg_notify( verbLev, thisFile, __LINE__, ...
+			  "matS for scaled monotonicity check may be wrong, not that it matters." );
+		case {STEPTYPE__SPECIFIED_VECTOR}
+			% This is a linear case, but, don't follow normal limit....
+			vecTemp = getfield( prm, "vecY" );
+			assert( isrealarray(vecTemp,[sizeK,1]) );
+			matS = matI;
 		otherwise
 			error(sprintf( "Invalid value of stepType (%d).", stepType ));
 		end
 		%
 		fTemp = vecTemp' * matH * vecTemp;
 		if (STEPTYPE__NEWTON==stepType)
-			assert( abs(fTemp-vecTemp'*vecG) < eps^0.75 );
-		end
-		if ( 0.0 < fTemp )
+			assert( abs(fTemp-vecTemp'*vecG) < (eps^0.75)*(abs(fTemp)+abs(vecTemp'*vecG)) );
+			vecY = vecTemp;
+		elseif (STEPTYPE__SPECIFIED_VECTOR == stepType)
+			vecY = vecTemp;
+		elseif ( 0.0 < fTemp )
 			vecY = vecTemp * ((vecTemp'*vecG)/fTemp);
 		else
 			vecY = vecTemp * 0.0;

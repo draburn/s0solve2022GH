@@ -62,7 +62,7 @@ STEPTYPE__LEVCURVE = 300;
 STEPTYPE__LEVCURVE_SCALED = 301;
 STEPTYPE__GRADCURVE = 400;
 STEPTYPE__GRADCURVE_SCALED = 401;
-STEPTYPE__SECRET = 900;
+STEPTYPE__SPECIFIED_VECTOR = 800;
 
 % ValLev: Validation level, qualitative amount of time (and other resources)
 %  to spend on validation checks.
