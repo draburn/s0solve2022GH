@@ -48,6 +48,37 @@ function [ figIndex, retCode, datOut ] = vizPt( studyPtDat, plotList, prm=[], da
 		title( "omega vs deltaNorm" );
 		%
 		%
+	case {VIZPT_PLOT__OMEGALIN_VS_DELTANORM}
+		strFieldX = "rvecDeltaNorm";
+		strFieldY = "rvecOmegaLin";
+		for n=1:numCurves
+			matPlotX(n,:) = getfield(curveDat(n),strFieldX);
+			matPlotY(n,:) = getfield(curveDat(n),strFieldY);
+			indexOfMin(n) = curveDat(n).indexOfMin;
+			col(n,:) = curveDat(n).col;
+		end
+		%
+		for n=1:numCurves
+			plot( ...
+			  matPlotX(n,:), matPlotY(n,:), ...
+			  "o-", "color", 0.8*col(n,:) );
+			strLegend = [ strLegend; curveDat(n).curveName ];
+		end
+		legend( strLegend, "location", "northeastoutside" );
+		plot( matPlotX(1,1), matPlotY(1,1), "k+", "linewidth", 2, "markersize", 20 );
+		for n=1:numCurves
+			m = indexOfMin(n);
+			plot( ...
+			  matPlotX(n,end), matPlotY(n,end), ...
+			  "x", "color", 0.4*col(n,:), "linewidth", 2, "markersize", 10, ...
+			  matPlotX(n,m), matPlotY(n,m), ...
+			  "s", "color", 0.4*col(n,:), "linewidth", 2, "markersize", 10 );
+		end
+		xlabel( strFieldX );
+		ylabel( strFieldY );
+		title([ strFieldY " vs " strFieldX ]);
+		%
+		%
 	case {VIZPT_PLOT__Y1_Y2}
 		k1 = 1;
 		k2 = 2;
