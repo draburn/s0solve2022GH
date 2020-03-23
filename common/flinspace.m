@@ -36,6 +36,9 @@ function [ xVals, retCode, datOut ] = flinspace( x0, x1, numValsRequested, funch
 	assert( 0.0 <= reportInterval );
 	reportTimePrev = startTime - 0.1;
 	%
+	msg_warn( verbLev, thisFile, __LINE__, "WARNING: This function planned for deprecation." );
+	msg_warn( verbLev, thisFile, __LINE__, "  Consider using daclinspace instead." );
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% PROBLEM-SPECIFIC INIT.
 	%
