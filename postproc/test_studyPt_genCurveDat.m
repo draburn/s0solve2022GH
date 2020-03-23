@@ -35,17 +35,25 @@ vecXSecret = funcPrm.x0;
 prm = [];
 [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
   funchF, vecX0, matV, matW, matH, vecG, STEPTYPE__LEVCURVE, prm );
+indexOfMin = curveDat.indexOfMin;
+numNuVals = size(curveDat.rvecNu,2);
 toc;
 %
 rvecDAC = sqrt(sum((curveDat.matY(:,2:end)-curveDat.matY(:,1:end-1)).^2,1));
 numFigs++; figure(numFigs);
-plot( rvecDAC, 'o-', [0], '.' );
+plot( ...
+  (1:numNuVals-1)-0.5, rvecDAC, 'o-', ...
+  [0], '.', ...
+  (indexOfMin-1)*[1,1], [min(rvecDAC),max(rvecDAC)], 's-', 'linewidth', 3, 'markersize', 10 );
 xlabel( "point index" );
 ylabel( "distance between points" );
 grid on;
 %
 numFigs++; figure(numFigs);
-plot( curveDat.rvecNu, curveDat.rvecDeltaNorm, 'o-' );
+plot( ...
+  curveDat.rvecNu, curveDat.rvecDeltaNorm, 'o-', ...
+  [0], '.', ...
+  curveDat.rvecNu(indexOfMin), curveDat.rvecDeltaNorm(indexOfMin), 's', 'linewidth', 3, 'markersize', 10 );
 xlabel( "nu" );
 ylabel( "deltaNorm" );
 grid on;
@@ -53,7 +61,8 @@ grid on;
 numFigs++; figure(numFigs);
 plot( ...
   curveDat.rvecDeltaNorm, curveDat.rvecOmegaLin, 'o-', ...
-  curveDat.rvecDeltaNorm, curveDat.rvecOmega, 'x-' );
+  curveDat.rvecDeltaNorm, curveDat.rvecOmega, 'x-', ...
+  curveDat.rvecDeltaNorm(indexOfMin), curveDat.rvecOmega(indexOfMin), 's', 'linewidth', 3, 'markersize', 10 );
 xlabel( "deltaNorm" );
 ylabel( "omega" );
 legend( ...

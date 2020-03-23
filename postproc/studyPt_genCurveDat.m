@@ -51,8 +51,12 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		assert( ( (matW'*vecF0) + vecG ) < (eps^0.75)*wScale*fScale );
 	end
 	%
-	numNuValsDesired = mygetfield( prm, "numNuValsDesired", 20 );
+	numNuValsDesired = mygetfield( prm, "numNuValsDesired", 100 );
+	assert( isposintscalar(numNuValsDesired-2) );
 	funchFSupportsMultiArg = mygetfield( prm, "funchFSupportsMultiArg", true );
+	nuDiffSqThresh = mygetfield( prm, "nuDiffSqThresh", 1.0/(10.0*numNuValsDesired) );
+	assert( isrealscalar(nuDiffSqThresh) );
+	assert( nuDiffSqThresh > 0.0 );
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO PRE-WORK.
@@ -220,7 +224,7 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	clear funchXOfNu;
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Get other ofMin quantities and insert.
+	% Get other ofMin quantities and overwrite.
 	%
 	vecYOfMin = funchYOfNu(nuOfMin);
 	vecDeltaOfMin = matV * vecYOfMin;
@@ -228,9 +232,37 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	vecFOfMin = funchF(vecXOfMin);
 	omegaOfMin = 0.5*sum(vecFOfMin.^2);
 	%
-	indexOfMin = 0;
-	msg_notify( verbLev, thisFile, __LINE__, ...
-	  "Add 'ofMin' to data here?" );
+	[ nuDiffSqTemp, indexOfMin ] = min( (rvecNu-nuOfMin).^2 );
+	if ( nuDiffSqTemp < nuDiffSqThresh )
+		if ( 1 == indexOfMin )
+			% Do nothing more.
+			minResultIsIncluded = false;
+		elseif ( numNuVals == indexOfMin )
+			% Do nothing more.
+			minResultIsIncluded = false;
+		else
+			% Overwrite the point.
+			rvecNu(indexOfMin) = nuOfMin;
+			matY(:,indexOfMin) = vecYOfMin(:);
+			matDelta(:,indexOfMin) = vecDeltaOfMin(:);
+			matX(:,indexOfMin) = vecXOfMin(:);
+			matF(:,indexOfMin) = vecFOfMin(:);
+			rvecOmega(:,indexOfMin) = omegaOfMin(:);
+			minResultIsIncluded = true;
+		end
+	else
+		if ( nuOfMin > rvecNu(indexOfMin) )
+			indexOfMin++;
+		end
+		rvecNu(indexOfMin:numNuVals+1) = [ nuOfMin, rvecNu(indexOfMin:numNuVals) ];
+		matY(:,indexOfMin:numNuVals+1) = [ vecYOfMin, matY(:,indexOfMin:numNuVals) ];
+		matDelta(:,indexOfMin:numNuVals+1) = [ vecDeltaOfMin, matDelta(:,indexOfMin:numNuVals) ];
+		matX(:,indexOfMin:numNuVals+1) = [ vecXOfMin, matX(:,indexOfMin:numNuVals) ];
+		matF(:,indexOfMin:numNuVals+1) = [ vecFOfMin, matF(:,indexOfMin:numNuVals) ];
+		rvecOmega(indexOfMin:numNuVals+1) = [ omegaOfMin, rvecOmega(indexOfMin:numNuVals) ];
+		numNuVals++;
+		minResultIsIncluded = true;
+	end
 	%
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -258,6 +290,13 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	curveDat.matS = matS;
 	%
 	curveDat.indexOfMin = indexOfMin;
+	curveDat.minResultIsIncluded = minResultIsIncluded;
+	curveDat.nuOfMin = nuOfMin;
+	curveDat.vecYOfMin = vecYOfMin;
+	curveDat.vecDeltaOfMin = vecDeltaOfMin;
+	curveDat.vecXOfMin = vecXOfMin;
+	curveDat.vecFOfMin = vecFOfMin;
+	curveDat.omegaOfMin = omegaOfMin;
 	%
 	curveDat.rvecNu = rvecNu;
 	curveDat.matY = matY;
