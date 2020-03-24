@@ -75,6 +75,11 @@ function vizPt_vs( varargin )
 				assert( indexC <= size(matTemp,1) );
 				vizT(n).rvecVals = matTemp(indexC,:);
 			end
+			%
+			if (0)
+				vizT(n).rvecVals += 1.0E-3 * randn(size(vizT(n).rvecVals)) ...
+				  * (max(vizT(n).rvecVals)-min(vizT(n).rvecVals));
+			end
 		end
 		%
 		%
@@ -103,21 +108,21 @@ function vizPt_vs( varargin )
 	for n=1:numCurves
 		plot( ...
 		  vizX(n).rvecVals, vizY(n).rvecVals, ...
-		  "o-", "color", 0.8*vizC(n).col );
+		  "o-", "color", 0.8*vizC(n).col, "markersize", 4+2*(numCurves-n) );
 		strLegend = [ strLegend; vizC(n).curveName ];
 	end
 	legend( strLegend, "location", "northeastoutside" );
 	%
 	plot( ...
 	  vizX(1).rvecVals(1), vizY(1).rvecVals(1), ...
-	  "k+", "linewidth", 2, "markersize", 20 );
+	  "k+", "linewidth", 2, "markersize", 30 );
 	for n=1:numCurves
 		m = vizC(n).indexOfMin;
 		plot( ...
-		  vizX(n).rvecVals(end), vizY(n).rvecVals(end), ...
-		  "x", "color", 0.4*vizC(n).col, "linewidth", 2, "markersize", 10, ...
-		  vizX(n).rvecVals(m), vizY(n).rvecVals(m), ...
-		  "s", "color", 0.4*vizC(n).col, "linewidth", 2, "markersize", 10 );
+		  vizX(n).rvecVals(end), vizY(n).rvecVals(end), "s", ...
+		  "color", 0.6*vizC(n).col, "linewidth", 2, "markersize", 10+2*(numCurves-n), ...
+		  vizX(n).rvecVals(m), vizY(n).rvecVals(m), "x", ...
+		  "color", 0.6*vizC(n).col, "linewidth", 2, "markersize", 20+2*(numCurves-n) );
 	end
 	grid on;
 	hold off;
