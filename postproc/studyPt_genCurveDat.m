@@ -305,6 +305,7 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	curveDat.vecFOfMin = vecFOfMin;
 	curveDat.omegaOfMin = omegaOfMin;
 	%
+	curveDat.rvecIndex = (1:numNuVals);
 	curveDat.rvecNu = rvecNu;
 	curveDat.matY = matY;
 	curveDat.matDelta = matDelta;
