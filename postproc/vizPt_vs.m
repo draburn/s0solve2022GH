@@ -44,8 +44,8 @@ function vizPt_vs( varargin )
 		elseif ( strcmpi(strName,"index") )
 			strField = "rvecIndex";
 			indexC = 0;
-		elseif ( strcmpi(strName,"mu") )
-			strField = "rvecIndex";
+		elseif ( strcmpi(strName,"nu") )
+			strField = "rvecNu";
 			indexC = 0;
 		elseif ( strcmpi(strName,"deltaNorm") )
 			strField = "rvecDeltaNorm";
