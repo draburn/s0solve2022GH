@@ -118,4 +118,4 @@ return;
 end
 
 %!test
-%!	test_studyPt;
+%!	test_vizPt;
