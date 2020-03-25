@@ -1,14 +1,15 @@
-function vizPt_curve1( studyPtDat, indexB, prm=[], datIn=[] )
+function vizPt_curve1d( studyPtDat, indexB, prm=[], datIn=[] )
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% COMMON INIT.
 	%
 	commoninit;
-	thisFile = "vizPt_curve1";
+	thisFile = "vizPt_curve1d";
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% INIT.
 	%
+	numCurves = max(size(studyPtDat.curveDat));
 	if ( indexB < 0 )
 		m = studyPtDat.curveDat(abs(indexB)).indexOfMin;
 		vecBU = studyPtDat.curveDat(abs(indexB)).matDelta(:,m);
@@ -16,11 +17,10 @@ function vizPt_curve1( studyPtDat, indexB, prm=[], datIn=[] )
 		vecBU = studyPtDat.curveDat(indexB).matDelta(:,end);
 	end
 	%
-	numCurves = max(size(studyPtDat.curveDat));
-	vecBV = myorth(vecBU);
-	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% CALC.
+	%
+	vecBV = myorth(vecBU);
 	%
 	for n=1:numCurves
 		matDelta = studyPtDat.curveDat(n).matDelta;
@@ -38,7 +38,6 @@ function vizPt_curve1( studyPtDat, indexB, prm=[], datIn=[] )
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% PLOT.
 	%
-	figIndex++; figure(figIndex);
 	clf();
 	strLegend = [];
 	hold on;
@@ -72,8 +71,8 @@ function vizPt_curve1( studyPtDat, indexB, prm=[], datIn=[] )
 	end
 	%
 	xlabel(sprintf( "dist along %s", strXCoord ));
-	ylabel(sprintf( "ortho dist"));
-	title(sprintf("1D Curve Plot: %s",strXCoord));
+	ylabel(sprintf( "ortho dist" ));
+	title(sprintf( "1D Curve Plot: %s", strXCoord ));
 	%
 	grid on;
 	hold off;
@@ -81,3 +80,7 @@ function vizPt_curve1( studyPtDat, indexB, prm=[], datIn=[] )
 	%
 return;
 end
+
+%!test
+%!	test_studyPt;
+%!	vizPt_curve1d( studyPtDat, 1 );

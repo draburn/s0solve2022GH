@@ -16,14 +16,14 @@ function vizPt_curve( studyPtDat, vecBasisIndex, prm=[], datIn=[] )
 		error("vecBasisIndex appears to be empty.");
 	elseif (1==numB)
 		indexB = vecBasisIndex(1);
-		vizPt_curve1( studyPtDat, indexB, prm, datIn );
+		vizPt_curve1d( studyPtDat, indexB, prm, datIn );
 	elseif (2==numB)
-		error( "Not implemented!" );
+		indexB1 = vecBasisIndex(1);
+		indexB2 = vecBasisIndex(2);
+		vizPt_curve2d( studyPtDat, indexB1, indexB2, prm, datIn );
 	elseif (3<=numB)
 		error( "Not implemented!" );
 	end
-	
-	%
 	%
 return;
 end
