@@ -53,23 +53,48 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 	hold on;
 	%
 	for n=1:numCurves
+		if ( abs(indexB1)==n && abs(indexB2)==n )
+			% Only possible if comparing a curve's end with omegaMin.
+			tempLineWidth = 1;
+			tempFMT = "^-";
+		elseif (abs(indexB1)==n)
+			tempLineWidth = 1;
+			tempFMT = "^-";
+		elseif (abs(indexB2)==n)
+			tempLineWidth = 1;
+			tempFMT = "v-";
+		else
+			tempLineWidth = 1;
+			tempFMT = "o-";
+		end
 		plot( ...
-		  vizDat(n).rvecX, vizDat(n).rvecY, "o-", ...
-		  "color", 0.8*vizDat(n).col, "markersize", 4+2*(numCurves-n) );
+		  vizDat(n).rvecX, vizDat(n).rvecY, tempFMT, ...
+		  "color", 0.8*vizDat(n).col, ...
+		  "markersize", 4+2*(numCurves-n), ...
+		  "linewidth", tempLineWidth );
 		strLegend = [ strLegend; vizDat(n).curveName ];
 	end
 	legend( strLegend, "location", "northeastoutside" );
 	%
-	plot( ...
-	  0.0, 0.0, ...
-	  "k+", "linewidth", 2, "markersize", 30 );
+	plot( 0.0, 0.0, "k+", "linewidth", 2, "markersize", 30 );
 	for n=1:numCurves
 		m = vizDat(n).indexOfMin;
+		if (abs(indexB1)==n)
+			tempLineWidth = 2;
+		elseif (abs(indexB2)==n)
+			tempLineWidth = 2;
+		else
+			tempLineWidth = 2;
+		end
 		plot( ...
 		  vizDat(n).rvecX(end), vizDat(n).rvecY(end), "s", ...
-		  "color", 0.6*vizDat(n).col, "linewidth", 2, "markersize", 10+2*(numCurves-n), ...
+		  "color", 0.6*vizDat(n).col, ...
+		  "linewidth", tempLineWidth, ...
+		  "markersize", 10+2*(numCurves-n), ...
 		  vizDat(n).rvecX(m), vizDat(n).rvecY(m), "x", ...
-		  "color", 0.6*vizDat(n).col, "linewidth", 2, "markersize", 20+2*(numCurves-n) );
+		  "color", 0.6*vizDat(n).col, ...
+		  "linewidth", tempLineWidth, ...
+		  "markersize", 20+2*(numCurves-n) );
 	end
 	%
 	if ( 0 < indexB1 )
