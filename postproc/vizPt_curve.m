@@ -16,13 +16,7 @@ function vizPt_curve( studyPtDat, vecBasisIndex, prm=[], datIn=[] )
 		error("vecBasisIndex appears to be empty.");
 	elseif (1==numB)
 		indexB = vecBasisIndex(1);
-		if ( indexB < 0 )
-			m = studyPtDat.curveDat(abs(indexB)).indexOfMin;
-			vecBU = studyPtDat.curveDat(abs(indexB)).matDelta(:,m);
-		else
-			vecBU = studyPtDat.curveDat(indexB).matDelta(:,end);
-		end
-		vizPt_curve1( studyPtDat, vecBU, prm, datIn );
+		vizPt_curve1( studyPtDat, indexB, prm, datIn );
 	elseif (2==numB)
 		error( "Not implemented!" );
 	elseif (3<=numB)
