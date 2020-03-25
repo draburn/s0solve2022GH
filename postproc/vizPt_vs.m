@@ -1,4 +1,6 @@
 function vizPt_vs( varargin )
+	% 2020.03.24: May have been cleaner to use a cell:
+	%  vizPts_vs( studyPtDat, "nu", { "y", 1 } ).
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% COMMON INIT.
@@ -6,7 +8,6 @@ function vizPt_vs( varargin )
 	prm = [];
 	datIn = [];
 	commoninit;
-	vizPt_init;
 	thisFile = "vizPt_vs";
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -134,3 +135,7 @@ function vizPt_vs( varargin )
 	%
 return;
 end
+
+%!test
+%!	test_studyPt
+%!	vizPt_vs( studyPtDat, "nu", "y", 1 );
