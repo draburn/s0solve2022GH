@@ -96,6 +96,8 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 	switch (vizContour)
 	case {VIZPT_CONTOUR__NONE}
 		% Nothing to do.
+		gridZ = [];
+		strContour = "no";
 	case {VIZPT_CONTOUR__F}
 		if ( funchFSupportsMultiArg )
 			matF = funchF(matX);
@@ -106,10 +108,12 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 		end
 		rvecOmega = 0.5*sum(matF.^2,1);
 		gridZ = reshape( rvecOmega, [ numS1Vals, numS2Vals ] ).^0.5;
+		strContour = "omega";
 	case {VIZPT_CONTOUR__FLIN}
 		matFLin = repmat(vecF0,[1,numVals]) + (matW*(matV'*matDelta));
 		rvecOmegaLin = 0.5*sum(matFLin.^2,1);
 		gridZ = reshape( rvecOmegaLin, [ numS1Vals, numS2Vals ] ).^0.5;
+		strContour = "omegaLin";
 	otherwise
 		error(sprintf( "Invalid value of vizContour!"  ));
 	end
@@ -138,7 +142,7 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 		end
 		plot( ...
 		  vizDat(n).rvecX, vizDat(n).rvecY, tempFMT, ...
-		  "color", 0.8*vizDat(n).col, ...
+		  "color", 0.7*vizDat(n).col, ...
 		  "markersize", 4+2*(numCurves-n), ...
 		  "linewidth", tempLineWidth );
 		strLegend = [ strLegend; vizDat(n).curveName ];
@@ -147,7 +151,7 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 	%
 	if ( VIZPT_CONTOUR__NONE ~= vizContour )
 		contourf( gridS1, gridS2, gridZ, 30 );
-		colormap( 0.7 + 0.3*jet(256) );
+		colormap( 0.8 + 0.2*jet(256) );
 	end
 	%
 	plot( 0.0, 0.0, "k+", "linewidth", 2, "markersize", 30 );
@@ -162,11 +166,11 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 		end
 		plot( ...
 		  vizDat(n).rvecX(end), vizDat(n).rvecY(end), "s", ...
-		  "color", 0.6*vizDat(n).col, ...
+		  "color", 0.5*vizDat(n).col, ...
 		  "linewidth", tempLineWidth, ...
 		  "markersize", 10+2*(numCurves-n), ...
 		  vizDat(n).rvecX(m), vizDat(n).rvecY(m), "x", ...
-		  "color", 0.6*vizDat(n).col, ...
+		  "color", 0.5*vizDat(n).col, ...
 		  "linewidth", tempLineWidth, ...
 		  "markersize", 20+2*(numCurves-n) );
 	end
@@ -188,7 +192,7 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 	%
 	xlabel(sprintf( "dist along %s", strXCoord ));
 	ylabel(sprintf( "dist along ortho %s", strYCoord ));
-	title(sprintf( "2D Curve Plot: %s, %s", strXCoord, strYCoord ));
+	title(sprintf( "2D Curve Plot: %s, %s; %sC", strXCoord, strYCoord, strContour ));
 	%
 	grid on;
 	hold off;

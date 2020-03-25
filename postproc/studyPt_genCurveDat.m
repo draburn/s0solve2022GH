@@ -83,7 +83,6 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		funchYOfNu = @(nuDummy)( nuDummy*( (matL+(nuDummy*matA)) \ vecG )  );
 		funchYIsLinear = false;
 		funchYSupportsMultiArg = false;
-		matS = matI;
 		%
 		%
 	case {STEPTYPE__LEVCURVE_SCALED}
@@ -92,9 +91,6 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		funchYOfNu = @(nuDummy)( nuDummy*( (matD+(nuDummy*matA)) \ vecG )  );
 		funchYIsLinear = false;
 		funchYSupportsMultiArg = false;
-		matS = matD.^0.5;
-		msg_notify( verbLev, thisFile, __LINE__, ...
-		  "matS for scaled monotonicity check may be wrong." );
 		%
 		%
 	case {STEPTYPE__GRADCURVE}
@@ -110,28 +106,18 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		switch (stepType)
 		case {STEPTYPE__NEWTON}
 			vecTemp = matH \ vecG;
-			matS = matI;
 		case {STEPTYPE__GRADDIR}
 			vecTemp = vecG;
-			matS = matI;
 		case {STEPTYPE__GRADDIR_SCALED}
 			vecTemp = matD \ vecG;
-			matS = matD.^0.5;
-			msg_notify( verbLev, thisFile, __LINE__, ...
-			  "matS for scaled monotonicity check may be wrong, not that it matters." );
 		case {STEPTYPE__PICARD}
 			vecTemp = matV' * (eye(sizeX,sizeF) * vecF0);
-			matS = matI;
 		case {STEPTYPE__PICARD_SCALED}
 			vecTemp = matD \ (matV' * (eye(sizeX,sizeF) * vecF0));
-			matS = matD.^0.5;
-			msg_notify( verbLev, thisFile, __LINE__, ...
-			  "matS for scaled monotonicity check may be wrong, not that it matters." );
 		case {STEPTYPE__SPECIFIED_VECTOR}
 			% This is a linear case, but, don't follow normal limit....
 			vecTemp = getfield( prm, "vecY" );
 			assert( isrealarray(vecTemp,[sizeK,1]) );
-			matS = matI;
 		otherwise
 			error(sprintf( "Invalid value of stepType (%d).", stepType ));
 		end
@@ -175,19 +161,6 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	assert( 1 <= numNuVals );
 	assert(isrealarray(rvecNu,[1,numNuVals]));
 	assert(isrealarray(matY,[sizeK,numNuVals]));
-	%
-	if (VALLEV__HIGH<= valLev)
-		rvecSYNorm = sqrt(sum((matS*matY).^2,1));
-		assert( isrealarray(rvecSYNorm,[1,numNuVals]) );
-		assert( rvecSYNorm(2:end) - rvecSYNorm(1:end-1) > 0.0 );
-		%msg_notify( verbLev, thisFile, __LINE__, ...
-		%  "Scaled Y passed monotonicity check." );
-		%rvecYNorm = sqrt(sum(matY.^2,1));
-		%plot( ...
-		%  rvecNu, rvecSYNorm, 'o-', ...
-		%  rvecNu, rvecYNorm, 'x-' );
-		%grid on;
-	end
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Get matDelta, matX, matF, and rvecOmega.
@@ -296,7 +269,6 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	curveDat.funchYOfNu = funchYOfNu;
 	curveDat.funchYIsLinear = funchYIsLinear;
 	curveDat.funchYSupportsMultiArg = funchYSupportsMultiArg;
-	curveDat.matS = matS;
 	%
 	curveDat.indexOfMin = indexOfMin;
 	curveDat.minResultIsIncluded = minResultIsIncluded;
