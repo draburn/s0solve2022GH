@@ -42,6 +42,7 @@ function [ studyPtDat, retCode, datOut ] = studyPt( ...
 	funchFSupportsMultiArg = mygetfield( prm, "funchFSupportsMultiArg", true );
 	%
 	genStepFunchDatIn = mygetfield( datIn, "genStepFunchDatIn", [] );
+	includeFSOrcale = false;
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO WORK.
@@ -69,6 +70,20 @@ function [ studyPtDat, retCode, datOut ] = studyPt( ...
 		curveDat0.col = curveColMap(n,:);
 		curveDat(n) = curveDat0;
 	end
+	%
+	if (includeFSOrcale)
+		% DRaburn 2020.03.25: This is hackish.
+		numCurves++;
+		genCurveDat_prm.vecY = vecXSecret - vecX0;
+		curveName = "FSOracle";
+		curveDat0 = studyPt_genCurveDat( funchF, vecX0, ...
+		  eye(sizeX,sizeX), zeros(sizeF,sizeX), zeros(sizeX,sizeX), zeros(sizeX,1), ...
+		  STEPTYPE__SPECIFIED_VECTOR, genCurveDat_prm );
+		curveDat0.curveName = curveName;
+		curveDat0.col = [ 0.6, 0.6, 0.6 ];
+		curveDat(numCurves) = curveDat0;
+	end
+	%
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% SET OUTPUT.

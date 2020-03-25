@@ -35,8 +35,8 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		wSqScale = max(max(matW.^2));
 		wScale = sqrt(wSqScale);
 		fScale = sqrt(max(vecF0.^2));
-		assert( ( (matW'*matW)-matH ) < (eps^0.75)*wSqScale );
-		assert( ( (matW'*vecF0) + vecG ) < (eps^0.75)*wScale*fScale );
+		assert( ( (matW'*matW)-matH ) <= (eps^0.75)*wSqScale );
+		assert( ( (matW'*vecF0) + vecG ) <= (eps^0.75)*wScale*fScale );
 	end
 	%
 	numNuValsDesired = mygetfield( prm, "numNuValsDesired", 100 );
@@ -50,9 +50,11 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	% DO PRE-WORK.
 	%
 	vecDiagH = diag(matH);
-	assert( 0.0 < max(vecDiagH) );
-	if ( 0.0 == min(vecDiagH) )
-		msg_warn( verbLev, thisFile, __LINE__, "Warning: matH has a diagonal zero." );
+	assert( 0.0 <= min(vecDiagH) );
+	if ( 0.0 == max(vecDiagH) )
+		msg_warn( verbLev, thisFile, __LINE__, "Warning: matH has all zero diagonals." );
+	elseif ( 0.0 == min(vecDiagH) )
+		msg_warn( verbLev, thisFile, __LINE__, "Warning: matH has a zero diagonal." );
 	end
 	if (VALLEV__HIGH<= valLev)
 		rcondH = rcond(matH);

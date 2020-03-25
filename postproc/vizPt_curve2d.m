@@ -34,7 +34,7 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 	VIZPT_CONTOUR__NONE = 0;
 	VIZPT_CONTOUR__F = 1;
 	VIZPT_CONTOUR__FLIN = 2;
-	vizContour = VIZPT_CONTOUR__FLIN;
+	vizContour = VIZPT_CONTOUR__F;
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% CALC.
@@ -97,7 +97,7 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 	case {VIZPT_CONTOUR__NONE}
 		% Nothing to do.
 		gridZ = [];
-		strContour = "no";
+		strContour = "none";
 	case {VIZPT_CONTOUR__F}
 		if ( funchFSupportsMultiArg )
 			matF = funchF(matX);
@@ -114,6 +114,11 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 		rvecOmegaLin = 0.5*sum(matFLin.^2,1);
 		gridZ = reshape( rvecOmegaLin, [ numS1Vals, numS2Vals ] ).^0.5;
 		strContour = "omegaLin";
+		%
+		if ( sum(sum( ((matV*(matV'*matBV)) - matBV).^2 )) > eps )
+			msg_warn( verbLev, thisFile, __LINE__, sprintf( ...
+			  "Warning: Contour basis space is outside linear model space." ));
+		end
 	otherwise
 		error(sprintf( "Invalid value of vizContour!"  ));
 	end
@@ -129,13 +134,13 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 		if ( abs(indexB1)==n && abs(indexB2)==n )
 			% Only possible if comparing a curve's end with omegaMin.
 			tempLineWidth = 1;
-			tempFMT = "v-";
+			tempFMT = "o-";
 		elseif (abs(indexB1)==n)
 			tempLineWidth = 1;
-			tempFMT = "v-";
+			tempFMT = "o-";
 		elseif (abs(indexB2)==n)
 			tempLineWidth = 1;
-			tempFMT = "^-";
+			tempFMT = "o-";
 		else
 			tempLineWidth = 1;
 			tempFMT = "o-";
@@ -143,7 +148,7 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 		plot( ...
 		  vizDat(n).rvecX, vizDat(n).rvecY, tempFMT, ...
 		  "color", 0.7*vizDat(n).col, ...
-		  "markersize", 4+2*(numCurves-n), ...
+		  "markersize", 8+4*(numCurves-n), ...
 		  "linewidth", tempLineWidth );
 		strLegend = [ strLegend; vizDat(n).curveName ];
 	end
@@ -165,14 +170,19 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 			tempLineWidth = 2;
 		end
 		plot( ...
-		  vizDat(n).rvecX(end), vizDat(n).rvecY(end), "s", ...
-		  "color", 0.5*vizDat(n).col, ...
+		  vizDat(n).rvecX(m), vizDat(n).rvecY(m), "s", ...
+		  "color", 0.7*vizDat(n).col, ...
 		  "linewidth", tempLineWidth, ...
-		  "markersize", 10+2*(numCurves-n), ...
+		  "markersize", 20+5*(numCurves-n), ...
 		  vizDat(n).rvecX(m), vizDat(n).rvecY(m), "x", ...
-		  "color", 0.5*vizDat(n).col, ...
+		  "color", 0.7*vizDat(n).col, ...
 		  "linewidth", tempLineWidth, ...
-		  "markersize", 20+2*(numCurves-n) );
+		  "markersize", 20+5*(numCurves-n) );
+		  %"markersize", 10+10*(numCurves-n), ...
+		  %vizDat(n).rvecX(m), vizDat(n).rvecY(m), "v", ...
+		  %"color", 0.7*vizDat(n).col, ...
+		  %"linewidth", tempLineWidth, ...
+		  %"markersize", 10+10*(numCurves-n) );
 	end
 	%
 	if ( indexB1 > 0 )
@@ -192,7 +202,7 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 	%
 	xlabel(sprintf( "dist along %s", strXCoord ));
 	ylabel(sprintf( "dist along ortho %s", strYCoord ));
-	title(sprintf( "2D Curve Plot: %s, %s; %sC", strXCoord, strYCoord, strContour ));
+	title(sprintf( "2D Curve Plot (%s): %s, %s", strContour, strXCoord, strYCoord ));
 	%
 	grid on;
 	hold off;
