@@ -10,11 +10,11 @@ function vizPt_curve1d( studyPtDat, indexB, prm=[], datIn=[] )
 	% INIT.
 	%
 	numCurves = max(size(studyPtDat.curveDat));
-	if ( indexB < 0 )
+	if ( indexB > 0 )
 		m = studyPtDat.curveDat(abs(indexB)).indexOfMin;
 		vecBU = studyPtDat.curveDat(abs(indexB)).matDelta(:,m);
 	else
-		vecBU = studyPtDat.curveDat(indexB).matDelta(:,end);
+		vecBU = studyPtDat.curveDat(abs(indexB)).matDelta(:,end);
 	end
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -80,11 +80,11 @@ function vizPt_curve1d( studyPtDat, indexB, prm=[], datIn=[] )
 		  "markersize", 20+2*(numCurves-n) );
 	end
 	%
-	if ( 0 < indexB )
-		strXCoord = sprintf( "full %s step", ...
-		  studyPtDat.curveDat(indexB).curveName );
-	else
+	if ( indexB > 0 )
 		strXCoord = sprintf( "omegaMin %s step", ...
+		  studyPtDat.curveDat(abs(indexB)).curveName );
+	else
+		strXCoord = sprintf( "full %s step", ...
 		  studyPtDat.curveDat(abs(indexB)).curveName );
 	end
 	%

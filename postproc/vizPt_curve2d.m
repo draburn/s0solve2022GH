@@ -10,17 +10,17 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 	% INIT.
 	%
 	numCurves = max(size(studyPtDat.curveDat));
-	if ( indexB1 < 0 )
+	if ( indexB1 > 0 )
 		m = studyPtDat.curveDat(abs(indexB1)).indexOfMin;
 		vecBU1 = studyPtDat.curveDat(abs(indexB1)).matDelta(:,m);
 	else
-		vecBU1 = studyPtDat.curveDat(indexB1).matDelta(:,end);
+		vecBU1 = studyPtDat.curveDat(abs(indexB1)).matDelta(:,end);
 	end
-	if ( indexB2 < 0 )
+	if ( indexB2 > 0 )
 		m = studyPtDat.curveDat(abs(indexB2)).indexOfMin;
 		vecBU2 = studyPtDat.curveDat(abs(indexB2)).matDelta(:,m);
 	else
-		vecBU2 = studyPtDat.curveDat(indexB2).matDelta(:,end);
+		vecBU2 = studyPtDat.curveDat(abs(indexB2)).matDelta(:,end);
 	end
 	matBU = [ vecBU1, vecBU2 ];
 	%
@@ -64,8 +64,8 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 	s2Max = 0.0;
 	s2Min = 0.0;
 	for n=1:numCurves
-	%if ( abs(indexB1)==n || abs(indexB2)==n )
-	if (1)
+	if ( abs(indexB1)==n || abs(indexB2)==n )
+	%if (1)
 		s1Max = max([ s1Max, max(vizDat(n).rvecX) ]);
 		s1Min = min([ s1Min, min(vizDat(n).rvecX) ]);
 		s2Max = max([ s2Max, max(vizDat(n).rvecY) ]);
@@ -125,7 +125,7 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 		if ( abs(indexB1)==n && abs(indexB2)==n )
 			% Only possible if comparing a curve's end with omegaMin.
 			tempLineWidth = 1;
-			tempFMT = "^-";
+			tempFMT = "v-";
 		elseif (abs(indexB1)==n)
 			tempLineWidth = 1;
 			tempFMT = "v-";
@@ -171,18 +171,18 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 		  "markersize", 20+2*(numCurves-n) );
 	end
 	%
-	if ( 0 < indexB1 )
-		strXCoord = sprintf( "full %s step", ...
-		  studyPtDat.curveDat(indexB1).curveName );
-	else
+	if ( indexB1 > 0 )
 		strXCoord = sprintf( "omegaMin %s step", ...
 		  studyPtDat.curveDat(abs(indexB1)).curveName );
-	end
-	if ( 0 < indexB2 )
-		strYCoord = sprintf( "full %s step", ...
-		  studyPtDat.curveDat(indexB2).curveName );
 	else
+		strXCoord = sprintf( "full %s step", ...
+		  studyPtDat.curveDat(abs(indexB1)).curveName );
+	end
+	if ( indexB2 > 0 )
 		strYCoord = sprintf( "omegaMin %s step", ...
+		  studyPtDat.curveDat(abs(indexB2)).curveName );
+	else
+		strYCoord = sprintf( "full %s step", ...
 		  studyPtDat.curveDat(abs(indexB2)).curveName );
 	end
 	%
