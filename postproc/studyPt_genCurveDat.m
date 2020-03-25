@@ -278,6 +278,8 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	rvecDeltaNorm = sqrt(sum((matDelta).^2,1));
 	matFLin = repmat(vecF0,[1,numNuVals]) + (matW * matY);
 	rvecOmegaLin = 0.5*sum(matFLin.^2,1);
+	rvecDAC = [ 0.0, cumsum(sqrt(sum((matDelta(:,2:end)-matDelta(:,1:end-1)).^2,1))) ];
+	% DRaburn 2020.03.24: This measure of distance-along-curve is crude.
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% COPY TO CURVEDAT.
@@ -316,6 +318,7 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	curveDat.rvecDeltaNorm = rvecDeltaNorm;
 	curveDat.matFLin = matFLin;
 	curveDat.rvecOmegaLin = rvecOmegaLin;
+	curveDat.rvecDAC = rvecDAC;
 	%
 retCode = RETCODE__SUCCESS;
 return;

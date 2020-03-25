@@ -48,6 +48,10 @@ function vizPt_vs( varargin )
 		elseif ( strcmpi(strName,"nu") )
 			strField = "rvecNu";
 			indexC = 0;
+		elseif ( strcmpi(strName,"mu") )
+			warning( "You entered \"mu\". I'll assume you meant \"nu\"." );
+			strField = "rvecNu";
+			indexC = 0;
 		elseif ( strcmpi(strName,"deltaNorm") )
 			strField = "rvecDeltaNorm";
 			indexC = 0;
@@ -56,6 +60,9 @@ function vizPt_vs( varargin )
 			indexC = 0;
 		elseif ( strcmpi(strName,"omegaLin") )
 			strField = "rvecOmegaLin";
+			indexC = 0;
+		elseif ( strcmpi(strName,"dac") )
+			strField = "rvecDAC";
 			indexC = 0;
 		else
 			error(sprintf( "Unsupported value of strName as argument %d.", argIndex-1 ));
