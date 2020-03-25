@@ -24,6 +24,10 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 	end
 	matBU = [ vecBU1, vecBU2 ];
 	%
+	vecX0 = studyPtDat.vecX0;
+	funchF = studyPtDat.funchF;
+	funchFSupportsMultiArg = studyPtDat.funchFSupportsMultiArg;
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% CALC.
 	%
@@ -44,6 +48,55 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 		vizDat(n).curveName = studyPtDat.curveDat(n).curveName;
 		vizDat(n).indexOfMin = studyPtDat.curveDat(n).indexOfMin;
 	end
+	%
+	%
+	%
+	s1Max = 0.0;
+	s1Min = 0.0;
+	s2Max = 0.0;
+	s2Min = 0.0;
+	for n=1:numCurves
+	%if ( abs(indexB1)==n || abs(indexB2)==n )
+	if (1)
+		s1Max = max([ s1Max, max(vizDat(n).rvecX) ]);
+		s1Min = min([ s1Min, min(vizDat(n).rvecX) ]);
+		s2Max = max([ s2Max, max(vizDat(n).rvecY) ]);
+		s2Min = min([ s2Min, min(vizDat(n).rvecY) ]);
+	end
+	end
+	%
+	s1Var = s1Max - s1Min;
+	s2Var = s2Max - s2Min;
+	s1Max = s1Max + (0.2*s1Var);
+	s1Min = s1Min - (0.2*s1Var);
+	s2Max = s2Max + (0.2*s2Var);
+	s2Min = s2Min - (0.2*s2Var);
+	%
+	numS1Vals = 51;
+	numS2Vals = 51;
+	numVals = numS1Vals * numS2Vals;
+	s1Vals = linspace( s1Min, s1Max, numS1Vals );
+	s2Vals = linspace( s2Min, s2Max, numS2Vals );
+	[ gridS1, gridS2 ] = ndgrid( s1Vals, s2Vals );
+	%
+	rvecGridS1 = reshape( gridS1, 1, numVals );
+	rvecGridS2 = reshape( gridS2, 1, numVals );
+	%
+	matDelta = matBV * [ rvecGridS1; rvecGridS2 ];
+	matX = repmat(vecX0,[1,numVals]) + matDelta;
+	%
+	% WANT TO ALLOW CONSIDERATION OF FLIN,
+	% BUT, THIS IS RESTRICTED TO SUBSPACE MATV.
+	% SO, MUST REFACTOR SOME.
+	if ( funchFSupportsMultiArg )
+		matF = funchF(matX);
+	else
+		parfor n=1:numVals
+			matF(:,n) = funchF(matX(:,n));
+		end
+	end
+	rvecOmega = 0.5*sum(matF.^2,1);
+	gridOmega = reshape( rvecOmega, [ numS1Vals, numS2Vals ] );
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% PLOT.
@@ -75,6 +128,9 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 		strLegend = [ strLegend; vizDat(n).curveName ];
 	end
 	legend( strLegend, "location", "northeastoutside" );
+	%
+	contourf( gridS1, gridS2, gridOmega.^0.5, 30 );
+	colormap( 0.7 + 0.3*jet(256) );
 	%
 	plot( 0.0, 0.0, "k+", "linewidth", 2, "markersize", 30 );
 	for n=1:numCurves
@@ -118,8 +174,6 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 	%
 	grid on;
 	hold off;
-	%
-	borderzoom(0.1);
 	%
 	%
 return;
