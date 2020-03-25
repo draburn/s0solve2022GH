@@ -45,7 +45,7 @@ function vizPt_curve1d( studyPtDat, indexB, prm=[], datIn=[] )
 	for n=1:numCurves
 		if (abs(indexB)==n)
 			tempLineWidth = 1;
-			tempFMT = "^-";
+			tempFMT = "v-";
 		else
 			tempLineWidth = 1;
 			tempFMT = "o-";

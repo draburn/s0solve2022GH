@@ -76,6 +76,7 @@ function [ studyPtDat, retCode, datOut ] = studyPt( ...
 	studyPtDat.funchFSupportsMultiArg = funchFSupportsMultiArg;
 	studyPtDat.funchF = funchF;
 	studyPtDat.vecX0 = vecX0;
+	studyPtDat.vecF0 = vecF0;
 	studyPtDat.matV = matV;
 	studyPtDat.matW = matW;
 	studyPtDat.prm = prm;

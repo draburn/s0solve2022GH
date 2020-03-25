@@ -5,9 +5,9 @@ thisFile = "test_studyPt_genCurveDat";
 tic();
 numFigs = 0;
 %
-sizeK = 2;
-sizeX = 2;
-sizeF = 2;
+sizeK = 100;
+sizeX = 100;
+sizeF = 100;
 %
 %seedPrm = demoFunc0101_genSeedPrm("lin-easy");
 %seedPrm = demoFunc0101_genSeedPrm("easy");

@@ -27,6 +27,14 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 	vecX0 = studyPtDat.vecX0;
 	funchF = studyPtDat.funchF;
 	funchFSupportsMultiArg = studyPtDat.funchFSupportsMultiArg;
+	vecF0 = studyPtDat.vecF0;
+	matV = studyPtDat.matV;
+	matW = studyPtDat.matW;
+	%
+	VIZPT_CONTOUR__NONE = 0;
+	VIZPT_CONTOUR__F = 1;
+	VIZPT_CONTOUR__FLIN = 2;
+	vizContour = VIZPT_CONTOUR__FLIN;
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% CALC.
@@ -85,18 +93,26 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 	matDelta = matBV * [ rvecGridS1; rvecGridS2 ];
 	matX = repmat(vecX0,[1,numVals]) + matDelta;
 	%
-	% WANT TO ALLOW CONSIDERATION OF FLIN,
-	% BUT, THIS IS RESTRICTED TO SUBSPACE MATV.
-	% SO, MUST REFACTOR SOME.
-	if ( funchFSupportsMultiArg )
-		matF = funchF(matX);
-	else
-		parfor n=1:numVals
-			matF(:,n) = funchF(matX(:,n));
+	switch (vizContour)
+	case {VIZPT_CONTOUR__NONE}
+		% Nothing to do.
+	case {VIZPT_CONTOUR__F}
+		if ( funchFSupportsMultiArg )
+			matF = funchF(matX);
+		else
+			parfor n=1:numVals
+				matF(:,n) = funchF(matX(:,n));
+			end
 		end
+		rvecOmega = 0.5*sum(matF.^2,1);
+		gridZ = reshape( rvecOmega, [ numS1Vals, numS2Vals ] ).^0.5;
+	case {VIZPT_CONTOUR__FLIN}
+		matFLin = repmat(vecF0,[1,numVals]) + (matW*(matV'*matDelta));
+		rvecOmegaLin = 0.5*sum(matFLin.^2,1);
+		gridZ = reshape( rvecOmegaLin, [ numS1Vals, numS2Vals ] ).^0.5;
+	otherwise
+		error(sprintf( "Invalid value of vizContour!"  ));
 	end
-	rvecOmega = 0.5*sum(matF.^2,1);
-	gridOmega = reshape( rvecOmega, [ numS1Vals, numS2Vals ] );
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% PLOT.
@@ -112,10 +128,10 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 			tempFMT = "^-";
 		elseif (abs(indexB1)==n)
 			tempLineWidth = 1;
-			tempFMT = "^-";
+			tempFMT = "v-";
 		elseif (abs(indexB2)==n)
 			tempLineWidth = 1;
-			tempFMT = "v-";
+			tempFMT = "^-";
 		else
 			tempLineWidth = 1;
 			tempFMT = "o-";
@@ -129,8 +145,10 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 	end
 	legend( strLegend, "location", "northeastoutside" );
 	%
-	contourf( gridS1, gridS2, gridOmega.^0.5, 30 );
-	colormap( 0.7 + 0.3*jet(256) );
+	if ( VIZPT_CONTOUR__NONE ~= vizContour )
+		contourf( gridS1, gridS2, gridZ, 30 );
+		colormap( 0.7 + 0.3*jet(256) );
+	end
 	%
 	plot( 0.0, 0.0, "k+", "linewidth", 2, "markersize", 30 );
 	for n=1:numCurves
