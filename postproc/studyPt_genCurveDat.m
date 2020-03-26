@@ -96,7 +96,24 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		%
 		%
 	case {STEPTYPE__GRADCURVE}
-		error( "Not implemented!" );
+		[ matPsi, matLambda ] = eig( matH );
+		if (VALLEV__HIGH<= valLev)
+			assert( sum(sum(abs(((matPsi')*matPsi)-matI))) < 10.0*(sizeK^3)*(eps^0.75) );
+			assert( sum(sum(abs((matPsi*(matPsi'))-matI))) < 10.0*(sizeK^3)*(eps^0.75) );
+		end
+		vecPsiTN = matPsi'*(matH\vecG);
+		lambdaMin = min(diag(matLambda));
+		matSigma = matLambda / lambdaMin;
+		%
+		funchYOfNu = @(nu)( matPsi*(vecPsiTN - (diag(nu.^diag(matSigma))*vecPsiTN)) );
+		funchYIsLinear = false;
+		funchYSupportsMultiArg = false;
+		%
+		clear matSigma;
+		clear lambdaMin;
+		clear vecPsiTN;
+		clear matPsi;
+		clear matLambda;
 		%
 		%
 	case {STEPTYPE__GRADCURVE_SCALED}

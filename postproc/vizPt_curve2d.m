@@ -143,10 +143,14 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 		%contourf( gridS1, gridS2, gridZ, 30 );
 		image( s1Vals, s2Vals, gridZ' );
 		cmap = 0.7 + 0.3*jet(numCols);
-		cmap(1,:) *= 0.4;
-		cmap(2,:) *= 0.6;
+		cmap(1,:) *= 0.6;
+		cmap(2,:) *= 0.7;
 		cmap(3,:) *= 0.8;
-		cmap(end,:) *= 0.7;
+		cmap(4,:) *= 0.9;
+		cmap(end-3,:) *= 0.9;
+		cmap(end-2,:) *= 0.8;
+		cmap(end-1,:) *= 0.7;
+		cmap(end,:) *= 0.6;
 		colormap( cmap );
 	end
 	%
