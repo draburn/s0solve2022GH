@@ -1,4 +1,4 @@
-function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
+function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[], datIn=[] )
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% COMMON INIT.
@@ -31,10 +31,7 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 	matV = studyPtDat.matV;
 	matW = studyPtDat.matW;
 	%
-	VIZPT_CONTOUR__NONE = 0;
-	VIZPT_CONTOUR__F = 1;
-	VIZPT_CONTOUR__FLIN = 2;
-	vizContour = VIZPT_CONTOUR__F;
+	numCols = 256;
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% CALC.
@@ -43,6 +40,8 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 	vecBV1 = matBV(:,1);
 	vecBV2 = matBV(:,2);
 	%
+	oMax = studyPtDat.curveDat(1).rvecOmega(1);
+	oMin = studyPtDat.curveDat(1).rvecOmega(1);
 	for n=1:numCurves
 		matDelta = studyPtDat.curveDat(n).matDelta;
 		rvecVizX = vecBV1' * matDelta;
@@ -55,7 +54,14 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 		vizDat(n).col = studyPtDat.curveDat(n).col;
 		vizDat(n).curveName = studyPtDat.curveDat(n).curveName;
 		vizDat(n).indexOfMin = studyPtDat.curveDat(n).indexOfMin;
+		%
+		oMin = min([ oMin, studyPtDat.curveDat(n).rvecOmega ]);
+		oMin = min([ oMin, studyPtDat.curveDat(n).rvecOmegaLin ]);
 	end
+	oVar = oMax - oMin;
+	oMin = oMin - 0.0*oVar;
+	oMax = oMax + 0.0*oVar;
+	oMin = max([ 0.0, oMin ]);
 	%
 	%
 	%
@@ -93,12 +99,9 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 	matDelta = matBV * [ rvecGridS1; rvecGridS2 ];
 	matX = repmat(vecX0,[1,numVals]) + matDelta;
 	%
-	switch (vizContour)
-	case {VIZPT_CONTOUR__NONE}
-		% Nothing to do.
-		gridZ = [];
-		strContour = "none";
-	case {VIZPT_CONTOUR__F}
+	if (strcmpi(strContour,"none"))
+		gridO = [];
+	elseif (strcmpi(strContour,"omega"))
 		if ( funchFSupportsMultiArg )
 			matF = funchF(matX);
 		else
@@ -107,26 +110,25 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 			end
 		end
 		rvecOmega = 0.5*sum(matF.^2,1);
-		gridZ = reshape( rvecOmega, [ numS1Vals, numS2Vals ] ).^0.5;
-		strContour = "omega";
-	case {VIZPT_CONTOUR__FLIN}
+		gridO = reshape( rvecOmega, [ numS1Vals, numS2Vals ] );
+	elseif (strcmpi(strContour,"omegaLin"))
 		matFLin = repmat(vecF0,[1,numVals]) + (matW*(matV'*matDelta));
 		rvecOmegaLin = 0.5*sum(matFLin.^2,1);
-		gridZ = reshape( rvecOmegaLin, [ numS1Vals, numS2Vals ] ).^0.5;
-		strContour = "omegaLin";
+		gridO = reshape( rvecOmegaLin, [ numS1Vals, numS2Vals ] );
 		%
 		if ( sum(sum( ((matV*(matV'*matBV)) - matBV).^2 )) > eps )
 			msg_warn( verbLev, thisFile, __LINE__, sprintf( ...
 			  "Warning: Contour basis space is outside linear model space." ));
 		end
-	otherwise
-		error(sprintf( "Invalid value of vizContour!"  ));
+	else
+		error(sprintf( "Invalid value of strContour!"  ));
 	end
+	%
+	gridZ = (numCols-0.5)*((gridO-oMin)/(oMax-oMin)).^0.5;
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% PLOT.
 	%
-	clf();
 	strLegend = [];
 	hold on;
 	%
@@ -154,9 +156,13 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, prm=[], datIn=[] )
 	end
 	legend( strLegend, "location", "northeastoutside" );
 	%
-	if ( VIZPT_CONTOUR__NONE ~= vizContour )
-		contourf( gridS1, gridS2, gridZ, 30 );
-		colormap( 0.8 + 0.2*jet(256) );
+	if ( ~strcmpi(strContour,"none") )
+		%contourf( gridS1, gridS2, gridZ, 30 );
+		image( s1Vals, s2Vals, gridZ' );
+		cmap = 0.7 + 0.3*jet(numCols);
+		cmap(1,:) *= 0.9;
+		cmap(end,:) *= 0.9;
+		colormap( cmap );
 	end
 	%
 	plot( 0.0, 0.0, "k+", "linewidth", 2, "markersize", 30 );
