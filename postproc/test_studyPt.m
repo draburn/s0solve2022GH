@@ -5,17 +5,17 @@ thisFile = "test_studyPt_genCurveDat";
 tic();
 numFigs = 0;
 %
-sizeK = 100;
-sizeX = 100;
-sizeF = 100;
+sizeK = 3;
+sizeX = 4;
+sizeF = 4;
 %
 %seedPrm = demoFunc0101_genSeedPrm("lin-easy");
 %seedPrm = demoFunc0101_genSeedPrm("easy");
 seedPrm = demoFunc0101_genSeedPrm("moderate");
 %seedPrm = demoFunc0101_genSeedPrm("xhard");
 %randState = mod(round(time),1E6);
-randState = 0;
-%randState = 677832;
+%randState = 0;
+randState = 677832;
 %randState = 952523; % Try with 5x100x100xSTEPTYPE__GRADDIR.
 %randState = 88; % Try with 100x100x100x"moderate" STEPTYPE__LEVCURVE_SCALED.
 %randState = 953150; % Try with 100x100x100x"moderate" STEPTYPE__LEVCURVE_SCALED.

@@ -39,24 +39,28 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	matBV = myorth(matBU);
 	vecBV1 = matBV(:,1);
 	vecBV2 = matBV(:,2);
+	%matBV' * matBU
 	%
 	oMax = studyPtDat.curveDat(1).rvecOmega(1);
 	oMin = studyPtDat.curveDat(1).rvecOmega(1);
+	dMax = 0.0;
 	for n=1:numCurves
 		matDelta = studyPtDat.curveDat(n).matDelta;
 		rvecVizX = vecBV1' * matDelta;
 		rvecVizY = vecBV2' * matDelta;
 		matRes = matDelta - (vecBV1 * rvecVizX) - (vecBV2 * rvecVizY);
-		rvecVizOD = sqrt(sum((matRes.^2),1));
+		rvecVizR = sqrt(sum((matRes.^2),1));
 		%
 		vizDat(n).rvecX = rvecVizX;
 		vizDat(n).rvecY = rvecVizY;
 		vizDat(n).col = studyPtDat.curveDat(n).col;
 		vizDat(n).curveName = studyPtDat.curveDat(n).curveName;
 		vizDat(n).indexOfMin = studyPtDat.curveDat(n).indexOfMin;
+		vizDat(n).rvecR = rvecVizR;
 		%
 		oMin = min([ oMin, studyPtDat.curveDat(n).rvecOmega ]);
 		oMin = min([ oMin, studyPtDat.curveDat(n).rvecOmegaLin ]);
+		dMax = max([ dMax, max(max(matDelta)) ]);
 	end
 	oVar = oMax - oMin;
 	oMin = oMin - 0.0*oVar;
@@ -124,28 +128,47 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 		error(sprintf( "Invalid value of strContour!"  ));
 	end
 	%
-	gridZ = (numCols-0.5)*((gridO-oMin)/(oMax-oMin)).^0.5;
+	gridZ = (gridO-oMin)/(oMax-oMin);
+	gridZ = cap( gridZ, 0.0, 1.0 );
+	%gridZ = gridZ.^0.5;
+	gridZ = 0.5 + (numCols-0.5)*gridZ;
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% PLOT.
 	%
 	strLegend = [];
-	hold on;
+	hold off;
 	%
+	if ( ~strcmpi(strContour,"none") )
+		%contourf( gridS1, gridS2, gridZ, 30 );
+		image( s1Vals, s2Vals, gridZ' );
+		cmap = 0.7 + 0.3*jet(numCols);
+		cmap(1,:) *= 0.4;
+		cmap(2,:) *= 0.6;
+		cmap(3,:) *= 0.8;
+		cmap(end,:) *= 0.7;
+		colormap( cmap );
+	end
+	%
+	hold on;
 	for n=1:numCurves
 		if ( abs(indexB1)==n && abs(indexB2)==n )
 			% Only possible if comparing a curve's end with omegaMin.
-			tempLineWidth = 1;
-			tempFMT = "o-";
+			tempLineWidth = 2;
+			tempFMT = "-";
 		elseif (abs(indexB1)==n)
-			tempLineWidth = 1;
-			tempFMT = "o-";
+			tempLineWidth = 2;
+			tempFMT = "-";
 		elseif (abs(indexB2)==n)
-			tempLineWidth = 1;
-			tempFMT = "o-";
+			tempLineWidth = 2;
+			tempFMT = "-";
 		else
-			tempLineWidth = 1;
-			tempFMT = "o-";
+			tempLineWidth = 2;
+			tempFMT = "-";
+		end
+		msk = (vizDat(n).rvecR<dMax*eps^0.5);
+		if (sum(msk)==max(size(vizDat(n).rvecR)))
+			tempLineWidth = 5;
 		end
 		plot( ...
 		  vizDat(n).rvecX, vizDat(n).rvecY, tempFMT, ...
@@ -156,33 +179,26 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	end
 	legend( strLegend, "location", "northeastoutside" );
 	%
-	if ( ~strcmpi(strContour,"none") )
-		%contourf( gridS1, gridS2, gridZ, 30 );
-		image( s1Vals, s2Vals, gridZ' );
-		cmap = 0.7 + 0.3*jet(numCols);
-		cmap(1,:) *= 0.9;
-		cmap(end,:) *= 0.9;
-		colormap( cmap );
-	end
-	%
 	plot( 0.0, 0.0, "k+", "linewidth", 2, "markersize", 30 );
 	for n=1:numCurves
 		m = vizDat(n).indexOfMin;
-		if (abs(indexB1)==n)
-			tempLineWidth = 2;
-		elseif (abs(indexB2)==n)
-			tempLineWidth = 2;
-		else
-			tempLineWidth = 2;
+		msk = (vizDat(n).rvecR<dMax*eps^0.5);
+		if (sum(msk)==max(size(vizDat(n).rvecR)))
+			msk = [];
 		end
+		plot( ...
+		  vizDat(n).rvecX(msk), vizDat(n).rvecY(msk), "o", ...
+		  "color", 0.7*vizDat(n).col, ...
+		  "linewidth", 3, ...
+		  "markersize", 10+5*(numCurves-n) );
 		plot( ...
 		  vizDat(n).rvecX(m), vizDat(n).rvecY(m), "s", ...
 		  "color", 0.7*vizDat(n).col, ...
-		  "linewidth", tempLineWidth, ...
+		  "linewidth", 1, ...
 		  "markersize", 20+5*(numCurves-n), ...
 		  vizDat(n).rvecX(m), vizDat(n).rvecY(m), "x", ...
 		  "color", 0.7*vizDat(n).col, ...
-		  "linewidth", tempLineWidth, ...
+		  "linewidth", 1, ...
 		  "markersize", 20+5*(numCurves-n) );
 		  %"markersize", 10+10*(numCurves-n), ...
 		  %vizDat(n).rvecX(m), vizDat(n).rvecY(m), "v", ...

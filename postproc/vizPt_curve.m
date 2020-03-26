@@ -20,9 +20,11 @@ function vizPt_curve( studyPtDat, vecBasisIndex, prm=[], datIn=[] )
 	elseif (2==numB)
 		indexB1 = vecBasisIndex(1);
 		indexB2 = vecBasisIndex(2);
-		subplot(2,2,1);
+		%subplot(2,2,1);
+		figIndex++; figure(figIndex);
 		vizPt_curve2d( studyPtDat, indexB1, indexB2, "omegaLin", prm, datIn );
-		subplot(2,2,2);
+		%subplot(2,2,2);
+		figIndex++; figure(figIndex);
 		vizPt_curve2d( studyPtDat, indexB1, indexB2, "omega", prm, datIn );
 	elseif (3<=numB)
 		error( "Not implemented!" );
