@@ -63,8 +63,8 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 		dMax = max([ dMax, max(max(matDelta)) ]);
 	end
 	oVar = oMax - oMin;
-	oMin = oMin - 0.0*oVar;
-	oMax = oMax + 0.0*oVar;
+	oMin = oMin - 0.2*oVar;
+	oMax = oMax + 0.2*oVar;
 	oMin = max([ 0.0, oMin ]);
 	%
 	%
@@ -74,8 +74,8 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	s2Max = 0.0;
 	s2Min = 0.0;
 	for n=1:numCurves
-	if ( abs(indexB1)==n || abs(indexB2)==n )
-	%if (1)
+	%if ( abs(indexB1)==n || abs(indexB2)==n )
+	if (1)
 		s1Max = max([ s1Max, max(vizDat(n).rvecX) ]);
 		s1Min = min([ s1Min, min(vizDat(n).rvecX) ]);
 		s2Max = max([ s2Max, max(vizDat(n).rvecY) ]);
@@ -130,29 +130,15 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	%
 	gridZ = (gridO-oMin)/(oMax-oMin);
 	gridZ = cap( gridZ, 0.0, 1.0 );
-	%gridZ = gridZ.^0.5;
+	gridZ = gridZ.^0.5;
 	gridZ = 0.5 + (numCols-0.5)*gridZ;
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% PLOT.
 	%
 	strLegend = [];
+	clf();
 	hold off;
-	%
-	if ( ~strcmpi(strContour,"none") )
-		%contourf( gridS1, gridS2, gridZ, 30 );
-		image( s1Vals, s2Vals, gridZ' );
-		cmap = 0.7 + 0.3*jet(numCols);
-		cmap(1,:) *= 0.6;
-		cmap(2,:) *= 0.7;
-		cmap(3,:) *= 0.8;
-		cmap(4,:) *= 0.9;
-		cmap(end-3,:) *= 0.9;
-		cmap(end-2,:) *= 0.8;
-		cmap(end-1,:) *= 0.7;
-		cmap(end,:) *= 0.6;
-		colormap( cmap );
-	end
 	%
 	hold on;
 	for n=1:numCurves
@@ -182,6 +168,24 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 		strLegend = [ strLegend; vizDat(n).curveName ];
 	end
 	legend( strLegend, "location", "northeastoutside" );
+	%
+	if ( ~strcmpi(strContour,"none") )
+		contourf( gridS1, gridS2, gridZ, 25 );
+		%image( s1Vals, s2Vals, gridZ' );
+		%set(get(gcf,"children"),"ydir","normal");
+		cmap = 0.7 + 0.3*jet(numCols);
+		cmap(1,:) *= 0.5;
+		cmap(2,:) *= 0.6;
+		cmap(3,:) *= 0.7;
+		cmap(4,:) *= 0.8;
+		cmap(5,:) *= 0.9;
+		cmap(end-4,:) *= 0.9;
+		cmap(end-3,:) *= 0.8;
+		cmap(end-2,:) *= 0.7;
+		cmap(end-1,:) *= 0.6;
+		cmap(end,:) *= 0.5;
+		colormap( cmap );
+	end
 	%
 	plot( 0.0, 0.0, "k+", "linewidth", 2, "markersize", 30 );
 	for n=1:numCurves
@@ -230,6 +234,7 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	ylabel(sprintf( "dist along ortho %s", strYCoord ));
 	title(sprintf( "2D Curve Plot (%s): %s, %s", strContour, strXCoord, strYCoord ));
 	%
+	axis square;
 	grid on;
 	hold off;
 	%
