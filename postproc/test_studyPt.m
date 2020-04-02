@@ -1,7 +1,6 @@
-
 clear;
 commondefs;
-thisFile = "test_studyPt_genCurveDat";
+thisFile = "test_studyPt";
 tic();
 numFigs = 0;
 %
