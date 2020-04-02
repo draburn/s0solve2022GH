@@ -1,0 +1,22 @@
+To-do...
+ Revise vizPt_curve2d
+   - Use explicit contour levels and set colormap flagged levels.
+    (orig,curveMin,(zero),overCapMax,underCapMin)
+   - Mark "in space" pt based on distance to neighbor + interp.
+   - Modify to work with "offset", in prep for 3D viz.
+   - Revise markers.
+   
+ Revise vizPt_curve1d
+   - Synchronize to 2D markers.
+   - Modify to allow vs space, not just vs vector.
+   - Mark "in space" pt based on distance to neighbor + interp.
+ 
+ Revise vizPt_curve
+   - Handle 3+D.
+   
+ Revise vizPtVs ~ studyPt.
+   - Add "deltaRoot", "deltaSSRoot", "deltaNewton".
+ 
+ > Refactor...?
+ > Write default vizPt script.
+ > RM deprecated stuff.

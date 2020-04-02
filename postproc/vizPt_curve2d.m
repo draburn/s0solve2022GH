@@ -73,6 +73,19 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	zCapMax = zCapMin + ((z0-zCapMin)*(numCol_fullScale-1.0)/(indexC_z0-1.0));
 	%
 	%
+	% DRaburn 2020.04.02...
+	% This gets at the idea of "flagged" values, but
+	% should be made *exact* using explicit contour levels.
+	n0 = ceil(numCol_fullScale/50);
+	for n=1:n0
+		cmap_fullScale(n,:) *= 0.4 + 0.5*(n-1.0)/(n0-1.0);
+		cmap_fullScale(end+1-n,:) *= 0.4 + 0.5*(n-1.0)/(n0-1.0);
+		cmap_fullScale(indexC_z0+n,:) *= 0.4 + 0.5*(n-1.0)/(n0-1.0);
+		cmap_fullScale(indexC_z0-n,:) *= 0.4 + 0.5*(n-1.0)/(n0-1.0);
+	end
+	cmap_fullScale(indexC_z0,:) *= 0.3;
+	%
+	%
 	if (strcmpi(strContour,"colorbar"))
 		xVals = (0:1);
 		yVals = linspace(zCapMin,zCapMax,numCol_fullScale);
