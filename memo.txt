@@ -8,7 +8,7 @@ To-do...
    
  Revise vizPt_curve1d
    - Synchronize to 2D markers.
-   - Modify to allow vs space, not just vs vector.
+   - Modify legends and title to report vs space.
    - Mark "in space" pt based on distance to neighbor + interp.
  
  Revise vizPt_curve
