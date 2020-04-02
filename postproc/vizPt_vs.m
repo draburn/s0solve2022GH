@@ -109,7 +109,7 @@ function vizPt_vs( varargin )
 	end
 	%
 	%
-	strLegend = [];
+	strLegend = char([]);
 	clf;
 	hold on
 	%

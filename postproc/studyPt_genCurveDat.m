@@ -105,7 +105,7 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		lambdaMin = min(diag(matLambda));
 		matSigma = matLambda / lambdaMin;
 		%
-		funchYOfNu = @(nu)( matPsi*(vecPsiTN - (diag(nu.^diag(matSigma))*vecPsiTN)) );
+		funchYOfNu = @(nu)( matPsi*(vecPsiTN - (diag((1.0-nu).^diag(matSigma))*vecPsiTN)) );
 		funchYIsLinear = false;
 		funchYSupportsMultiArg = false;
 		%
@@ -129,7 +129,7 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		lambdaMin = min(diag(matLambda));
 		matSigma = matLambda / lambdaMin;
 		%
-		funchYOfNu = @(nu)( matDInvSqrt*matPsi*(vecPsiTN - (diag(nu.^diag(matSigma))*vecPsiTN)) );
+		funchYOfNu = @(nu)( matDInvSqrt*matPsi*(vecPsiTN - (diag((1.0-nu).^diag(matSigma))*vecPsiTN)) );
 		funchYIsLinear = false;
 		funchYSupportsMultiArg = false;
 		%
