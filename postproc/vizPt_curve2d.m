@@ -69,6 +69,18 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	omegaCapMax = omegaCapMin + ((omega0-omegaCapMin)*(numCol_fullScale-1.0)/(indexC_omega0-1.0));
 	%
 	%
+	if (strcmpi(strContour,"colorbar"))
+		xVals = (0:1);
+		yVals = linspace(omegaCapMin,omegaCapMax,numCol_fullScale);
+		[ gridX, gridY ] = ndgrid(xVals,yVals);
+		gridZ = gridY;
+		contourf( gridX, gridY, gridZ, 50 );
+		grid on;
+		ylabel( "value" );
+		title( "colorbar" );
+		return;
+	end
+	%
 	%
 	s1Max = 0.0;
 	s1Min = 0.0;
