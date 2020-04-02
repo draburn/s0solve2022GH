@@ -31,7 +31,6 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	matV = studyPtDat.matV;
 	matW = studyPtDat.matW;
 	%
-	numCols = 256;
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% CALC.
@@ -41,8 +40,8 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	vecBV2 = matBV(:,2);
 	%matBV' * matBU
 	%
-	oMax = studyPtDat.curveDat(1).rvecOmega(1);
-	oMin = studyPtDat.curveDat(1).rvecOmega(1);
+	omegaLo = studyPtDat.curveDat(1).rvecOmega(1);
+	omega0 = studyPtDat.curveDat(1).rvecOmega(1);
 	dMax = 0.0;
 	for n=1:numCurves
 		matDelta = studyPtDat.curveDat(n).matDelta;
@@ -58,14 +57,16 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 		vizDat(n).indexOfMin = studyPtDat.curveDat(n).indexOfMin;
 		vizDat(n).rvecR = rvecVizR;
 		%
-		oMin = min([ oMin, studyPtDat.curveDat(n).rvecOmega ]);
-		oMin = min([ oMin, studyPtDat.curveDat(n).rvecOmegaLin ]);
+		omegaLo = min([ omegaLo, studyPtDat.curveDat(n).rvecOmega ]);
+		omegaLo = min([ omegaLo, studyPtDat.curveDat(n).rvecOmegaLin ]);
 		dMax = max([ dMax, max(max(matDelta)) ]);
 	end
-	oVar = oMax - oMin;
-	oMin = oMin - 0.2*oVar;
-	oMax = oMax + 0.2*oVar;
-	oMin = max([ 0.0, oMin ]);
+	omegaCapMin = 0.5 * ((omegaLo/omega0)^2);
+	%
+	numCol_fullScale = 1001;
+	cmap_fullScale = 0.7 + ( 0.3 * jet(numCol_fullScale) );
+	indexC_omega0 = 1 + round( (numCol_fullScale-1.0) * 0.7 );
+	omegaCapMax = omegaCapMin + ((omega0-omegaCapMin)*(numCol_fullScale-1.0)/(indexC_omega0-1.0));
 	%
 	%
 	%
@@ -128,10 +129,15 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 		error(sprintf( "Invalid value of strContour!"  ));
 	end
 	%
-	gridZ = (gridO-oMin)/(oMax-oMin);
-	gridZ = cap( gridZ, 0.0, 1.0 );
-	gridZ = gridZ.^0.5;
-	gridZ = 0.5 + (numCols-0.5)*gridZ;
+	gridOC = cap( gridO, omegaCapMin, omegaCapMax );
+	omegaMin = min(min(gridOC));
+	omegaMax = max(max(gridOC));
+	%
+	indexC_omegaObsMin = 1 + round((omegaMin-omegaCapMin)*(numCol_fullScale-1.0)/(omegaCapMax-omegaCapMin));
+	indexC_omegaObsMax = 1 + round((omegaMax-omegaCapMin)*(numCol_fullScale-1.0)/(omegaCapMax-omegaCapMin));
+	cmap = cmap_fullScale(indexC_omegaObsMin:indexC_omegaObsMax,:);
+	gridZ = 1 + round((gridOC-omegaCapMin)*(numCol_fullScale-1.0)/(omegaCapMax-omegaCapMin));
+	%
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% PLOT.
@@ -173,17 +179,6 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 		contourf( gridS1, gridS2, gridZ, 25 );
 		%image( s1Vals, s2Vals, gridZ' );
 		%set(get(gcf,"children"),"ydir","normal");
-		cmap = 0.7 + 0.3*jet(numCols);
-		cmap(1,:) *= 0.5;
-		cmap(2,:) *= 0.6;
-		cmap(3,:) *= 0.7;
-		cmap(4,:) *= 0.8;
-		cmap(5,:) *= 0.9;
-		cmap(end-4,:) *= 0.9;
-		cmap(end-3,:) *= 0.8;
-		cmap(end-2,:) *= 0.7;
-		cmap(end-1,:) *= 0.6;
-		cmap(end,:) *= 0.5;
 		colormap( cmap );
 	end
 	%
