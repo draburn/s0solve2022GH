@@ -1,16 +1,20 @@
 clear;
 %
 test_studyPt;
-close("all");
+%close("all");
 commondefs;
 thisFile = "test_vizPt";
 %
 tic();
 prm.figIndex0 = 0;
-figure(1);
+figure;
 vizPt_vs(studyPtDat,"deltaNorm","omega",prm);
-figure(2);
-vizPt_curve(studyPtDat,1,prm);
-prm.figIndex0=2;
-vizPt_curve(studyPtDat,[1,2],prm);
+figure;
+vizPt_curve1d(studyPtDat,1,prm);
+figure;
+vizPt_curve1d(studyPtDat,8,prm);
+figure;
+vizPt_curve1d(studyPtDat,[1,8],prm);
+prm.figIndex0=4;
+vizPt_curve(studyPtDat,[1,8],prm);
 toc;

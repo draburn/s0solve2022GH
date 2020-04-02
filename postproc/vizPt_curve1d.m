@@ -1,4 +1,4 @@
-function vizPt_curve1d( studyPtDat, indexB, prm=[], datIn=[] )
+function vizPt_curve1d( studyPtDat, matIndexB, prm=[], datIn=[] )
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% COMMON INIT.
@@ -10,22 +10,29 @@ function vizPt_curve1d( studyPtDat, indexB, prm=[], datIn=[] )
 	% INIT.
 	%
 	numCurves = max(size(studyPtDat.curveDat));
-	if ( indexB > 0 )
-		m = studyPtDat.curveDat(abs(indexB)).indexOfMin;
-		vecBU = studyPtDat.curveDat(abs(indexB)).matDelta(:,m);
-	else
-		vecBU = studyPtDat.curveDat(abs(indexB)).matDelta(:,end);
+	sizeB = size(matIndexB,2);
+	for n=1:sizeB
+		indexB = matIndexB(:,n);
+		if ( indexB > 0 )
+			m = studyPtDat.curveDat(abs(indexB)).indexOfMin;
+			vecBU = studyPtDat.curveDat(abs(indexB)).matDelta(:,m);
+		else
+			vecBU = studyPtDat.curveDat(abs(indexB)).matDelta(:,end);
+		end
+		matBU(:,n) = vecBU;
+		clear indexB;
 	end
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% CALC.
 	%
-	vecBV = myorth(vecBU);
+	matBV = myorth(matBU);
 	%
 	for n=1:numCurves
 		matDelta = studyPtDat.curveDat(n).matDelta;
-		rvecVizX = vecBV' * matDelta;
-		matRes = matDelta - (vecBV * rvecVizX);
+		matVizX = matBV' * matDelta;
+		rvecVizX = sqrt(sum(matVizX.^2,1));
+		matRes = matDelta - (matBV * matVizX);
 		rvecVizY = sqrt(sum((matRes.^2),1));
 		%
 		vizDat(n).rvecX = rvecVizX;
@@ -43,7 +50,8 @@ function vizPt_curve1d( studyPtDat, indexB, prm=[], datIn=[] )
 	hold on;
 	%
 	for n=1:numCurves
-		if (abs(indexB)==n)
+		%if (abs(indexB)==n)
+		if (0)
 			tempLineWidth = 1;
 			tempFMT = "v-";
 		else
@@ -64,7 +72,8 @@ function vizPt_curve1d( studyPtDat, indexB, prm=[], datIn=[] )
 	  "k+", "linewidth", 2, "markersize", 30 );
 	for n=1:numCurves
 		m = vizDat(n).indexOfMin;
-		if (abs(indexB)==n)
+		%if (abs(indexB)==n)
+		if (0)
 			tempLineWidth = 2;
 		else
 			tempLineWidth = 2;
@@ -80,6 +89,7 @@ function vizPt_curve1d( studyPtDat, indexB, prm=[], datIn=[] )
 		  "markersize", 20+2*(numCurves-n) );
 	end
 	%
+	if (0)
 	if ( indexB > 0 )
 		strXCoord = sprintf( "omegaMin %s step", ...
 		  studyPtDat.curveDat(abs(indexB)).curveName );
@@ -91,6 +101,11 @@ function vizPt_curve1d( studyPtDat, indexB, prm=[], datIn=[] )
 	xlabel(sprintf( "dist along %s", strXCoord ));
 	ylabel(sprintf( "ortho dist" ));
 	title(sprintf( "1D Curve Plot: %s", strXCoord ));
+	end
+	%
+	xlabel(sprintf( "dist in space" ));
+	ylabel(sprintf( "ortho dist" ));
+	title(sprintf( "1D Curve Plot" ));
 	%
 	grid on;
 	hold off;
