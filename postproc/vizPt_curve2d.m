@@ -32,6 +32,7 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	matW = studyPtDat.matW;
 	%
 	funchZ = @(omega)( omega.^0.5 );
+	numCol_fullScale = 51;
 	%
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -65,14 +66,25 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	end
 	zLo = funchZ(omegaLo);
 	z0 = funchZ(omega0);
-	zCapMin = zLo * ((zLo/z0)^0.0);
+	if (zLo>z0/numCol_fullScale)
+		zCapMin = zLo * ((zLo/z0)^0.0);
+	else
+		zCapMin = 0.0;
+	end
 	%
-	numCol_fullScale = 1001;
 	cmap_fullScale = 0.5 + ( 0.5 * jet(numCol_fullScale) );
 	indexC_z0 = 1 + round( (numCol_fullScale-1.0) * 0.63 );
 	zCapMax = zCapMin + ((z0-zCapMin)*(numCol_fullScale-1.0)/(indexC_z0-1.0));
 	%
 	%
+	if (1)
+		cmap_fullScale(1,:) *= 0.4;
+		cmap_fullScale(end,:) *= 0.4;
+		cmap_fullScale(indexC_z0,:) *= 0.4;
+		cmap_fullScale(1,:) += 0.4;
+		cmap_fullScale(end,:) += 0.4;
+		cmap_fullScale(indexC_z0,:) += 0.4;
+	else
 	% DRaburn 2020.04.02...
 	% This gets at the idea of "flagged" values, but
 	% should be made *exact* using explicit contour levels.
@@ -84,6 +96,14 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 		cmap_fullScale(indexC_z0-n,:) *= 0.4 + 0.5*(n-1.0)/(n0-1.0);
 	end
 	cmap_fullScale(indexC_z0,:) *= 0.3;
+	end
+	%
+	%
+	% DRaburn 2020.04.02...
+	% This zUnderMin and zOverMax are just guesses.
+	zUnderMin = zCapMin - (zCapMax-zCapMin)*0.1/(numCol_fullScale);
+	zOverMax = zCapMax + (zCapMax-zCapMin)*0.1/(numCol_fullScale);
+	clev_fullScale = linspace(zUnderMin,zOverMax,numCol_fullScale+1);
 	%
 	%
 	if (strcmpi(strContour,"colorbar"))
@@ -92,6 +112,18 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 		[ gridX, gridY ] = ndgrid(xVals,yVals);
 		gridZ = gridY;
 		contourf( gridX, gridY, gridZ, 50 );
+		colormap( cmap_fullScale );
+		set(get(gcf,"children"),"xticklabel",[]);
+		grid on;
+		ylabel( "value" );
+		title( "colorbar" );
+		return;
+	elseif (strcmpi(strContour,"fullColorMap"))
+		xVals = (0:1);
+		yVals = linspace(zCapMin,zCapMax,numCol_fullScale);
+		[ gridX, gridY ] = ndgrid(xVals,yVals);
+		gridZ = gridY;
+		contourf( gridX, gridY, gridZ, clev_fullScale );
 		colormap( cmap_fullScale );
 		set(get(gcf,"children"),"xticklabel",[]);
 		grid on;
@@ -209,6 +241,8 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	%
 	if ( ~strcmpi(strContour,"none") )
 		if (1)
+			contourf( gridS1, gridS2, gridZC, clev_fullScale );
+		elseif (1)
 			contourf( gridS1, gridS2, gridZV, 30 );
 		else
 			image( s1Vals, s2Vals, gridZV' );
