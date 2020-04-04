@@ -12,10 +12,10 @@ numCuts = 50;
 colorMap_base = 0.4 + (jet(1000)*0.4);
 fMin_base =  0.0;
 fMax_base =  1.0;
-color_underMin = [0.3,0.3,0.3];
-color_overMax  = [0.8,0.8,0.8];
-fVals_flagged = [];
-colorMap_flagged = [];
+color_underMin = [0.2,0.2,0.2];
+color_overMax  = [0.9,0.9,0.9];
+fVals_flagged = [0.4;0.6];
+colorMap_flagged = [0.0,1.0,1.0;1.0,0.0,1.0];
 funchZ = @(f)(f);
 strContourFunc = "contourf";
 %

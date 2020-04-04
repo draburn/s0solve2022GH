@@ -21,6 +21,8 @@ function mycontour( ...
 	%
 	%
 	numColorsBase = size(colorMap_base,1);
+	numFlaggedVals = max(size(fVals_flagged));
+	%
 	gridZ = funchZ( gridF );
 	zMin = min(min(gridZ));
 	zMax = max(max(gridZ));
@@ -42,6 +44,16 @@ function mycontour( ...
 				colorMap_tailored(n,:) = colorMap_base(m,:);
 			end
 		end
+		%
+		% Modification for flagged values might be wrong.
+		for n=1:numFlaggedVals
+			zTemp = funchZ(fVals_flagged(n));
+			lFloat = (zTemp-zMin)/(zMax-zMin);
+			m = round( (numCuts+2)*lFloat );
+			if ( m >= 1 && m <= numCuts+2 )
+				colorMap_tailored(m,:) = colorMap_flagged(n,:);
+			end
+		end
 	elseif (strcmp("contourf",strContourFunc))
 		for n=1:numCuts+1
 			fTemp = (fLevels(n)+fLevels(n+1))/2.0;
@@ -55,8 +67,19 @@ function mycontour( ...
 				colorMap_tailored(n,:) = colorMap_base(m,:);
 			end
 		end
-		% Last element doesn't matter, but, needs to be included.
-		colorMap_tailored(numCuts+2,:) = colorMap_tailored(numCuts+1,:);
+		% Seems last element won't be shown, but needs to be included
+		% to prevent color map getting re-scaled.
+		colorMap_tailored(numCuts+2,:) = [1.0,1.0,0.0];
+		%
+		% Modification for flagged values might be wrong.
+		for n=1:numFlaggedVals
+			zTemp = funchZ(fVals_flagged(n));
+			lFloat = (zTemp-zMin)/(zMax-zMin);
+			m = round( 0.5 + (numCuts+1.0)*lFloat );
+			if ( m >= 1 && m <= numCuts+2 )
+				colorMap_tailored(m,:) = colorMap_flagged(n,:);
+			end
+		end
 	end
 	%echo__colorMap_tailored = colorMap_tailored
 	%
