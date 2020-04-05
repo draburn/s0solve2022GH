@@ -1,7 +1,7 @@
 clear;
 tic();
 commondefs;
-figIndex = 2;
+figIndex = 0;
 %
 xVals = linspace(-1.0,1.0,26);
 yVals = linspace( 0.0,1.0,21);
