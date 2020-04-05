@@ -23,18 +23,34 @@ function mycontour( ...
 	numColorsBase = size(colorMap_base,1);
 	numFlaggedVals = max(size(fVals_flagged));
 	%
-	gridZ = funchZ( gridF );
+	if ( strcmp("colorbar",strContourFunc) || strcmp("colorbarf",strContourFunc) )
+		% Display original f values, don't apply funchZ.
+		fLo = fMin_base - 0.3*(fMax_base-fMin_base);
+		fHi = fMax_base + 0.3*(fMax_base-fMin_base);
+		xVals = [0,1];
+		yVals = linspace( fLo, fHi, numColorsBase+1 );
+		[ gridX, gridY ] = ndgrid( xVals, yVals );
+		gridZ = gridY;
+		zMin_base = fMin_base;
+		zMax_base = fMax_base;
+		zVals_flagged = fVals_flagged;
+	else
+		gridZ = funchZ( gridF );
+		zMin_base = funchZ( fMin_base );
+		zMax_base = funchZ( fMax_base );
+		zVals_flagged = funchZ( fVals_flagged );
+	end
 	zMin = min(min(gridZ));
 	zMax = max(max(gridZ));
-	fLevels = linspace( min(min(gridZ)), max(max(gridZ)), numCuts+2 );
-	fLevels(1) += sqrt(eps)*(zMax-zMin)/numCuts;
-	fLevels(end) -= sqrt(eps)*(zMax-zMin)/numCuts;
-	%echo__fLevels = fLevels
+	zLevels = linspace( min(min(gridZ)), max(max(gridZ)), numCuts+2 );
+	zLevels(1) += sqrt(eps)*(zMax-zMin)/numCuts;
+	zLevels(end) -= sqrt(eps)*(zMax-zMin)/numCuts;
+	%echo__zLevels = zLevels
 	%
-	if (strcmp("contour",strContourFunc))
+	if ( strcmp("contour",strContourFunc) || strcmp("colorbar",strContourFunc) )
 		for n=1:numCuts+2
-			fTemp = fLevels(n);
-			lFloat = (fTemp-fMin_base)/(fMax_base-fMin_base);
+			zTemp = zLevels(n);
+			lFloat = (zTemp-zMin_base)/(zMax_base-zMin_base);
 			if (lFloat<0)
 				colorMap_tailored(n,:) = color_underMin;
 			elseif (lFloat>1)
@@ -47,17 +63,17 @@ function mycontour( ...
 		%
 		% Modification for flagged values might be wrong.
 		for n=1:numFlaggedVals
-			zTemp = funchZ(fVals_flagged(n));
+			zTemp = zVals_flagged(n);
 			lFloat = (zTemp-zMin)/(zMax-zMin);
 			m = round( (numCuts+2)*lFloat );
 			if ( m >= 1 && m <= numCuts+2 )
 				colorMap_tailored(m,:) = colorMap_flagged(n,:);
 			end
 		end
-	elseif (strcmp("contourf",strContourFunc))
+	elseif ( strcmp("contourf",strContourFunc) || strcmp("colorbarf",strContourFunc) )
 		for n=1:numCuts+1
-			fTemp = (fLevels(n)+fLevels(n+1))/2.0;
-			lFloat = (fTemp-fMin_base)/(fMax_base-fMin_base);
+			zTemp = (zLevels(n)+zLevels(n+1))/2.0;
+			lFloat = (zTemp-zMin_base)/(zMax_base-zMin_base);
 			if (lFloat<0)
 				colorMap_tailored(n,:) = color_underMin;
 			elseif (lFloat>1)
@@ -73,7 +89,7 @@ function mycontour( ...
 		%
 		% Modification for flagged values might be wrong.
 		for n=1:numFlaggedVals
-			zTemp = funchZ(fVals_flagged(n));
+			zTemp = zVals_flagged(n);
 			lFloat = (zTemp-zMin)/(zMax-zMin);
 			m = round( 0.5 + (numCuts+1.0)*lFloat );
 			if ( m >= 1 && m <= numCuts+2 )
@@ -84,9 +100,15 @@ function mycontour( ...
 	%echo__colorMap_tailored = colorMap_tailored
 	%
 	if (strcmp("contour",strContourFunc))
-		contour( gridX, gridY, gridZ, fLevels );
+		contour( gridX, gridY, gridZ, zLevels );
 	elseif (strcmp("contourf",strContourFunc))
-		contourf( gridX, gridY, gridZ, fLevels );
+		contourf( gridX, gridY, gridZ, zLevels );
+	elseif (strcmp("colorbar",strContourFunc))
+		contour( gridX, gridY, gridZ, zLevels );
+		set(get(gcf,"children"),"xticklabel",[]);
+	elseif (strcmp("colorbarf",strContourFunc))
+		contourf( gridX, gridY, gridZ, zLevels );
+		set(get(gcf,"children"),"xticklabel",[]);
 	else
 		error("Unsupported value of strContourFunc.");
 	end
