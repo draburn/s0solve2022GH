@@ -86,8 +86,6 @@ function [ studyPtDat, retCode, datOut ] = studyPt( ...
 		curveDat(numCurves) = curveDat0;
 	end
 	%
-if ( DEV_VIZPT_CONTOUR_VER > 0 )
-	%
 	% Generate contour levels and color map;
 	% for any given slice, select from among these when plotting.
 	haveLevCurve = false;
@@ -102,10 +100,6 @@ if ( DEV_VIZPT_CONTOUR_VER > 0 )
 	assert( omegaLo < omega0 );
 	assert( omegaLo >= 0.0 );
 	%
-	studyPtDat.contourVizDat.omegaLo = omegaLo;
-	studyPtDat.contourVizDat.omega0 = omega0;
-	%
-end
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% SET OUTPUT.
@@ -122,6 +116,9 @@ end
 	studyPtDat.vecG = vecG;
 	%
 	studyPtDat.curveDat = curveDat;
+	%
+	studyPtDat.omegaLo = omegaLo;
+	studyPtDat.omega0 = omega0;
 	%
 	%
 retCode = RETCODE__SUCCESS;

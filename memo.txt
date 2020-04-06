@@ -1,7 +1,5 @@
 To-do...
  Revise vizPt_curve2d
-   - Use explicit contour levels and set colormap flagged levels.
-    (orig,curveMin,(zero),overCapMax,underCapMin)
    - Mark "in space" pt based on distance to neighbor + interp.
    - Modify to work with "offset", in prep for 3D viz.
    - Revise markers.
