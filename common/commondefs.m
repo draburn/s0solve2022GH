@@ -77,6 +77,8 @@ VALLEV__MEDIUM = 200;
 VALLEV__HIGH = 300;
 VALLEV__UNLIMITED = 400;
 
+DEV_VIZPT_CONTOUR_VER = 1;
+
 %!test
 %!	commondefs
 %!	thisFile = "test commondefs";
