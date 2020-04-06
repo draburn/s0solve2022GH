@@ -26,8 +26,8 @@ function vizPt_curve( studyPtDat, vecBasisIndex, prm=[], datIn=[] )
 		%subplot(2,2,2);
 		figIndex++; figure(figIndex);
 		vizPt_curve2d( studyPtDat, indexB1, indexB2, "omega", prm, datIn );
-		figIndex++; figure(figIndex);
-		vizPt_curve2d( studyPtDat, indexB1, indexB2, "colorbar", prm, datIn );
+		%figIndex++; figure(figIndex);
+		%vizPt_curve2d( studyPtDat, indexB1, indexB2, "colorbar", prm, datIn );
 	elseif (3<=numB)
 		error( "Not implemented!" );
 	end

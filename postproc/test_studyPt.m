@@ -4,14 +4,15 @@ thisFile = "test_studyPt";
 tic();
 numFigs = 0;
 %
-sizeK = 4;
-sizeX = 4;
-sizeF = 4;
+sizeK = 10
+sizeX = 10
+sizeF = 10
+%seedName = "lin-easy"
+%seedName = "easy"
+%seedName = "moderate"
+seedName = "xhard"
 %
-%seedPrm = demoFunc0101_genSeedPrm("lin-easy");
-%seedPrm = demoFunc0101_genSeedPrm("easy");
-%seedPrm = demoFunc0101_genSeedPrm("moderate");
-seedPrm = demoFunc0101_genSeedPrm("xhard");
+seedPrm = demoFunc0101_genSeedPrm(seedName);
 %randState = mod(round(time),1E6);
 randState = 0;
 %randState = 677832;

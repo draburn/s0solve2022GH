@@ -62,6 +62,42 @@ function vizPt_curve2d_contour( ...
 			zCHi = (2*contourLevels(n)) - contourLevels(n-1);
 		end
 		%
+		if (1)
+		%%
+		%%
+		if ( zCLo < 0.5*(zMax-zMin)/numCol ...
+		  || ((n==1) && zCLo < (zMax-zMin)/numCol) )
+			% Contains zero. (Maybe also contains zLo, z0.)
+			cMap(n,:) = 0.35 + 0.3*cMap0(1,:);
+		elseif ( zCHi < zLo )
+			% Between zLo and z0 without containing either.
+			% Note that color scale runs from 0 to z0, not 0 to zLo.
+			m = 1 + round( (numCol1-1)*(zCMid-0.0)/(z0-0.0) );
+			cMap(n,:) = 0.9 + 0.1*cMap1(m,:);
+		elseif ( zCLo < zLo ...
+		      || ((n==1) && zCLo + (zMax-zMin)/numCol ) )
+			% Contains zLo. (Maybe also contains z0.)
+			% Take color similar to (between zLo and z0) range,
+			% to provide sense of how low value is.
+			m = 1 + round( (numCol1-1)*(zLo-0.0)/(z0-0.0) );
+			cMap(n,:) = 0.6 + 0.15*cMap1(m,:);
+		elseif ( zCHi < z0 )
+			% Between zLo and z0 without containing either.
+			m = 1 + round( (numCol1-1)*(zCMid-zLo)/(z0-zLo) );
+			cMap(n,:) = 0.8 + 0.15*cMap1(m,:);
+		elseif ( zCLo < z0 )
+			% Contains z0.
+			cMap(n,:) = 0.15 + 0.8*(2.0-cMap1(end,:)-cMap2(1,:))/2.0;
+		else
+			% Over z0.
+			m = 1 + round( (numCol2-1)*(zCMid-z0)/(zMax-z0) );
+			cMap(n,:) = 0.65 + 0.2*cMap2(m,:);
+		end
+		%%
+		%%
+		else
+		%%
+		%%
 		if ( zCLo < 0.5*(zMax-zMin)/numCol )
 			% Contains zero.
 			cMap(n,:) = 0.35 + 0.3*cMap0(1,:);
@@ -83,6 +119,9 @@ function vizPt_curve2d_contour( ...
 			% Under zLo.
 			m = 1 + round( (numCol1-1)*(zCMid-0.0)/(zLo-0.0) );
 			cMap(n,:) = 0.9 + 0.1*cMap0(m,:);
+		end
+		%%
+		%%
 		end
 	end
 	%
