@@ -7,13 +7,11 @@ thisFile = "test_vizPt";
 %
 tic();
 figure(1);
-vizPt_vs(studyPtDat,"deltaNorm","omega",prm);
+vizPt_vs(studyPtDat,"deltaNorm","omegalin",prm);
 figure(2);
-vizPt_curve1d(studyPtDat,1,prm);
+vizPt_vs(studyPtDat,"deltaNorm","omega",prm);
 figure(3);
-vizPt_curve1d(studyPtDat,8,prm);
-figure(4);
-vizPt_curve1d(studyPtDat,[2,4],prm);
-prm.figIndex0 = 4;
-vizPt_curve(studyPtDat,[2,4],prm);
+vizPt_curve1d(studyPtDat,[4,2],prm);
+prm.figIndex0 = 3;
+vizPt_curve(studyPtDat,[4,2],prm);
 toc;
