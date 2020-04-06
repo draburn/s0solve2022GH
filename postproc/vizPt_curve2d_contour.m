@@ -30,36 +30,52 @@ function vizPt_curve2d_contour( ...
 	z0 = funchZ(omega0);
 	zMax = max(max(gridZ));
 	%
-	assert( numCL >= 3 );
-	numCLBelow = round( (numCL-3.0)*(z0-zMin)/(zMax-zMin) );
-	numCLAbove = numCL - 3 - numCLBelow;
-	clBelow = linspace( zMin, z0, numCLBelow+2 );
-	clAbove = linspace( z0, zMax, numCLAbove+2 );
-	contourLevels = [ clBelow(1:end-1), z0, clAbove(2:end) ];
-	contourLevels(1) -= (zMax-zMin)*0.001/numCL;
-	contourLevels(end) += (zMax-zMin)*0.001/numCL;
+	contourLevels = linspace( zMin, zMax, numCL );
 	assert(isrealarray(contourLevels,[1,numCL]));
-	%echo__contourLevels = contourLevels
 	%
-	if ( strcmp(strContourFunc,"contour") )
-		cMap = 0.3 * jet(numCL-1);
-		cMap(1:numCLBelow+1,:) += 0.3;
-		cMap(numCLBelow+2,:) = [1.0,0.0,0.0];
-		cMap(numCLBelow+3:end,:) += 0.7;
-		%echo__cMap = cMap
+	numCol = numCL; % Must be true for contourf+colormap to work well.
+	cMap = jet(numCol);
+	%zEps = 0.01*(zMax-zMin)/numCol;
+	%
+	for n=1:numCol
+		zCLo = contourLevels(n);
+		if ( n<numCol )
+			zCHi = contourLevels(n+1);
+		else
+			zCHi = (2*contourLevels(n)) - contourLevels(n-1);
+		end
 		%
-		contour(gridX,gridY,gridZ,contourLevels);
-		colormap(cMap);
-	elseif ( strcmp(strContourFunc,"contourf") )
-		cMap = 0.3 * jet(numCL-1);
-		cMap(1:numCLBelow+1,:) += 0.3;
-		cMap(numCLBelow+2:end,:) += 0.7;
-		%echo__cMap = cMap
-		%
-		contourf(gridX,gridY,gridZ,contourLevels);
-		colormap(cMap);
-	else
-		error("Unsupported value of strContourFunc.");
+		if ( zCLo < (zMax-zMin)/numCol )
+			% Contains zero.
+			cMap(n,:) *= 0.2;
+			cMap(n,:) += 0.35;
+		elseif ( zCLo > z0 )
+			% Over z0.
+			cMap(n,:) *= 0.2;
+			cMap(n,:) += 0.4;
+		elseif ( zCHi > z0 )
+			% Contains z0. (Could also contain zLo, but, meh.)
+			cMap(n,:) *= 0.2;
+			cMap(n,:) += 0.75;
+		elseif ( zCLo > zLo )
+			% Between zLo and z0 without containing either.
+			cMap(n,:) *= 0.2;
+			cMap(n,:) += 0.6;
+		elseif ( zCHi > zLo )
+			% Contains zLo. (If also contains z0, see above.)
+			cMap(n,:) *= 0.2;
+			cMap(n,:) += 0.45;
+		else
+			% Under zLo.
+			cMap(n,:) *= 0.2;
+			cMap(n,:) += 0.8;
+		end
 	end
+	%
+	contourf(gridX,gridY,gridZ,contourLevels);
+	colormap(cMap);
+	%echo__contourLevels = contourLevels
+	%echo__cMap = cMap
+	%
 	grid on;
 end

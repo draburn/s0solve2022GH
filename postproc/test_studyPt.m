@@ -4,7 +4,7 @@ thisFile = "test_studyPt";
 tic();
 numFigs = 0;
 %
-sizeK = 3;
+sizeK = 4;
 sizeX = 4;
 sizeF = 4;
 %

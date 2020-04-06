@@ -94,7 +94,7 @@ if ( DEV_VIZPT_CONTOUR_VER > 0 )
 	for n=1:numCurves
 	if (curveDat(n).stepType == STEPTYPE__LEVCURVE )
 		haveLevCurve = true;
-		omega0 = curveDat(n).rvecOmega(1)
+		omega0 = curveDat(n).rvecOmega(1);
 		omegaLo = min(curveDat(n).rvecOmega);
 	end
 	end
