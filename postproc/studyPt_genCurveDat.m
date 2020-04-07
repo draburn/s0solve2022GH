@@ -333,6 +333,12 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 	curveDat.rvecOmegaLin = rvecOmegaLin;
 	curveDat.rvecDAC = rvecDAC;
 	%
+	% Distance between points, distance to nearest neighbor.
+	rvecDBP = sqrt(sum((matDelta(:,2:end)-matDelta(:,1:end-1)).^2,1));
+	curveDat.rvecDTNN(1) = rvecDBP(1);
+	curveDat.rvecDTNN(2:numNuVals-1) = min([ rvecDBP(1:end-1); rvecDBP(2:end) ]);
+	curveDat.rvecDTNN(numNuVals) = rvecDBP(end);
+	%
 retCode = RETCODE__SUCCESS;
 return;
 end
