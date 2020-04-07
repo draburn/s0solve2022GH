@@ -84,10 +84,13 @@ function vizPt_curve2d_contour( ...
 		elseif ( zCLo < z0 )
 			% Contains z0.
 			cMap(n,:) = 0.15 + 0.8*(2.0-cMap1(end,:)-cMap2(1,:))/2.0;
-		else
-			% Over z0.
+		elseif ( zCHi < zMax )
+			% Over z0 but not zMax.
 			m = 1 + round( (numCol2-1)*(zCMid-z0)/(zMax-z0) );
 			cMap(n,:) = 0.65 + 0.2*cMap2(m,:);
+		else
+			% Contains zMax.
+			cMap(n,:) = 0.5 + 0.2*cMap2(end,:);
 		end
 	end
 	%

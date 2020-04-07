@@ -1,6 +1,5 @@
 To-do...
  Settle vizPt_curve2d_contour
-   - Add colorbar.
    - Comment, cleanup.
    - Revise _curve2d.
 
