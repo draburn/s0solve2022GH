@@ -1,8 +1,4 @@
 To-do...
- Settle vizPt_curve2d_contour
-   - Comment, cleanup.
-   - Revise _curve2d.
-
  Revise vizPt_curve2d
    - Mark "in space" pt based on distance to neighbor + interp.
    - Modify to work with "offset", in prep for 3D viz.
@@ -19,6 +15,6 @@ To-do...
  Revise vizPtVs ~ studyPt.
    - Add "deltaRoot", "deltaSSRoot", "deltaNewton".
  
- > Refactor...?
+ > Refactor, comment...?
  > Write default vizPt script.
  > RM deprecated stuff.

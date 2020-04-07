@@ -9,6 +9,11 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% INIT.
 	%
+	if ( strcmpi("colorbar",strContour) || strcmpi("colorbarf",strContour) )
+		vizPt_curve2d_colorbar( studyPtDat, indexB1, indexB2, strContour, prm, datIn );
+		return;
+	end
+	%
 	numCurves = max(size(studyPtDat.curveDat));
 	if ( indexB1 > 0 )
 		m = studyPtDat.curveDat(abs(indexB1)).indexOfMin;
@@ -33,8 +38,6 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	%
 	funchZ = @(omega)( omega.^0.5 );
 	numContours = 30;
-	numCol_colorbar = 30;
-	%
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% CALC.
@@ -64,61 +67,6 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 		vizDat(n).rvecR = rvecVizR;
 		%
 		dMax = max([ dMax, max(max(matDelta)) ]);
-	end
-	%
-	%
-	if (strcmpi(strContour,"colorbar"))
-	if (1)
-		xVals = (0:1);
-		yVals = linspace( 0, omegaVizMax, numCol_colorbar );
-		[ gridX, gridY ] = ndgrid(xVals,yVals);
-		gridO = gridY;
-		%
-		vizPt_curve2d_contour( ...
-		  gridX, ...
-		  funchZ(gridY), ...
-		  gridO, ...
-		  numCol_colorbar, ...
-		  omegaVizMin, ...
-		  omegaLo, ...
-		  omega0, ...
-		  omegaVizMax, ...
-		  funchZ, ...
-		  "contourf" );
-		%
-		set(get(gcf,"children"),"xticklabel",[]);
-		grid on;
-		ylabel( "value" );
-		title( "colorbar (funchZ)" );
-		return;
-	funchZ
-	else
-		xVals = (0:1);
-		yVals = linspace( ...
-		  -omega0/numCol_colorbar, ...
-		  omegaVizMax + (omega0/numCol_colorbar), ...
-		   numCol_colorbar );
-		[ gridX, gridY ] = ndgrid(xVals,yVals);
-		gridO = gridY;
-		%
-		vizPt_curve2d_contour( ...
-		  gridX, ...
-		  gridY, ...
-		  gridO, ...
-		  numCol_colorbar, ...
-		  omegaVizMin, ...
-		  omegaLo, ...
-		  omega0, ...
-		  omegaVizMax, ...
-		  @(omega_dummy)( (omega_dummy) ), ...
-		  "contourf" );
-		%
-		set(get(gcf,"children"),"xticklabel",[]);
-		grid on;
-		ylabel( "value" );
-		title( "colorbar (original values)" );
-		return;
-	end
 	end
 	%
 	%
