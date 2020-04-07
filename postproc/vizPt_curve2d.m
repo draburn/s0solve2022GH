@@ -47,6 +47,21 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	vecBV1 = matBV(:,1);
 	vecBV2 = matBV(:,2);
 	%
+	if ( indexB1 > 0 )
+		strXCoord = sprintf( "OM %s", ...
+		  studyPtDat.curveDat(abs(indexB1)).curveName );
+	else
+		strXCoord = sprintf( "full %s", ...
+		  studyPtDat.curveDat(abs(indexB1)).curveName );
+	end
+	if ( indexB2 > 0 )
+		strYCoord = sprintf( "OM %s", ...
+		  studyPtDat.curveDat(abs(indexB2)).curveName );
+	else
+		strYCoord = sprintf( "full %s", ...
+		  studyPtDat.curveDat(abs(indexB2)).curveName );
+	end
+	%
 	omegaLo = studyPtDat.omegaLo;
 	omega0 = studyPtDat.omega0;
 	omegaVizMin = 0.0;
@@ -122,6 +137,86 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	[ gridS1, gridS2 ] = ndgrid( s1Vals, s2Vals );
 	%
 	%
+	if ( strcmpi(strContour,"resS1") ...
+	  || strcmpi(strContour,"resS2") )
+		switch (strContour)
+		case {"resS1"}
+			strXField = "rvecS1";
+			this_strXCoord = strXCoord;
+			this_minX = s1Min;
+			this_maxX = s1Max;
+		case {"resS2"}
+			strXField = "rvecS2";
+			this_strXCoord = strYCoord;
+			this_minX = s2Min;
+			this_maxX = s2Max;
+		otherwise
+			error( "This should be impossible." );
+		end
+		strLegend = char([]);
+		clf();
+		hold on;
+		for n=1:numCurves
+			tempVals = getfield( vizDat(n), strXField );
+			tempFMT = "-";
+			tempLineWidth = 2;
+			tempMarkerSize = 1;
+			if (vizDat(n).allInPlane )
+				tempLineWidth = 2;
+			end
+			if ( abs(indexB1) == n && abs(indexB2) == n )
+				tempFMT = "p-";
+				tempMarkerSize = 5;
+			elseif ( abs(indexB1) == n )
+				tempFMT = "v-";
+				tempMarkerSize = 6;
+			elseif ( abs(indexB2) == n )
+				tempFMT = "^-";
+				tempMarkerSize = 4;
+			end
+			plot( ...
+			  tempVals, vizDat(n).rvecSX, tempFMT, ...
+			  "color", 0.7*vizDat(n).col, ...
+			  "markersize", tempMarkerSize, ...
+			  "linewidth", tempLineWidth );
+			strLegend = [ strLegend; vizDat(n).curveName ];
+		end
+		legend( strLegend, "location", "northeastoutside" );
+		plot( 0.0, 0.0, "k+", "linewidth", 2, "markersize", 30 );
+		%
+		for n=1:numCurves
+			tempVals = getfield( vizDat(n), strXField );
+			if (~vizDat(n).allInPlane )
+				plot( ...
+				  tempVals(vizDat(n).rvecInPlane), ...
+				  vizDat(n).rvecSX(vizDat(n).rvecInPlane), "o", ...
+				  "color", 0.7*vizDat(n).col, ...
+				  "linewidth", 2, ...
+				  "markersize", 10+5*(numCurves-n) );
+			end
+			%
+			m = vizDat(n).indexOfMin;
+			plot( ...
+			  tempVals(m), vizDat(n).rvecSX(m), "s", ...
+			  "color", 0.7*vizDat(n).col, ...
+			  "linewidth", 2, ...
+			  "markersize", 15+5*(numCurves-n), ...
+			  tempVals(m), vizDat(n).rvecSX(m), "x", ...
+			  "color", 0.7*vizDat(n).col, ...
+			  "linewidth", 2, ...
+			  "markersize", 15+5*(numCurves-n) );
+		end
+		%
+		%
+		ax = axis();
+		axis([ this_minX, this_maxX, ax(3), ax(4) ]);
+		grid on;
+		xlabel(sprintf( "dist along %s", this_strXCoord ));
+		ylabel(sprintf( "dist ortho to %s x %s", strXCoord, strYCoord ));
+		return;
+	end
+	%
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Get gridOmega...
 	%
@@ -168,13 +263,24 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	for n=1:numCurves
 		tempLineWidth = 2;
 		tempFMT = "-";
+		tempMarkerSize = 1;
 		if (vizDat(n).allInPlane )
-			tempLineWidth = 7;
+			tempLineWidth = 2;
+		end
+		if ( abs(indexB1) == n && abs(indexB2) == n )
+			tempFMT = "p-";
+			tempMarkerSize = 5;
+		elseif ( abs(indexB1) == n )
+			tempFMT = "v-";
+			tempMarkerSize = 6;
+		elseif ( abs(indexB2) == n )
+			tempFMT = "^-";
+			tempMarkerSize = 4;
 		end
 		plot( ...
 		  vizDat(n).rvecS1, vizDat(n).rvecS2, tempFMT, ...
 		  "color", 0.7*vizDat(n).col, ...
-		  "markersize", 8+4*(numCurves-n), ...
+		  "markersize", tempMarkerSize, ...
 		  "linewidth", tempLineWidth );
 		strLegend = [ strLegend; vizDat(n).curveName ];
 	end
@@ -212,26 +318,11 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 		  vizDat(n).rvecS1(m), vizDat(n).rvecS2(m), "s", ...
 		  "color", 0.7*vizDat(n).col, ...
 		  "linewidth", 2, ...
-		  "markersize", 10+5*(numCurves-n), ...
+		  "markersize", 15+5*(numCurves-n), ...
 		  vizDat(n).rvecS1(m), vizDat(n).rvecS2(m), "x", ...
 		  "color", 0.7*vizDat(n).col, ...
 		  "linewidth", 2, ...
-		  "markersize", 10+5*(numCurves-n) );
-	end
-	%
-	if ( indexB1 > 0 )
-		strXCoord = sprintf( "omegaMin %s step", ...
-		  studyPtDat.curveDat(abs(indexB1)).curveName );
-	else
-		strXCoord = sprintf( "full %s step", ...
-		  studyPtDat.curveDat(abs(indexB1)).curveName );
-	end
-	if ( indexB2 > 0 )
-		strYCoord = sprintf( "omegaMin %s step", ...
-		  studyPtDat.curveDat(abs(indexB2)).curveName );
-	else
-		strYCoord = sprintf( "full %s step", ...
-		  studyPtDat.curveDat(abs(indexB2)).curveName );
+		  "markersize", 15+5*(numCurves-n) );
 	end
 	%
 	xlabel(sprintf( "dist along %s", strXCoord ));
