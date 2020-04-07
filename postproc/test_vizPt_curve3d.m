@@ -19,22 +19,17 @@ figIndex++; figure(figIndex);
 vizPt_curve2d( studyPtDat, n1, n2, "omega" );
 figIndex++; figure(figIndex);
 vizPt_curve2d( studyPtDat, n1, n2, "resS1" );
-figIndex++; figure(figIndex);
-vizPt_curve2d( studyPtDat, n1, n2, "resS2" );
 %
 figIndex++; figure(figIndex);
-prm.vecXP = studyPtDat.vecX0 + studyPtDat.curveDat(n3).matDelta(:,round(numPts3/2.0));
+m = round(numPts3*0.5);
+prm.vecXP = studyPtDat.vecX0 + studyPtDat.curveDat(n3).matDelta(:,m);
 vizPt_curve2d( studyPtDat, n1, n2, "omega", prm );
 figIndex++; figure(figIndex);
 vizPt_curve2d( studyPtDat, n1, n2, "resS1", prm );
-figIndex++; figure(figIndex);
-vizPt_curve2d( studyPtDat, n1, n2, "resS2", prm );
 %
 figIndex++; figure(figIndex);
 prm.vecXP = studyPtDat.vecX0 + studyPtDat.curveDat(n3).matDelta(:,end);
 vizPt_curve2d( studyPtDat, n1, n2, "omega", prm );
 figIndex++; figure(figIndex);
 vizPt_curve2d( studyPtDat, n1, n2, "resS1", prm );
-figIndex++; figure(figIndex);
-vizPt_curve2d( studyPtDat, n1, n2, "resS2", prm );
 toc;

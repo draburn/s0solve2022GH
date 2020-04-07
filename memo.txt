@@ -1,20 +1,6 @@
 To-do...
- Revise vizPt_curve2d
-   - Modify to work with "offset", in prep for 3D viz.
-   - Revise markers.
-   - Call effective vizPt_curve1d, to see distance from plane (vs s1, s2?)
-   
- Revise vizPt_curve1d
-   - Synchronize to 2D markers.
-   - Modify legends and title to report vs space.
-   - Mark "in space" pt based on distance to neighbor + interp.
- 
- Revise vizPt_curve
-   - Handle 3+D.
-   
- Revise vizPtVs ~ studyPt.
-   - Add "deltaRoot", "deltaSSRoot", "deltaNewton".
+ vizPt_curve: Handle 3+D.
+ studyPt: Add "deltaRoot", "deltaSSRoot", "deltaNewton".
  
  > Refactor, comment...?
  > Write default vizPt script.
- > RM deprecated stuff.

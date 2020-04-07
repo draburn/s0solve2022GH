@@ -20,7 +20,7 @@ function vizPt_curve2d_colorbar( studyPtDat, indexB1, indexB2, strContour="omega
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO WORK.
 	%
-	if (0)
+	if (1)
 		xVals = (0:1);
 		yVals = linspace( 0, omegaVizMax, numCol_colorbar );
 		[ gridX, gridY ] = ndgrid(xVals,yVals);

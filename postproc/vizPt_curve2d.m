@@ -150,6 +150,9 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 			this_strXCoord = strYCoord;
 			this_minX = s2Min;
 			this_maxX = s2Max;
+			% DRaburn 2020.04.06...
+			%  Occurs to me that swapping the x- and y-axes
+			%  might improve usability. ... Meh.
 		otherwise
 			error( "This should be impossible." );
 		end
