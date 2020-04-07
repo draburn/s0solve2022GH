@@ -29,7 +29,7 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	end
 	matBU = [ vecBU1, vecBU2 ];
 	%
-	vecX0 = studyPtDat.vecX0;
+	vecX0 = studyPtDat.vecX0; % X of starting point.
 	funchF = studyPtDat.funchF;
 	funchFSupportsMultiArg = studyPtDat.funchFSupportsMultiArg;
 	vecF0 = studyPtDat.vecF0;
@@ -38,6 +38,7 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	%
 	funchZ = @(omega)( omega.^0.5 );
 	numContours = 30;
+	vecXP = mygetfield(prm,"vecXP",vecX0); % X of origin of plane.
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% CALC.
@@ -45,42 +46,51 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	matBV = myorth(matBU);
 	vecBV1 = matBV(:,1);
 	vecBV2 = matBV(:,2);
-	%matBV' * matBU
 	%
 	omegaLo = studyPtDat.omegaLo;
 	omega0 = studyPtDat.omega0;
 	omegaVizMin = 0.0;
 	omegaVizMax = 2.0*omega0;
-	dMax = 0.0;
+	%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Get vizDat.
+	%
 	for n=1:numCurves
-		matDelta = studyPtDat.curveDat(n).matDelta;
-		rvecVizX = vecBV1' * matDelta;
-		rvecVizY = vecBV2' * matDelta;
-		matRes = matDelta - (vecBV1 * rvecVizX) - (vecBV2 * rvecVizY);
-		rvecVizR = sqrt(sum((matRes.^2),1));
-		%
-		vizDat(n).rvecX = rvecVizX;
-		vizDat(n).rvecY = rvecVizY;
+		vizDat(n).numPts = size(studyPtDat.curveDat(n).matX,2);
+		vizDat(n).matDelta = studyPtDat.curveDat(n).matX ...
+		  - repmat(vecXP,[1,vizDat(n).numPts]);
+		vizDat(n).rvecS1 = vecBV1' * vizDat(n).matDelta;
+		vizDat(n).rvecS2 = vecBV2' * vizDat(n).matDelta;
 		vizDat(n).col = studyPtDat.curveDat(n).col;
 		vizDat(n).curveName = studyPtDat.curveDat(n).curveName;
 		vizDat(n).indexOfMin = studyPtDat.curveDat(n).indexOfMin;
-		vizDat(n).rvecR = rvecVizR;
-		%
-		dMax = max([ dMax, max(max(matDelta)) ]);
 	end
 	%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Get gridS1, gridS2.
 	%
 	s1Max = 0.0;
 	s1Min = 0.0;
 	s2Max = 0.0;
 	s2Min = 0.0;
-	for n=1:numCurves
-	%if ( abs(indexB1)==n || abs(indexB2)==n )
 	if (1)
-		s1Max = max([ s1Max, max(vizDat(n).rvecX) ]);
-		s1Min = min([ s1Min, min(vizDat(n).rvecX) ]);
-		s2Max = max([ s2Max, max(vizDat(n).rvecY) ]);
-		s2Min = min([ s2Min, min(vizDat(n).rvecY) ]);
+	% Maximal area of interest.
+	for n=1:numCurves
+		s1Max = max([ s1Max, max(vizDat(n).rvecS1) ]);
+		s1Min = min([ s1Min, min(vizDat(n).rvecS1) ]);
+		s2Max = max([ s2Max, max(vizDat(n).rvecS2) ]);
+		s2Min = min([ s2Min, min(vizDat(n).rvecS2) ]);
+	end
+	else
+	% Minimal area of interest.
+	for n=1:numCurves
+	if ( abs(indexB1)==n || abs(indexB2)==n )
+		m = vizDat(n).indexOfMin;
+		s1Max = max([ s1Max, max(vizDat(n).rvecS1(1:m)) ]);
+		s1Min = min([ s1Min, min(vizDat(n).rvecS1(1:m)) ]);
+		s2Max = max([ s2Max, max(vizDat(n).rvecS2(1:m)) ]);
+		s2Min = min([ s2Min, min(vizDat(n).rvecS2(1:m)) ]);
+	end
 	end
 	end
 	%
@@ -98,14 +108,17 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	s2Vals = linspace( s2Min, s2Max, numS2Vals );
 	[ gridS1, gridS2 ] = ndgrid( s1Vals, s2Vals );
 	%
+	%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Get gridOmega...
+	%
 	rvecGridS1 = reshape( gridS1, 1, numVals );
 	rvecGridS2 = reshape( gridS2, 1, numVals );
 	%
-	matDelta = matBV * [ rvecGridS1; rvecGridS2 ];
-	matX = repmat(vecX0,[1,numVals]) + matDelta;
+	matX = repmat(vecXP,[1,numVals]) + matBV * [ rvecGridS1; rvecGridS2 ];
 	%
 	if (strcmpi(strContour,"none"))
-		gridO = [];
+		gridOmega = [];
 	elseif (strcmpi(strContour,"omega"))
 		if ( funchFSupportsMultiArg )
 			matF = funchF(matX);
@@ -115,11 +128,12 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 			end
 		end
 		rvecOmega = 0.5*sum(matF.^2,1);
-		gridO = reshape( rvecOmega, [ numS1Vals, numS2Vals ] );
+		gridOmega = reshape( rvecOmega, [ numS1Vals, numS2Vals ] );
 	elseif (strcmpi(strContour,"omegaLin"))
-		matFLin = repmat(vecF0,[1,numVals]) + (matW*(matV'*matDelta));
+		matFLin = repmat(vecF0,[1,numVals]) ...
+		  + (matW*(matV'*(matX-repmat(vecX0,[1,numVals]))));
 		rvecOmegaLin = 0.5*sum(matFLin.^2,1);
-		gridO = reshape( rvecOmegaLin, [ numS1Vals, numS2Vals ] );
+		gridOmega = reshape( rvecOmegaLin, [ numS1Vals, numS2Vals ] );
 		%
 		if ( sum(sum( ((matV*(matV'*matBV)) - matBV).^2 )) > eps )
 			msg_warn( verbLev, thisFile, __LINE__, sprintf( ...
@@ -139,26 +153,14 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	%
 	hold on;
 	for n=1:numCurves
-		if ( abs(indexB1)==n && abs(indexB2)==n )
-			% Only possible if comparing a curve's end with omegaMin.
-			tempLineWidth = 2;
-			tempFMT = "-";
-		elseif (abs(indexB1)==n)
-			tempLineWidth = 2;
-			tempFMT = "-";
-		elseif (abs(indexB2)==n)
-			tempLineWidth = 2;
-			tempFMT = "-";
-		else
-			tempLineWidth = 2;
-			tempFMT = "-";
-		end
-		msk = (vizDat(n).rvecR<dMax*eps^0.5);
-		if (sum(msk)==max(size(vizDat(n).rvecR)))
-			tempLineWidth = 5;
-		end
+		tempLineWidth = 2;
+		tempFMT = "-";
+		%msk = (vizDat(n).rvecR<dMax*eps^0.5);
+		%if (sum(msk)==max(size(vizDat(n).rvecR)))
+		%	tempLineWidth = 5;
+		%end
 		plot( ...
-		  vizDat(n).rvecX, vizDat(n).rvecY, tempFMT, ...
+		  vizDat(n).rvecS1, vizDat(n).rvecS2, tempFMT, ...
 		  "color", 0.7*vizDat(n).col, ...
 		  "markersize", 8+4*(numCurves-n), ...
 		  "linewidth", tempLineWidth );
@@ -170,7 +172,7 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 		vizPt_curve2d_contour( ...
 		  gridS1, ...
 		  gridS2, ...
-		  gridO, ...
+		  gridOmega, ...
 		  numContours, ...
 		  omegaVizMin, ...
 		  omegaLo, ...
@@ -185,29 +187,24 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	plot( 0.0, 0.0, "k+", "linewidth", 2, "markersize", 30 );
 	for n=1:numCurves
 		m = vizDat(n).indexOfMin;
-		msk = (vizDat(n).rvecR<dMax*eps^0.5);
-		if (sum(msk)==max(size(vizDat(n).rvecR)))
-			msk = [];
-		end
+		%msk = (vizDat(n).rvecR<dMax*eps^0.5);
+		%if (sum(msk)==max(size(vizDat(n).rvecR)))
+		%	msk = [];
+		%end
+		%plot( ...
+		%  vizDat(n).rvecX(msk), vizDat(n).rvecY(msk), "o", ...
+		%  "color", 0.7*vizDat(n).col, ...
+		%  "linewidth", 3, ...
+		%  "markersize", 10+5*(numCurves-n) );
 		plot( ...
-		  vizDat(n).rvecX(msk), vizDat(n).rvecY(msk), "o", ...
-		  "color", 0.7*vizDat(n).col, ...
-		  "linewidth", 3, ...
-		  "markersize", 10+5*(numCurves-n) );
-		plot( ...
-		  vizDat(n).rvecX(m), vizDat(n).rvecY(m), "s", ...
+		  vizDat(n).rvecS1(m), vizDat(n).rvecS2(m), "s", ...
 		  "color", 0.7*vizDat(n).col, ...
 		  "linewidth", 1, ...
 		  "markersize", 20+5*(numCurves-n), ...
-		  vizDat(n).rvecX(m), vizDat(n).rvecY(m), "x", ...
+		  vizDat(n).rvecS1(m), vizDat(n).rvecS2(m), "x", ...
 		  "color", 0.7*vizDat(n).col, ...
 		  "linewidth", 1, ...
 		  "markersize", 20+5*(numCurves-n) );
-		  %"markersize", 10+10*(numCurves-n), ...
-		  %vizDat(n).rvecX(m), vizDat(n).rvecY(m), "v", ...
-		  %"color", 0.7*vizDat(n).col, ...
-		  %"linewidth", tempLineWidth, ...
-		  %"markersize", 10+10*(numCurves-n) );
 	end
 	%
 	if ( indexB1 > 0 )

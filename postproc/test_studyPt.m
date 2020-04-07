@@ -4,9 +4,9 @@ thisFile = "test_studyPt";
 tic();
 numFigs = 0;
 %
-sizeK = 10
-sizeX = 10
-sizeF = 10
+sizeK = 4
+sizeX = 4
+sizeF = 4
 %seedName = "lin-easy"
 %seedName = "easy"
 %seedName = "moderate"
@@ -14,7 +14,8 @@ seedName = "xhard"
 %
 seedPrm = demoFunc0101_genSeedPrm(seedName);
 %randState = mod(round(time),1E6);
-randState = 0;
+randState = 238148
+%randState = 0;
 %randState = 677832;
 %randState = 952523; % Try with 5x100x100xSTEPTYPE__GRADDIR.
 %randState = 88; % Try with 100x100x100x"moderate" STEPTYPE__LEVCURVE_SCALED.
