@@ -23,12 +23,15 @@ vizPt_curve2d( studyPtDat, n1, n2, "resS1" );
 figIndex++; figure(figIndex);
 m = round(numPts3*0.5);
 prm.vecXP = studyPtDat.vecX0 + studyPtDat.curveDat(n3).matDelta(:,m);
+prm.strPName = sprintf( "(%s plane %d/%d)", studyPtDat.curveDat(n3).curveName, m, numPts3 );
 vizPt_curve2d( studyPtDat, n1, n2, "omega", prm );
 figIndex++; figure(figIndex);
 vizPt_curve2d( studyPtDat, n1, n2, "resS1", prm );
 %
 figIndex++; figure(figIndex);
+m = numPts3;
 prm.vecXP = studyPtDat.vecX0 + studyPtDat.curveDat(n3).matDelta(:,end);
+prm.strPName = sprintf( "(%s plane %d/%d)", studyPtDat.curveDat(n3).curveName, m, numPts3 );
 vizPt_curve2d( studyPtDat, n1, n2, "omega", prm );
 figIndex++; figure(figIndex);
 vizPt_curve2d( studyPtDat, n1, n2, "resS1", prm );

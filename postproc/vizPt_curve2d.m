@@ -39,6 +39,7 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	funchZ = @(omega)( omega.^0.5 );
 	numContours = 30;
 	vecXP = mygetfield(prm,"vecXP",vecX0); % X of origin of plane.
+	strPName = mygetfield(prm,"strPName",[]); % Name of the plane.
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% CALC.
@@ -330,7 +331,13 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	%
 	xlabel(sprintf( "dist along %s", strXCoord ));
 	ylabel(sprintf( "dist along ortho %s", strYCoord ));
-	title(sprintf( "2D Curve Plot (%s): %s, %s", strContour, strXCoord, strYCoord ));
+	strTitle = sprintf( "2D Curve Plot (%s): %s, %s", strContour, strXCoord, strYCoord );
+	if (~isempty(strPName))
+		strTitle_old = strTitle;
+		strTitle = sprintf( "%s %s", strTitle_old, strPName );
+	else
+	end
+	title(strTitle);
 	%
 	axis square;
 	grid on;
