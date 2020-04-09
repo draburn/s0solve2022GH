@@ -158,6 +158,15 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 		matH = matJ' * matJ;
 		matI = eye(sizeF,sizeX);
 		%
+		datOut.iterDat(numIter+1).numIter = 0;
+		datOut.iterDat(numIter+1).vecX = vecX;
+		datOut.iterDat(numIter+1).vecF = vecF;
+		datOut.iterDat(numIter+1).omega = omega;
+		datOut.iterDat(numIter+1).matJ = matJ;
+		datOut.iterDat(numIter+1).vecG = vecG;
+		datOut.iterDat(numIter+1).matH = matH;
+		datOut.iterDat(numIter+1).matI = matI;
+		%
 		%
 		i0 = min([ numIter+1, max(size(stepTypeList)) ]);
 		switch( stepTypeList(i0) )
@@ -228,6 +237,7 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 			end
 			%
 			[ omegaBest, nOfBest ] = min([ rvecOmega ]);
+			%echo__omegaBest = omegaBest
 			nuOfBest = rvecNu(nOfBest);
 			searchIter++;
 			if ( searchIterLimit <= searchIter )
@@ -263,11 +273,9 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 		vecX = vecXTrial;
 		vecF = vecFTrial;
 		omega = omegaTrial;
-		datOut.iterDat(numIter).vecX = vecXTrial;
-		datOut.iterDat(numIter).vecF = vecFTrial;
-		datOut.iterDat(numIter).matI = matI;
-		datOut.iterDat(numIter).matJ = matJ;
-		datOut.iterDat(numIter).omega = omegaTrial;
+		datOut.iterDat(numIter).vecXTrial = vecXTrial;
+		datOut.iterDat(numIter).vecFTrial = vecFTrial;
+		datOut.iterDat(numIter).omegaTrial = omegaTrial;
 	end
 	%
 return;

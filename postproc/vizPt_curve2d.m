@@ -66,7 +66,7 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	omegaLo = studyPtDat.omegaLo;
 	omega0 = studyPtDat.omega0;
 	omegaVizMin = 0.0;
-	omegaVizMax = 2.0*omega0;
+	omegaVizMax = 5.0*omega0;
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Get vizDat.
@@ -102,7 +102,7 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	s1Min = 0.0;
 	s2Max = 0.0;
 	s2Min = 0.0;
-	if (1)
+	if (0)
 	% Maximal area of interest.
 	for n=1:numCurves
 		s1Max = max([ s1Max, max(vizDat(n).rvecS1) ]);
@@ -130,8 +130,8 @@ function vizPt_curve2d( studyPtDat, indexB1, indexB2, strContour="omega", prm=[]
 	s2Max = s2Max + (0.2*s2Var);
 	s2Min = s2Min - (0.2*s2Var);
 	%
-	numS1Vals = 51;
-	numS2Vals = 51;
+	numS1Vals = 201;
+	numS2Vals = 201;
 	numVals = numS1Vals * numS2Vals;
 	s1Vals = linspace( s1Min, s1Max, numS1Vals );
 	s2Vals = linspace( s2Min, s2Max, numS2Vals );

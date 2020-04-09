@@ -7,4 +7,4 @@ figIndex++; figure(figIndex);
 vizPt_vs( p, "deltaNorm", "omega" );
 %.
 prm.figIndex0 = figIndex;
-vizPt_curve( p, [1,2], prm );
+vizPt_curve( p, [8,4], prm );

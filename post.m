@@ -1,4 +1,4 @@
-iterToViz = 1;
+iterToViz = 3
 studyPt_prm.vecXSecret = funcPrm.x0;
 tic();
 p = studyPt( ...
