@@ -165,7 +165,9 @@ function [ curveDat, retCode, datOut ] = studyPt_genCurveDat( ...
 		%
 		fTemp = vecTemp' * matH * vecTemp;
 		if (STEPTYPE__NEWTON==stepType)
-			assert( abs(fTemp-vecTemp'*vecG) < (eps^0.75)*(abs(fTemp)+abs(vecTemp'*vecG)) );
+			%echo__fTemp = fTemp
+			%echo__vecTempPTVecG = vecTemp'*vecG
+			assert( abs(fTemp-vecTemp'*vecG) < sqrt(eps)*(abs(fTemp)+abs(vecTemp'*vecG)) );
 			vecY = vecTemp;
 		elseif (STEPTYPE__SPECIFIED_VECTOR == stepType)
 			vecY = vecTemp;

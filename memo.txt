@@ -1,6 +1,17 @@
 To-do...
- vizPt_curve: Handle 3+D.
- studyPt: Add "deltaRoot", "deltaSSRoot", "deltaNewton".
+ studyPt & vizPt_vs: Add "deltaRoot", "deltaSSRoot", "deltaNewton".
+ vizPt_curve: Refactor...
+   ! Consider use-case. (Incorporate vizPt_vs too?)
+   * Handle 3+D.
+   * Look at res vs all basis vecs in addition to plane basis vecs.
  
- > Refactor, comment...?
  > Write default vizPt script.
+
+What might be convenient commands?...
+  viz( d, "basic" );
+  viz( d, "omega", "deltaNorm" );
+  viz( d );
+  viz( d, "all" );
+  viz( d, "suite20200408" );
+  viz( d, "newt", "grad" ); -- show all curves in {newton,gradDir} basis, omega contours.
+  viz( d, "newt", "grad", "all" ); -- as above, for omega, omegaLin, sX vs s1.

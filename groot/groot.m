@@ -265,6 +265,8 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 		omega = omegaTrial;
 		datOut.iterDat(numIter).vecX = vecXTrial;
 		datOut.iterDat(numIter).vecF = vecFTrial;
+		datOut.iterDat(numIter).matI = matI;
+		datOut.iterDat(numIter).matJ = matJ;
 		datOut.iterDat(numIter).omega = omegaTrial;
 	end
 	%

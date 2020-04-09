@@ -40,7 +40,9 @@ function [ studyPtDat, retCode, datOut ] = studyPt( ...
 	numNuVals = mygetfield( prm, "numNuVals", 100 );
 	stepTypeList = mygetfield( prm, "stepTypeList", stepTypeList_default );
 	vecXSecret = mygetfield( prm, "vecXSecret", [] );
-	assert( isrealarray(vecXSecret,[sizeX,1]) );
+	if (~isempty(vecXSecret))
+		assert( isrealarray(vecXSecret,[sizeX,1]) );
+	end
 	funchFSupportsMultiArg = mygetfield( prm, "funchFSupportsMultiArg", true );
 	%
 	genStepFunchDatIn = mygetfield( datIn, "genStepFunchDatIn", [] );
