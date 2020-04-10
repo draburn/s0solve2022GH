@@ -47,7 +47,7 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 	stepType_default = STEPTYPE__LEVCURVE;
 	%stepType_default = STEPTYPE__GRADDIR;
 	%stepType_default = STEPTYPE__GRADCURVE;
-	stepTypeList = mygetfield( prm, "stepTypes", [stepType_default] );
+	stepTypeList = mygetfield( prm, "stepTypeList", [stepType_default] );
 	funchJ = prm.funchJ;
 	btIterLimit = 10;
 	fallThresh = 1.0e-4;
@@ -157,8 +157,10 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 		vecG = matJ' * vecF;
 		matH = matJ' * matJ;
 		matI = eye(sizeF,sizeX);
+		i0 = min([ numIter+1, max(size(stepTypeList)) ]);
+		stepType = stepTypeList(i0);
 		%
-		datOut.iterDat(numIter+1).numIter = 0;
+		datOut.iterDat(numIter+1).numIter = numIter;
 		datOut.iterDat(numIter+1).vecX = vecX;
 		datOut.iterDat(numIter+1).vecF = vecF;
 		datOut.iterDat(numIter+1).omega = omega;
@@ -166,10 +168,10 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 		datOut.iterDat(numIter+1).vecG = vecG;
 		datOut.iterDat(numIter+1).matH = matH;
 		datOut.iterDat(numIter+1).matI = matI;
+		datOut.iterDat(numIter+1).stepType = stepType;
 		%
 		%
-		i0 = min([ numIter+1, max(size(stepTypeList)) ]);
-		switch( stepTypeList(i0) )
+		switch( stepType )
 		case {STEPTYPE__NEWTON}
 			vecT = -matH \ vecG;
 			funchDelta = @(nu)( nu*vecT);
