@@ -1,4 +1,4 @@
-function vecF = blm_0429_func_alt( matX, matA, matB, vecX0, indexNNonLin, c1, c0 )
+function vecF = blm0429_func_alt( matX, matA, matB, vecX0, indexNNonLin, c1, c0 )
 	numVals = size(matX,2);
 	matAB = matA*matB;
 	vecANL = matA(:,indexNNonLin);
