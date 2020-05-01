@@ -1,5 +1,5 @@
 myclear;
-setprngstates(0);
+%setprngstates(0);
 thisFile = "blm0430";
 %
 sizeN = 5;
@@ -29,7 +29,7 @@ else
 end
 %
 c1 = 1.0;
-cx = 0.1;
+cx = 0.01;
 c0 = (c1^2)*(1.0+cx)/4.0;
 funchF = @(dummy_matX)( blm0429_func_alt( dummy_matX, matA, matB, vecX0, indexNNonLin, c1, c0 ) );
 %
@@ -123,12 +123,8 @@ rvecIsRealIsh = abs(imag(rvecZRoots)) < sqrt(eps);
 assert(1==sum(rvecIsRealIsh));
 %
 zRoot = real(rvecZRoots(rvecIsRealIsh))
-vecXGuess = vecW + (vecV*( (p*(zRoot^2)) + (q*(zRoot^3)) ))
+vecXGuess = -vecW - (vecV*( (p*(zRoot^2)) + (q*(zRoot^3)) ))
 echo__vecX0 = vecX0
 %
 rvecResX = vecXGuess - vecX0
 resX = sqrt(sum(rvecResX.^2))
-%
-% Need correct sign of bHat???
-rvecResX_flip = vecXGuess + vecX0
-resX_flip = sqrt(sum(rvecResX_flip.^2))
