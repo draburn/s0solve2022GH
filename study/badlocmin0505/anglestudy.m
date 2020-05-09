@@ -33,6 +33,9 @@ matJ = funchJ(matX);
 rvecF0 = sum(matJ.^2,1);
 rvecF1 = sum((vecVHat'*matJ).^2,1);
 rvecF2 = sum((vecWHat'*matJ).^2,1);
+rvecF3 = sum((vecY1Hat'*matJ).^2,1);
+rvecF4 = sum((vecY2Hat'*matJ).^2,1);
+rvecF5 = sum(matX.*matJ,1);
 %
 %%[ dummy, indexOfMax ] = max(rvecF1);
 %%vecZ = matJ(:,indexOfMax);
@@ -41,5 +44,8 @@ rvecF2 = sum((vecWHat'*matJ).^2,1);
 plot( ...
   rvecPhi, rvecF0, 'o-', ...
   rvecPhi, rvecF1, 'v-', ...
-  rvecPhi, rvecF2, '^-' );
+  rvecPhi, rvecF2, '^-', ...
+  rvecPhi, rvecF3, 'v-', ...
+  rvecPhi, rvecF4, '^-', ...
+  rvecPhi, rvecF5, 's-' );
 grid on;
