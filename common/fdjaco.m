@@ -21,7 +21,7 @@ function matJ = fdjaco( funchF, vecX0, prm=[] )
 	% PARSE INPUT
 	%
 	% Verbosity.
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	reportInterval = mygetfield( prm, "reportInterval", 3.0 );
 	assert( isrealscalar(verbLev) );
 	assert( isrealscalar(reportInterval) );

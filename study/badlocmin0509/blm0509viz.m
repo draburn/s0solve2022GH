@@ -13,6 +13,8 @@ x2Vals = linspace(-2,2,numX2Vals);
 %x2Vals = linspace(-0.1,0.3,numX2Vals);
 x1Vals = linspace(-0.6,0.05,numX1Vals);
 x2Vals = linspace(-0.02,0.05,numX2Vals);
+%x1Vals = linspace(-0.5,-0.45,numX1Vals);
+%x2Vals = linspace(0.006,0.014,numX2Vals);
 %
 [ gridX1, gridX2 ] = ndgrid( x1Vals, x2Vals );
 matX = [ ...
@@ -27,6 +29,7 @@ gridOmega = 0.5*(gridF1.^2+gridF2.^2);
 funchViz = @(f)( ( abs(f).^(1.0/2.0) ) );
 %funchViz = @(f)( abs(asinh(f*100.0)/100.0) );
 %funchViz = @(f)( abs(asinh(f*1000.0)/1000.0) );
+%funchViz = @(f)( abs(asinh(f*10000.0)/10000.0) );
 cmap = colormap(jet(1000));
 cmap(1,:) = 0.7;
 %
