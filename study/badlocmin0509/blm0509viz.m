@@ -5,15 +5,15 @@ numX1Vals = 201;
 numX2Vals = 201;
 x1Vals = linspace(-2,2,numX1Vals);
 x2Vals = linspace(-2,2,numX2Vals);
-x1Vals = linspace(-0.6,0.05,numX1Vals);
-x2Vals = linspace(-0.02,0.05,numX2Vals);
+%x1Vals = linspace(-0.6,0.05,numX1Vals);
+%x2Vals = linspace(-0.02,0.05,numX2Vals);
 %x1Vals = linspace(-0.5,-0.45,numX1Vals);
 %x2Vals = linspace(0.006,0.014,numX2Vals);
 %
 x1Vals = linspace(-0.7,0.02,numX1Vals);
 x2Vals = linspace(-0.1,0.02,numX2Vals);
-x1Vals = linspace(-0.6,-0.4,numX1Vals);
-x2Vals = linspace(-0.06,-0.02,numX2Vals);
+%x1Vals = linspace(-0.6,-0.4,numX1Vals);
+%x2Vals = linspace(-0.06,-0.02,numX2Vals);
 %
 [ gridX1, gridX2 ] = ndgrid( x1Vals, x2Vals );
 matX = [ ...

@@ -13,6 +13,7 @@ for n=1:50
 	vecF = funchF(vecX);
 	matJ = funchJ(vecX);
 	vecG = matJ'*vecF;
+	%%vecG *= norm(vecG)/(norm(matJ*vecG));
 	%if ( rcond(matJ'*matJ) < 1e-16 )
 	%	break;
 	%end
@@ -63,4 +64,56 @@ if (0)
 	grid on;
 	% THIS WILL ONLY SHOW A STEEP DIP IF THE
 	% "ROOT-ISH CURVE" IS A LINE.
+end
+
+matCM = matUM(:,1); %Columnspace of Jm.
+matVMNonNull = matVM(:,1); %Non-null space of Jm.
+vecVMHatNull = matVM(:,2); %Null space of Jm, 1D is assumed.
+yPrev = 0.0;
+for k=1:500
+	z = -0.001*k;
+	funchXCurve = @(y,z)( repmat(vecXM,[1,size(y,2)]) ...
+	 + (matVMNonNull*y) + (vecVMHatNull*z) );
+	funchFSub = @(y)( (matCM') * funchF( funchXCurve(y,z) ));
+	y = yPrev;
+	n = 0;
+	while (1)
+		epsP = 1e-8;
+		epsM = 1e-8;
+		f = funchFSub(y);
+		if (norm(f)<1e-14)
+			break;
+		end
+		fp = funchFSub(y+epsP);
+		fm = funchFSub(y-epsM);
+		dfdy = (fp-fm)/(epsP+epsM);
+		dy = -(dfdy)\f;
+		m = 0;
+		while (1)
+			yTemp = y+dy;
+			fTemp = funchFSub(yTemp);
+			if (norm(fTemp)<norm(f))
+				break;
+			end
+			m++;
+			if (m>20)
+				%msg(thisFile,__LINE__,"Failed to converge.");
+				break;
+			end
+			dy *= 0.1;
+		end
+		if (m>20)
+			break;
+		end
+		n++;
+		if (n>50)
+			break;
+		end
+		y+=dy;
+	end
+	rvecZ(k) = z;
+	rvecY(k) = y;
+	matX(:,k) = funchXCurve(y,z);
+	matF(:,k) = funchF(matX(:,k));
+	matFSub(:,k) = funchFSub(y);
 end
