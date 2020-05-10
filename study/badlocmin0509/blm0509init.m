@@ -15,8 +15,8 @@ if (1)
 	theta2 = 30.0*pi/180.0;
 	funchF2A = @(x1,x2)( (-x1-5*(x2.^2))./(1.0+(x1.^2)+(x2.^2)) );
 	funchF2B = @(x1,x2)( funchF2A(funchRot1(x1,x2,theta2),funchRot2(x1,x2,theta2)) );
-	%matA = [ 1.0, -0.01; 10.0, 1.0 ];
-	matA = [ 1.0, 0.0; 0.0, 1.0 ];
+	matA = [ 1.0, -0.01; 10.0, 1.0 ];
+	%matA = [ 1.0, 0.0; 0.0, 1.0 ];
 	funchF = @(x)(  matA * [ funchF1B(x(1,:),x(2,:)); funchF2B(x(1,:),x(2,:)) ]);
 elseif (1)
 	theta1 = 0.0*pi/180.0;
