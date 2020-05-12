@@ -3,7 +3,6 @@ myclear;
 %
 sizeX = 2;
 sizeF = 2;
-numVals = 10;
 %
 dat.c0.ary = randn(sizeF,1);
 dat.c(1).ary = randn(sizeF,sizeX);
@@ -26,5 +25,6 @@ axis equal;
 colormap(0.5+0.5*jet(1000));
 grid on;
 %
+numVals = 10;
 matX = randn(sizeX,numVals);
 matF = funchF(matX);
