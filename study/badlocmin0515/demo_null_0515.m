@@ -13,10 +13,12 @@ funchFNorm = @(x)sqrt(sum(funchF([x]).^2,1));
 figIndex++; figure(figIndex);
 funchVizXY = @(x,y)asinh(funchFNorm([x;y])*100)/100;
 %contourfunch( funchVizXY, [-0.75,0.15,-0.05,0.05] );
-contourfunch( funchVizXY, [0.3 1.1 0.95 1.05], 101, 101, 40 );
+contourfunch( funchVizXY, [0.4 1.1 0.99 1.04], 101, 101, 40 );
 %contourfunch( funchVizXY, [ 0.9 1.1 0.9 1.05] )
 %contourfunch( funchVizXY, [ 0.5024 0.5026 1.00239 1.0024] )
-colormap(0.6+0.4*jet);
+cMap = 0.6+0.4*jet;
+cMap(1,:) *= 0.4;
+colormap(cMap);
 grid on;
 %
 if (0)
