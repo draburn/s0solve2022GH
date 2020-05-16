@@ -8,7 +8,7 @@ c1 = 1.0;
 cx = 0.01;
 c0 = (c1^2)*(1.0+cx)/4.0;
 funchF = @(x) blm0429_func( x, matA, matB, vecX0, indexNNonLin, c1, c0 );
-funchFNorm = @(x)sqrt(sum(funchF([x]).^2,1));
+funchFNorm = @(x)sqrt(sum(funchF(x).^2,1));
 %
 figIndex++; figure(figIndex);
 funchVizXY = @(x,y)asinh(funchFNorm([x;y])*100)/100;
@@ -103,5 +103,21 @@ plot( matX(1,:), matX(2,:), 'ro-' );
 plot( vecX(1), vecX(2), 'rs', 'markersize', 20, 'linewidth', 5 );
 plot( matX(1,indexOfMin), matX(2,indexOfMin), 'rx', 'markersize', 20, 'linewidth', 5 );
 hold off;
-
-return;
+%
+vecFHat = vecF/sqrt(sum(vecF.^2));
+funchFAlpha = @(x)( vecFHat*(vecFHat'*funchF(x)) );
+funchFBeta = @(x)( funchF(x) - funchFAlpha(x) );
+funchFAlphaNorm = @(x)( sqrt(sum(funchFAlpha(x).^2,1)) );
+funchFBetaNorm = @(x)( sqrt(sum(funchFBeta(x).^2,1)) );
+funchVizAlphaXY = @(x,y) funchFAlphaNorm([x;y]);
+funchVizBetaXY = @(x,y) funchFBetaNorm([x;y]);
+%
+figIndex++; figure(figIndex);
+contourfunch( funchVizAlphaXY, [0.4 1.1 0.99 1.04], 101, 101, 40 );
+colormap(cMap);
+grid on;
+%
+figIndex++; figure(figIndex);
+contourfunch( funchVizBetaXY, [0.4 1.1 0.99 1.04], 101, 101, 40 );
+colormap(cMap);
+grid on;
