@@ -16,5 +16,5 @@ commondefs;
 %addpath( "tac" );
 %msg("init",__LINE__,"Adding path \"study/badlocmin0509\".");
 %addpath( "study/badlocmin0509" );
-msg("init",__LINE__,"Adding path \"study/badlocmin0510\".");
-addpath( "study/badlocmin0510" );
+msg("init",__LINE__,"Adding path \"study/badlocmin0515\".");
+addpath( "study/badlocmin0515" );
