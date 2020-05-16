@@ -29,6 +29,8 @@ grid on;
 vecX = [rvecX1(indexOfMin);0];
 else
 	vecX = [ 0.5025;1.0024 ];
+	%%vecX = [ 0.5;1.0 ];
+	%%vecX = [ 0.4; 0.9 ];
 end
 %
 %
@@ -63,8 +65,9 @@ assert( norm(funchFModel(vecXP)-vecFP) <= eps^0.5 * norm(vecFP) );
 assert( norm(funchFModel(vecXM)-vecFM) <= eps^0.5 * norm(vecFM) );
 %
 numVals = 1001;
-rvecLambda = linspace(-1E0,1E0,numVals);
+%rvecLambda = linspace(-1E0,1E0,numVals);
 %rvecLambda = linspace(-0.4728,-0.47276,numVals);
+rvecLambda = linspace(-0.5,0.0,numVals);
 ff = vecF'*vecF
 fu = vecF'*vecUNull*sNull
 fa = vecF'*vecA
@@ -95,6 +98,7 @@ grid on;
 figure(1);
 hold on;
 plot( matX(1,:), matX(2,:), 'ro-' );
+plot( vecX(1), vecX(2), 'rs', 'markersize', 20, 'linewidth', 5 );
 plot( matX(1,indexOfMin), matX(2,indexOfMin), 'rx', 'markersize', 20, 'linewidth', 5 );
 hold off;
 
