@@ -1,29 +1,36 @@
 myclear;
 tic();
-matA = eye(2,2);
-matB = eye(2,2);
-vecX0 = zeros(2,1);
+matA = [1,5;0,1];
+matB = [1,0;0,0.1];
+vecX0 = [1;1];
 indexNNonLin = 1;
 c1 = 1.0;
-cx = 0.1;
+cx = 0.01;
 c0 = (c1^2)*(1.0+cx)/4.0;
 funchF = @(x) blm0429_func( x, matA, matB, vecX0, indexNNonLin, c1, c0 );
 funchFNorm = @(x)sqrt(sum(funchF([x]).^2,1));
 %
 figIndex++; figure(figIndex);
-funchVizXY = @(x,y)asinh(funchFNorm([x;y]));
-contourfunch( funchVizXY, [-0.75,0.15,-0.05,0.05] );
+funchVizXY = @(x,y)asinh(funchFNorm([x;y])*100)/100;
+%contourfunch( funchVizXY, [-0.75,0.15,-0.05,0.05] );
+contourfunch( funchVizXY, [0.3 1.1 0.95 1.05], 101, 101, 40 );
+%contourfunch( funchVizXY, [ 0.9 1.1 0.9 1.05] )
+%contourfunch( funchVizXY, [ 0.5024 0.5026 1.00239 1.0024] )
 colormap(0.6+0.4*jet);
 grid on;
 %
+if (0)
 figIndex++; figure(figIndex);
 %rvecX1 = linspace(-0.75,0.15,1001);
 rvecX1 = linspace(-0.474,-0.472,1001);
 [ minVal, indexOfMin ] = min(funchFNorm([1;0]*rvecX1))
-%plot( rvecX1, funchFNorm([1;0]*rvecX1), 'o-' );
-%grid on;
-%
+plot( rvecX1, funchFNorm([1;0]*rvecX1), 'o-' );
+grid on;
 vecX = [rvecX1(indexOfMin);0];
+else
+	vecX = [ 0.5025;1.0024 ];
+end
+%
 %
 fdjaco_prm.epsFD = 1E-6;
 fdjaco_prm.fdOrder = 2;
@@ -75,8 +82,7 @@ for n=1:numVals
 end
 toc
 %
-%figIndex++; figure(figIndex);
-%rvecLambda -= 5.19548109;
+figIndex++; figure(figIndex);
 semilogy( ...
   rvecLambda, sqrt(sum(matFModel.^2,1)), 'o-', ...
   rvecLambda, sqrt(sum(matF.^2,1)), 'x-', ...
@@ -85,5 +91,11 @@ semilogy( ...
 grid on;
 %
 [ minVal, indexOfMin ] = min(sqrt(sum(matFModel.^2,1)))
+%
+figure(1);
+hold on;
+plot( matX(1,:), matX(2,:), 'ro-' );
+plot( matX(1,indexOfMin), matX(2,indexOfMin), 'rx', 'markersize', 20, 'linewidth', 5 );
+hold off;
 
 return;
