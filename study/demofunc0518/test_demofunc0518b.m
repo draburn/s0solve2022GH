@@ -1,16 +1,21 @@
 myclear;
-%setprngstates();
+%setprngstates(11835232);
+setprngstates();
 sizeX = 2;
 sizeF = 2;
-funcPrm.vecF0 = zeros(sizeF,1);
-funcPrm.matJ0 = eye(sizeF,sizeX);
+funcPrm.vecF0 = randn(sizeF,1);
+funcPrm.matJ0 = randn(sizeF,sizeX);
 funcPrm.polyOrder = 5;
-funcPrm.c2 = randn(sizeF,sizeX,sizeX)/2;
-funcPrm.c3 = randn(sizeF,sizeX,sizeX,sizeX)/6;
-funcPrm.c4 = randn(sizeF,sizeX,sizeX,sizeX,sizeX)/24;
-funcPrm.c5 = randn(sizeF,sizeX,sizeX,sizeX,sizeX,sizeX)/120;
+funcPrm.c2 = randn(sizeF,sizeX,sizeX)/20;
+funcPrm.c3 = randn(sizeF,sizeX,sizeX,sizeX)/100;
+funcPrm.c4 = randn(sizeF,sizeX,sizeX,sizeX,sizeX)/500;
+funcPrm.c5 = randn(sizeF,sizeX,sizeX,sizeX,sizeX,sizeX)/2000;
+ax = 4*[-5,5,-5,5];
+nx = 101;
+ny = 101;
+nc = 30;
 %
-funcPrm.expPrm.numTerms = round(exp(2+randn));
+funcPrm.expPrm.numTerms = 0*round(exp(2+randn));
 for n=1:funcPrm.expPrm.numTerms
 	funcPrm.expPrm.matC(:,n) = randn(sizeF,1);
 	funcPrm.expPrm.matX0(:,n) = randn(sizeX,1);
@@ -20,7 +25,7 @@ for n=1:funcPrm.expPrm.numTerms
 end
 %
 funcPrm.vecF0Denom = ones(2,1);
-funcPrm.denomExpPrm.numTerms = round(exp(2+randn));
+funcPrm.denomExpPrm.numTerms = 0*round(exp(2+randn));
 for n=1:funcPrm.denomExpPrm.numTerms
 	funcPrm.denomExpPrm.matC(:,n) = abs(randn(sizeF,1));
 	funcPrm.denomExpPrm.matX0(:,n) = randn(sizeX,1);
@@ -39,20 +44,16 @@ funchF1XY = @(x,y)( funchF([x;y])(1,:) );
 funchF2XY = @(x,y)( funchF([x;y])(2,:) );
 funchFNXY = @(x,y)( sqrt(sum(funchF([x;y]).^2,1)) );
 %
-vizScl = 1.0;
+vizScl = 10.0;
 vizFunch = @(x)(abs(asinh(x*vizScl)/vizScl));
 %vizFunch = @(x)( double(abs(x)<0.05) );
 cMap = 0.6 +0.4*jet;
 cMap(1,:) *= 0.4;
 cMap(end,:) *= 0.4;
 cMap(end,:) += 0.6;
-ax = [-5,5,-5,5];
 %ax = [-1.569,-1.568,-2.785,-2.784];
 %ax = [3.3727,3.374,-0.7037,-0.7034]
 %ax = [1.8,3,3.7,4.5];
-nx = 201;
-ny = 201;
-nc = 20;
 %
 figIndex++; figure(figIndex);
 funchVizXY = @(x,y)( vizFunch(funchF1XY(x,y)) );
@@ -76,35 +77,3 @@ axis equal;
 grid on;
 %
 toc
-
-%vecXA = [4;0];
-%vecXA = [-1.6;-2.8];
-vecXA = [-1.56846;-2.78451];
-vecFA = funchF(vecXA)
-vecFAHat = vecFA/sqrt(sum(vecFA.^2,1));
-matSolvedPart = eye(2,2)-(vecFAHat*(vecFAHat'));
-funchFSolvedPart = @(x)( matSolvedPart * funchF(x) );
-funchFSolvedPartNormXY = @(x,y)( sqrt(sum(funchFSolvedPart([x;y]).^2,1)) );
-%
-figIndex++; figure(figIndex);
-funchVizXY = @(x,y)( vizFunch(funchFSolvedPartNormXY(x,y)) );
-contourfunch( funchVizXY, ax, nx, ny, nc );
-colormap(cMap);
-axis equal;
-grid on;
-%
-%
-%vecXA = [3.3734;-0.7035];
-vecXA = [2;4];
-vecFA = funchF(vecXA)
-vecFAHat = vecFA/sqrt(sum(vecFA.^2,1));
-matSolvedPart = eye(2,2)-(vecFAHat*(vecFAHat'));
-funchFSolvedPart = @(x)( matSolvedPart * funchF(x) );
-funchFSolvedPartNormXY = @(x,y)( sqrt(sum(funchFSolvedPart([x;y]).^2,1)) );
-%
-figIndex++; figure(figIndex);
-funchVizXY = @(x,y)( vizFunch(funchFSolvedPartNormXY(x,y)) );
-contourfunch( funchVizXY, ax, nx, ny, nc );
-colormap(cMap);
-axis equal;
-grid on;
