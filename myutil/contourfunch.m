@@ -46,5 +46,7 @@ function [ zMin, zMax, zAvg, zVar ] = contourfunch( ...
 	else
 		contour(gridX,gridY,gridZ,numContours);
 	end
+	colormap(mycmap);
+	grid on;
 return;
 end
