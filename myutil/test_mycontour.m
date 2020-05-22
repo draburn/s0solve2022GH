@@ -3,7 +3,7 @@ thisFile = "test_mycontour";
 %
 funchZ = @(x,y)( x.^2 + y.^2 - exp( -20.0*((x-1.0).^2+y.^2)) );
 [ gridX1, gridY1, gridZ1 ] = gridfunch( funchZ, 2, [-5.0,5.0,-5.0,5.0] );
-[ gridX2, gridY2, gridZ2 ] = gridfunch( funchZ, 2, [-1.5,1.5,-1,1] );
+[ gridX2, gridY2, gridZ2 ] = gridfunch( funchZ, 2, [-1.5,1.5,-1,1], 101, 101 );
 funchViz = @(z)(asinh(z*10.0)/10.0);
 %
 figIndex++; figure(figIndex);
@@ -19,12 +19,8 @@ colormap(mycmap);
 grid on;
 %
 %
-z1Min = min(min(gridZ1))
-z2Min = min(min(gridZ2))
-z1Max = max(max(gridZ1))
-z2Max = max(max(gridZ2))
-zLo = min([ z1Min z2Min ]);
-zHi = max([ z1Max z2Max ]);
+zLo = mymin(gridZ1,gridZ2)
+zHi = mymax(gridZ1,gridZ2)
 %
 figIndex++; figure(figIndex);
 mycontour( gridX1, gridY1, gridZ1, zLo, zHi, mycmap, funchViz, 20 );
