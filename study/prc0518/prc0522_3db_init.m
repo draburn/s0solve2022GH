@@ -36,15 +36,15 @@ vecFPreRoot = demofunc0518_eval(vecXRoot,funcPrm);
 funchF = @(x)( demofunc0518_eval(x,funcPrm) - repmat(vecFPreRoot,[1,size(x,2)]) );
 funchJ = @(x)( fdjaco(funchF,x) );
 vecXGroot0 = zeros(sizeX,1);
-if (0)
+if (1)
 	grootPrm.funchJ = funchJ;
 	[ vecXM, retCode, grootDat ] = groot( funchF, vecXGroot0, grootPrm );
 else
-	% "Resolve"...
+	% "Re-solve"...
 	groot_vecFMHat = [
 	  0.520266905658494
 	  0.147619556424842
-	  0.841148508550938 ];
+	  0.841148508550938 ]
 	groot_matW = eye(sizeF,sizeF) + 10*groot_vecFMHat*(groot_vecFMHat');
 	groot_funchF = @(x)( groot_matW * funchF(x) );
 	groot_funchJ = @(x)( fdjaco(groot_funchF,x) );

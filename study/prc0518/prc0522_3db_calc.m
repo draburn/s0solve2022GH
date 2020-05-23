@@ -4,16 +4,21 @@ numZVals = 5;
 minVar = 0.5;
 axCoeff = 2.0;
 %
-if (0)
+if (1)
 	% Shows main space btw vecXM and vecXRoot.
 	ax = [-1,1.5,-1,1];
 	z0 = min([vecXRoot(3),vecXM(3)]);
 	z1 = max([vecXRoot(3),vecXM(3)]);
 	%
-	% Shows PRC from vecXM.
+	% Shows PRC from vecXM in obvious direction.
 	%ax = [-1,0.5,-0.5,1.5];
 	%z0 = -0.688;
 	%z1 = max([vecXRoot(3),vecXM(3)]);
+	%
+	% Shows PRC from vecXM in *other* direction.
+	ax = [-0.5,1.2,-1.0,0.3];
+	z0 = max([vecXRoot(3),vecXM(3)]);
+	z1 = 0.26;
 	%
 	xShift0 = 0.0; xShift1 = 0.0;
 	yShift0 = 0.0; yShift1 = 0.0;

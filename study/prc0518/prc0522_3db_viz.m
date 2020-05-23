@@ -1,6 +1,6 @@
 figIndex = 0;
 
-if (1) % Viz FN on each slice...
+if (0) % Viz FN on each slice...
 for n=1:max(size(zVals));
 	figIndex++; figure(figIndex); clf;
 	mycontour( dat(n).gridX, dat(n).gridY, dat(n).gridFN, fLo, fHi, mycmap, @(f)asinh(10*f)/10, 30 );
