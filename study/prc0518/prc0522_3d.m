@@ -20,7 +20,7 @@ if (0)
 	xShiftVals = linspace(0.0,0.0,numZVals);
 	yShiftVals = linspace(0.0,0.0,numZVals);
 	vecXM = [ 0.789; 0.0; 0.0 ]; % From manual search.
-elseif (1)
+elseif (0)
 	funcPrm.vecV = [1;0;0] + 0.5*randn(sizeX,1);
 	funcPrm.vecV /= norm(funcPrm.vecV);
 	funcPrm.matM = eye(sizeF,sizeX) + 0.3*randn(sizeF,sizeX);
@@ -46,16 +46,28 @@ elseif (1)
 	xShiftVals = linspace(0.0,0.0,numZVals);
 	yShiftVals = linspace(0.0,0.0,numZVals);
 else
-	funcPrm.matM = [1,0,1;1,-1,0;1,0,2];
-	funcPrm.vecV = [1;0;1];
-	funcPrm.vecA = [0;3;1];
+	funcPrm.matM = eye(sizeF,sizeX) + 0.2*randn(sizeF,sizeX);
+	funcPrm.vecV = [1;0;0] + 0.2*randn(sizeX,1);
+	funcPrm.vecA = [2;0;0] + 0.2*randn(sizeF,1);
 	funcPrm.cQuad = -1.3;
-	vecXRoot = [-0.5;0.2;0.0];
-	ax = [-2,1,-5,4];
-	z0 = -1;
-	z1 = 1;
+	vecXRoot = [-0.2;0;0];
+	%
+	% Good for FN;
+	ax = [-0.3,1.2,-0.5,0.5];
+	z0 = 0.0; z1 = 0.140;
+	%
+	% Good for PFN
+	ax = [-0.3,0.9,-0.2,0.1];
+	z0 = 0.0; z1 = 0.140;
+	%
+	%ax = [0.672,0.674,-0.147,-0.146];
+	%z0 = 0.139; z1 = 0.141;
+	vecXM = [ 0.673; -0.146; 0.140 ]; % From manual search.
+	%vecXM = [ 0.2; -0.3; 0.140 ]; % An arbitrary value.
+	%
 	zVals = linspace(z0,z1,numZVals);
-	vecXM = [ 0.0; 0.0; 0.0 ]; % MUST FIND THIS!
+	xShiftVals = linspace(0.0,0.0,numZVals);
+	yShiftVals = linspace(0.0,0.0,numZVals);
 end
 vecFPreRoot = oneComponentCubic(vecXRoot,funcPrm);
 funchF = @(x)( oneComponentCubic(x,funcPrm) - repmat(vecFPreRoot,[1,size(x,2)]) );
@@ -98,10 +110,14 @@ for n=1:max(size(zVals));
 		fLoSigned = mymin( gridF1, gridF2, gridF3, gridFN, gridPFN );
 		fLo = mymin( gridFN );
 		fHi = mymax( gridFN );
+		pfLo = mymin( gridPFN );
+		pfHi = mymax( gridPFN );
 	else
 		fLoSigned = mymin( fLoSigned, gridF1, gridF2, gridF3, gridFN, gridPFN );
 		fLo = mymin( fLo, gridFN );
 		fHi = mymax( fHi, gridFN );
+		pfLo = mymin( pfLo, gridPFN );
+		pfHi = mymax( pfHi, gridPFN );
 	end
 	%
 	gridDFNDX = (gridFN(3:end,2:end-1)-gridFN(1:end-2,2:end-1)) ...
@@ -123,7 +139,7 @@ for n=1:max(size(zVals));
 	end
 end
 %
-if (1) % Viz FN on each slice...
+if (0) % Viz FN on each slice...
 for n=1:max(size(zVals));
 	figIndex++; figure(figIndex);
 	mycontour( dat(n).gridX, dat(n).gridY, dat(n).gridFN, fLo, fHi, mycmap, @(f)asinh(10*f)/10, 30 );
@@ -132,7 +148,7 @@ end
 return;
 end
 %
-if (1) % Viz GN on each slice...
+if (0) % Viz GN on each slice...
 for n=1:max(size(zVals));
 	figIndex++; figure(figIndex);
 	funchViz = @(g)asinh(10*g)/10;
@@ -147,7 +163,7 @@ end
 if (1) % Viz PFN on each slice...
 for n=1:max(size(zVals));
 	figIndex++; figure(figIndex);
-	mycontour( dat(n).gridX, dat(n).gridY, dat(n).gridPFN, fLo, fHi, mycmap, @(f)(f), 30 );
+	mycontour( dat(n).gridX, dat(n).gridY, dat(n).gridPFN, pfLo, pfHi, mycmap(12), @(f)sqrt(f), 20 );
 	title(sprintf("z = %f",dat(n).z));
 end
 return;
