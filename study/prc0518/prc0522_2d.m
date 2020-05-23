@@ -3,7 +3,7 @@ myclear;
 sizeX = 2;
 sizeF = 2;
 %
-if (0)
+if (1)
 	funcPrm.matM = eye(sizeF,sizeX);
 	funcPrm.vecV = [1;0];
 	funcPrm.vecA = [2;0];
@@ -25,6 +25,15 @@ funchF = @(x)( oneComponentCubic(x,funcPrm) - repmat(vecFPreRoot,[1,size(x,2)]) 
 funchF1XY = @(x,y)( funchF([x;y])(1,:) );
 funchF2XY = @(x,y)( funchF([x;y])(2,:) );
 funchFNXY = @(x,y)( sqrt(sum(funchF([x;y]).^2,1)) );
+
+if (0)
+	rvecX = linspace(ax(1),ax(2),1001);
+	figIndex++; figure(figIndex);
+	plot( ...
+	  rvecX, funchF1XY(rvecX,0*rvecX), 'o-', ...
+	  rvecX, funchF2XY(rvecX,0*rvecX), 'x-' );
+	grid on;
+end
 
 figIndex++; figure(figIndex);
 funchVizXY = @(x,y)( asinh(funchFNXY(x,y)*10.0)/10.0 );
