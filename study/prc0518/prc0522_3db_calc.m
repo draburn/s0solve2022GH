@@ -1,19 +1,19 @@
-numXVals = 201;
-numYVals = 201;
+numXVals = 51;
+numYVals = 51;
 numZVals = 5;
 minVar = 0.5;
 axCoeff = 2.0;
 %
-if (1)
+if (0)
 	% Shows main space btw vecXM and vecXRoot.
-	%ax = [-1,1.5,-1,1];
-	%z0 = min([vecXRoot(3),vecXM(3)]);
-	%z1 = max([vecXRoot(3),vecXM(3)]);
+	ax = [-1,1.5,-1,1];
+	z0 = min([vecXRoot(3),vecXM(3)]);
+	z1 = max([vecXRoot(3),vecXM(3)]);
 	%
 	% Shows PRC from vecXM.
-	ax = [-1,0.5,-0.5,1.5];
-	z0 = -0.688;
-	z1 = max([vecXRoot(3),vecXM(3)]);
+	%ax = [-1,0.5,-0.5,1.5];
+	%z0 = -0.688;
+	%z1 = max([vecXRoot(3),vecXM(3)]);
 	%
 	xShift0 = 0.0; xShift1 = 0.0;
 	yShift0 = 0.0; yShift1 = 0.0;
