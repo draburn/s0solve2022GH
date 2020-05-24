@@ -1,6 +1,6 @@
-numXVals = 51;
-numYVals = 51;
-numZVals = 5;
+numXVals = 201;
+numYVals = 201;
+numZVals = 7;
 minVar = 0.5;
 axCoeff = 2.0;
 %
@@ -16,8 +16,9 @@ if (1)
 	%z1 = max([vecXRoot(3),vecXM(3)]);
 	%
 	% Shows PRC from vecXM in *other* direction.
-	ax = [-0.5,1.2,-1.0,0.3];
-	z0 = max([vecXRoot(3),vecXM(3)]);
+	ax = [-0.5,1.2,-1,0.3];
+	%z0 = max([vecXRoot(3),vecXM(3)]);
+	z0 = 0.20;
 	z1 = 0.26;
 	%
 	xShift0 = 0.0; xShift1 = 0.0;

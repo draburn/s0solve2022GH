@@ -27,7 +27,7 @@ function [ vecX, retCode, datOut ] = groot( funchF, vecX0, prm=[], datIn=[] )
 	vecF0 = funchF( vecX0 );
 	sizeF = size(vecF0,1);
 	assert( 1 <= sizeF );
-	assert( isrealarray(vecF0,[sizeX,1]) );
+	assert( isrealarray(vecF0,[sizeF,1]) );
 	funchOmegaOfF = @(f)( 0.5*(sum(f.^2,1)) );
 	omega0 = funchOmegaOfF(vecF0);
 	%
