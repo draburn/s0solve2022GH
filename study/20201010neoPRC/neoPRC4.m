@@ -2,7 +2,7 @@ if (1)
 clear;
 funch_fx = @(x)( x .* (x-1.0) .* (x+1.0) + 1.0 );
 %%%funch_fy = @(y)( y );
-funch_fy = @(y)( 2*y );
+funch_fy = @(y)( y );
 funch_f = @(x,y)[ funch_fx(x); funch_fy(y) ];
 eps_j = sqrt(eps);
 funch_dfxdx = @(x)( (funch_fx(x+eps_j)-funch_fx(x-eps_j))/(2.0*eps_j) );
@@ -31,13 +31,15 @@ grid on;
 vecXBad = [ 0.577350269161; 0.0 ];
 vecXGood = [ -1.324717957244746; 0.0 ];
 %
-theta = linspace(0,2*pi,100);
-r = 0.7;
-x = vecXBad(1) + r*cos(theta);
-y = vecXBad(2) + r*sin(theta);
-hold on;
-plot( x, y, 'k-' );
-hold off;
+%vecFBad = funch_f(vecXBad(1),vecXBad(2));
+%funch_oldPRC = @(x,y)( vecFBad.'*funch_f(x,y) );
+vecNu = [0;1];
+funch_oldPRC = @(x,y)( vecNu.'*funch_f(x,y) );
+numFigs++; figure(numFigs);
+[ gridX, gridY, gridZ ] = gridfunch( funch_oldPRC, 1, ax, 201, 201 );
+contourf( gridX, gridY, asinh(100.0*gridZ)/100.0, 51 );
+colormap(cMap);
+%
 return;
 %
 eps_g = sqrt(eps);
@@ -88,12 +90,6 @@ for n=1:100
 	%
 	matX(:,n+1) = vecX;
 end
-%
-hold on;
-plot( matX(1,:), matX(2,:), 'ko' );
-hold off;
-%
-return;
 %
 %ax = [ -1.33, -1.32, -0.01, 0.01 ];
 [ gridX, gridY, gridGX ] = gridfunch( funch_gx, 1, ax, 201, 201 );

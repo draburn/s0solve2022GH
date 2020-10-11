@@ -1,8 +1,7 @@
 if (1)
 clear;
 funch_fx = @(x)( x .* (x-1.0) .* (x+1.0) + 1.0 );
-%%%funch_fy = @(y)( y );
-funch_fy = @(y)( 2*y );
+funch_fy = @(y)( y * 100.0 );
 funch_f = @(x,y)[ funch_fx(x); funch_fy(y) ];
 eps_j = sqrt(eps);
 funch_dfxdx = @(x)( (funch_fx(x+eps_j)-funch_fx(x-eps_j))/(2.0*eps_j) );
@@ -10,7 +9,8 @@ funch_dfydy = @(y)( (funch_fy(y+eps_j)-funch_fy(y-eps_j))/(2.0*eps_j) );
 funch_j = @(x,y)( [ funch_dfxdx(x), 0.0; 0.0, funch_dfydy(y) ] );
 funch_omega = @(x,y)( sum(funch_f(x,y).^2, 1) );
 %
-ax = [ -1.5, 1.5, -1.5, 1.5 ];
+%ax = [ -1.5, 1.5, -1.5, 1.5 ];
+ax = [ -1.5, 1.5, -0.03, 0.03 ];
 %ax = [ 0.57734, 0.57736, -0.00001, 0.00001 ];
 [ gridX, gridY, gridZ ] = gridfunch( funch_omega, 1, ax, 201, 201 );
 end
@@ -25,14 +25,14 @@ numFigs++; figure(numFigs);
 contourf( gridX, gridY, asinh(100.0*gridZ)/100.0, 51 );
 %%%imagesc( gridY', gridX', asinh(100.0*gridZ')/100.0 );
 colormap(cMap);
-axis equal;
+%axis equal;
 grid on;
 %
 vecXBad = [ 0.577350269161; 0.0 ];
 vecXGood = [ -1.324717957244746; 0.0 ];
 %
 theta = linspace(0,2*pi,100);
-r = 0.7;
+r = 0.01;
 x = vecXBad(1) + r*cos(theta);
 y = vecXBad(2) + r*sin(theta);
 hold on;
