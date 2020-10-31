@@ -1,7 +1,7 @@
 clear;
 %
 %setprngstates
-setprngstates(0)
+setprngstates(0);
 numYTerms = 4;
 yScale = 50.0;
 ya0_orig = 0.0;
@@ -30,9 +30,6 @@ funch_f = @(x)( ...
 %
 numFigs = 0;
 %
-%xVals = linspace(-5000,5000,10001);
-%min(diff(funch_y(xVals))./diff(xVals))
-%
 xVals = linspace(-500,500,10001);
 numFigs++; figure(numFigs);
 plot( cent(xVals), diff(funch_y(xVals))./diff(xVals), 'o-' );
@@ -41,30 +38,35 @@ numFigs++; figure(numFigs);
 plot( xVals, xVals, 'kx-', xVals, funch_y(xVals), 'mx-' );
 grid on;
 numFigs++; figure(numFigs);
-funch_f = @(x)( funch_f(x) );
 plot( xVals, funch_f(xVals), 'gs-' );
 grid on;
 numFigs++; figure(numFigs);
-funch_f = @(x)( funch_f(funch_y(x)) );
 plot( xVals, funch_f(funch_y(xVals)), 'r^-' );
 grid on;
 %
-xVals = linspace(-365,-355,10001);
+yVals = funch_y(xVals);
+dydxVals = diff(yVals)./diff(xVals);
+[ foo, iOfMin ] = min(dydxVals);
+xOfMin = (xVals(iOfMin)+xVals(iOfMin+1))/2.0;
+[ foo, iOfMax ] = max(dydxVals);
+xOfMax = (xVals(iOfMax)+xVals(iOfMax+1))/2.0;
+%
+xLo = xOfMin-0.05*(xOfMax-xOfMin);
+xHi = xOfMin+0.05*(xOfMax-xOfMin);
+xVals = linspace(xLo,xHi,10001);
 numFigs++; figure(numFigs);
-funch_f = @(x)( funch_f(x) );
 plot( xVals, funch_f(xVals), 'gs-' );
 grid on;
 numFigs++; figure(numFigs);
-funch_f = @(x)( funch_f(funch_y(x)) );
 plot( xVals, funch_f(funch_y(xVals)), 'r^-' );
 grid on;
 %
-xVals = linspace(-146,-136,10001);
+xLo = xOfMax-0.05*(xOfMax-xOfMin);
+xHi = xOfMax+0.05*(xOfMax-xOfMin);
+xVals = linspace(xLo,xHi,10001);
 numFigs++; figure(numFigs);
-funch_f = @(x)( funch_f(x) );
 plot( xVals, funch_f(xVals), 'gs-' );
 grid on;
 numFigs++; figure(numFigs);
-funch_f = @(x)( funch_f(funch_y(x)) );
 plot( xVals, funch_f(funch_y(xVals)), 'r^-' );
 grid on;
