@@ -23,3 +23,5 @@ commondefs;
 %
 msg("init",__LINE__,"Adding path \"study/20201010neoPRC\".");
 addpath( "study/20201010neoPRC" );
+msg("init",__LINE__,"Adding path \"study/20201030chaoticSignal\".");
+addpath( "study/20201030chaoticSignal" );
