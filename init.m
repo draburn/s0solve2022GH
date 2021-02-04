@@ -21,7 +21,9 @@ commondefs;
 %msg("init",__LINE__,"Adding path \"study/demofunc0518\".");
 %addpath( "study/demofunc0518" );
 %
-msg("init",__LINE__,"Adding path \"study/20201010neoPRC\".");
-addpath( "study/20201010neoPRC" );
-msg("init",__LINE__,"Adding path \"study/20201030chaoticSignal\".");
-addpath( "study/20201030chaoticSignal" );
+%%%msg("init",__LINE__,"Adding path \"study/20201010neoPRC\".");
+%%%addpath( "study/20201010neoPRC" );
+%%%msg("init",__LINE__,"Adding path \"study/20201030chaoticSignal\".");
+%%%addpath( "study/20201030chaoticSignal" );
+msg("init",__LINE__,"Adding path \"study/myntegrator0204\".");
+addpath( "study/myntegrator0204" );
