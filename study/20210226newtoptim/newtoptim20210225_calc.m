@@ -6,15 +6,15 @@ setprngstates(0);
 if (1)
 	xLo = 0.0;
 	xHi = 2.0;
-	numXVals = 11;
+	numXVals = 51;
 	numTrials = 1E5;
 	%
 	a0 =  1.0;
-	a1 =  0.0;
+	a1 =  0.3;
 	b0 = -1.0;
-	b1 =  1.0;
-	absC0 = 0.1;
-	absC1 = 0.1;
+	b1 =  0.3;
+	absC0 = 0.0;
+	absC1 = 0.0;
 else
 	%xLo = 0.0;
 	%xHi = 4.0;
