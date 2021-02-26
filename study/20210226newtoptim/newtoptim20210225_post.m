@@ -1,46 +1,47 @@
-numFigs = 0;
 tic();
+msg("newtoptim20210225_post",__LINE__,"Performing post-processing...");
 %
-matAbsF = abs(matF);
-matFSq = matF.^2;
+list_pows = [ 0.5, 1, 2, 3, 4 ];
+list_percentiles = [ 0.1, 0.3, 0.5, 0.7, 0.9 ];
+tauLo = 0.0;
+tauHi = 2*absC0 + 3*absC1 + a0 + 3*a1;
+list_taus = tauLo + (tauHi-tauLo)*[ 0E0, 1E-3, 1E-2, 2E-2, 5E-2, 1E-1, 2E-1, 5E-1, 1E0 ];
 %
-avgFVals = sum(matF,1)/numTrials;
-avgAbsFVals = sum(matAbsF,1)/numTrials;
-avgFSqVals = sum(matFSq,1)/numTrials;
 %
-fracAbsFLE3E0 = sum( double(matAbsF<=3E0), 1 )/numTrials;
-fracAbsFLE1E0 = sum( double(matAbsF<=1E0), 1 )/numTrials;
-fracAbsFLE1EM1 = sum( double(matAbsF<=1E-1), 1 )/numTrials;
-fracAbsFLE1EM2 = sum( double(matAbsF<=1E-2), 1 )/numTrials;
+matF_abs = abs(matF);
+matF_sign = sign(matF);
+matF_sort = sort( matF, TRIALS_DIMENSION );
+matF_absSort = sort( matF_abs, TRIALS_DIMENSION );
 %
-numFigs++; figure(numFigs);
-plot( ...
- xVals, abs(avgFVals), 'o-', ...
- xVals, avgAbsFVals, 'x-', ...
- xVals, sqrt(avgFSqVals), '^-' );
-grid on;
-%
-numFigs++; figure(numFigs);
-plot( ...
- cent(xVals), diff(abs(avgFVals))./diff(xVals), 'o-', ...
- cent(xVals), diff(avgAbsFVals)./diff(xVals), 'x-', ...
- cent(xVals), diff(sqrt(avgFSqVals))./diff(xVals), '^-' );
-grid on;
-%
-numFigs++; figure(numFigs);
-plot( ...
- xVals, fracAbsFLE3E0, 's-', ...
- xVals, fracAbsFLE1E0, 'o-', ...
- xVals, fracAbsFLE1EM1, 'x-', ...
- xVals, fracAbsFLE1EM2, '^-' );
-grid on;
-%
-numFigs++; figure(numFigs);
-plot( ...
- cent(xVals), diff(fracAbsFLE3E0)./diff(xVals), 's-', ...
- cent(xVals), diff(fracAbsFLE1E0)./diff(xVals), 'o-', ...
- cent(xVals), diff(fracAbsFLE1EM1)./diff(xVals), 'x-', ...
- cent(xVals), diff(fracAbsFLE1EM2)./diff(xVals), '^-' );
-grid on;
+for n=1:length(list_pows);
+	p = list_pows(n);
+	%
+	matFAbsP = matF_abs.^p;
+	vecF_avgAbsPows(:,n) = ( sum( matFAbsP, TRIALS_DIMENSION ) / numTrials ).^(1.0/p);
+	%
+	matFSignP = matF_sign .* matFAbsP;
+	vec_temp = sum( matFSignP, TRIALS_DIMENSION ) / numTrials;
+	vecF_avgSignPows(:,n) = sign(vec_temp) .* (abs(vec_temp).^(1.0/p));
+	%
+	clear vec_temp;
+	clear matFAbsP;
+	clear matFSignP;
+	clear p;
+end
+for n=1:length(list_percentiles)
+	p = list_percentiles(n);
+	t = 1 + round((numTrials-1)*p);
+	%
+	vecF_signPercentiles(:,n) = matF_sort(:,t);
+	vecF_absPercentiles(:,n) = matF_absSort(:,t);
+	%
+	clear t;
+	clear p;
+end
+for n=1:length(list_taus)
+	tau = list_taus(n);
+	vecProbLETau(:,n) = sum( double(matF_abs<=tau), TRIALS_DIMENSION ) / numTrials;
+	clear tau;
+end
 %
 toc();

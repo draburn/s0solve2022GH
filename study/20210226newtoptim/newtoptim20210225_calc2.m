@@ -1,17 +1,18 @@
 clear;
-setprngstates(0);
 tic();
+msg("newtoptim20210225_calc2",__LINE__,"Performing calculations...");
+setprngstates(0);
 %
 if (1)
 	xLo = 0.0;
 	xHi = 2.0;
-	numXVals = 51;
-	numTrials = 1E6;
+	numXVals = 11;
+	numTrials = 1E5;
 	%
 	a0 =  1.0;
-	a1 =  0.1;
+	a1 =  0.0;
 	b0 = -1.0;
-	b1 =  0.1;
+	b1 =  1.0;
 	absC0 = 0.1;
 	absC1 = 0.1;
 else
@@ -31,14 +32,17 @@ else
 	absC1 = 1.0;
 endif
 %
-vecA = a0 + a1*randn(numTrials,1);
-vecB = b0 + b1*randn(numTrials,1);
-vecC = abs( absC0 + absC1*randn(numTrials,1) );
-matR = randn(numTrials,numXVals);
+XVALS_DIMENSION = 1;
+TRIALS_DIMENSION = 2;
 %
-xVals = linspace( xLo, xHi, numXVals );
+aVals = a0 + a1*randn(1,numTrials);
+bVals = b0 + b1*randn(1,numTrials);
+cVals = abs( absC0 + absC1*randn(1,numTrials) );
+matR = randn(numXVals,numTrials);
 %
-matF = repmat(vecA,[1,numXVals]) + vecB * xVals + repmat(vecC,[1,numXVals]).*matR;
+vecX = linspace( xLo, xHi, numXVals )';
+%
+matF = repmat(aVals,[numXVals,1]) + vecX * bVals + repmat(cVals,[numXVals,1]) .* matR;
 % This misses the fact that we do know f exactly at several values of x.
 %
 toc();
