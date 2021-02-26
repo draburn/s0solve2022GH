@@ -1,0 +1,4 @@
+clear;
+newtoptim20210225_calc2;
+newtoptim20210225_post;
+newtoptim20210225_viz;
