@@ -135,4 +135,46 @@ ylabel( "d/dx |F| percentiles" );
 title( "d/dx |F| percentiles vs x" );
 %
 %
+for n=1:length(list_atXs)
+	numFigs++; figure(numFigs);
+	hist( fVals_signAtX(n,:), linspace(-4,1,51) );
+	axis([-2,1,0,150000]);
+	grid on;
+	title( ["Histogram for F at index " num2str(n)] );
+end
+%
+for n=1:length(list_atXs)
+	numFigs++; figure(numFigs);
+	hist( fVals_absAtX(n,:), linspace(-0.01,2,101) );
+	axis([0,1.5,0,40000]);
+	grid on;
+	title( ["Histogram for |F| at index " num2str(n)] );
+end
+%
+%
+cumlhist_numPtsDesired = 1000;
+cumlhist_stride = round(numTrials/cumlhist_numPtsDesired);
+cumlhist_numPts = floor(numTrials/cumlhist_stride);
+tVals = linspace(0.0,1.0,cumlhist_numPts);
+numFigs++; figure(numFigs);
+plot( fVals_signAtX(1,1:cumlhist_stride:end), tVals, 'o-' );
+hold on;
+for n=2:length(list_atXs)
+	plot( fVals_signAtX(n,1:cumlhist_stride:end), tVals, 'o-' );
+end
+hold off;
+axis([-2.5,1.5,0,1.1]);
+grid on;
+%
+numFigs++; figure(numFigs);
+plot( fVals_absAtX(1,1:cumlhist_stride:end), tVals, 'o-' );
+hold on;
+for n=2:length(list_atXs)
+	plot( fVals_absAtX(n,1:cumlhist_stride:end), tVals, 'gx-' );
+end
+hold off;
+axis([0,10,0,1]);
+grid on;
+%
+%
 toc();

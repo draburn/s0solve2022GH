@@ -7,10 +7,12 @@ if (0)
 	list_pows = [ 0.5, 1, 2, 3, 4 ];
 	list_percentiles = [ 0.1, 0.3, 0.5, 0.7, 0.9 ];
 	list_taus = tauLo + (tauHi-tauLo)*[ 1E-3, 1E-2, 2E-2, 5E-2, 1E-1, 2E-1, 5E-1 ];
+	list_atXs = [ 0.5, 1.0 ];
 else
 	list_pows = [2];
 	list_percentiles = [ 0.1, 0.5, 0.9 ];
 	list_taus = tauLo + (tauHi-tauLo)*[ 1E-3, 1E-2, 1E-1 ];
+	list_atXs = [ 0.5, 1.0 ];
 end
 %
 %
@@ -31,7 +33,7 @@ for n=1:length(list_pows);
 end
 for n=1:length(list_percentiles)
 	p = list_percentiles(n);
-	t = 1 + round((numTrials-1)*p);
+	t = 1 + round((numTrials-1.0)*p);
 	%
 	vecF_signPercentiles(:,n) = matF_sort(:,t);
 	vecF_absPercentiles(:,n) = matF_absSort(:,t);
@@ -43,6 +45,12 @@ for n=1:length(list_taus)
 	tau = list_taus(n);
 	vecProbLETau(:,n) = sum( double(matF_abs<=tau), TRIALS_DIMENSION ) / numTrials;
 	clear tau;
+end
+for n=1:length(list_atXs)
+	k = 1 + round( (numXVals-1.0)*(list_atXs(n)-xLo)/(xHi-xLo) )
+	fVals_signAtX(n,:) = matF_sort(k,:);
+	fVals_absAtX(n,:) = matF_absSort(k,:);
+	clear k;
 end
 %
 toc();
