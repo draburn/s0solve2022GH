@@ -8,6 +8,12 @@
 %    fileName: Name of file from which called, ideally __FILE__.
 %    lineNum: Line number from which called, ideally __LINE__.
 %    msgStr: The message content.
+%
+%  IMPORTANT NOTE!!!
+%   On Octave 3.8.1 and earlier,
+%   "__FILE__" is likely to cause Octave to crash;
+%   Here, unfortunately, it may be necessary to use some "thisFile",
+%   a la, 'thisFile = foo.m'; 'msg( thisFile, __LINE__, "Hello world!" );' instead.
 function msg( fileName, lineNum, msgStr )
 	clockNow = clock();
 	printf( "%02d:%02d:%02d.%03d [%s.%d] %s\n", ...

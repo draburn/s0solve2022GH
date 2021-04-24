@@ -31,5 +31,8 @@ commondefs;
 %addpath( "study/20210226newtoptim" );
 %msg("init",__LINE__,"Adding path \"study/mathchecks0311\".");
 %addpath( "study/mathchecks0311" );
-msg("init",__LINE__,"Adding path \"study/20210315PDFvsLeSq\".");
-addpath( "study/20210315PDFvsLeSq" );
+%msg("init",__LINE__,"Adding path \"study/20210315PDFvsLeSq\".");
+%addpath( "study/20210315PDFvsLeSq" );
+%
+msg( "init", __LINE__, "Adding path \"2021\"." );
+addpath( "2021" );
