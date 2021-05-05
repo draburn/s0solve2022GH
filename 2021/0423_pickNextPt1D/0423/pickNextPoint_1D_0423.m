@@ -98,16 +98,8 @@ function f_x_next = pickNextPoint_1D_0423( ...
 	trim__ia_exceptionFlag = sorted__ia_exceptionFlag(trimIndexLo:trimIndexHi)
 	assert( 0 == sum(0~=trim__ia_exceptionFlag) );
 	%
-	return;
-	% Identify all local abs min...
-	% Identify if end points are decreasing outwards...
-	% Disregard all local abs min that look "unpromising."
-	% ...
-	% ..
-	% .
-	%
-	%
-	msg( thisFile, __LINE__, "Not implemented." );
+	f_x_next = pickNextPoint_1D_0423_trim( ...
+	  trim__fa_x, trim__fa_f, haveRangeBounds, rangeBoundsVals );
 return;
 end
 
