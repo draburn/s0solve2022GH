@@ -35,4 +35,4 @@ commondefs;
 %addpath( "study/20210315PDFvsLeSq" );
 %
 msg( "init", __LINE__, "Adding path \"2021\"." );
-addpath( "2021" );
+addpath( "2021/0423_pickNextPt1D/0504/" );
