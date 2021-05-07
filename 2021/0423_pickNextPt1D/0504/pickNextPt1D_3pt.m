@@ -1,6 +1,6 @@
-function xNext = pickNextPt1D_2pt( xVals, fVals, prm = [] )
+function xNext = pickNextPt1D_3pt( xVals, fVals, prm = [] )
   	% Should-be-precompiled...
-	thisFile = "pickNextPoint1D_2pt.m";
+	thisFile = "pickNextPoint1D_3pt.m";
 	%
 	% Check data types...
 	numPts = size(xVals,2);
@@ -8,7 +8,7 @@ function xNext = pickNextPt1D_2pt( xVals, fVals, prm = [] )
 	assert( isrealarray(fVals,[1,numPts]) );
 	%
 	% Check requirements...
-	assert( 2 == numPts );
+	assert( 3 == numPts );
 	%
 	% Check unsupported cases...
 	xValsAreStrictlyIncreasing =( 0==sum(0.0>=diff(xVals)) );
@@ -29,20 +29,18 @@ function xNext = pickNextPt1D_2pt( xVals, fVals, prm = [] )
 	assert( fValsAllHaveSameSign );
 	%
 	% Do work.
-	% Simple linear extrapolation.
-	xNext = ( xVals(1)*fVals(2) - xVals(2)*fVals(1) ) / (fVals(2)-fVals(1));
-	assert( isrealarray(xNext,[1,1]) );
+	error( "Not implemented." );
+	%xNext = 2.0*xVals(3) - xVals(1);
+	%assert( isrealarray(xNext,[1,1]) );
 return;
 end
 
 %!test
-%!	assert( 2.0 == pickNextPt1D_2pt( [0.0,1.0], [2.0,1.0] ) );
-%!
 %!	x1 = randn()
 %!	x2 = x1 + abs(randn())
+%!	x3 = x2 + abs(randn())
 %!	f1 = randn()
 %!	f2 = sign(f1)*abs(randn())
-%!	xNext_mio = ( x1*f2 - x2*f1 ) / ( f2 - f1 )
-%!	xNext = pickNextPt1D_2pt( [x1,x2], [f1,f2] )
-%!	assert( abs(xNext-xNext_mio) < eps );
+%!	f3 = sign(f1)*abs(randn())
+%!	xNext = pickNextPt1D_3pt( [x1,x2,x3], [f1,f2,f3] )
 %!	
