@@ -1,7 +1,7 @@
 clear;
 %
-%setprngstates
-setprngstates(0);
+setprngstates
+%setprngstates(0);
 numYTerms = 4;
 yScale = 50.0;
 ya0_orig = 0.0;
