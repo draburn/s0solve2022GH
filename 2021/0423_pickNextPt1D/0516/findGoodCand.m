@@ -59,8 +59,8 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 			xTemp = -b / (2.0*a);
 			if ( xVals(n-1) < xTemp && xTemp < xVals(n+1) )
 				xCand = xTemp;
-				return;
 			end
+				return;
 		end
 	end
 	end
@@ -111,6 +111,14 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 	%
 	% Explore local pt-wise min, make sure we've found actual min.
 	%error( "Not implemented!" );
+	%
+	msg( thisFile, __LINE__, sprintf( ...
+	  "Using end-scale lin extrap with points ( %g, %g ) and ( %g, %g ).", ...
+	  xVals(1), fVals(1), xVals(end), fVals(end) ) );
+	xCand = ( xVals(end)*fVals(1) - xVals(1)*fVals(end) ) / (fVals(1)-fVals(end));
+	msg( thisFile, __LINE__, sprintf( "New point is ( %g, ??? ).", xCand ) );
+	return;
+	%
 	xCand = [];
 	return;
 	%

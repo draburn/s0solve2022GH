@@ -26,8 +26,8 @@ datOut.fevalCountLimit = fevalCountLimit;
 datOut.fevalCount = fevalCount;
 datOut.fNormMin = fNormMin;
 %
-datOut.xVals = xVals;
-datOut.fVals = fVals;
+datOut.xVals_raw = xVals_raw;
+datOut.fVals_raw = fVals_raw;
 datOut.evalIndex_sorted = evalIndex_sorted;
 datOut.xVals_sorted = xVals_sorted;
 datOut.fVals_sorted = fVals_sorted;

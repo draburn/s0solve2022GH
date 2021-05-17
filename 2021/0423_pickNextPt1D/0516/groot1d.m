@@ -50,7 +50,7 @@
 	% Stopping criteria.
 	fNormTol = mygetfield( prm, "fNormTol", 1E-12 ); % Success.
 	exeTimeLimit = mygetfield( prm, "exeTimeLimit", 3.0 ); % Imposed stop.
-	fevalCountLimit = mygetfield( prm, "fevalCountLimit", 100 ); % Imposed stop.
+	fevalCountLimit = mygetfield( prm, "fevalCountLimit", 50 ); % Imposed stop.
 	stopsigCheckInterval = mygetfield( prm, "stopsigCheckInterval", -1.0 ); % Imposed stop.
 	assert( isrealscalar(fNormTol) );
 	assert( 0.0 < fNormTol );
@@ -64,8 +64,8 @@
 	% DO PREPARATIONAL WORK
 	%
 	fevalCount = 0;
-	xVals = [];
-	fVals = [];
+	xVals_raw = [];
+	fVals_raw = [];
 	boundedIter = 0;
 	desperationIter = 0;
 	%
@@ -83,17 +83,17 @@
 		assert( isrealscalar(xNew) );
 		fNew = funchF(xNew); fevalCount++;
 		assert( isrealscalar(fNew) );
-		xVals = [ xVals, xNew ];
-		fVals = [ fVals, fNew ];
+		xVals_raw = [ xVals_raw, xNew ];
+		fVals_raw = [ fVals_raw, fNew ];
 		clear fNew;
 		clear xNew;
 		%
 		% Do a bit of analysis.
-		[ xVals_sorted, evalIndex_sorted ] = sort( xVals );
-		fVals_sorted = fVals(evalIndex_sorted);
-		absFVals = abs(fVals);
-		[ fNormMin, indexOfFNormMin ] = min( absFVals );
-		xBest = xVals(indexOfFNormMin);
+		absFVals_raw = abs(fVals_raw);
+		[ fNormMin, indexOfFNormMin_raw ] = min( absFVals_raw );
+		xBest = xVals_raw(indexOfFNormMin_raw);
+		[ xVals_sorted, evalIndex_sorted ] = sort( xVals_raw );
+		fVals_sorted = fVals_raw(evalIndex_sorted);
 		%
 		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		% CHECK STOP
@@ -148,10 +148,12 @@
 		if ( 0.0 <= reportInterval )
 		if ( time() > reportTimePrev + reportInterval )
 			msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
-			  "  %4d  %6.2f  %8.2e", ...
+			  "  %4d  %6.2f  %8.2e  %8.2e", ...
 			   fevalCount, ...
 			   time()-startTime, ...
-			   fNormMin )  );
+			   fNormMin, ...
+			   xVals_raw(end), ...
+			   fVals_raw(end) )  );
 			reportTimePrev = time();
 		end
 		end
