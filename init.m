@@ -23,8 +23,8 @@ commondefs;
 %
 %%%msg("init",__LINE__,"Adding path \"study/20201010neoPRC\".");
 %%%addpath( "study/20201010neoPRC" );
-msg("init",__LINE__,"Adding path \"study/20201030chaoticSignal\".");
-addpath( "study/20201030chaoticSignal" );
+%msg("init",__LINE__,"Adding path \"study/20201030chaoticSignal\".");
+%addpath( "study/20201030chaoticSignal" );
 %msg("init",__LINE__,"Adding path \"study/myntegrator0204\".");
 %addpath( "study/myntegrator0204" );
 %msg("init",__LINE__,"Adding path \"study/20210226newtoptim\".");
@@ -34,5 +34,5 @@ addpath( "study/20201030chaoticSignal" );
 %msg("init",__LINE__,"Adding path \"study/20210315PDFvsLeSq\".");
 %addpath( "study/20210315PDFvsLeSq" );
 %
-msg( "init", __LINE__, "Adding path \"2021/0423_pickNextPt1D/0513\"." );
-addpath( "2021/0423_pickNextPt1D/0513" );
+msg( "init", __LINE__, "Adding path \"2021/0423_pickNextPt1D/0516\"." );
+addpath( "2021/0423_pickNextPt1D/0516" );
