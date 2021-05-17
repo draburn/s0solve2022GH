@@ -1,7 +1,15 @@
 thisFile = "groot1d__getXNew";
 
-if ( 1 == fevalCount )
-	msg_copious( verbLev, thisFile, __LINE__, "xNew via 'x2'." );
+numPts = size(xVals,2);
+assert( fevalCount == numPts );
+if ( 0 == numPts )
+	msg_copious( verbLev, thisFile, __LINE__, "xNew via 'given - x1'." );
+	xNew = x1;
+	thisFile = "RETURNED FROM groot1d__getXNew";
+	return;
+end
+if ( 1 == numPts )
+	msg_copious( verbLev, thisFile, __LINE__, "xNew via 'given - x2'." );
 	xNew = x2;
 	thisFile = "RETURNED FROM groot1d__getXNew";
 	return;
@@ -20,13 +28,6 @@ if ( fMin * fMax < 0.0 )
 		n++;
 	end
 	assert( fVals_sorted(n)*fVals_sorted(n+1) < 0.0 );
-	%msg_copious( verbLev, thisFile, __LINE__, sprintf("n = %d.",n) );
-	%msg_copious( verbLev, thisFile, __LINE__, sprintf("boundedIter = %d.",boundedIter) );
-	%msg_copious( verbLev, thisFile, __LINE__, sprintf("xVals_sorted(n)   = %f.", xVals_sorted(n)  ) );
-	%msg_copious( verbLev, thisFile, __LINE__, sprintf("xVals_sorted(n+1) = %f.", xVals_sorted(n+1)) );
-	%msg_copious( verbLev, thisFile, __LINE__, sprintf("fVals_sorted(n)   = %f.", fVals_sorted(n)  ) );
-	%msg_copious( verbLev, thisFile, __LINE__, sprintf("fVals_sorted(n+1) = %f.", fVals_sorted(n+1)) );
-	%
 	% For simplicity, just alternate between lin and bisection.
 	% More advanced methods would include using a cubic
 	%  (after checking for good agreement with points further out),
@@ -43,18 +44,14 @@ if ( fMin * fMax < 0.0 )
 		msg_copious( verbLev, thisFile, __LINE__, "xNew via 'bounded - bisection'." );
 		xNew = ( xVals_sorted(n) + xVals_sorted(n+1) )/2.0;
 	end
-	%msg_copious( verbLev, thisFile, __LINE__, sprintf("xNew = %f.",xNew) );
 	thisFile = "RETURNED FROM groot1d__getXNew";
 	return;
 end
 
 % Handle typical case.
-%%% PLACEHOLDER
-%xNew = xVals(end) - fVals(end)*(xVals(end)-xVals(end-1))/(fVals(end)-fVals(end-1));
-%return;
 xNew = findGoodCand( xVals_sorted, fVals_sorted );
 if ( isrealscalar(xNew) )
-	msg_copious( verbLev, thisFile, __LINE__, "xNew via 'typical method'." );
+	msg_copious( verbLev, thisFile, __LINE__, "xNew via 'typical method - ???'." );
 	thisFile = "RETURNED FROM groot1d__getXNew";
 	return;
 end

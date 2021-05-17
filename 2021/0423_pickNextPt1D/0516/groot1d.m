@@ -63,14 +63,9 @@
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO PREPARATIONAL WORK
 	%
-	% Validate funchF (to an extent).
 	fevalCount = 0;
-	f1 = funchF(x1); fevalCount++;
-	assert( isrealscalar(f1) );
-	xVals = [ x1 ];
-	fVals = [ f1 ];
-	clear f1;
-	%
+	xVals = [];
+	fVals = [];
 	boundedIter = 0;
 	desperationIter = 0;
 	%
@@ -79,6 +74,19 @@
 	% MAIN LOOP
 	%
 	while (true)
+		%
+		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		% DO WORK
+		%
+		groot1d__getXNew; thisFile = "groot1d";
+		%
+		assert( isrealscalar(xNew) );
+		fNew = funchF(xNew); fevalCount++;
+		assert( isrealscalar(fNew) );
+		xVals = [ xVals, xNew ];
+		fVals = [ fVals, fNew ];
+		clear fNew;
+		clear xNew;
 		%
 		% Do a bit of analysis.
 		[ xVals_sorted, evalIndex_sorted ] = sort( xVals );
@@ -147,19 +155,6 @@
 			reportTimePrev = time();
 		end
 		end
-		%
-		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-		% DO WORK
-		%
-		groot1d__getXNew; thisFile = "groot1d";
-		%
-		assert( isrealscalar(xNew) );
-		fNew = funchF(xNew); fevalCount++;
-		assert( isrealscalar(fNew) );
-		xVals = [ xVals, xNew ];
-		fVals = [ fVals, fNew ];
-		clear fNew;
-		clear xNew;
 	end
 	%
 return;
