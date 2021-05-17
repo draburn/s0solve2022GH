@@ -4,8 +4,8 @@
 	clear;
 	%funchF = @(x)( 1.0 );
 	%funchF = @(x)( pi - x );
-	funchF = @(x)( pi - x + 0.05*x.^2);
-	%funchF = @(x)( x.*(10.0-x.^2) + 20.0 );
+	%funchF = @(x)( pi - x + 0.05*x.^2);
+	funchF = @(x)( x.*(10.0-x.^2) + 20.0 );
 	x1 = 0.0;
 	x2 = 1.0;
 	prm = [];
@@ -35,6 +35,7 @@
 	%
 	% Verbosity.
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	reportInterval = mygetfield( prm, "reportInterval", 0.0 );
 	assert( isrealscalar(verbLev) );
 	assert( isrealscalar(reportInterval) );
@@ -70,6 +71,9 @@
 	fVals = [ f1 ];
 	clear f1;
 	%
+	boundedIter = 0;
+	desperationIter = 0;
+	%
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% MAIN LOOP
@@ -91,7 +95,7 @@
 			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
 			  "Converged ( %e <= %e ).", fNormMin, fNormTol ) );
 			retCode = RETCODE__SUCCESS;
-			groot1d__finish;
+			groot1d__finish; thisFile = "groot1d";
 			return;
 		end
 		%
@@ -102,7 +106,7 @@
 			msg_notify( verbLev, thisFile, __LINE__, ...
 			  sprintf("Reached exeTimeLimit (%g).",exeTimeLimit) );
 			retCode = RETCODE__IMPOSED_STOP;
-			groot1d__finish;
+			groot1d__finish; thisFile = "groot1d";
 			return;
 		end
 		end
@@ -112,7 +116,7 @@
 			msg_notify( verbLev, thisFile, __LINE__, ...
 			  sprintf("Reached fevalCountLimit (%d).",fevalCountLimit) );
 			retCode = RETCODE__IMPOSED_STOP;
-			groot1d__finish;
+			groot1d__finish; thisFile = "groot1d";
 			return;
 		end
 		end
@@ -123,7 +127,7 @@
 				msg_notify( verbLev, thisFile, __LINE__, ...
 				  sprintf("Found stop signal file in working directory.") );
 				retCode = RETCODE__IMPOSED_STOP;
-				groot1d__finish;
+				groot1d__finish; thisFile = "groot1d";
 				return;
 			end
 			stopsigCheckTimePrev = time();
@@ -147,7 +151,7 @@
 		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		% DO WORK
 		%
-		groot1d__getXNew;
+		groot1d__getXNew; thisFile = "groot1d";
 		%
 		assert( isrealscalar(xNew) );
 		fNew = funchF(xNew); fevalCount++;

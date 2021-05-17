@@ -33,4 +33,5 @@ datOut.xVals_sorted = xVals_sorted;
 datOut.fVals_sorted = fVals_sorted;
 %
 %
+thisFile = "RETURNED FROM groot1d__finish";
 return;
