@@ -28,9 +28,9 @@ datOut.fNormMin = fNormMin;
 %
 datOut.xVals = xVals;
 datOut.fVals = fVals;
-datOut.evalIndex_ordered = evalIndex_ordered;
-datOut.xVals_ordered = xVals_ordered;
-datOut.fVals_ordered = fVals_ordered;
+datOut.evalIndex_sorted = evalIndex_sorted;
+datOut.xVals_sorted = xVals_sorted;
+datOut.fVals_sorted = fVals_sorted;
 %
 %
 return;

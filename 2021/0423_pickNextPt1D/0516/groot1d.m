@@ -2,8 +2,10 @@
 	%
 	% Dummy input.
 	clear;
-	funchF_pre = @(x)(x.*( 10.0 - x.^2 ));
-	funchF = @(x)( funchF_pre(x) + 20.0 );
+	%funchF = @(x)( 1.0 );
+	%funchF = @(x)( pi - x );
+	funchF = @(x)( pi - x + 0.05*x.^2);
+	%funchF = @(x)( x.*(10.0-x.^2) + 20.0 );
 	x1 = 0.0;
 	x2 = 1.0;
 	prm = [];
@@ -75,10 +77,11 @@
 	while (true)
 		%
 		% Do a bit of analysis.
-		[ xVals_ordered, evalIndex_ordered ] = sort( xVals );
-		fVals_ordered = fVals(evalIndex_ordered);
+		[ xVals_sorted, evalIndex_sorted ] = sort( xVals );
+		fVals_sorted = fVals(evalIndex_sorted);
 		absFVals = abs(fVals);
 		[ fNormMin, indexOfFNormMin ] = min( absFVals );
+		xBest = xVals(indexOfFNormMin);
 		%
 		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		% CHECK STOP
@@ -144,12 +147,7 @@
 		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		% DO WORK
 		%
-		
-		%%% OBVIOUS HACK
-		%xNew = randn() * exp( 1.0*randn() );
-		xNew = 10.0*rand() - 5.0;
-		%%%
-		
+		groot1d__getXNew;
 		%
 		assert( isrealscalar(xNew) );
 		fNew = funchF(xNew); fevalCount++;
