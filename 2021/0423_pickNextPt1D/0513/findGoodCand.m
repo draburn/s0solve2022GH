@@ -10,43 +10,64 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 	% Check unsupported cases...
 	assert( 2 <= numPts );
 	%
-	xValsAreStrictlyIncreasing =( 0==sum(0.0>=diff(xVals)) );
+	xValsAreStrictlyIncreasing = (0==sum( 0.0 >= diff(xVals) ));
 	assert(xValsAreStrictlyIncreasing);
 	%
-	fValsAreAllNonzero = ( 0==sum(0.0==fVals) );
+	fValsAreAllNonzero = (0==sum( 0.0 == fVals ));
 	assert( fValsAreAllNonzero );
 	%
 	signF = sign(fVals(1));
 	gVals = signF * fVals;
-	fValsAllHaveSameSign =( 0 == sum(0.0>=gVals) );
+	fValsAllHaveSameSign = (0==sum( 0.0 >= gVals ));
+	if (!fValsAllHaveSameSign)
+		n = 1;
+		while ( gVals(n+1) > 0.0 )
+			n++;
+		end
+		x1 = xVals(n);
+		x2 = xVals(n+1);
+		g1 = gVals(n);
+		g2 = gVals(n+1);
+		assert( g1 > 0.0 );
+		assert( g2 < 0.0 );
+		xTemp = ( x1*g2 - x2*g1 ) / ( g2 - g1 );
+		assert( xTemp > x1 );
+		assert( xTemp < x2 );
+		xCand = xTemp;
+		return;
+	end
 	assert( fValsAllHaveSameSign );
 	%
 	%
 	% Do work..
-%	% 3-pt quad interp that has a root.
-%	% We'll take the extremum.
-%	if ( 3 <= numPts )
-%	for n=2:numPts-1
-%	if ( gVals(n-1) >= gVals(n) && gVals(n+1) >= gVals(n) )
-%	if ( gVals(n-1) != gVals(n+1) )
-%		matX = [ ones(3,1), xVals(n-1:n+1)', xVals(n-1:n+1).^2' ];
-%		vecG = gVals';
-%		vecC = matX\vecG;
-%		a = vecC(3);
-%		b = vecC(2);
-%		c = vecC(1);
-%		assert( 0.0 < a );
-%		if ( b^2 >= 4.0*a*c )
-%			xTemp = -b / (2.0*a);
-%			if ( xVals(n-1) < xTemp && xTemp < xVals(n+1) )
-%				xCand = xTemp;
-%				return;
-%			end
-%		end
-%	end
-%	end
-%	end
-%	end
+	if (1)
+	%
+	% 3-pt quad interp that has a root.
+	% We'll take the extremum.
+	if ( 3 <= numPts )
+	for n=2:numPts-1
+	if ( gVals(n-1) >= gVals(n) && gVals(n+1) >= gVals(n) )
+	if ( gVals(n-1) != gVals(n+1) )
+		matX = [ ones(3,1), xVals(n-1:n+1)', xVals(n-1:n+1).^2' ];
+		vecG = gVals(n-1:n+1)';
+		vecC = matX\vecG;
+		a = vecC(3);
+		b = vecC(2);
+		c = vecC(1);
+		assert( 0.0 < a );
+		if ( b^2 >= 4.0*a*c )
+			xTemp = -b / (2.0*a);
+			if ( xVals(n-1) < xTemp && xTemp < xVals(n+1) )
+				xCand = xTemp;
+				return;
+			end
+		end
+	end
+	end
+	end
+	end
+	%
+	end
 	%
 	% 2-pt lin extrap... but internal.
 	if ( 3<= numPts )
