@@ -2,6 +2,15 @@ function [ xCand, meritCand ] = findGoodCand__boundedQuad( ...
   xl, xc, xr, gl, gc, gr, prm = [] );
   	% Should-be-precompiled...
 	thisFile = "findGoodCand__boundedQuad.m";
+	if (0)
+		echo__thisFile = thisFile
+		echo__xl = xl
+		echo__xc = xc
+		echo__xr = xr
+		echo__gl = gl
+		echo__gc = gc
+		echo__gr = gr
+	end
 	%
 	assert( isrealscalar(xl) );
 	assert( isrealscalar(xc) );
@@ -11,8 +20,8 @@ function [ xCand, meritCand ] = findGoodCand__boundedQuad( ...
 	assert( isrealscalar(gr) );
 	assert( xl < xc );
 	assert( xc < xr );
-	%assert( gl > gc ); % Require monotonicity in g?
-	%assert( gc > gr );
+	assert( gl > gc ); % Require monotonicity in g?
+	assert( gc > gr );
 	assert( gl > 0.0 );
 	assert( gc != 0.0 );
 	assert( gr < 0.0 );

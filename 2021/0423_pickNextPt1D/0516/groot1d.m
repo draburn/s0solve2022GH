@@ -5,13 +5,24 @@
 	%funchF = @(x)( 1.0 );
 	%funchF = @(x)( pi - x );
 	%funchF = @(x)( pi - x + 0.05*x.^2);
-	funchF = @(x)( x.*(10.0-x.^2) + 20.0 );
+	%funchF = @(x)( x.*(10.0-x.^2) + 20.0 );
+	%setprngstates();
+	setprngstates(44236336);
+	c = randn(20,1);
+	funchF_pre = @(x)( c(1) + c(2)*x + 0*c(3)*x.^2 + 0*c(4)*x.^3 ...
+	 + c(5) * cos( c(6) + c(7)*x ) + c(8) * cos( c(8) + c(9) * x ) ...
+	 + c(10) * cos( c(11) + c(12)*cos( c(13) + c(14)*x) ) );
+	xSecret = randn*exp(abs(randn));
+	fPreSecret = funchF_pre(xSecret);
+	funchF = @(x)( funchF_pre(x) - fPreSecret );
 	x1 = 0.0;
 	x2 = 1.0;
 	prm = [];
 	datIn = [];
 	%
-	xVals_demo = linspace(-5,5,1001);
+	demoLo = -15.0%-1-2*abs(xSecret);
+	demoHi =  15.0%1+2*abs(xSecret);
+	xVals_demo = linspace(demoLo,demoHi,1001);
 	fVals_demo = funchF(xVals_demo);
 	if (0)
 		plot( xVals_demo, fVals_demo, 'o-' );

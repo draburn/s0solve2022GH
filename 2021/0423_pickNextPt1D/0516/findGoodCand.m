@@ -29,10 +29,15 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 		% Negative merit would mean "do not use".
 		% Only run the model if the point exists.
 		% Perhaps require monotonicity in g?
+		% Update 2021.05.19:
+		%  Realized we can have an "other-side" extremum.
+		%  So, we will not use quad in that scenario.
+		%  In fact, let's require monotonicity in g.
 		meritLeft = -1.0;
 		meritRight = -1.0;
 		prm_boundedQuad = mygetfield( prm, "prm_boundedQuad", [] );
 		if ( n >= 2 )
+		if ( gVals(n-1) > gVals(n) )
 			[ xLeft, meritLeft ] = findGoodCand__boundedQuad( ...
 			  xVals(n-1), xVals(n), xVals(n+1), ...
 			  gVals(n-1), gVals(n), gVals(n+1), ...
@@ -44,7 +49,9 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 				assert( xLeft < xVals(n+1) );
 			end
 		end
+		end
 		if ( n+2 <= numPts )
+		if ( gVals(n+1) > gVals(n+2) )
 			[ xRight, meritRight ] = findGoodCand__boundedQuad( ...
 			  xVals(n), xVals(n+1), xVals(n+2), ...
 			  gVals(n), gVals(n+1), gVals(n+2), ...
@@ -56,12 +63,13 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 				assert( xRight < xVals(n+1) );
 			end
 		end
+		end
 		%
 		if ( meritLeft < 0.0 )
 			if ( meritRight < 0.0 )
-				xCand = xVals_sorted(n) - fVals_sorted(n) ...
-				 * ( xVals_sorted(n)-xVals_sorted(n+1) ) ...
-				 / ( fVals_sorted(n)-fVals_sorted(n+1) );
+				xCand = xVals(n) - gVals(n) ...
+				 * ( xVals(n)-xVals(n+1) ) ...
+				 / ( gVals(n)-gVals(n+1) );
 			else
 				xCand = xRight;
 			end
