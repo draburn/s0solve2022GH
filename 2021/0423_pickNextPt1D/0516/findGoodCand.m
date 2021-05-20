@@ -1,6 +1,9 @@
 function xCand = findGoodCand( xVals, fVals, prm = [] )
   	% Should-be-precompiled...
+	commondefs;
 	thisFile = "findGoodCand.m";
+	%
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	%
 	% Check data types...
 	numPts = size(xVals,2);

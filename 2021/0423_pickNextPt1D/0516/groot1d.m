@@ -1,5 +1,6 @@
-%function [ xFinal, retCode, datOut ] = groot1d( funchF, x1, x2, prm=[], datIn=[] )
+function [ xFinal, retCode, datOut ] = groot1d( funchF, x1, x2, prm=[], datIn=[] )
 	%
+if (0)
 	% Dummy input.
 	clear;
 	%funchF = @(x)( 1.0 );
@@ -16,7 +17,9 @@
 	fPreSecret = funchF_pre(xSecret);
 	funchF = @(x)( funchF_pre(x) - fPreSecret ).^2;
 	x1 = 0.0;
-	x2 = 1.0;
+	x2 = 3.0; % Slow-cnvg.
+	%x2 = 5.0; % Complex behavior.
+	funchF = @(x)( (x-(pi-1.0)).^20.0 );
 	prm = [];
 	datIn = [];
 	%
@@ -29,7 +32,7 @@
 		grid on;
 		return;
 	end
-	
+end
 	
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% BASIC INIT.
@@ -98,6 +101,9 @@
 		fVals_raw = [ fVals_raw, fNew ];
 		clear fNew;
 		clear xNew;
+		numPts = size(xVals_raw,2);
+		assert( isrealarray(xVals_raw,[1,numPts]) );
+		assert( isrealarray(fVals_raw,[1,numPts]) );
 		%
 		% Do a bit of analysis.
 		absFVals_raw = abs(fVals_raw);

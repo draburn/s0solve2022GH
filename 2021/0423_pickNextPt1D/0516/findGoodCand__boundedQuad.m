@@ -1,7 +1,10 @@
 function [ xCand, meritCand ] = findGoodCand__boundedQuad( ...
   xl, xc, xr, gl, gc, gr, prm = [] );
   	% Should-be-precompiled...
+	commondefs;
 	thisFile = "findGoodCand__boundedQuad.m";
+	%
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	if (0)
 		echo__thisFile = thisFile
 		echo__xl = xl

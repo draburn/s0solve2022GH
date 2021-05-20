@@ -8,6 +8,7 @@ msg_main( verbLev, thisFile, __LINE__, sprintf( ...
    fNormMin, ...
    retcode2str(retCode) )  );
 %
+xFinal = xVals_raw(end);
 %
 datOut.funchF = funchF;
 datOut.x1 = x1;
@@ -26,6 +27,7 @@ datOut.fevalCountLimit = fevalCountLimit;
 datOut.fevalCount = fevalCount;
 datOut.fNormMin = fNormMin;
 %
+datOut.numPts = numPts;
 datOut.xVals_raw = xVals_raw;
 datOut.fVals_raw = fVals_raw;
 datOut.evalIndex_sorted = evalIndex_sorted;
