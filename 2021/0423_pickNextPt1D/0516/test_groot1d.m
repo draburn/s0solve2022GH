@@ -1,10 +1,10 @@
 clear;
 commondefs;
-thisFile = "test_groot1d"
+thisFile = "test_groot1d";
 tic();
 
 verbLev = VERBLEV__COPIOUS;
-caseNum = 1;
+caseNum = 3;
 
 prm = []; % Unless overwritten by case.
 datIn = []; % Unless overwritten by case.
@@ -18,9 +18,9 @@ case (0)
 	x2 = 1.0;
 case (1)
 	msg_main( verbLev, thisFile, __LINE__, ...
-	  sprintf("Case: Simple glancing zero, complex behavior.") );
+	  sprintf("Case: Simple glancing zero, 'complex behavior'.") );
 	funchF = @(x)( (x-(pi-1.0)).^20.0 );
-	x1 = 0.0;
+	x1 = 1.0;
 	x2 = 3.0;
 case (2)
 	msg_main( verbLev, thisFile, __LINE__, ...

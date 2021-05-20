@@ -14,6 +14,8 @@ function [ xCand, meritCand ] = findGoodCand__boundedQuad( ...
 		echo__gc = gc
 		echo__gr = gr
 	end
+	msg_copious( verbLev, thisFile, __LINE__, sprintf( ...
+	  "{ %f, %f, %f }, { %f, %f, %f }.",xl,xc,xr,gl,gc,gr ) );
 	%
 	assert( isrealscalar(xl) );
 	assert( isrealscalar(xc) );
@@ -62,6 +64,8 @@ function [ xCand, meritCand ] = findGoodCand__boundedQuad( ...
 		assert( abs(c1) > eps*abs(c0) );
 		yCand = -c0 / c1;
 		xCand = xc + yCand*(xr-xl);
+		msg_copious( verbLev, thisFile, __LINE__, sprintf( ...
+		  "merit = %f, xCand = %f",meritCand,xCand ) );
 		return;
 	end
 	%
@@ -72,5 +76,7 @@ function [ xCand, meritCand ] = findGoodCand__boundedQuad( ...
 	yCand = ( -c1 - sqrt(discr) ) / ( 2.0*c2 );
 	assert( isrealscalar(yCand) );
 	xCand =	xc + yCand*(xr-xl);
+	msg_copious( verbLev, thisFile, __LINE__, sprintf( ...
+	  "merit = %f, xCand = %f",meritCand,xCand ) );
 return;
 end

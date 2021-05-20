@@ -59,6 +59,7 @@ function [ xFinal, retCode, datOut ] = groot1d( funchF, x1, x2, prm=[], datIn=[]
 		% DO WORK
 		%
 		groot1d__getXNew; thisFile = "groot1d";
+		msg_copious( verbLev, thisFile, __LINE__, sprintf( "xNew = %f.", xNew ) );
 		%
 		assert( isrealscalar(xNew) );
 		fNew = funchF(xNew); fevalCount++;

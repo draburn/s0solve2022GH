@@ -27,6 +27,8 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 		while ( gVals(n+1) > 0.0 )
 			n++;
 		end
+		msg_copious( verbLev, thisFile, __LINE__, sprintf( ...
+		  "Bounded root between x = %f and %f.",xVals(n),xVals(n+1) ) );
 		%
 		% Consider two quadratic models, look at "merit" of each.
 		% Negative merit would mean "do not use".
@@ -106,6 +108,12 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 	for n=2:numPts-1
 	if ( gVals(n-1) >= gVals(n) && gVals(n+1) >= gVals(n) )
 	if ( gVals(n-1) != gVals(n+1) )
+		msg_copious( verbLev, thisFile, __LINE__, sprintf( ...
+		  "Looking at pt-wise ext quadratic interpolation..." ) );
+		msg_copious( verbLev, thisFile, __LINE__, sprintf( ...
+		  "{ %f, %f, %f }, { %f, %f, %f }.", ...
+		  xVals(n-1), xVals(n), xVals(n+1), ...
+		  gVals(n-1), gVals(n), gVals(n+1) )  );
 		matX = [ ones(3,1), xVals(n-1:n+1)', xVals(n-1:n+1).^2' ];
 		vecG = gVals(n-1:n+1)';
 		vecC = matX\vecG;
@@ -114,16 +122,15 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 		c = vecC(1);
 		assert( 0.0 < a );
 		if ( b^2 >= 4.0*a*c )
-			%xTemp = -b / (2.0*a);
-			%if ( xVals(n-1) < xTemp && xTemp < xVals(n+1) )
-			%	xCand = xTemp;
-			%end
-			xCand = -b / (2.0*a);
-			assert( xVals(n-1) < xCand );
-			assert( xCand < xVals(n+1) );
+			xTemp = -b / (2.0*a);
+			if ( xVals(n-1) < xTemp && xTemp < xVals(n+1) )
+				msg_copious( verbLev, thisFile, __LINE__, ...
+				  "  xNew via 'pt-wise extremum - quadratic interpolation'." );
+				xCand = xTemp;
+				return;
+			end
 			msg_copious( verbLev, thisFile, __LINE__, ...
-			  "xNew via 'pt-wise extremum - quadratic interpolation'." );
-			return;
+			  "  REJECTED this 'pt-wise extremum - quadratic interpolation'." );
 		end
 	end
 	end
