@@ -27,7 +27,6 @@ if ( isrealscalar(xNew) )
 	xCapHi = xVals_sorted(end) + (xVals_sorted(end)-xVals_sorted(1));
 	xCapLo = xVals_sorted(1)   - (xVals_sorted(end)-xVals_sorted(1));
 	xNew = cap( xNew, xCapLo, xCapHi );
-	msg_copious( verbLev, thisFile, __LINE__, "xNew via 'typical method - ???'." );
 	thisFile = "RETURNING FROM groot1d__getXNew";
 	return;
 end

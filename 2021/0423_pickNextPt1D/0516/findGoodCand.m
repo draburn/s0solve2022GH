@@ -70,16 +70,24 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 		%
 		if ( meritLeft < 0.0 )
 			if ( meritRight < 0.0 )
+				msg_copious( verbLev, thisFile, __LINE__, ...
+				  "xNew via 'bounded - linear interpolation'." );
 				xCand = xVals(n) - gVals(n) ...
 				 * ( xVals(n)-xVals(n+1) ) ...
 				 / ( gVals(n)-gVals(n+1) );
 			else
+				msg_copious( verbLev, thisFile, __LINE__, ...
+				  "xNew via 'bounded - right-side quadratic interpolation'." );
 				xCand = xRight;
 			end
 		else
 			if ( meritRight < 0.0 )
+				msg_copious( verbLev, thisFile, __LINE__, ...
+				  "xNew via 'bounded - left-side quadratic interpolation'." );
 				xCand = xLeft;
 			else
+				msg_copious( verbLev, thisFile, __LINE__, ...
+				  "xNew via 'bounded - blended quadratic interpolation'." );
 				xCand = ( meritLeft*xLeft + meritRight*xRight ) ...
 				 / ( meritLeft + meritRight );
 			end
@@ -106,10 +114,15 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 		c = vecC(1);
 		assert( 0.0 < a );
 		if ( b^2 >= 4.0*a*c )
-			xTemp = -b / (2.0*a);
-			if ( xVals(n-1) < xTemp && xTemp < xVals(n+1) )
-				xCand = xTemp;
-			end
+			%xTemp = -b / (2.0*a);
+			%if ( xVals(n-1) < xTemp && xTemp < xVals(n+1) )
+			%	xCand = xTemp;
+			%end
+			xCand = -b / (2.0*a);
+			assert( xVals(n-1) < xCand );
+			assert( xCand < xVals(n+1) );
+			msg_copious( verbLev, thisFile, __LINE__, ...
+			  "xNew via 'pt-wise extremum - quadratic interpolation'." );
 			return;
 		end
 	end
@@ -134,12 +147,16 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 		assert( xTemp > x2 );
 		if ( xTemp < x3 )
 			xCand = min([ xTemp, (x2+x3)/2.0 ]);
+			msg_copious( verbLev, thisFile, __LINE__, ...
+			  "xNew via 'left-side linear interpolation'." );
 			return;
 		end
 		xTemp = ( x3*g2 - x2*g3 ) / ( g2 - g3 );
 		assert( xTemp < x2 );
 		if ( xTemp > x1 )
 			xCand = max([ xTemp, (x2+x1)/2.0 ]);
+			msg_copious( verbLev, thisFile, __LINE__, ...
+			  "xNew via 'right-side linear interpolation'." );
 			return;
 		end
 	end
@@ -152,21 +169,26 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 	% horizontal asymptote above zero.
 	if ( gVals(1) < gVals(2) )
 		xCand = ( xVals(1)*gVals(2) - xVals(2)*gVals(1) ) / (gVals(2)-gVals(1));
+		msg_copious( verbLev, thisFile, __LINE__, ...
+		  "xNew via 'rightward linear extrapolation'." );
 		return;
 	end
 	if ( gVals(end) < gVals(end-1) )
 		xCand = ( xVals(end)*gVals(end-1) - xVals(end-1)*gVals(end) ) / (gVals(end-1)-gVals(end));
+		msg_copious( verbLev, thisFile, __LINE__, ...
+		  "xNew via 'leftward linear extrapolation'." );
 		return;
 	end
 	%
 	% Explore local pt-wise min, make sure we've found actual min.
 	%error( "Not implemented!" );
 	%
-	msg( thisFile, __LINE__, sprintf( ...
+	msg_copious( verbLev, thisFile, __LINE__, sprintf( ...
 	  "Using end-scale lin extrap with points ( %g, %g ) and ( %g, %g ).", ...
 	  xVals(1), fVals(1), xVals(end), fVals(end) ) );
 	xCand = ( xVals(end)*fVals(1) - xVals(1)*fVals(end) ) / (fVals(1)-fVals(end));
-	msg( thisFile, __LINE__, sprintf( "New point is ( %g, ??? ).", xCand ) );
+	msg_copious( verbLev, thisFile, __LINE__, ...
+	  sprintf( "New point is ( %g, ??? ).", xCand ) );
 	return;
 	%
 	xCand = [];
