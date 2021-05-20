@@ -1,5 +1,5 @@
 function [ xCand, meritCand ] = findGoodCand__boundedQuad( ...
-  xl, xc, xr, gl, gc, gr, prm = [] );.
+  xl, xc, xr, gl, gc, gr, prm = [] );
   	% Should-be-precompiled...
 	thisFile = "findGoodCand__boundedQuad.m";
 	%
@@ -11,6 +11,8 @@ function [ xCand, meritCand ] = findGoodCand__boundedQuad( ...
 	assert( isrealscalar(gr) );
 	assert( xl < xc );
 	assert( xc < xr );
+	%assert( gl > gc ); % Require monotonicity in g?
+	%assert( gc > gr );
 	assert( gl > 0.0 );
 	assert( gc != 0.0 );
 	assert( gr < 0.0 );
@@ -32,7 +34,7 @@ function [ xCand, meritCand ] = findGoodCand__boundedQuad( ...
 	% Find model root.
 	% Normalize in x.
 	yl = (xl-xc)/(xr-xl);
-	yc = 1.0;
+	yc = 0.0;
 	yr = (xr-xc)/(xr-xl);
 	yVec = [ yl; yc; yr ];
 	gVec = [ gl; gc; gr ];
@@ -56,7 +58,7 @@ function [ xCand, meritCand ] = findGoodCand__boundedQuad( ...
 	discr = c1^2 - 4.0*c0*c2;
 	assert( 0.0 <= discr );
 	yCand = ( -c1 - sqrt(discr) ) / ( 2.0*c2 );
-	assert( isrealscalar(y_root) );
+	assert( isrealscalar(yCand) );
 	xCand =	xc + yCand*(xr-xl);
 return;
 end

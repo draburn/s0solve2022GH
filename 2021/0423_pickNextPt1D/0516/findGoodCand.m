@@ -40,6 +40,8 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 		% New 2021.05.19...
 		% Consider two quadratic models, look at "merit" of each.
 		% Negative merit would mean "do not use".
+		% Only run the model if the point exists.
+		% Perhaps require monotonicity in g?
 		meritLeft = -1.0;
 		meritRight = -1.0;
 		prm_boundedQuad = mygetfield( prm, "prm_boundedQuad", [] );
@@ -68,21 +70,23 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 			end
 		end
 		%
-		if ( meritL < 0.0 )
-			if ( meritR < 0.0 )
-				xNew = xVals_sorted(n) - fVals_sorted(n) ...
+		if ( meritLeft < 0.0 )
+			if ( meritRight < 0.0 )
+				xCand = xVals_sorted(n) - fVals_sorted(n) ...
 				 * ( xVals_sorted(n)-xVals_sorted(n+1) ) ...
 				 / ( fVals_sorted(n)-fVals_sorted(n+1) );
 			else
-				xNew = xRight;
+				xCand = xRight;
 			end
 		else
-			if ( meritR < 0.0 )
-				xNew = xLeft;
+			if ( meritRight < 0.0 )
+				xCand = xLeft;
 			else
-				xNew = ( meritL*xLeft + meritR*xRight ) / ( meritL + meritR );
+				xCand = ( meritLeft*xLeft + meritRight*xRight ) ...
+				 / ( meritLeft + meritRight );
 			end
 		end
+	return;
 	end
 	assert( fValsAllHaveSameSign );
 	%
@@ -108,7 +112,7 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 			if ( xVals(n-1) < xTemp && xTemp < xVals(n+1) )
 				xCand = xTemp;
 			end
-				return;
+			return;
 		end
 	end
 	end

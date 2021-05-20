@@ -22,7 +22,7 @@ fMin = min(fVals_raw);
 fMax = max(fVals_raw);
 
 % Handle "bounded".
-if (1) % Handle in findGoodCand instead. This block is depricated.
+if (0) % Handle in findGoodCand instead. This block is depricated.
 if ( fMin * fMax < 0.0 )
 	if ( 0 == boundedIter )
 		msg_main( verbLev, thisFile, __LINE__, "Bounded a zero." );
