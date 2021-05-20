@@ -24,17 +24,65 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 		while ( gVals(n+1) > 0.0 )
 			n++;
 		end
-		x1 = xVals(n);
-		x2 = xVals(n+1);
-		g1 = gVals(n);
-		g2 = gVals(n+1);
-		assert( g1 > 0.0 );
-		assert( g2 < 0.0 );
-		xTemp = ( x1*g2 - x2*g1 ) / ( g2 - g1 );
-		assert( xTemp > x1 );
-		assert( xTemp < x2 );
-		xCand = xTemp;
-		return;
+		% This is 2021.05.17.
+		%x1 = xVals(n);
+		%x2 = xVals(n+1);
+		%g1 = gVals(n);
+		%g2 = gVals(n+1);
+		%assert( g1 > 0.0 );
+		%assert( g2 < 0.0 );
+		%xTemp = ( x1*g2 - x2*g1 ) / ( g2 - g1 );
+		%assert( xTemp > x1 );
+		%assert( xTemp < x2 );
+		%xCand = xTemp;
+		%return;
+		%
+		% New 2021.05.19...
+		% Consider two quadratic models, look at "merit" of each.
+		% Negative merit would mean "do not use".
+		meritLeft = -1.0;
+		meritRight = -1.0;
+		prm_boundedQuad = mygetfield( prm, "prm_boundedQuad", [] );
+		if ( n >= 2 )
+			[ xLeft, meritLeft ] = findGoodCand__boundedQuad( ...
+			  xVals(n-1), xVals(n), xVals(n+1), ...
+			  gVals(n-1), gVals(n), gVals(n+1), ...
+			  prm_boundedQuad );
+			assert( isrealscalar(meritLeft) );
+			if ( meritLeft > 0.0 )
+				assert( isrealscalar(xLeft) );
+				assert( xVals(n) < xLeft );
+				assert( xLeft < xVals(n+1) );
+			end
+		end
+		if ( n+2 <= numPts )
+			[ xRight, meritRight ] = findGoodCand__boundedQuad( ...
+			  xVals(n), xVals(n+1), xVals(n+2), ...
+			  gVals(n), gVals(n+1), gVals(n+2), ...
+			  prm_boundedQuad );
+			assert( isrealscalar(meritRight) );
+			if ( meritRight > 0.0 )
+				assert( isrealscalar(xRight) );
+				assert( xVals(n) < xRight );
+				assert( xRight < xVals(n+1) );
+			end
+		end
+		%
+		if ( meritL < 0.0 )
+			if ( meritR < 0.0 )
+				xNew = xVals_sorted(n) - fVals_sorted(n) ...
+				 * ( xVals_sorted(n)-xVals_sorted(n+1) ) ...
+				 / ( fVals_sorted(n)-fVals_sorted(n+1) );
+			else
+				xNew = xRight;
+			end
+		else
+			if ( meritR < 0.0 )
+				xNew = xLeft;
+			else
+				xNew = ( meritL*xLeft + meritR*xRight ) / ( meritL + meritR );
+			end
+		end
 	end
 	assert( fValsAllHaveSameSign );
 	%

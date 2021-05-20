@@ -22,6 +22,7 @@ fMin = min(fVals_raw);
 fMax = max(fVals_raw);
 
 % Handle "bounded".
+if (1) % Handle in findGoodCand instead. This block is depricated.
 if ( fMin * fMax < 0.0 )
 	if ( 0 == boundedIter )
 		msg_main( verbLev, thisFile, __LINE__, "Bounded a zero." );
@@ -196,8 +197,9 @@ if ( fMin * fMax < 0.0 )
 	thisFile = "RETURNING FROM groot1d__getXNew";
 	return;
 end
+end
 
-% Handle typical case.
+% Handle typical case, including bounded.
 xNew = findGoodCand( xVals_sorted, fVals_sorted );
 if ( isrealscalar(xNew) )
 	xCapHi = xVals_sorted(end) + (xVals_sorted(end)-xVals_sorted(1));
