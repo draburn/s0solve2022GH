@@ -14,7 +14,7 @@
 	 + c(10) * cos( c(11) + c(12)*cos( c(13) + c(14)*x) ) );
 	xSecret = randn*exp(abs(randn));
 	fPreSecret = funchF_pre(xSecret);
-	funchF = @(x)( funchF_pre(x) - fPreSecret );
+	funchF = @(x)( funchF_pre(x) - fPreSecret ).^2;
 	x1 = 0.0;
 	x2 = 1.0;
 	prm = [];
@@ -61,7 +61,7 @@
 	% Stopping criteria.
 	fNormTol = mygetfield( prm, "fNormTol", 1E-12 ); % Success.
 	exeTimeLimit = mygetfield( prm, "exeTimeLimit", 3.0 ); % Imposed stop.
-	fevalCountLimit = mygetfield( prm, "fevalCountLimit", 50 ); % Imposed stop.
+	fevalCountLimit = mygetfield( prm, "fevalCountLimit", 200 ); % Imposed stop.
 	stopsigCheckInterval = mygetfield( prm, "stopsigCheckInterval", -1.0 ); % Imposed stop.
 	assert( isrealscalar(fNormTol) );
 	assert( 0.0 < fNormTol );
