@@ -24,20 +24,7 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 		while ( gVals(n+1) > 0.0 )
 			n++;
 		end
-		% This is 2021.05.17.
-		%x1 = xVals(n);
-		%x2 = xVals(n+1);
-		%g1 = gVals(n);
-		%g2 = gVals(n+1);
-		%assert( g1 > 0.0 );
-		%assert( g2 < 0.0 );
-		%xTemp = ( x1*g2 - x2*g1 ) / ( g2 - g1 );
-		%assert( xTemp > x1 );
-		%assert( xTemp < x2 );
-		%xCand = xTemp;
-		%return;
 		%
-		% New 2021.05.19...
 		% Consider two quadratic models, look at "merit" of each.
 		% Negative merit would mean "do not use".
 		% Only run the model if the point exists.
@@ -86,7 +73,7 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 				 / ( meritLeft + meritRight );
 			end
 		end
-	return;
+		return;
 	end
 	assert( fValsAllHaveSameSign );
 	%
