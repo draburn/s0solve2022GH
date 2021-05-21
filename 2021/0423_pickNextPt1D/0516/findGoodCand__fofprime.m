@@ -20,12 +20,32 @@ function [ xCand, meritCand ] = findGoodCand__fofprime( ...
 	chVals = cgVals .* dxVals ./ dgVals;
 	%
 	numPtsForFit = mygetfield( prm, "numPtsForFit", 2 );
-	numPtsToCheck = mygetfield( prm, "numPtsToCheck", 4 );
+	numPtsToCheck = mygetfield( prm, "numPtsToCheck", 3 );
 	assert( numPtsForFit >= 2 );
 	assert( numPtsToCheck >= 3 );
 	assert( numPtsToCheck >= numPtsForFit );
 	%
-	for n = numPtsToCheck : numPts-1
+	msg_copious( verbLev, thisFile, __LINE__, "From left side..." );
+	for n = numPtsToCheck + 1 : numPts-1
+	if ( gVals(n) < gVals(n-1) && gVals(n) < gVals(n+1) )
+		meritCand = -1.0;
+		findGoodCand__fofprime__sub;
+		thisFile = "findGoodCand__fofprime";
+		if ( 0.0 < meritCand )
+			return;
+		end
+	end
+	end
+	%
+	xVals = xVals_input(end:-1:1);
+	gVals = gVals_input(end:-1:1);
+	dxVals = diff(xVals);
+	cxVals = cent(xVals);
+	dgVals = diff(gVals);
+	cgVals = cent(gVals);
+	chVals = cgVals .* dxVals ./ dgVals;
+	msg_copious( verbLev, thisFile, __LINE__, "From right side..." );
+	for n = numPtsToCheck + 1 : numPts-1
 	if ( gVals(n) < gVals(n-1) && gVals(n) < gVals(n+1) )
 		meritCand = -1.0;
 		findGoodCand__fofprime__sub;

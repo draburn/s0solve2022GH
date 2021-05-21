@@ -1,11 +1,10 @@
 thisFile = "findGoodCand__fofprime__sub";
-msg( thisFile, __LINE__, "Hey!" );
 %
 % Make sure we have enough points monotonic...
-mCheckLo = n + 1 - numPtsToCheck;
-mCheckHi = n;
-for m = mCheckLo+1 : mCheckHi
-if ( gVals(m-1) <= gVals(m) )
+mCheckLo = n - numPtsToCheck;
+mCheckHi = n - 1;
+for m = mCheckLo : mCheckHi
+if ( gVals(m) <= gVals(m+1) )
 	thisFile = "RETURNING FROM findGoodCand__fofprime__sub";
 	return;
 end
@@ -14,8 +13,8 @@ assert( isrealarray(chVals(mCheckLo:mCheckHi),[1,numPtsToCheck]) );
 
 
 % Build linear model.
-mFitLo = n + 1 - numPtsForFit;
-mFitHi = n;
+mFitLo = n - numPtsForFit;
+mFitHi = n - 1;
 cxFitLo = cxVals(mFitLo);
 cxFitHi = cxVals(mFitHi);
 %
@@ -74,8 +73,17 @@ if ( abs(c1) < eps*abs(c0) )
 end
 yTemp = -c0 / c1;
 xTemp = cxFitLo + yTemp*(cxFitHi-cxFitLo);
+msg_copious( verbLev, thisFile, __LINE__, ...
+  sprintf("xTemp = %f.",xTemp) );
 
 % Only do this once, for now.
+if ( (xVals(n+1)-xTemp) * (xTemp-xVals(n)) <= 0.0 )
+	meritCand = -1.0;
+	xCand = [];
+	msg_copious( verbLev, thisFile, __LINE__, "Rejecting, because maybe repeated." );
+	thisFile = "RETURNING FROM findGoodCand__fofprime__sub";
+	return;
+end
 distCheck = abs( xVals-xTemp );
 if ( min(abs(xVals-xTemp)) > sqrt(eps)*(cxFitHi-cxFitLo) )
 	xCand = xTemp;
