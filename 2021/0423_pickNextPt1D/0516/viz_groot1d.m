@@ -9,7 +9,7 @@ evalIndex = (1:numPts);
 xVizBumper = (abs(x2-x1) + max(xVals) - min(xVals))/5.0;
 xVizLo = min(xVals) - xVizBumper;
 xVizHi = max(xVals) + xVizBumper;
-xVals_viz = linspace( xVizLo, xVizHi, 1001 );
+xVals_viz = linspace( xVizLo, xVizHi, 10001 );
 fVals_viz = funchF( xVals_viz );
 %
 %
@@ -87,6 +87,15 @@ legend( ...
 grid on;
 
 
+cfVals_viz = cent(fVals_viz);
+dfVals_viz = diff(fVals_viz)./diff(xVals_viz);
+cxVals_viz = cent(xVals_viz);
+cdfVals_viz = cent(dfVals_viz);
+ddfVals_viz = diff(dfVals_viz)./diff(cxVals_viz);
+ccxVals_viz = cent(cxVals_viz);
+%
+cfofpVals_viz = cfVals_viz./dfVals_viz;
+ccfpofppVals_viz = cdfVals_viz./ddfVals_viz;
 %
 %
 numFigs++; figure(numFigs);
@@ -94,10 +103,16 @@ plot( ...
   cent(datOut.xVals_sorted), ...
   cent(datOut.fVals_sorted).*diff(datOut.xVals_sorted)./diff(datOut.fVals_sorted), ....
   'o-', 'markersize', 10, 'linewidth', 2, ...
-  cent(xVals_viz), ...
-  cent(fVals_viz) .* diff(xVals_viz) ./ diff(fVals_viz), ...
-  'ko-', 'linewidth', 1, 'markersize', 2 );
+  cxVals_viz, cfofpVals_viz, 'ko-', 'linewidth', 1, 'markersize', 2 );
 title( "F/F' vs X" );
 xlabel( "X" );
 ylabel( "F / F'" );
+grid on;
+%
+numFigs++; figure(numFigs);
+plot( ...
+  ccxVals_viz, ccfpofppVals_viz, 'ko-', 'linewidth', 1, 'markersize', 2 );
+title( "F'/F'' vs X" );
+xlabel( "X" );
+ylabel( "F' / F''" );
 grid on;
