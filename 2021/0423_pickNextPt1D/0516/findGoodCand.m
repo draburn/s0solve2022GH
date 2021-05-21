@@ -98,9 +98,21 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 	end
 	assert( fValsAllHaveSameSign );
 	%
+	% 3-pt reciprocal logarithmic derivative interp aka "fofprime".
+	% This is good for glancing roots of order > 2.
+	% But, we want to be strict about when we use it.
+	% For simplicity, consider only one-sided models,
+	% BUT, if purely one-sided interp, watch out for
+	%  hitting the same point repeatedly!
+	prm_fofprime = mygetfield( prm, "prm_fofprime", [] );
+	[ xTemp, meritTemp ] = findGoodCand__fofprime( xVals, gVals, prm_fofprime );
+	if ( 0.0 < meritTemp )
+		msg_copious( verbLev, thisFile, __LINE__, ...
+		  "  xNew via 'f over f prime'." );
+		xCand = xTemp;
+		return;
+	end
 	%
-	% Do work..
-	if (1)
 	%
 	% 3-pt quad interp that has a root.
 	% We'll take the extremum.
@@ -135,8 +147,6 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 	end
 	end
 	end
-	end
-	%
 	end
 	%
 	% 2-pt lin extrap... but internal.
