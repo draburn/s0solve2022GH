@@ -18,6 +18,7 @@ function [ xCand, meritCand ] = findGoodCand__fofprime( ...
 	dgVals = diff(gVals);
 	cgVals = cent(gVals);
 	chVals = cgVals .* dxVals ./ dgVals;
+	% 05.20: Current h values suffer from finite differencing inaccuracy.
 	%
 	numPtsForFit = mygetfield( prm, "numPtsForFit", 2 );
 	numPtsToCheck = mygetfield( prm, "numPtsToCheck", 3 );

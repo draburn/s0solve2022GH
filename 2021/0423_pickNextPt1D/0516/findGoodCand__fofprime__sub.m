@@ -5,6 +5,7 @@ mCheckLo = n - numPtsToCheck;
 mCheckHi = n - 1;
 for m = mCheckLo : mCheckHi
 if ( gVals(m) <= gVals(m+1) )
+	msg_copious( verbLev, thisFile, __LINE__, "Insufficient points." );
 	thisFile = "RETURNING FROM findGoodCand__fofprime__sub";
 	return;
 end
@@ -12,7 +13,8 @@ end
 assert( isrealarray(chVals(mCheckLo:mCheckHi),[1,numPtsToCheck]) );
 
 
-% Build linear model.
+% Build one-sided linear model.
+% Later, could implement bounded quadratic, etc.
 mFitLo = n - numPtsForFit;
 mFitHi = n - 1;
 cxFitLo = cxVals(mFitLo);
@@ -20,9 +22,9 @@ cxFitHi = cxVals(mFitHi);
 %
 % A bit excessive to recalc? 
 cyVals = (cxVals - cxFitLo) / (cxFitHi - cxFitLo);
-msg_copious( verbLev, thisFile, __LINE__, "Looking at..." );
+%msg_copious( verbLev, thisFile, __LINE__, "Looking at..." );
 
-if ( verbLev >= VERBLEV__COPIOUS )
+if 0&&( verbLev >= VERBLEV__COPIOUS )
 	echo__myFitXVals = cxVals(mFitLo:mFitHi)
 	echo__myFitYVals = cyVals(mFitLo:mFitHi)
 	echo__myFitHVals = chVals(mFitLo:mFitHi)
@@ -43,7 +45,7 @@ c1 = coeffVec(2);
 
 % Also excessive, but, convenient.
 chModelVals = c0 + c1*cyVals;
-if ( verbLev >= VERBLEV__COPIOUS )
+if 0&&( verbLev >= VERBLEV__COPIOUS )
 	echo__cyVec = cyVec
 	echo__chVec = chVec
 	echo__coeffVec = coeffVec
@@ -58,11 +60,12 @@ for m = mCheckLo : mCheckHi
 	sumSqVal += chVals(m)^2;
 	sumSqRes += ( chVals(m) - chModelVals(m) )^2;
 end
-if ( verbLev >= VERBLEV__COPIOUS )
+if 0&&( verbLev >= VERBLEV__COPIOUS )
 	echo__sumSqVal = sumSqVal
 	echo__sumSqRes = sumSqRes
 end
 if ( sumSqRes >= sumSqVal/10.0 )
+	msg_copious( verbLev, thisFile, __LINE__, "Bad fit." );
 	thisFile = "RETURNING FROM findGoodCand__fofprime__sub";
 	return;
 end
@@ -76,21 +79,24 @@ xTemp = cxFitLo + yTemp*(cxFitHi-cxFitLo);
 msg_copious( verbLev, thisFile, __LINE__, ...
   sprintf("xTemp = %f.",xTemp) );
 
-% Only do this once, for now.
-if ( (xVals(n+1)-xTemp) * (xTemp-xVals(n)) <= 0.0 )
-	meritCand = -1.0;
-	xCand = [];
-	msg_copious( verbLev, thisFile, __LINE__, "Rejecting, because maybe repeated." );
-	thisFile = "RETURNING FROM findGoodCand__fofprime__sub";
-	return;
-end
-distCheck = abs( xVals-xTemp );
-if ( min(abs(xVals-xTemp)) > sqrt(eps)*(cxFitHi-cxFitLo) )
+
+% Well-behaved?
+if ( (xVals(n+1)-xTemp) * (xTemp-xVals(n)) > 0.0 )
 	xCand = xTemp;
 	meritCand = 1.0;
 	msg_copious( verbLev, thisFile, __LINE__, "Accepting." );
-	msg_copious( verbLev, thisFile, __LINE__, "  xNew via 'f over f prime'." );
 	thisFile = "RETURNING FROM findGoodCand__fofprime__sub";
 	return;
 end
-msg_copious( verbLev, thisFile, __LINE__, "Rejecting." );
+
+% Not well behaved. So, simple hack...
+if ( xVals(n+1) < xVals(n) )
+	xCand = (xVals(n+1) + xVals(n))/2.0;
+	meritCand = 1.0;
+	msg_copious( verbLev, thisFile, __LINE__, "Forcing bisection." );
+	thisFile = "RETURNING FROM findGoodCand__fofprime__sub";
+	return;
+end
+msg_copious( verbLev, thisFile, __LINE__, "OOB." );
+thisFile = "RETURNING FROM findGoodCand__fofprime__sub";
+return;
