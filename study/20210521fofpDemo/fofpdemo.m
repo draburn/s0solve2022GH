@@ -1,0 +1,12 @@
+clear;
+%bigR = 3.5;
+xa = -0.1;
+xb = 0.0;
+xc = 0.3;
+%x = linspace(xa,xc,10000);
+%x = linspace(0.299,0.301,1000);
+%x = linspace(-1e-12,1e-12,10000);
+x = linspace( 0.0, xc*1.0/3.0, 10000 );
+f = log(abs(xa-x)./abs(xb-x)) ./ log(abs(xc-x)./abs(xb-x));
+plot( x, f, 'o-' );
+grid on;

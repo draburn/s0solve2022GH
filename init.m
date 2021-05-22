@@ -36,3 +36,5 @@ commondefs;
 %
 msg( "init", __LINE__, "Adding path \"2021/0423_pickNextPt1D/0516\"." );
 addpath( "2021/0423_pickNextPt1D/0516" );
+msg( "init", __LINE__, "Adding path \"study/20210521fofpDemo/fofpdemo\"." );
+addpath( "study/20210521fofpDemo" );
