@@ -8,7 +8,7 @@ funch_lambdaHi = @(gamma,beta)( (1.0-1.0./gamma).*beta./(1.0-beta) );
 funch_lambdaMax = @(gamma,beta)( ones(size(gamma)).*beta./(1.0-beta) );
 %
 
-if (0)
+if (1)
 	xa = 0.0
 	xc = 1.0
 	xb = xa + 0.05*(xc-xa);
@@ -53,12 +53,21 @@ p = log(ga/gc)./log(gamX./(1.0-gamX))
 bigX = xa + gamX*(xc-xa);
 bigG = ga ./ (( gamX*(xc-xa) ).^p)
 
+vecBigX = [ xa; xb; xc ];
+matBigX = [ ones(3,1), vecBigX, vecBigX.^2 ];
+vecG = [ ga; gb; gc ];
+vecC = matBigX \ vecG;
+c0 = vecC(1);
+c1 = vecC(2);
+c2 = vecC(3);
+
 x = linspace(xa,xc,1000);
 numFigs++; figure(numFigs);
 plot( ...
   x, bigG(1)*abs(x-bigX(1)).^p(1), '-', 'linewidth', 2, ...
   x, bigG(2)*abs(x-bigX(2)).^p(2), '-', 'linewidth', 2, ...
   x, bigG(3)*abs(x-bigX(3)).^p(3), '-', 'linewidth', 2, ...
+  x, c0 + (c1*x) + (c2*(x.^2)), '-', 'linewidth', 2, ...
   bigX(1), 0.0, 'x', 'markersize', 15, 'linewidth', 2, ...
   bigX(2), 0.0, 'x', 'markersize', 15, 'linewidth', 2, ...
   bigX(3), 0.0, 'x', 'markersize', 15, 'linewidth', 2, ...
