@@ -21,15 +21,13 @@ end
 super_matH = [ ones(numSuperPts,1), super_hVals' ];
 super_vecRes = [ super_hVals' + super_xVals' ];
 super_vecC = super_matH \ super_vecRes;
-bigX = super_vecC(1);
-bigP = super_vecC(2);
+bigX = super_vecC(1)
+bigP = super_vecC(2)
 %
 %
 doLoop = true
 loopCount = 0;
 while (doLoop)
-	temp_bigX = bigX
-	temp_bigP = bigP
 	%
 	epsBigX = sqrt(eps)*abs(max(xVals)-min(xVals));
 	epsBigP = sqrt(eps);
@@ -47,17 +45,19 @@ while (doLoop)
 	   sum(dRho_dx.*dRho_dp), sum(dRho_dp.^2) ...
 	 ] \ [ sum(dRho_dx.*rhoVals_0); sum(dRho_dp.*rhoVals_0) ];
 	%
-	% Simple geom backtrack to prevent p going negative.
-	while (  bigP + vecDelta(2) < 0 )
-		vecDelta *= 0.1/vecDelta(2);
+	%if (norm(vecDelta)>0.001)
+	%	vecDelta *= 0.001/norm(vecDelta);
+	%end
+	if (norm(vecDelta)>0.01)
+		vecDelta *= 0.01/norm(vecDelta);
 	end
 	%
-	bigX = bigX + vecDelta(1)
-	bigP = bigP + vecDelta(2)
+	bigX = bigX + vecDelta(1);
+	bigP = bigP + vecDelta(2);
 	%
 	loopCount++;
-	echo__loopCount = loopCount
-	if (loopCount>=20)
+	%if ( loopCount>=10000 || norm(vecDelta)<0.00005 )
+	if ( loopCount>=100 || norm(vecDelta)<0.00005 )
 		doLoop = false;
 	end
 end

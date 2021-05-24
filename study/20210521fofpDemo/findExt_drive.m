@@ -1,6 +1,8 @@
 clear;
+setprngstates(40793712); % A very bad case.
+%setprngstates(72305920); % A slightly bad case.
+%setprngstates(67766576); % Another hard case
 %setprngstates();
-setprngstates(40793712);
 numFigs = 0;
 %
 secret_bigX = randn*exp(2*randn)
@@ -12,13 +14,22 @@ funch_f = @(x)( secret_bigF0 + secret_bigF1 * abs( x - secret_bigX ).^secret_big
 %
 numPts = 7;
 xVals = sort( randn(1,numPts) );
+%%%xVals = sort( secret_bigX + randn(1,numPts) );
 fVals = funch_f(xVals);
 %
+tic();
 findExt
+toc();
 echo__bigX = bigX
 echo__bigP = bigP
 echo__bigF0 = bigF0
 echo__bigF1 = bigF1
+"Residuals..."
+echo__res_bigF0 = bigF0 - secret_bigF0
+echo__res_bigF1 = bigF1 - secret_bigF1
+ehoc__res_bigP  = bigP  - secret_bigP
+ehoc__res_bigX  = bigX  - secret_bigX
+%
 funch_fModel = @(x)( bigF0 + bigF1*abs(x-bigX).^bigP );
 %
 viz_numPts = 100;
