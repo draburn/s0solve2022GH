@@ -1,4 +1,4 @@
-function rhoVals = findExt__f( xVals, fVals, bigX, bigP )
+function rhoVals = findExt__rho( xVals, fVals, bigX, bigP )
 	thetaVals = abs( xVals - bigX ).^bigP;
 	numPts = max(size(xVals));
 	sumThetaVals = sum(thetaVals);

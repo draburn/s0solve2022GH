@@ -40,7 +40,7 @@ while (1)
 		bigX_temp = bigX + vecDelta(1);
 		bigP_temp = bigP + vecDelta(2);
 		rhoVals_temp = findExt__rho( xVals, fVals, bigX_temp, bigP_temp );
-		if ( 0.5*sum(rhoVals_temp.^2) < 0.5*sum(rhoVals_0.^2) )
+		if ( 0.5*sum(rhoVals_temp.^2) < (1.0-minResDecrease)*0.5*sum(rhoVals_0.^2) )
 			break;
 		end
 		btCount++;
@@ -56,6 +56,12 @@ while (1)
 	%
 	bigX = bigX + vecDelta(1);
 	bigP = bigP + vecDelta(2);
+	if (!haveVisitedAlternateInterval)
+	if ( (bigX_initial-bigX_altIntBoundary)*(bigX_altIntBoundary-bigX) > 0.0 )
+		msg( thisFile, __LINE__, "Hit other side of interval boundary." );
+		haveVisitedAlternateInterval = true;
+	end
+	end
 	loopCount++;
 	res = 0.5*sum(rhoVals_temp.^2);
 	msg( thisFile, __LINE__, sprintf( ...
