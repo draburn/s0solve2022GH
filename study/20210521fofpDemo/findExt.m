@@ -23,84 +23,70 @@ end
 super_matH = [ ones(numSuperPts,1), super_hVals' ];
 super_vecRes = [ super_hVals' + super_xVals' ];
 super_vecC = super_matH \ super_vecRes;
+%
 bigX_initial = super_vecC(1);
-
-if (0)
-	bigX_initial = 0.2
-	msg( thisFile, __LINE__, sprintf("HACK: Set bigX_initial = %f.", bigX_initial) );
-end
-
 bigP_initial = super_vecC(2);
 matK_initial = [ ones(numPts,1), abs(xVals'-bigX_initial).^bigP_initial ];
 vecF = fVals';
 vecBigF_initial = matK_initial \ vecF;
 bigF0_initial = vecBigF_initial(1);
 bigF1_initial = vecBigF_initial(2);
+rhoVals_initial = findExt__rho( xVals, fVals, bigX_initial, bigP_initial );
+res_initial = 0.5*sum(rhoVals_initial.^2);
+%
+%
+resTarget = numPts * eps^1.5;
+resAccept = 1E2*resTarget;
+maxLoopCount = 1000;
 
-msg( thisFile, __LINE__, "TODO: Consider that our bigX may be in wrong interval!" );
-msg( thisFile, __LINE__, "TODO: Prevent P from going negative?" );
-%
-%
-doLoop = true;
 loopCount = 0;
 btCount = 0;
 vecDelta0 = zeros(2,1);
 vecDelta = zeros(2,1);
 bigX = bigX_initial;
 bigP = bigP_initial;
-msg( thisFile, __LINE__, sprintf( ...
-  " %3d, %2d,   %10.3e, %10.3e, %10.3e, %10.3e,   %10.3e, %10.3e, %10.3e, %10.3e", ...
-  loopCount, btCount, ...
-  vecDelta0(1), vecDelta(1), bigX, bigX-secret_bigX, ...
-  vecDelta0(2), vecDelta(2), bigP, bigP-secret_bigP ) );
-while (doLoop)
+res = res_initial;
+findExt__loop; thisFile = "findExt";
+
+if ( res > resAccept )
+	% Re-do from "alternate" interval.
+	% We assume our initial guess was at least close.
+	% Note that the loop might not prevent jumping between intervals.
+	msg( thisFile, __LINE__, "Examining alternate interval." );
+	bigX_firstSolve = bigX;
+	bigP_firstSolve = bigP;
+	res_firstSolve = res;
 	%
-	epsBigX = sqrt(eps)*abs(max(xVals)-min(xVals));
-	epsBigP = sqrt(eps);
-	rhoVals_0  = findExt__rho( xVals, fVals, bigX,         bigP         );
-	rhoVals_px = findExt__rho( xVals, fVals, bigX+epsBigX, bigP         );
-	rhoVals_mx = findExt__rho( xVals, fVals, bigX-epsBigX, bigP         );
-	rhoVals_pp = findExt__rho( xVals, fVals, bigX,         bigP+epsBigP );
-	rhoVals_mp = findExt__rho( xVals, fVals, bigX,         bigP-epsBigP );
+	msg( thisFile, __LINE__, "HACK!!!" );
+	msg( thisFile, __LINE__, "HACK!!!" );
+	msg( thisFile, __LINE__, "PLACEHOLDER HACK: FORCING bigX_initial2 = 1.0." );
+	bigX_initial2 = 1.0;
+	msg( thisFile, __LINE__, "HACK!!!" );
+	msg( thisFile, __LINE__, "HACK!!!" );
 	%
-	dRho_dx = 0.5 * ( rhoVals_px - rhoVals_mx ) / epsBigX;
-	dRho_dp = 0.5 * ( rhoVals_pp - rhoVals_mp ) / epsBigP;
+	bigP_initial2 = bigP_initial;
+	matK_initial2 = [ ones(numPts,1), abs(xVals'-bigX_initial2).^bigP_initial2 ];
+	vecF = fVals';
+	vecBigF_initial2 = matK_initial2 \ vecF;
+	bigF0_initial2 = vecBigF_initial2(1);
+	bigF1_initial2 = vecBigF_initial2(2);
+	rhoVals_initial2 = findExt__rho( xVals, fVals, bigX_initial2, bigP_initial2 );
+	res_initial2 = 0.5*sum(rhoVals_initial2.^2);
 	%
-	vecDelta0 = -...
-	 [ sum(dRho_dx.^2),       sum(dRho_dx.*dRho_dp); ...
-	   sum(dRho_dx.*dRho_dp), sum(dRho_dp.^2) ...
-	 ] \ [ sum(dRho_dx.*rhoVals_0); sum(dRho_dp.*rhoVals_0) ];
-	vecDelta = vecDelta0;
+	bigX = bigX_initial2;
+	bigP = bigP_initial2;
+	res = res_initial2;
+	findExt__loop; thisFile = "findExt";
 	%
-	doBTLoop = true;
-	btCount = 0;
-	while (doBTLoop)
-		bigX_temp = bigX + vecDelta(1);
-		bigP_temp = bigP + vecDelta(2);
-		rhoVals_temp = findExt__rho( xVals, fVals, bigX_temp, bigP_temp );
-		if ( sum(rhoVals_temp.^2) < sum(rhoVals_0.^2) )
-			doBTLoop = false;
-		else
-			btCount++;
-			vecDelta /= 5.0;
-			if ( btCount >= 10 )
-				doBTLoop = false;
-			end
-		end
+	bigX_secondSolve = bigX;
+	bigP_secondSolve = bigP;
+	res_secondSolve = res;
+	if ( res_secondSolve < res )
+		msg( thisFile, __LINE__, "Alternate interval was WORSE." );
+		bigX = bigX_firstSovle;
+		bigP = bigP_firstSovle;
+		res = res_firstSolve;
 	end
-	%
-	bigX = bigX + vecDelta(1);
-	bigP = bigP + vecDelta(2);
-	%
-	loopCount++;
-	if ( loopCount>=50 )
-		doLoop = false;
-	end
-	msg( thisFile, __LINE__, sprintf( ...
-	  " %3d, %2d,   %10.3e, %10.3e, %10.3e, %10.3e,   %10.3e, %10.3e, %10.3e, %10.3e", ...
-	  loopCount, btCount, ...
-	  vecDelta0(1), vecDelta(1), bigX, bigX-secret_bigX, ...
-	  vecDelta0(2), vecDelta(2), bigP, bigP-secret_bigP ) );
 end
 
 % Finally: Find corresponding F0 and F1

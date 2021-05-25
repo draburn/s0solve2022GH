@@ -10,6 +10,8 @@ thisFile = "findExt_drive";
 %setprngstates(64596560); % Very slowly converging case.
 %setprngstates(98430512); % Bad case - all pts very far from ext.
 setprngstates(70837456); % Woah! Need multi-interval analysis here!
+%setprngstates(74903232); % Very bad initial points.
+%setprngstates();
 numFigs = 0;
 %
 secret_bigX = randn*exp(2*randn)
