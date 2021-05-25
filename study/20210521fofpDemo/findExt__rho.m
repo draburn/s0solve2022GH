@@ -7,6 +7,6 @@ function rhoVals = findExt__f( xVals, fVals, bigX, bigP )
 	  \ [ sum(fVals); sum(thetaVals.*fVals) ];
 	bigF0 = vecF(1);
 	bigF1 = vecF(2);
-	rhoVals = bigF0 + bigF1 * abs( xVals - bigX ).^bigP;
+	rhoVals = bigF0 + bigF1 * abs( xVals - bigX ).^bigP - fVals;
 return;
 end

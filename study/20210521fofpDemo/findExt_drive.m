@@ -1,7 +1,10 @@
 clear;
-setprngstates(40793712); % A very bad case.
+thisFile = "findExt_drive";
+%setprngstates(40793712); % A very bad case.
 %setprngstates(72305920); % A slightly bad case.
 %setprngstates(67766576); % Another hard case
+%setprngstates(43447584); % A nicely converging case.
+setprngstates(97827072); % Needs BT.
 %setprngstates();
 numFigs = 0;
 %
@@ -18,17 +21,20 @@ xVals = sort( randn(1,numPts) );
 fVals = funch_f(xVals);
 %
 tic();
-findExt
+findExt; thisFile = "findExt_drive";
 toc();
-echo__bigX = bigX
-echo__bigP = bigP
-echo__bigF0 = bigF0
-echo__bigF1 = bigF1
-"Residuals..."
-echo__res_bigF0 = bigF0 - secret_bigF0
-echo__res_bigF1 = bigF1 - secret_bigF1
-ehoc__res_bigP  = bigP  - secret_bigP
-ehoc__res_bigX  = bigX  - secret_bigX
+msg( thisFile, __LINE__, sprintf( ...
+  "BigX:    Calculated %10.3e;   Secret is %10.3e;   Res is %10.3e.", ...
+  bigX, secret_bigX, bigX-secret_bigX ) );
+msg( thisFile, __LINE__, sprintf( ...
+  "BigP:    Calculated %10.3e;   Secret is %10.3e;   Res is %10.3e.", ...
+  bigP, secret_bigP, bigP-secret_bigP ) );
+msg( thisFile, __LINE__, sprintf( ...
+  "BigF0:   Calculated %10.3e;   Secret is %10.3e;   Res is %10.3e.", ...
+  bigF0, secret_bigF0, bigF0-secret_bigF0 ) );
+msg( thisFile, __LINE__, sprintf( ...
+  "BigF1:   Calculated %10.3e;   Secret is %10.3e;   Res is %10.3e.", ...
+  bigF1, secret_bigF1, bigF1-secret_bigF1 ) );
 %
 funch_fModel = @(x)( bigF0 + bigF1*abs(x-bigX).^bigP );
 %
