@@ -23,10 +23,16 @@ end
 super_matH = [ ones(numSuperPts,1), super_hVals' ];
 super_vecRes = [ super_hVals' + super_xVals' ];
 super_vecC = super_matH \ super_vecRes;
-bigX = super_vecC(1);
-bigP = super_vecC(2);
+bigX_initial = super_vecC(1);
+bigP_initial = super_vecC(2);
+matK_initial = [ ones(numPts,1), abs(xVals'-bigX_initial).^bigP_initial ];
+vecF = fVals';
+vecBigF_initial = matK_initial \ vecF;
+bigF0_initial = vecBigF_initial(1);
+bigF1_initial = vecBigF_initial(2);
 
 msg( thisFile, __LINE__, "TODO: Consider that our bigX may be in wrong interval!" );
+msg( thisFile, __LINE__, "TODO: Prevent P from going negative?" );
 %
 %
 doLoop = true;
@@ -34,8 +40,10 @@ loopCount = 0;
 btCount = 0;
 vecDelta0 = zeros(2,1);
 vecDelta = zeros(2,1);
+bigX = bigX_initial;
+bigP = bigP_initial;
 msg( thisFile, __LINE__, sprintf( ...
-  " %3d, %d,   %10.3e, %10.3e, %10.3e, %10.3e,   %10.3e, %10.3e, %10.3e, %10.3e", ...
+  " %3d, %2d,   %10.3e, %10.3e, %10.3e, %10.3e,   %10.3e, %10.3e, %10.3e, %10.3e", ...
   loopCount, btCount, ...
   vecDelta0(1), vecDelta(1), bigX, bigX-secret_bigX, ...
   vecDelta0(2), vecDelta(2), bigP, bigP-secret_bigP ) );
@@ -59,6 +67,7 @@ while (doLoop)
 	vecDelta = vecDelta0;
 	%
 	doBTLoop = true;
+	btCount = 0;
 	while (doBTLoop)
 		bigX_temp = bigX + vecDelta(1);
 		bigP_temp = bigP + vecDelta(2);
@@ -68,7 +77,7 @@ while (doLoop)
 		else
 			btCount++;
 			vecDelta /= 5.0;
-			if ( btCount >= 4 )
+			if ( btCount >= 10 )
 				doBTLoop = false;
 			end
 		end
@@ -78,11 +87,11 @@ while (doLoop)
 	bigP = bigP + vecDelta(2);
 	%
 	loopCount++;
-	if ( loopCount>=5 )
+	if ( loopCount>=50 )
 		doLoop = false;
 	end
 	msg( thisFile, __LINE__, sprintf( ...
-	  " %3d, %d,   %10.3e, %10.3e, %10.3e, %10.3e,   %10.3e, %10.3e, %10.3e, %10.3e", ...
+	  " %3d, %2d,   %10.3e, %10.3e, %10.3e, %10.3e,   %10.3e, %10.3e, %10.3e, %10.3e", ...
 	  loopCount, btCount, ...
 	  vecDelta0(1), vecDelta(1), bigX, bigX-secret_bigX, ...
 	  vecDelta0(2), vecDelta(2), bigP, bigP-secret_bigP ) );
