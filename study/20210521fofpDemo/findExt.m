@@ -104,7 +104,7 @@ elseif ( leftIndex_initial == numPts )
 	leftIndex_alternate = numPts-1;
 	bigX_altIntBoundary = xVals(numPts);
 	bigX_initial2 = 0.99*xVals(numPts) + 0.01*xVals(numPts-1);
-elseif ( bigX_initial < 0.5*(xVals(2)+xVals(nmPts-1)) )
+elseif ( bigX_initial < 0.5*(xVals(2)+xVals(numPts-1)) )
 	msg( thisFile, __LINE__, sprintf( ...
 	  "bigX_initial is not close to left edge. Moving towards left edge.") );
 	bigX_initial = 0.99*xVals(2) + 0.01*xVals(1);
@@ -138,7 +138,7 @@ res_initial = 0.5*sum(rhoVals_initial.^2);
 % Note that res is 0.5*sum( rhoVals.^2 ).
 resTarget = numPts * eps^1.5;
 resAccept = 1E2*resTarget;
-maxLoopCount = 1000;
+maxLoopCount = 100;
 minResDecrease = 1E-8;
 
 loopCount = 0;
@@ -150,6 +150,7 @@ bigP = bigP_initial;
 res = res_initial;
 findExt__loop; thisFile = "findExt";
 
+if (1)
 if ( res > resAccept )
 if (haveVisitedAlternateInterval)
 	msg( thisFile, __LINE__, "Have already visited alternate interval." );
@@ -186,6 +187,7 @@ else
 		bigP = bigP_firstSolve;
 		res = res_firstSolve;
 	end
+end
 end
 end
 

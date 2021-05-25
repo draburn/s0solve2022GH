@@ -1,33 +1,71 @@
 clear;
 thisFile = "findExt_drive";
-% Before fix "-f_n" in "rho_n"...
+%
+%%
+%%%
+for trialIndex=1:1
+%for trialIndex=1:1000
+%%%
+%%
+%
+
+%setprngstates();
+% These cases were before fixing "-f_n" in "rho_n"...
 %setprngstates(40793712); % A very bad case.
 %setprngstates(72305920); % A slightly bad case.
 %setprngstates(67766576); % Another hard case
 %setprngstates(43447584); % A nicely converging case.
 %setprngstates(97827072); % Needs BT.
-% After...
+% After fix, before 05-25-1640
 %setprngstates(64596560); % Very slowly converging case.
 %setprngstates(98430512); % Bad case - all pts very far from ext.
-setprngstates(70837456); % Woah! Need multi-interval analysis here!
+%setprngstates(70837456); % Woah! Need multi-interval analysis here!
 %setprngstates(74903232); % Very bad initial points.
-%setprngstates();
+%setprngstates(3158448); % Bad initial points.
+%setprngstates(61627072); % P is 0.0627.
+% After 05-25-1640 param changes
+%setprngstates(43458496); % Triggers a new path.
+%setprngstates(73688096); % P is 0.458 and one of the pts in nearly on top of secret_bigX.
+%setprngstates(74718336); % P is 0.0009639.
+setprngstates(7254960); % Initial guess is totally wrong; P=0.1245.
+
 numFigs = 0;
 %
 secret_bigX = randn*exp(2*randn)
 secret_bigP = abs(2+randn)
-%secret_bigP = 2.0
 secret_bigF0 = randn
 secret_bigF1 = randn
 funch_f = @(x)( secret_bigF0 + secret_bigF1 * abs( x - secret_bigX ).^secret_bigP );
 %
 numPts = 7;
 xVals = sort( randn(1,numPts) );
+if (1)
+	% 05-25-1640 modifications.
+	xVals += secret_bigX + randn;
+	%xVals(1:2) -= 0.01 % Use with 73688096 to cnvg.
+end
 %%%xVals = sort( secret_bigX + randn(1,numPts) );
 fVals = funch_f(xVals);
 %
 tic();
 findExt; thisFile = "findExt_drive";
+
+if ( res > 1e-20 )
+	msg( thisFile, __LINE__, "" );
+	msg( thisFile, __LINE__, "!!!!!!!!!!!!!!!!!!!" );
+	msg( thisFile, __LINE__, "! FOUND A BAD CASE!" );
+	msg( thisFile, __LINE__, "!!!!!!!!!!!!!!!!!!!" );
+	msg( thisFile, __LINE__, "" );
+	break;
+end
+%
+%%
+%%%
+end
+%%%
+%%
+%
+
 toc();
 msg( thisFile, __LINE__, sprintf( ...
   "BigX:    Initial was %10.3e;   Converged to %10.3e;   Secret is %10.3e;   Res is %10.3e.", ...
