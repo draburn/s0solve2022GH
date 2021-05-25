@@ -14,7 +14,7 @@ for m=1:numSuperPts
 	%
 	% What should super_xVal be???
 	super_xVals(m) = 0.5*( vecX(1) + vecX(3) );
-	%super_xVals(m) = vecX(2);
+	super_xVals_probablyBad(m) = vecX(2);
 	%
 	super_hVals(m) = 0.5*c1/c2 + super_xVals(m);
 end
@@ -24,6 +24,12 @@ super_matH = [ ones(numSuperPts,1), super_hVals' ];
 super_vecRes = [ super_hVals' + super_xVals' ];
 super_vecC = super_matH \ super_vecRes;
 bigX_initial = super_vecC(1);
+
+if (0)
+	bigX_initial = 0.2
+	msg( thisFile, __LINE__, sprintf("HACK: Set bigX_initial = %f.", bigX_initial) );
+end
+
 bigP_initial = super_vecC(2);
 matK_initial = [ ones(numPts,1), abs(xVals'-bigX_initial).^bigP_initial ];
 vecF = fVals';
