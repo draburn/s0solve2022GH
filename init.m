@@ -34,7 +34,9 @@ commondefs;
 %msg("init",__LINE__,"Adding path \"study/20210315PDFvsLeSq\".");
 %addpath( "study/20210315PDFvsLeSq" );
 %
-msg( "init", __LINE__, "Adding path \"2021/0423_pickNextPt1D/0516\"." );
-addpath( "2021/0423_pickNextPt1D/0516" );
-msg( "init", __LINE__, "Adding path \"study/20210521fofpDemo/fofpdemo\"." );
-addpath( "study/20210521fofpDemo" );
+%msg( "init", __LINE__, "Adding path \"2021/0423_pickNextPt1D/0516\"." );
+%addpath( "2021/0423_pickNextPt1D/0516" );
+%msg( "init", __LINE__, "Adding path \"study/20210521fofpDemo\"." );
+%addpath( "study/20210521fofpDemo" );
+msg( "init", __LINE__, "Adding path \"study/20210526analyzeExt\"." );
+addpath( "study/20210526analyzeExt" );

@@ -14,7 +14,7 @@ for trialIndex=1:1
 %setprngstates(40793712); % A very bad case.
 %setprngstates(72305920); % A slightly bad case.
 %setprngstates(67766576); % Another hard case
-%setprngstates(43447584); % A nicely converging case.
+%%%setprngstates(43447584); % A nicely converging case.
 %setprngstates(97827072); % Needs BT.
 % After fix, before 05-25-1640
 %setprngstates(64596560); % Very slowly converging case.
@@ -36,6 +36,7 @@ secret_bigP = abs(2+randn)
 secret_bigF0 = randn
 secret_bigF1 = randn
 funch_f = @(x)( secret_bigF0 + secret_bigF1 * abs( x - secret_bigX ).^secret_bigP );
+%%%funch_f = @(x)( secret_bigF0 + secret_bigF1 * exp( -(x-secret_bigX).^(-2) ) );
 %
 numPts = 7;
 xVals = sort( randn(1,numPts) );
