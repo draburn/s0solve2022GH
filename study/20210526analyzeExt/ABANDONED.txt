@@ -1,0 +1,4 @@
+DRaburn 2021.05.30
+Found that the "f/f'" and "f'/f''" approach seems harder to work with
+than a straight-up non-linear fit.
+Hence, I'm abandoning this approach.
