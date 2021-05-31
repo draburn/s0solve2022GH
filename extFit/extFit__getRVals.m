@@ -2,8 +2,13 @@ function rVals = extFit__getRVals( bigX, bigP, xVals, fVals, wVals = [] )
 	if (isempty(wVals))
 		wVals = ones(size(xVals));
 	end
-	vecC = extFit__getCoeff( bigX, bigP, xVals, fVals, wVals );
 	dVals = abs( xVals - bigX ).^bigP;
+	sigma1 = sum(wVals);
+	sigmaD = sum(wVals.*dVals);
+	sigmaDD = sum(wVals.*dVals.*dVals);
+	sigmaF = sum(wVals.*fVals);
+	sigmaFD = sum(wVals.*dVals.*fVals);
+	vecC = [ sigma1, sigmaD; sigmaD, sigmaDD ] \ [ sigmaF; sigmaFD ];
 	rVals = vecC(1) + (vecC(2) * dVals) - fVals;
 return;
 end
@@ -16,12 +21,12 @@ end
 %!	bigB = randn();
 %!	bigX = randn()*exp(3*randn());
 %!	bigP = 0.3 + abs(randn());
-%!	numPts = 2 + round(abs(randn()*exp(3*randn())));
+%!	numPts = 5 + round(abs(randn()*exp(3*randn())));
 %!	funchF = @(x)( bigA + bigB * abs(x-bigX).^bigP );
 %!	xVals = randn(1,numPts).*exp(randn()) + bigX;
-%!	fVals = funchF(xVals);
-%!	noiseLevel = 0.01*abs(randn())*sum(abs(fVals))/numPts;
-%!	fVals += noiseLevel*randn(1,numPts)
+%!	fVals_before = funchF(xVals)
+%!	noiseLevel = 0.01*abs(randn())*sum(abs(fVals_before))/numPts;
+%!	noiseVals = noiseLevel*randn(1,numPts)
+%!	fVals = fVals_before + noiseVals;
 %!	rVals = extFit__getRVals( bigX, bigP, xVals, fVals )
-%!
-%!	msg( thisFile, __LINE__, "PLEASE CHECK THESE VALUES!" );
+%!	msg( thisFile, __LINE__, "ARE THESE VALUES FOR REASONABLE?" );

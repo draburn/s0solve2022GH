@@ -24,11 +24,16 @@ function [ deltaX, deltaP ] = extFit__getDelta( ...
 	sumRXF  = sum( wVals .* dRdXVals .* rVals0 );
 	sumRPF  = sum( wVals .* dRdPVals .* rVals0 );
 	%
+	matW = [ sumRXSq, sumRXRP; sumRXRP, sumRPSq ];
+	matH0 = matW'*matW;
+	matD = diag(diag(matH0));
+	vecF = [ sumRXF; sumRPF ];
+	vecG = matW'*vecF;
+	%
 	mu = mygetfield( prm, "mu", 0.0 );
-	vecDelta = - ... % Note minus sign.
-	 [ (1.0+mu) * sumRXSq,           sumRXRP; ...
-	              sumRXRP,  (1.0+mu)*sumRPSq ] ...
-	 \ [ sumRXF; sumRPF ];
+	matH = matH0 + mu*matD;
+	vecDelta = -matH\vecG;
+	%
 	deltaX = vecDelta(1);
 	deltaP = vecDelta(2);
 return;
