@@ -1,6 +1,6 @@
-function datOut = extFit__getLocalGradHess_omegaQuad( ...
+function datOut = extFit__getLocalModel_omegaQuad( ...
   bigX, bigP, xVals, fVals, wVals = [], prm = [] )
-	thisFile = "extFit__getLocalGradHess_omegaQuad";
+	thisFile = "extFit__getLocalModel_omegaQuad";
 	if (isempty(wVals))
 		wVals = ones(size(xVals));
 	end
@@ -27,18 +27,23 @@ function datOut = extFit__getLocalGradHess_omegaQuad( ...
 	%
 	matH = [ omegaX2, omegaXP; omegaXP, omegaP2 ];
 	vecG = -[ omegaX1; omegaP1 ];
+	prm_funchDelta = mygetfield( prm, "prm_funchDelta", [] );
+	dat_funchDelta = extFit__getLocalModel__getFunchDelta( vecG, matH, prm_funchDelta );
 	%
 	% Copy main stuff to datOut...
 	datOut.vecG = vecG;
 	datOut.matH = matH;
+	datOut.dat_funchDelta = dat_funchDelta;
 	%
-	% Copy other stuff to datOut...
+	% Copy input to datOut...
 	datOut.bigX = bigX;
 	datOut.bigP = bigP;
 	datOut.xVals = xVals;
 	datOut.fVals = fVals;
 	datOut.wVals = wVals;
 	datOut.prm = prm;
+	%
+	% Copy other stuff to datOut...
 	datOut.epsX = epsX;
 	datOut.epsP = epsP;
 	%
@@ -47,7 +52,7 @@ return;
 end
 
 %!test
-%!	thisFile = "test extFit__getLocalGradHess_omegaQuad"
+%!	thisFile = "test extFit__getLocalModel_omegaQuad"
 %!	bigA = 1.0;
 %!	bigB = 1.0;
 %!	bigX = 0.5;
@@ -57,6 +62,6 @@ end
 %!	fVals = funchF(xVals);
 %!	bigX_guess = bigX + 0.1;
 %!	bigP_guess = bigP + 0.1;
-%!	datOut = extFit__getLocalGradHess_omegaQuad( bigX_guess, bigP_guess, xVals, fVals )
+%!	datOut = extFit__getLocalModel_omegaQuad( bigX_guess, bigP_guess, xVals, fVals )
 %!	1.0 - (datOut.matH(1,2)^2)/(datOut.matH(1,1)*datOut.matH(2,2))
 %!	msg( thisFile, __LINE__, "CHECK ABOVE VALUES!" );
