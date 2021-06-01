@@ -48,11 +48,11 @@ function datOut = extFit__getLocalGradHess_rhoLin( ...
 	datOut.rhoValsMP = rhoValsMP;
 	datOut.rhoDXVals = rhoDXVals;
 	datOut.rhoDPVals = rhoDPVals;
-	datOut.sumRXSq = sumRXSq
-	datOut.sumRPSq = sumRPSq
-	datOut.sumRXRP = sumRXRP
-	datOut.sumRXF  = sumRXF
-	datOut.sumRPF  = sumRPF
+	datOut.sumRXSq = sumRXSq;
+	datOut.sumRPSq = sumRPSq;
+	datOut.sumRXRP = sumRXRP;
+	datOut.sumRXF  = sumRXF;
+	datOut.sumRPF  = sumRPF;
 return;
 end
 
