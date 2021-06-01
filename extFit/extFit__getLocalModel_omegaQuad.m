@@ -25,8 +25,8 @@ function datOut = extFit__getLocalModel_omegaQuad( ...
 	omegaXP = ( omega(3,3) + omega(1,1) - omega(3,1) - omega(1,3) ) ...
 	  / (4.0*epsX*epsP);
 	%
-	matH = [ omegaX2, omegaXP; omegaXP, omegaP2 ];
 	vecG = -[ omegaX1; omegaP1 ];
+	matH = [ omegaX2, omegaXP; omegaXP, omegaP2 ];
 	prm_funchDelta = mygetfield( prm, "prm_funchDelta", [] );
 	dat_funchDelta = extFit__getLocalModel__getFunchDelta( vecG, matH, prm_funchDelta );
 	%
@@ -34,6 +34,7 @@ function datOut = extFit__getLocalModel_omegaQuad( ...
 	datOut.vecG = vecG;
 	datOut.matH = matH;
 	datOut.dat_funchDelta = dat_funchDelta;
+	datOut.funchOmegaModel = @(vecDelta)( omega(2,2) -  vecG'*vecDelta + 0.5*vecDelta'*matH*vecDelta );
 	%
 	% Copy input to datOut...
 	datOut.bigX = bigX;

@@ -34,6 +34,7 @@ function datOut = extFit__getLocalModel_rhoLin( ...
 	datOut.vecG = vecG;
 	datOut.matH = matH;
 	datOut.dat_funchDelta = dat_funchDelta;
+	datOut.funchOmegaModel = @(vecDelta)( 0.5*sum( (rhoVals0 + rhoDXVals*vecDelta(1) + rhoDPVals*vecDelta(2)).^2 ) );
 	%
 	% Copy input to datOut...
 	datOut.bigX = bigX;

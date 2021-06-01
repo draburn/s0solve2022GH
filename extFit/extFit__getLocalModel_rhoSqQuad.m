@@ -26,14 +26,18 @@ function datOut = extFit__getLocalModel_rhoSqQuad( ...
 	rhoDDPVals = ( rhoVals0P + rhoVals0M - 2.0*rhoVals00 ) / ( epsP^2 );
 	rhoDXDPVals = ( rhoValsPP + rhoValsMM - rhoValsPM - rhoValsMP ) / ( 4.0*epsX*epsP );
 	%
-	matH = [ ...
-	  sum( wVals.*(rhoDXVals.^2 + rhoVals00.*rhoDDXVals) ), ...
-	  sum( wVals.*(rhoDXVals.*rhoDPVals) ); ...
-	  sum( wVals.*(rhoDXVals.*rhoDPVals) ), ...
-	  sum( wVals.*(rhoDPVals.^2 + rhoVals00.*rhoDDPVals) ) ];
-	vecG = -[ ...
-	  sum( wVals.*(rhoDXVals.*rhoVals00) ); ...
-	  sum( wVals.*(rhoDPVals.*rhoVals00) ) ];
+	sumR00 = sum( wVals .* rhoVals00 .* rhoVals00 );
+	sumRXSq = sum( wVals .* rhoDXVals .* rhoDXVals );
+	sumRPSq = sum( wVals .* rhoDPVals .* rhoDPVals );
+	sumRXRP = sum( wVals .* rhoDPVals .* rhoDXVals );
+	sumRX0  = sum( wVals .* rhoDXVals .* rhoVals00 );
+	sumRP0  = sum( wVals .* rhoDPVals .* rhoVals00 );
+	sumDDX = sum( wVals .* rhoDDXVals .* rhoVals00 );
+	sumDDP = sum( wVals .* rhoDDPVals .* rhoVals00 );
+	sumDXDP = sum( wVals .* rhoDXDPVals .* rhoVals00 );
+	%
+	vecG = -[ sumRX0; sumRP0 ];
+	matH = [ sumRXSq + sumDDX, sumRXRP + sumDXDP; sumRXRP + sumDXDP, sumRPSq + sumDDP ];
 	prm_funchDelta = mygetfield( prm, "prm_funchDelta", [] );
 	dat_funchDelta = extFit__getLocalModel__getFunchDelta( vecG, matH, prm_funchDelta );
 	%
@@ -41,6 +45,10 @@ function datOut = extFit__getLocalModel_rhoSqQuad( ...
 	datOut.vecG = vecG;
 	datOut.matH = matH;
 	datOut.dat_funchDelta = dat_funchDelta;
+	datOut.funchOmegaModel = @(vecDelta)( 0.5*sumR00 ...
+	 + sumRX0*vecDelta(1) + sumRP0*vecDelta(2) ...
+	 + 0.5*(sumRXSq+sumDDX)*(vecDelta(1).^2) + 0.5*(sumRPSq+sumDDP)*(vecDelta(2).^2) ...
+	 + (sumRXRP+sumDXDP)*vecDelta(1).*vecDelta(2) );
 	%
 	% Copy input to datOut...
 	datOut.bigX = bigX;
@@ -63,6 +71,20 @@ function datOut = extFit__getLocalModel_rhoSqQuad( ...
 	datOut.rhoValsPM = rhoValsPM;
 	datOut.rhoValsP0 = rhoValsP0;
 	datOut.rhoValsPP = rhoValsPP;
+	datOut.rhoDXVals   = rhoDXVals;
+	datOut.rhoDPVals   = rhoDPVals;
+	datOut.rhoDDXVals  = rhoDDXVals;
+	datOut.rhoDDPVals  = rhoDDPVals;
+	datOut.rhoDXDPVals = rhoDXDPVals;
+	datOut.sumR00 = sumR00;
+	datOut.sumRXSq = sumRXSq;
+	datOut.sumRPSq = sumRPSq;
+	datOut.sumRXRP = sumRXRP;
+	datOut.sumRX0  = sumRX0;
+	datOut.sumRP0  = sumRP0;
+	datOut.sumDDP  = sumDDP;
+	datOut.sumDDX  = sumDDX;
+	datOut.sumDXDP  = sumDXDP;
 return;
 end
 

@@ -7,7 +7,7 @@ funchF = @(x)( bigA + bigB * abs(x-bigX).^bigP );
 xVals = linspace( -2.0, 3.0, 6 );
 fVals = funchF(xVals);
 bigX_guess = bigX + 0.0;
-bigP_guess = bigP + 0.01;
+bigP_guess = bigP + 0.2;
 %
 dat_localModel_rhoLin    = extFit__getLocalModel_rhoLin(    bigX_guess, bigP_guess, xVals, fVals );
 dat_localModel_rhoSqQuad = extFit__getLocalModel_rhoSqQuad( bigX_guess, bigP_guess, xVals, fVals );
@@ -34,6 +34,18 @@ for lambda=lambdaVals
 	vecDeltaVals_omegaQuad_gradSclDir(:,n) = dat_localModel_omegaQuad.dat_funchDelta.gradSclDir( lambda );
 	vecDeltaVals_omegaQuad_levenberg(:,n)  = dat_localModel_omegaQuad.dat_funchDelta.levenberg(  lambda );
 	vecDeltaVals_omegaQuad_levMarq(:,n)    = dat_localModel_omegaQuad.dat_funchDelta.levMarq(    lambda );
+	%
+	omegaModelVals_rhoLin_newton(n)    = dat_localModel_rhoLin.funchOmegaModel(vecDeltaVals_rhoLin_newton(:,n));
+	omegaModelVals_rhoLin_levenberg(n) = dat_localModel_rhoLin.funchOmegaModel(vecDeltaVals_rhoLin_levenberg(:,n));
+	omegaModelVals_rhoLin_levMarq(n)   = dat_localModel_rhoLin.funchOmegaModel(vecDeltaVals_rhoLin_levMarq(:,n));
+	%
+	omegaModelVals_rhoSqQuad_newton(n)    = dat_localModel_rhoSqQuad.funchOmegaModel(vecDeltaVals_rhoSqQuad_newton(:,n));
+	omegaModelVals_rhoSqQuad_levenberg(n) = dat_localModel_rhoSqQuad.funchOmegaModel(vecDeltaVals_rhoSqQuad_levenberg(:,n));
+	omegaModelVals_rhoSqQuad_levMarq(n)   = dat_localModel_rhoSqQuad.funchOmegaModel(vecDeltaVals_rhoSqQuad_levMarq(:,n));
+	%
+	omegaModelVals_omegaQuad_newton(n)    = dat_localModel_omegaQuad.funchOmegaModel(vecDeltaVals_omegaQuad_newton(:,n));
+	omegaModelVals_omegaQuad_levenberg(n) = dat_localModel_omegaQuad.funchOmegaModel(vecDeltaVals_omegaQuad_levenberg(:,n));
+	omegaModelVals_omegaQuad_levMarq(n)   = dat_localModel_omegaQuad.funchOmegaModel(vecDeltaVals_omegaQuad_levMarq(:,n));
 end
 
 numFigs = 0;
@@ -93,3 +105,19 @@ plot( ...
 grid on;
 xlabel( "lambda" );
 ylabel( "deltaP" );
+
+
+numFigs++; figure(numFigs);
+plot( ...
+  lambdaVals, omegaModelVals_rhoLin_newton, '*-', ...
+  lambdaVals, omegaModelVals_rhoLin_levenberg, 'o-', ...
+  lambdaVals, omegaModelVals_rhoLin_levMarq, '^-', ...
+  lambdaVals, omegaModelVals_rhoSqQuad_newton, '*-', ...
+  lambdaVals, omegaModelVals_rhoSqQuad_levenberg, 'o-', ...
+  lambdaVals, omegaModelVals_rhoSqQuad_levMarq, '^-', ...
+  lambdaVals, omegaModelVals_omegaQuad_newton, '*-', ...
+  lambdaVals, omegaModelVals_omegaQuad_levenberg, 'o-', ...
+  lambdaVals, omegaModelVals_omegaQuad_levMarq, '^-' );
+grid on;
+xlabel( "lambda" );
+ylabel( "omegaModel" );
