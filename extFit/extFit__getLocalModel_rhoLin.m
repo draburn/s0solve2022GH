@@ -25,7 +25,7 @@ function datOut = extFit__getLocalModel_rhoLin( ...
 	sumRXF  = sum( wVals .* rhoDXVals .* rhoVals0 );
 	sumRPF  = sum( wVals .* rhoDPVals .* rhoVals0 );
 	%
-	vecG = -[ sumRXF; sumRPF ];
+	vecG = [ sumRXF; sumRPF ];
 	matH = [ sumRXSq, sumRXRP; sumRXRP, sumRPSq ];
 	prm_funchDelta = mygetfield( prm, "prm_funchDelta", [] );
 	dat_funchDelta = extFit__getLocalModel__getFunchDelta( vecG, matH, prm_funchDelta );
@@ -34,7 +34,12 @@ function datOut = extFit__getLocalModel_rhoLin( ...
 	datOut.vecG = vecG;
 	datOut.matH = matH;
 	datOut.dat_funchDelta = dat_funchDelta;
-	datOut.funchOmegaModel = @(vecDelta)( 0.5*sum( (rhoVals0 + rhoDXVals*vecDelta(1) + rhoDPVals*vecDelta(2)).^2 ) );
+	omega0 = 0.5*sum( wVals .* rhoVals0 .* rhoVals0 );
+	%datOut.funchOmegaModel = @(vecDelta)( omega0 + vecG'*vecDelta + 0.5*vecDelta'*matH*vecDelta );
+	datOut.funchOmegaModel = @(vecDelta)( omega0 ...
+	 + vecG(1)*vecDelta(1) + vecG(2)*vecDelta(2) ...
+	 + 0.5*matH(1,1)*(vecDelta(1).^2) + 0.5*matH(2,2)*(vecDelta(2).^2) ...
+	 + matH(1,2)*vecDelta(1).*vecDelta(2) );
 	%
 	% Copy input to datOut...
 	datOut.bigX = bigX;

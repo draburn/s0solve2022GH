@@ -3,19 +3,19 @@ function datOut = extFit__getLocalModel__getFunchDelta( vecG, matH, prm = [] )
 	% We should maybe do something if matH is not pos-def?
 	%
 	matI = eye(2,2);
-	vecDeltaNewt = matH \ vecG;
+	vecDeltaNewt = -matH \ vecG;
 	matS = diag(abs(diag(matH)));
 	matHMS = matH - matS;
 	matHMI = matH - matI;
 	vecGS = matS \ vecG;
-	vecGHat = vecG * norm(vecDeltaNewt)/norm(vecG);
-	vecGSHat = vecGS * norm(vecDeltaNewt)/norm(vecGS);
+	vecGHat = -vecG * norm(vecDeltaNewt)/norm(vecG);
+	vecGSHat = -vecGS * norm(vecDeltaNewt)/norm(vecGS);
 	%
 	datOut.newton = @(lambda)( lambda*vecDeltaNewt );
 	datOut.gradDir = @(lambda)( lambda*vecGHat );
 	datOut.gradSclDir = @(lambda)( lambda*vecGSHat );
-	datOut.levenberg = @(lambda)( lambda*( (lambda*matHMI+matI)\vecG ) );
-	datOut.levMarq = @(lambda)( lambda*( (lambda*matHMS+matS)\vecG ) );
+	datOut.levenberg = @(lambda)( -lambda*( (lambda*matHMI+matI)\vecG ) );
+	datOut.levMarq = @(lambda)( -lambda*( (lambda*matHMS+matS)\vecG ) );
 	% gradCurve?
 	% gradScaledCurve?
 return;
