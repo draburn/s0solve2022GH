@@ -3,12 +3,12 @@ thisFile = "test_extFit__getLocalModel";
 bigA = 1.0;
 bigB = 1.0;
 bigX = 0.5;
-bigP = 2.0;
+bigP = 3.0;
 funchF = @(x)( bigA + bigB * abs(x-bigX).^bigP );
 xVals = linspace( -2.0, 3.0, 6 );
 fVals = funchF(xVals);
-bigX_guess = bigX + 0.001;
-bigP_guess = bigP + 0.1;
+bigX_guess = bigX + 0.4;
+bigP_guess = bigP + 0.4;
 %
 dat_localModel_rhoLin    = extFit__getLocalModel_rhoLin(    bigX_guess, bigP_guess, xVals, fVals );
 dat_localModel_rhoSqQuad = extFit__getLocalModel_rhoSqQuad( bigX_guess, bigP_guess, xVals, fVals );
@@ -18,7 +18,7 @@ dat_localModel_omegaQuad = extFit__getLocalModel_omegaQuad( bigX_guess, bigP_gue
 %echo__omegaQuad_matH = dat_localModel_omegaQuad.matH
 %
 funch_omega = @(deltaVec)( 0.5*sum(extFit__getRhoVals(bigX_guess+deltaVec(1),bigP_guess+deltaVec(2),xVals,fVals).^2) );
-lambdaVals = linspace(0.0,1.0,51);
+lambdaVals = linspace(0.0,1.0,101);
 n = 0;
 for lambda=lambdaVals
 	n++;
@@ -159,3 +159,62 @@ grid on;
 title( "omegaActual vs lambda" );
 xlabel( "lambda" );
 ylabel( "omegaActual" );
+
+
+
+numBigXVals = 21;
+numBigPVals = 31;
+bigXVals = linspace(bigX-2.0,bigX+2.0,numBigXVals);
+bigPVals = linspace(bigP-1.0,bigP+1.0,numBigPVals);
+mesh_omega = zeros(numBigPVals,numBigXVals);
+for ix=1:numBigXVals
+for ip=1:numBigPVals
+	mesh_omega(ip,ix) = 0.5*sum( extFit__getRhoVals( bigXVals(ix), bigPVals(ip), xVals, fVals ).^2 );
+	mesh_omegaModel_rhoLin(ip,ix) = dat_localModel_rhoLin.funchOmegaModel([ bigXVals(ix)-bigX_guess; bigPVals(ip)-bigP_guess ]);
+	mesh_omegaModel_rhoSqQuad(ip,ix) = dat_localModel_rhoSqQuad.funchOmegaModel([ bigXVals(ix)-bigX_guess; bigPVals(ip)-bigP_guess ]);
+end
+end
+
+numFigs++; figure(numFigs);
+contourf( bigXVals, bigPVals, sqrt(abs(mesh_omega)), 21 );
+colormap(mycmap(100));
+hold on;
+plot( bigX, bigP, 'w*', 'markersize', 25, 'linewidth', 3 );
+plot( bigX_guess, bigP_guess, 'ws', 'markersize', 20, 'linewidth', 2 );
+plot( ...
+  vecDeltaVals_rhoLin_levenberg(1,:)+bigX_guess, ...
+  vecDeltaVals_rhoLin_levenberg(2,:)+bigP_guess, ...
+  'wo-', 'markersize', 10 );
+hold off;
+grid on;
+xlabel( "bigX" );
+ylabel( "bigP" );
+title( "omega vs bigX, bigP" );
+
+numFigs++; figure(numFigs);
+contourf( bigXVals, bigPVals, sqrt(abs(mesh_omegaModel_rhoLin)), 21 );
+colormap(mycmap(100));
+hold on;
+plot( bigX, bigP, 'w*', 'markersize', 25, 'linewidth', 3 );
+plot( bigX_guess, bigP_guess, 'ws', 'markersize', 20, 'linewidth', 2 );
+plot( ...
+  vecDeltaVals_rhoLin_levenberg(1,:)+bigX_guess, ...
+  vecDeltaVals_rhoLin_levenberg(2,:)+bigP_guess, ...
+  'wo-', 'markersize', 10 );
+hold off;
+grid on;
+xlabel( "bigX" );
+ylabel( "bigP" );
+title( "omegaModel - rhoLin vs bigX, bigP" );
+
+numFigs++; figure(numFigs);
+contourf( bigXVals, bigPVals, sqrt(abs(mesh_omegaModel_rhoSqQuad)), 21 );
+colormap(mycmap(100));
+hold on;
+plot( bigX, bigP, 'w*', 'markersize', 25, 'linewidth', 3 );
+plot( bigX_guess, bigP_guess, 'ws', 'markersize', 20, 'linewidth', 2 );
+hold off;
+grid on;
+xlabel( "bigX" );
+ylabel( "bigP" );
+title( "omegaModel - rhoSqQuad vs bigX, bigP" );
