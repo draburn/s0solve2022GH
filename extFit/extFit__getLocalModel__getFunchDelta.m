@@ -1,5 +1,6 @@
 function datOut = extFit__getLocalModel__getFunchDelta( vecG, matH, prm = [] )
 	thisFile = "extFit__getLocalModel__getFunchDelta";
+	msg( thisFile, __LINE__, "DEPRECATED." );
 	% We should maybe do something if matH is not pos-def?
 	%
 	matI = eye(2,2);

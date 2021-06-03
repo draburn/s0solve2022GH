@@ -1,5 +1,6 @@
 function rhoVals = extFit__getRhoVals( bigX, bigP, xVals, fVals, wVals = [] )
 	thisFile = "extFit__getRhoVals";
+	msg( thisFile, __LINE__, "DEPRECATED." );
 	if (isempty(wVals))
 		wVals = ones(size(xVals));
 	end

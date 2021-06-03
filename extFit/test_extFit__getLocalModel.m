@@ -1,5 +1,6 @@
 clear;
 thisFile = "test_extFit__getLocalModel";
+msg( thisFile, __LINE__, "DEPRECATED." );
 bigA = 1.0;
 bigB = 1.0;
 bigX = 0.5;

@@ -1,6 +1,7 @@
 function datOut = extFit__getLocalModel_rhoLin( ...
   bigX, bigP, xVals, fVals, wVals = [], prm = [] )
 	thisFile = "extFit__getLocalModel_rhoLin";
+	msg( thisFile, __LINE__, "DEPRECATED." );
 	if (isempty(wVals))
 		wVals = ones(size(xVals));
 	end

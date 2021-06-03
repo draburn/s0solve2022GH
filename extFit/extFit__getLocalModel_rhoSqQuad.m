@@ -1,6 +1,7 @@
 function datOut = extFit__getLocalModel_rhoSqQuad( ...
   bigX, bigP, xVals, fVals, wVals = [], prm = [] )
 	thisFile = "extFit__getLocalModel_rhoSqQuad";
+	msg( thisFile, __LINE__, "DEPRECATED." );
 	if (isempty(wVals))
 		wVals = ones(size(xVals));
 	end
