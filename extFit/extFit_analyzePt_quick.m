@@ -37,6 +37,7 @@ end
 
 %!test
 %!	thisFile = "test extFit_analyzePt_quick 1";
+%!	msg( thisFile, __LINE__, "Skipping test." ); return;
 %!	setprngstates();
 %!	numFigs = 0;
 %!	%
@@ -104,4 +105,32 @@ end
 %!	contourf( y_vec, p_vec, omega_mat.^2 );
 %!	colormap(mycmap(100));
 %!	grid on;
+%!	toc();
+
+
+%!test
+%!	thisFile = "test extFit_analyzePt_quick 2";
+%!	setprngstates();
+%!	numFigs = 0;
+%!	%
+%!	y = randn();
+%!	p = 1.0+abs(randn());
+%!	funch_f = @(x)( randn + randn*( abs(x-randn).^(1.0+abs(randn)) ) );
+%!	%
+%!	x_rvec = randn(1,5);
+%!	f_rvec = funch_f( x_rvec );
+%!	%
+%!	msg( thisFile, __LINE__, "Doing newnew calc..." );
+%!	tic();
+%!	omegaNeoNeo = extFit_analyzePt_quick( y, p, x_rvec, f_rvec );
+%!	toc();
+%!	%
+%!	msg( thisFile, __LINE__, "Doing new calc..." );
+%!	tic();
+%!	omegaNeo = extFit_analyzePt( y, p, x_rvec, f_rvec );
+%!	toc();
+%!	%
+%!	msg( thisFile, __LINE__, "Doing old calc (Comment out the \"DEPRECATE\" in extFit__getRhoVals.m!)..." );
+%!	tic();
+%!	omega = 0.5*sum( extFit__getRhoVals( y, p, x_rvec, f_rvec ).^2 );
 %!	toc();
