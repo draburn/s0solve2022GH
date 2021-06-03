@@ -43,8 +43,8 @@ end
 
 %!test
 %!	thisFile = "test extFit_analyzePt_mat 1";
-%!	setprngstates();
-%!	numFigs = 2;
+%!	setprngstates(0);
+%!	numFigs = 0;
 %!	%
 %!	sizeY = 201;
 %!	sizeP = 101;
@@ -91,9 +91,9 @@ end
 
 
 %!test
-%!	thisFile = "test extFit_analyzePt_mat 1";
+%!	thisFile = "test extFit_analyzePt_mat 2";
 %!	setprngstates();
-%!	numFigs = 0;
+%!	numFigs = 2;
 %!	%
 %!	sizeY = 2;
 %!	sizeP = 2;
