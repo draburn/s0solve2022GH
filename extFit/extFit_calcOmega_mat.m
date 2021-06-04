@@ -1,24 +1,23 @@
-function datOut = extFit_analyzePt_mat( matX0, matP, rvecX, rvecF, rvecW=[] )
-	thisFile = "extFit_analyzePt_mat";
+function datOut = extFit_calcOmega_mat( matBigX, matBigP, rvecX, rvecF, rvecW=[] )
+	thisFile = "extFit_calcOmega_mat";
 	%
 	% The logic:
-	%  d_n = abs( x_n - x_0 )^p
+	%  d_n = abs( x_n - X )^P
 	%  sigma_1  = sum_n w_n
 	%  sigma_d  = sum_n w_n * d_n
 	%  sigma_dd = sum_n w_n * d_n^2
 	%  sigma_f  = sum_n w_n * f_n
 	%  sigma_fd = sum_n w_n * f_n * d_n
-	%  [ a; b ] = [ sigma_1, sigma_d; sigma_d, sigma_dd ] \ [ sigma_f; sigma_df ]
-	%  rho_n = a + b*d_n - f_n
+	%  [ A; B ] = [ sigma_1, sigma_d; sigma_d, sigma_dd ] \ [ sigma_f; sigma_df ]
+	%  rho_n = A + B*d_n - f_n
 	%  omega = 0.5 * ( sum_n w_n * rho_n^2 ) / sum_1
-	% But, do this in a way that is quick for a large number of x0 and p values.
-	% Because the mix of quantity shapes, non-standard variable naming
-	%  may be used in some places.
 	%
-	size1 = size(matX0,1);
-	size2 = size(matX0,2);
-	assert( isrealarray(matX0,[size1,size2]) );
-	assert( isrealarray(matP,[size1,size2]) );
+	% But, do this in a way that is quick for a large number of X and P values.
+	%
+	size1 = size(matBigX,1);
+	size2 = size(matBigX,2);
+	assert( isrealarray(matBigX,[size1,size2]) );
+	assert( isrealarray(matBigP,[size1,size2]) );
 	numPts = size(rvecX,2);
 	assert( isrealarray(rvecX,[1,numPts]) );
 	assert( isrealarray(rvecF,[1,numPts]) );
@@ -32,7 +31,7 @@ function datOut = extFit_analyzePt_mat( matX0, matP, rvecX, rvecF, rvecW=[] )
 	ary3WDD = zeros(size1,size2,numPts);
 	ary3WDF = zeros(size1,size2,numPts);
 	parfor n=1:numPts
-		ary3D(:,:,n) = abs( rvecX(n) - matX0 ).^matP;
+		ary3D(:,:,n) = abs( rvecX(n) - matBigX ).^matBigP;
 		ary3WD(:,:,n) = rvecW(n)*ary3D(:,:,n);
 		ary3WDD(:,:,n) = ary3WD(:,:,n).*ary3D(:,:,n);
 		ary3WDF(:,:,n) = ary3WD(:,:,n)*rvecF(n);
@@ -45,23 +44,35 @@ function datOut = extFit_analyzePt_mat( matX0, matP, rvecX, rvecF, rvecW=[] )
 	matSigmaDF = sum( ary3WDF, 3 );
 	%
 	matDenom = sigma1 * matSigmaDD - (matSigmaD).^2;
-	matA = ( matSigmaDD * sigmaF - matSigmaD .* matSigmaDF ) ./ matDenom;
-	matB = ( sigma1 * matSigmaDF - matSigmaD * sigmaF ) ./ matDenom;
+	matBigA = ( matSigmaDD * sigmaF - matSigmaD .* matSigmaDF ) ./ matDenom;
+	matBigB = ( sigma1 * matSigmaDF - matSigmaD * sigmaF ) ./ matDenom;
 	%
 	ary3Rho = zeros(size1,size2,numPts);
 	parfor n=1:numPts
-		ary3Rho(:,:,n) = matA + matB .* ary3D(:,:,n) - rvecF(n);
+		ary3Rho(:,:,n) = matBigA + matBigB .* ary3D(:,:,n) - rvecF(n);
 		ary3WRho(:,:,n) = rvecW(n) * ary3Rho(:,:,n);
 		ary3WRhoSq(:,:,n) = ary3WRho(:,:,n) .* ary3Rho(:,:,n);
 	end
 	matOmega = 0.5 * sum( ary3WRhoSq, 3 ) / sigma1;
 	%
+	%
+	% Copy main results.
+	datOut.matBigA = matBigA;
+	datOut.matBigB = matBigB;
+	datOut.ary3Rho = ary3Rho;
 	datOut.matOmega = matOmega;
+	%
+	% Copy input.
+	datOut.matBigX = matBigX;
+	datOut.matBigP = matBigP;
+	datOut.rvecX = rvecX;
+	datOut.rvecF = rvecF;
+	datOut.rvecW = rvecW;
 return;
 end
 
 %!test
-%!	thisFile = "test extFit_analyzePt_mat 1";
+%!	thisFile = "test extFit_calcOmega_mat 1";
 %!	setprngstates();
 %!	numFigs = 0;
 %!	%
@@ -77,7 +88,7 @@ end
 %!	%
 %!	msg( thisFile, __LINE__, "Doing new calc..." );
 %!	tic();
-%!	datOut = extFit_analyzePt_mat( y_mat, p_mat, x_rvec, f_rvec );
+%!	datOut = extFit_calcOmega_mat( y_mat, p_mat, x_rvec, f_rvec );
 %!	toc();
 %!	%
 %!	msg( thisFile, __LINE__, "Doing old calc (Comment out the \"DEPRECATE\" in extFit__getRhoVals.m!)..." );
@@ -110,7 +121,7 @@ end
 
 
 %!test
-%!	thisFile = "test extFit_analyzePt_mat 1";
+%!	thisFile = "test extFit_calcOmega_mat 1";
 %!	setprngstates();
 %!	numFigs = 0;
 %!	%
@@ -126,7 +137,7 @@ end
 %!	%
 %!	msg( thisFile, __LINE__, "Doing new calc..." );
 %!	tic();
-%!	datOut = extFit_analyzePt_mat( y_mat, p_mat, x_rvec, f_rvec );
+%!	datOut = extFit_calcOmega_mat( y_mat, p_mat, x_rvec, f_rvec );
 %!	toc();
 %!	%
 %!	msg( thisFile, __LINE__, "Doing old calc (Comment out the \"DEPRECATE\" in extFit__getRhoVals.m!)..." );
