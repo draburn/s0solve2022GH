@@ -9,9 +9,14 @@
 		matR = [1,0;0,1];
 	else
 		setprngstates();
+		%setprngstates(84427936); % Non-monotonic. It is known.
+		%setprngstates(16576176);
+		%setprngstates(82450176);
+		%setprngstates(40131696);
 		%setprngstates(38566912);
 		%setprngstates(69539920);
-		setprngstates(82122480);
+		%setprngstates(82122480);
+		%setprngstates(53282288);
 		omegaLim = 50.0;
 		omega0 = 100.0;
 		vecG = randn(2,1);
@@ -22,10 +27,14 @@
 	end
 	prm = [];
 	%
+	mu = extFit_findMuOfOmega( omegaLim, omega0, vecG, matH, matR, prm );
+	return;
 	[ muLim, retCode, datOut ] = extFit_findMuLim( omegaLim, omega0, vecG, matH, matR, prm );
 	vecDeltaLim = -(matH + muLim*matR)\vecG;
 	%
-	rvecMu = datOut.muCrit + datOut.muScale * 100.0 * linspace(0.0,1.0,101).^4;
+	vecDelta = -(matH + muLim*matR) \ vecG;
+	omegaAtMuLim = omega0 + (vecDelta'*vecG) + (0.5*vecDelta'*matH*vecDelta);
+	rvecMu = 0.5*(datOut.muCrit+muLim) + datOut.muScale * 1000.0 * linspace(0.0,1.0,101).^4;
 	for n=1:max(size(rvecMu))
 		mu = rvecMu(n);
 		vecDelta = -(matH + mu*matR) \ vecG;
@@ -44,7 +53,8 @@
 	title( "omega vs mu (unmasked)" );
 	grid on;
 	%
-	rvecMask = ( rvecOmega > omegaLim - abs( omega0 - omegaLim ) );
+	%rvecMask = ( rvecOmega > omegaLim - abs( omega0 - omegaLim ) );
+	rvecMask = ( ones(size(rvecOmega)) > zeros(size(rvecOmega)) );
 	numFigs++; figure(numFigs);
 	plot( ...
 	  rvecMu(rvecMask), rvecOmega(rvecMask), 'o-', ...
@@ -61,14 +71,14 @@
 	grid on;
 	xlabel( "mu" );
 	ylabel( "||vecDelta||" );
-	title( "mu vs ||vecDelta|| (masked)" );
+	title( "||vecDelta|| vs mu (masked)" );
 	%
 	numFigs++; figure(numFigs);
 	plot( ...
 	  rvecDeltaNorm(rvecMask), rvecOmega(rvecMask), 'o-', ...
 	  [0.0, max(rvecDeltaNorm(rvecMask))], omegaLim*[1.0,1.0], 'k-', ...
-	  norm(vecDeltaLim), omegaLim, '*', 'markersize', 30 );
+	  norm(vecDeltaLim), omegaAtMuLim, '*', 'markersize', 30 );
 	grid on;
 	xlabel( "||vecDelta||" );
 	ylabel( "omega" );
-	title( "||vecDelta|| vs omega (masked)" );
+	title( "omega vs ||vecDelta|| (masked)" );

@@ -21,10 +21,10 @@ function [ muLim, retCode, datOut ] = extFit_findMuLim( omegaLim, omega0, vecG, 
 	assert( isrealarray(matR,[sizeK,sizeK]) );
 	%
 	%
-	%omegaTol = mygetfield( prm, "omegaTol", sqrt(eps)*(abs(omega0)+abs(omegaLim)) );
-	omegaTol = mygetfield( prm, "omegaTol", 0.01*(abs(omega0)+abs(omegaLim))/1.5 );
-	%omegaTol = mygetfield( prm, "omegaTol", 0.25*(abs(omega0)+abs(omegaLim))/1.5 );
-	omegaTol/omega0
+	omegaTol = mygetfield( prm, "omegaTol", sqrt(eps)*(abs(omega0)+abs(omegaLim)) );
+	%omegaTol = mygetfield( prm, "omegaTol", 0.01*(abs(omega0)+abs(omegaLim))/1.5 );
+	%omegaTol = mygetfield( prm, "omegaTol", 0.1*(abs(omega0)+abs(omegaLim))/1.5 );
+	%omegaTol/omega0
 	assert( isrealscalar(omegaTol) );
 	assert( omegaTol > 0.0 );
 	assert( omegaTol < abs(omega0-omegaLim) );
@@ -36,11 +36,9 @@ function [ muLim, retCode, datOut ] = extFit_findMuLim( omegaLim, omega0, vecG, 
 	rScale = sqrt(sum(sum(matR.^2))) / sizeK;
 	assert( rScale > 0.0 );
 	muScale = hScale / rScale;
-	muBumper = mygetfield( prm, "muBumper", sqrt(eps) * muScale );
-	%muBumper = mygetfield( prm, "muBumper", muScale/100.0 );
-	%muBumper = mygetfield( prm, "muBumper", 0.1 * muScale );
-	assert( isrealscalar(muBumper) );
-	assert( muBumper > 0.0 );
+	epsMu = mygetfield( prm, "epsMu", sqrt(eps) * muScale );
+	assert( isrealscalar(epsMu) );
+	assert( epsMu > 0.0 );
 	%
 	%msg_main( verbLev, thisFile, __LINE__, "BUMPER AND TOLERANCE SHOULD BE IN TERMS OF STEP LENGTH, NOT MU!" );
 	% Isn't using strict tolerances (/small bumper) good enough?
@@ -68,31 +66,42 @@ function [ muLim, retCode, datOut ] = extFit_findMuLim( omegaLim, omega0, vecG, 
 	%
 	%
 	%
+	msg( thieFiLe, __LINE__, "Need proper handling for case(s?) where borderline pos-def!" );
 	% Get muCrit.
 	matRInvH = matR\matH;
 	rvecEigRInvH = eig(matRInvH);
 	minEig = min(rvecEigRInvH);
-	if ( minEig > muBumper )
+	if ( minEig > epsMu )
+		msg_main( verbLev, thisFile, __LINE__, "omega appears to be pos-def." );
 		muCrit = 0.0;
+		mu = 0.0;
+		vecDelta = -(matH + mu*matR)\vecG;
+		omega = omega0 + vecDelta'*vecG + 0.5*vecDelta'*matH*vecDelta;
+		msg_main( verbLev, thisFile, __LINE__, sprintf( "Calculation %d, %g, (%g), %g.", 0, mu, norm(vecDelta), omega ) );
+		%
+		if ( omega > omegaLim + omegaTol )
+			msg_main( verbLev, thisFile, __LINE__, "omegaLim appears to be unreachable." );
+			muLim = mu;
+			msg_main( verbLev, thisFile, __LINE__, sprintf( "Returning %d, %g, (%g), %g.", 0, mu, norm(vecDelta), omega ) );
+			datOut.muCrit = muCrit;
+			datOut.muScale = muScale;
+			return;
+		elseif ( abs(omega - omegaLim) <= omegaTol )
+			msg_main( verbLev, thisFile, __LINE__, "Min of omega appears to be omegaLim." );
+			muLim = mu;
+			msg_main( verbLev, thisFile, __LINE__, sprintf( "Returning %d, %g, (%g), %g.", 0, mu, norm(vecDelta), omega ) );
+			datOut.muCrit = muCrit;
+			datOut.muScale = muScale;
+			return;
+		end
 	else
-		muCrit = -minEig + muBumper;
+		muCrit = -minEig;
 	end
 	msg_main( verbLev, thisFile, __LINE__, sprintf( "muCrit = %g.", muCrit ) );
 	%
-	mu = muCrit;
-	vecDelta = -(matH + mu*matR)\vecG;
-	omega = omega0 + vecDelta'*vecG + 0.5*vecDelta'*matH*vecDelta;
-	msg_main( verbLev, thisFile, __LINE__, sprintf( "Calculation %d, %g, (%g), %g.", 0, mu, norm(vecDelta), omega ) );
-	omegaCrit = omega;
-	if ( omegaCrit > omegaLim - omegaTol )
-		msg_main( verbLev, thisFile, __LINE__, "omega appears to be pos-semi-def (or very nearly so.)" );
-		muLim = muCrit;
-		msg_main( verbLev, thisFile, __LINE__, sprintf( "Returning %d, %g, (%g), %g.", 0, mu, norm(vecDelta), omega ) );
-		datOut.omegaCrit = omegaCrit;
-		datOut.muCrit = muCrit;
-		datOut.muScale = muScale;
-		return;
-	end
+	muLo = muCrit;
+	muHi = [];
+	haveHi = false;
 	%
 	gTRInvG = vecG' * ( matR \ vecG );
 	assert( isrealscalar(gTRInvG) );
@@ -102,15 +111,14 @@ function [ muLim, retCode, datOut ] = extFit_findMuLim( omegaLim, omega0, vecG, 
 		mu = muCrit + muScale;
 	end
 	%
+	bracketBumper = mygetfield( prm, "bracketBumper", 0.1 );
+	assert( isrealscalar(bracketBumper) );
+	assert( bracketBumper > 0.0 );
+	assert( bracketBumper <= 0.5 );
+	%
 	trialCountLimit = mygetfield( prm, "trialCountLimit", 100 );
 	assert( isrealscalar(trialCountLimit) );
 	assert( trialCountLimit > 0 );
-	%
-	muLo = muCrit;
-	omegaLo = omegaCrit;
-	muHi = [];
-	omegaHi = [];
-	haveHi = false;
 	trialCount = 0;
 	while (1)
 		assert( mu > muLo );
@@ -125,7 +133,6 @@ function [ muLim, retCode, datOut ] = extFit_findMuLim( omegaLim, omega0, vecG, 
 		if ( abs(omega-omegaLim) < omegaTol )
 			muLim = mu;
 			msg_main( verbLev, thisFile, __LINE__, sprintf( "Returning %d, %g, (%g), %g.", trialCount, mu, norm(vecDelta), omega ) );
-			datOut.omegaCrit = omegaCrit;
 			datOut.muCrit = muCrit;
 			datOut.muScale = muScale;
 			return;
@@ -134,10 +141,8 @@ function [ muLim, retCode, datOut ] = extFit_findMuLim( omegaLim, omega0, vecG, 
 		%
 		if ( omega < omegaLim )
 			muLo = mu;
-			omegaLo = omega;
 		else
 			muHi = mu;
-			omegaHi = mu;
 			haveHi = true;
 		end
 		%
@@ -145,20 +150,17 @@ function [ muLim, retCode, datOut ] = extFit_findMuLim( omegaLim, omega0, vecG, 
 		omegaPrime = vecDeltaPrime'*vecG + vecDeltaPrime'*matH*vecDelta;
 		mu_next = mu + (omega0-omega) * (omegaLim-omega) / ( (omega0-omegaLim) * omegaPrime );
 		%
-		muBondLo = ( mu + 3.0*muLo ) / 4.0;
-		if ( mu_next < muBondLo )
-			mu_next = muBondLo;
-		elseif ( haveHi )
-			muBondHi = ( mu + 3.0*muHi ) / 4.0;
-			if ( mu_next > muBondHi )
-				mu_next = muBondHi;
-			end
+		if (haveHi)
+			muBracketLo = (1.0-bracketBumper)*muLo + bracketBumper*muHi;
+			muBracketHi = (1.0-bracketBumper)*muHi + bracketBumper*muLo;
+			mu = cap( mu_next, muBracketLo, muBracketHi );
+		else
+			assert( mu_next > mu );
+			mu = mu_next;
 		end
-		mu = mu_next;
 	end
-	assert(0);
 return;
-%end
+end
 
 %!test
 %!	assert(0);
