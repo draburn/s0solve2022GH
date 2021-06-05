@@ -36,7 +36,7 @@ function datOut = extFit_calcOmega( bigX, bigP, rvecX, rvecF, rvecW=[] )
 	bigA = ( sigmaDD * sigmaF  - sigmaD * sigmaDF ) ./ denom;
 	bigB = ( sigma1  * sigmaDF - sigmaD * sigmaF  ) ./ denom;
 	rvecRho = bigA + bigB * rvecD - rvecF;
-	omega = 0.5 * sum( rvecW .* rvecRho .* rvecRho ) / sigma1;
+	omega = 0.5 * sum( rvecW .* rvecRho .* rvecRho );
 	%
 	% Copy main results.
 	datOut.bigA = bigA;

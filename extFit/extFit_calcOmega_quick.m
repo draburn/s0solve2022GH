@@ -8,7 +8,7 @@ function omega = extFit_calcOmega_quick( bigX, bigP, rvecX, rvecF )
 	denom = sigma1 * sigmaDD - sigmaD^2;
 	bigA = ( sigmaDD * sigmaF  - sigmaD * sigmaDF ) / denom;
 	bigB = ( sigma1  * sigmaDF - sigmaD * sigmaF  ) / denom;
-	omega = 0.5 * sum( (bigA + bigB*rvecD - rvecF).^2 ) / sigma1;
+	omega = 0.5 * sum( (bigA + bigB*rvecD - rvecF).^2 );
 return;
 end
 
@@ -120,17 +120,24 @@ end
 %!	x_rvec = randn(1,5);
 %!	f_rvec = funch_f( x_rvec );
 %!	%
-%!	msg( thisFile, __LINE__, "Doing newnew calc..." );
+%!	msg( thisFile, __LINE__, "Doing one-shot mat calc..." );
 %!	tic();
-%!	omegaNeoNeo = extFit_calcOmega_quick( y, p, x_rvec, f_rvec );
+%!	datFoo = extFit_calcOmega_mat( y, p, x_rvec, f_rvec );
+%!	toc();
+%!	datFoo.matOmega
+%!	%
+%!	msg( thisFile, __LINE__, "Doing one-shot quick calc..." );
+%!	tic();
+%!	extFit_calcOmega_quick( y, p, x_rvec, f_rvec )
 %!	toc();
 %!	%
-%!	msg( thisFile, __LINE__, "Doing new calc..." );
+%!	msg( thisFile, __LINE__, "Doing one-shot new calc..." );
 %!	tic();
-%!	omegaNeo = extFit_calcOmega( y, p, x_rvec, f_rvec );
+%!	datFoo = extFit_calcOmega( y, p, x_rvec, f_rvec );
 %!	toc();
+%!	datFoo.omega
 %!	%
-%!	msg( thisFile, __LINE__, "Doing old calc (Comment out the \"DEPRECATE\" in extFit__getRhoVals.m!)..." );
+%!	msg( thisFile, __LINE__, "Doing one-shot old calc (Comment out the \"DEPRECATE\" in extFit__getRhoVals.m!)..." );
 %!	tic();
-%!	omega = 0.5*sum( extFit__getRhoVals( y, p, x_rvec, f_rvec ).^2 );
+%!	omega = 0.5*sum( extFit__getRhoVals( y, p, x_rvec, f_rvec ).^2 )
 %!	toc();

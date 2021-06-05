@@ -53,7 +53,7 @@ function datOut = extFit_calcOmega_mat( matBigX, matBigP, rvecX, rvecF, rvecW=[]
 		ary3WRho(:,:,n) = rvecW(n) * ary3Rho(:,:,n);
 		ary3WRhoSq(:,:,n) = ary3WRho(:,:,n) .* ary3Rho(:,:,n);
 	end
-	matOmega = 0.5 * sum( ary3WRhoSq, 3 ) / sigma1;
+	matOmega = 0.5 * sum( ary3WRhoSq, 3 );
 	%
 	%
 	% Copy main results.
