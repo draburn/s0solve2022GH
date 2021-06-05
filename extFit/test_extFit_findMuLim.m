@@ -10,7 +10,8 @@
 	else
 		setprngstates();
 		%setprngstates(38566912);
-		setprngstates(69539920);
+		%setprngstates(69539920);
+		setprngstates(82122480);
 		omegaLim = 50.0;
 		omega0 = 100.0;
 		vecG = randn(2,1);
@@ -22,6 +23,7 @@
 	prm = [];
 	%
 	[ muLim, retCode, datOut ] = extFit_findMuLim( omegaLim, omega0, vecG, matH, matR, prm );
+	vecDeltaLim = -(matH + muLim*matR)\vecG;
 	%
 	rvecMu = datOut.muCrit + datOut.muScale * 100.0 * linspace(0.0,1.0,101).^4;
 	for n=1:max(size(rvecMu))
@@ -37,6 +39,9 @@
 	  rvecMu, rvecOmega, 'o-', ...
 	  [min(rvecMu), max(rvecMu)], omegaLim*[1,1], 'k-', ...
 	  muLim, omegaLim, '*', 'markersize', 30 );
+	xlabel( "mu" );
+	ylabel( "omega" );
+	title( "omega vs mu (unmasked)" );
 	grid on;
 	%
 	rvecMask = ( rvecOmega > omegaLim - abs( omega0 - omegaLim ) );
@@ -45,25 +50,25 @@
 	  rvecMu(rvecMask), rvecOmega(rvecMask), 'o-', ...
 	  [min(rvecMu), max(rvecMu)], omegaLim*[1,1], 'k-', ...
 	  muLim, omegaLim, '*', 'markersize', 30 );
+	xlabel( "mu" );
+	ylabel( "omega" );
+	title( "omega vs mu (masked)" );
 	grid on
-	%
-	%numFigs++; figure(numFigs);
-	%plot( ...
-	%  rvecMu, rvecDeltaNorm, 'o-' );
-	%grid on;
 	%
 	numFigs++; figure(numFigs);
 	plot( ...
 	  rvecMu(rvecMask), rvecDeltaNorm(rvecMask), 'o-' );
 	grid on;
-	%
-	%numFigs++; figure(numFigs);
-	%plot( ...
-	%  rvecDeltaNorm, rvecOmega, 'o-' );
-	%grid on;
+	xlabel( "mu" );
+	ylabel( "||vecDelta||" );
+	title( "mu vs ||vecDelta|| (masked)" );
 	%
 	numFigs++; figure(numFigs);
 	plot( ...
-	  rvecDeltaNorm(rvecMask), rvecOmega(rvecMask), 'o-' );
+	  rvecDeltaNorm(rvecMask), rvecOmega(rvecMask), 'o-', ...
+	  [0.0, max(rvecDeltaNorm(rvecMask))], omegaLim*[1.0,1.0], 'k-', ...
+	  norm(vecDeltaLim), omegaLim, '*', 'markersize', 30 );
 	grid on;
-
+	xlabel( "||vecDelta||" );
+	ylabel( "omega" );
+	title( "||vecDelta|| vs omega (masked)" );
