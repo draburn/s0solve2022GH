@@ -42,11 +42,11 @@ function datOut = extFit_calcGradHess( bigX, bigP, rvecX, rvecF, rvecW=[], prm=[
 	%
 	% Derivatives of rvecRho.
 	rvecRhoD0 = rvecRhoAt00;
-	rvecRhoDX = ( rvecRhoAtP0 - rvecRhoAtM0 ) / ( 2.0*epsX )
-	rvecRhoDP = ( rvecRhoAt0P - rvecRhoAt0M ) / ( 2.0*epsP )
-	rvecRhoDXX = ( rvecRhoAtP0 + rvecRhoAtM0 - 2.0*rvecRhoAt00 ) / ( epsX*epsX )
-	rvecRhoDPP = ( rvecRhoAt0P + rvecRhoAt0M - 2.0*rvecRhoAt00 ) / ( epsP*epsP ) %AUGH
-	rvecRhoDXP = ( rvecRhoAtPP + rvecRhoAtMM - rvecRhoAtPM - rvecRhoAtMP ) / ( 4.0*epsX*epsP )
+	rvecRhoDX = ( rvecRhoAtP0 - rvecRhoAtM0 ) / ( 2.0*epsX );
+	rvecRhoDP = ( rvecRhoAt0P - rvecRhoAt0M ) / ( 2.0*epsP );
+	rvecRhoDXX = ( rvecRhoAtP0 + rvecRhoAtM0 - 2.0*rvecRhoAt00 ) / ( epsX*epsX );
+	rvecRhoDPP = ( rvecRhoAt0P + rvecRhoAt0M - 2.0*rvecRhoAt00 ) / ( epsP*epsP );
+	rvecRhoDXP = ( rvecRhoAtPP + rvecRhoAtMM - rvecRhoAtPM - rvecRhoAtMP ) / ( 4.0*epsX*epsP );
 	%
 	sigma0X = sum( rvecW .* rvecRhoD0 .* rvecRhoDX );
 	sigma0P = sum( rvecW .* rvecRhoD0 .* rvecRhoDP );
