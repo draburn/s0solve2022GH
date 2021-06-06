@@ -9,6 +9,8 @@
 		matR = [1,0;0,1];
 	else
 		setprngstates();
+		%setprngstates(44975936);
+		%setprngstates(38883696);
 		%setprngstates(84427936); % Non-monotonic. It is known.
 		%setprngstates(16576176);
 		%setprngstates(82450176);
@@ -28,7 +30,6 @@
 	prm = [];
 	%
 	mu = extFit_findMuOfOmega( omegaLim, omega0, vecG, matH, matR, prm );
-	return;
 	[ muLim, retCode, datOut ] = extFit_findMuLim( omegaLim, omega0, vecG, matH, matR, prm );
 	vecDeltaLim = -(matH + muLim*matR)\vecG;
 	%

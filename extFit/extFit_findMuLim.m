@@ -66,7 +66,7 @@ function [ muLim, retCode, datOut ] = extFit_findMuLim( omegaLim, omega0, vecG, 
 	%
 	%
 	%
-	msg( thieFiLe, __LINE__, "Need proper handling for case(s?) where borderline pos-def!" );
+	msg( thisFile, __LINE__, "Need proper handling for case(s?) where borderline pos-def!" );
 	% Get muCrit.
 	matRInvH = matR\matH;
 	rvecEigRInvH = eig(matRInvH);

@@ -1,9 +1,12 @@
 function [ mu, retCode, datOut ] = extFit_findMuOfOmega( omegaTarget, omega0, vecG, matH, matR, prm=[] )
 	%
-	thisFile = "extFit_findMuOfOmega";
 	commondefs;
+	thisFile = "extFit_findMuOfOmega";
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
+	retCode = RETCODE__NOT_SET;
 	%
+	%
+	% Validate input.
 	size1 = size(matH,1);
 	size2 = size(matH,2);
 	assert( size1 == size2 );
@@ -14,25 +17,17 @@ function [ mu, retCode, datOut ] = extFit_findMuOfOmega( omegaTarget, omega0, ve
 	assert( isrealarray(matH,[size1,size2]) );
 	assert( isrealarray(matR,[size1,size2]) );
 	%
-	%
-	omegaTol = mygetfield( prm, "omegaTol", sqrt(eps)*(abs(omega0)+abs(omegaTarget)) );
-	assert( isrealscalar(omegaTol) );
-	assert( omegaTol > 0.0 );
-	assert( omegaTol < abs(omega0-omegaTarget) );
+	% Require (and enforce) R and H sym.
+	hScale = sqrt( sum(sum(matH.^2)) / (size1*size2) );
+	rScale = sqrt( sum(sum(matR.^2)) / (size1*size2) );
+	assert( rScale > 0.0 );
+	muScale = hScale / rScale;
+	datOut.muScale = muScale;
 	%
 	symTol = mygetfield( prm, "symTol", sqrt(eps) );
 	assert( isrealscalar(symTol) );
 	assert( symTol > 0.0 );
 	%
-	hScale = sqrt( sum(sum(matH.^2)) / (size1*size2) );
-	rScale = sqrt( sum(sum(matR.^2)) / (size1*size2) );
-	assert( rScale > 0.0 );
-	muScale = hScale / rScale;
-	epsMu = mygetfield( prm, "epsMu", sqrt(eps) * muScale );
-	assert( isrealscalar(epsMu) );
-	assert( epsMu > 0.0 );
-	%
-	% Require (and enforce) R and H sym.
 	assert( sum(sum((matH'-matH).^2)) < (symTol*hScale*size1)^2 );
 	assert( sum(sum((matR'-matR).^2)) < (symTol*rScale*size1)^2 );
 	matR = 0.5*(matR'+matR);
@@ -48,16 +43,25 @@ function [ mu, retCode, datOut ] = extFit_findMuOfOmega( omegaTarget, omega0, ve
 	assert( vecG'*(matR\vecG) > 0.0 );
 	%
 	%
-	% Default return values.
-	mu = [];
-	retCode = RETCODE__NOT_SET;
-	datOut = [];
+	% So, the input looks good.
+	% Let's start looking for our mu.
+	omegaTol = mygetfield( prm, "omegaTol", sqrt(eps)*(abs(omega0)+abs(omegaTarget)) );
+	assert( isrealscalar(omegaTol) );
+	assert( omegaTol > 0.0 );
+	assert( omegaTol < abs(omega0-omegaTarget) );
 	%
-	% Find min eigenvalue.
+	%
+	% See if we can hit below omegaTarget.
+	% Find min eigenvalue, which limits how low mu can go.
 	rvecLamda = eig(matH,matR); % Returns eig( matR^-1 * matH ), right?
 	lambdaMin = min(rvecLamda);
+	datOut.lambdaMin = lambdaMin;
 	%
-	% Confirm that we can hit below omegaTarget.
+	epsMu = sqrt(eps)*muScale + sqrt(eps)*max([-lambdaMin,0.0]);
+	epsMu = mygetfield( prm, "epsMu", epsMu );
+	assert( isrealscalar(epsMu) );
+	assert( epsMu > 0.0 );
+	%
 	mu = max([ -lambdaMin + epsMu, 0.0 ]);
 	vecDelta = -(matH + mu*matR)\vecG;
 	omega = omega0 + vecDelta'*vecG + 0.5*vecDelta'*matH*vecDelta;
@@ -75,26 +79,24 @@ function [ mu, retCode, datOut ] = extFit_findMuOfOmega( omegaTarget, omega0, ve
 	%
 	%
 	% Prep for iterative solver.
-	bracketBumper = mygetfield( prm, "bracketBumper", 0.01 );
-	assert( isrealscalar(bracketBumper) );
-	assert( bracketBumper > 0.0 );
-	assert( bracketBumper <= 0.5 );
-	%
 	trialCountLimit = mygetfield( prm, "trialCountLimit", 100 );
 	assert( isrealscalar(trialCountLimit) );
 	assert( trialCountLimit > 0 );
+	%
+	bracketBumper = mygetfield( prm, "bracketBumper", 0.05 );
+	assert( isrealscalar(bracketBumper) );
+	assert( bracketBumper > 0.0 );
+	assert( bracketBumper <= 0.5 );
 	%
 	muLo = mu;
 	muHi = [];
 	haveHi = false;
 	%
-	% Initial guess.
-	f0 = vecG' * ( matR \ vecG );
-	mu = f0 / ( omega0 - omegaTarget );
+	% Initial guess, based on omega in lim mu -> inf.
+	mu = ( vecG' * ( matR \ vecG ) ) / ( omega0 - omegaTarget );
 	if ( mu < muLo )
 		mu = muLo + muScale;
 	end
-	%
 	trialCount = 0;
 	while (1)
 		assert( mu > muLo );
@@ -123,6 +125,8 @@ function [ mu, retCode, datOut ] = extFit_findMuOfOmega( omegaTarget, omega0, ve
 			haveHi = true;
 		end
 		%
+		% Next guess based on omega = omega0 + A / ( mu + B ),
+		% set to match current mu, omega, and dOmega/dMu.
 		vecDeltaPrime = -(matH + mu*matR)\(matR*vecDelta);
 		omegaPrime = vecDeltaPrime'*vecG + vecDeltaPrime'*matH*vecDelta;
 		mu_next = mu + (omega0-omega) * (omegaTarget-omega) / ( (omega0-omegaTarget) * omegaPrime );
