@@ -10,6 +10,7 @@ function [ muLim, retCode, datOut ] = extFit_findMuLim( omegaLim, omega0, vecG, 
 	thisFile = "extFit_findMuLim";
 	commondefs;
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
+	msg( thisFile, __LINE__, "DEPRECATED." );
 	%
 	sizeK = size(matH,1);
 	sizeK = size(matH,2);

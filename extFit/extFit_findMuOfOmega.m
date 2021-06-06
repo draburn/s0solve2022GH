@@ -2,7 +2,7 @@ function [ mu, retCode, datOut ] = extFit_findMuOfOmega( omegaTarget, omega0, ve
 	%
 	commondefs;
 	thisFile = "extFit_findMuOfOmega";
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__WARN );
 	retCode = RETCODE__NOT_SET;
 	%
 	%
@@ -56,7 +56,7 @@ function [ mu, retCode, datOut ] = extFit_findMuOfOmega( omegaTarget, omega0, ve
 	rvecLamda = eig(matH,matR); % Returns eig( matR^-1 * matH ), right?
 	lambdaMin = min(rvecLamda);
 	datOut.lambdaMin = lambdaMin;
-	msg_main( verbLev, thisFile, __LINE__, sprintf( "lambdaMin = %f.", lambdaMin ) );
+	msg_progress( verbLev, thisFile, __LINE__, sprintf( "lambdaMin = %f.", lambdaMin ) );
 	%
 	epsMu = sqrt(eps)*muScale + sqrt(eps)*max([-lambdaMin,0.0]);
 	epsMu = mygetfield( prm, "epsMu", epsMu );
@@ -66,7 +66,7 @@ function [ mu, retCode, datOut ] = extFit_findMuOfOmega( omegaTarget, omega0, ve
 	mu = max([ -lambdaMin + epsMu, 0.0 ]);
 	vecDelta = -(matH + mu*matR)\vecG;
 	omega = omega0 + vecDelta'*vecG + 0.5*vecDelta'*matH*vecDelta;
-	msg_main( verbLev, thisFile, __LINE__, sprintf( ...
+	msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
 	  " %3d, %10.3e, (%10.3e), %11.3e, %11.3e.", 0, mu, norm(vecDelta), omega, omega-omegaTarget ) );
 	%
 	if ( abs(omega-omegaTarget) <= omegaTol )
@@ -74,14 +74,14 @@ function [ mu, retCode, datOut ] = extFit_findMuOfOmega( omegaTarget, omega0, ve
 		retCode = RETCODE__SUCCESS;
 		return;
 	elseif ( omega > omegaTarget )
-		msg_main( verbLev, thisFile, __LINE__, "omegaTarget appears to be unreachable." );
+		msg_notify( verbLev, thisFile, __LINE__, "Target appears to be unreachable." );
 		retCode = RETCODE__ALGORITHM_BREAKDOWN;
 		return;
 	end
 	%
 	%
 	% Prep for iterative solver.
-	trialCountLimit = mygetfield( prm, "trialCountLimit", 100 );
+	trialCountLimit = mygetfield( prm, "trialCountLimit", 50 );
 	assert( isrealscalar(trialCountLimit) );
 	assert( trialCountLimit > 0 );
 	%
@@ -108,7 +108,7 @@ function [ mu, retCode, datOut ] = extFit_findMuOfOmega( omegaTarget, omega0, ve
 		trialCount++;
 		vecDelta = -(matH + mu*matR)\vecG;
 		omega = omega0 + vecDelta'*vecG + 0.5*vecDelta'*matH*vecDelta;
-		msg_main( verbLev, thisFile, __LINE__, sprintf( ...
+		msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
 		  "%3d, %10.3e, (%10.3e), %11.3e, %11.3e.", trialCount, mu, norm(vecDelta), omega, omega-omegaTarget ) );
 		%
 		if ( abs(omega-omegaTarget) <= omegaTol )
@@ -117,7 +117,8 @@ function [ mu, retCode, datOut ] = extFit_findMuOfOmega( omegaTarget, omega0, ve
 			return;
 		end
 		if ( trialCount >= trialCountLimit )
-			msg_main( verbLev, thisFile, __LINE__, "Giving up." );
+			msg_notify( verbLev, thisFile, __LINE__, sprintf( ...
+			  "Reached trialCountLimit (%d).", trialCountLimit )  );
 			retCode = RETCODE__IMPOSED_STOP;
 			return;
 		end

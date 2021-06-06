@@ -18,44 +18,44 @@ function datOut = extFit_calcGradHess( bigX, bigP, rvecX, rvecF, rvecW=[], prm=[
 	epsX = mygetfield( prm, "epsX", epsX_default );
 	epsP = mygetfield( prm, "epsP", epsP_default );
 	%
-	omegaDatMM = extFit_calcOmega( bigX-epsX, bigP-epsP, rvecX, rvecF, rvecW )
-	omegaDatM0 = extFit_calcOmega( bigX-epsX, bigP,      rvecX, rvecF, rvecW )
-	omegaDatMP = extFit_calcOmega( bigX-epsX, bigP+epsP, rvecX, rvecF, rvecW )
-	omegaDat0M = extFit_calcOmega( bigX,      bigP-epsP, rvecX, rvecF, rvecW )
-	omegaDat00 = extFit_calcOmega( bigX,      bigP,      rvecX, rvecF, rvecW )
-	omegaDat0P = extFit_calcOmega( bigX,      bigP+epsP, rvecX, rvecF, rvecW )
-	omegaDatPM = extFit_calcOmega( bigX+epsX, bigP-epsP, rvecX, rvecF, rvecW )
-	omegaDatP0 = extFit_calcOmega( bigX+epsX, bigP,      rvecX, rvecF, rvecW )
-	omegaDatPP = extFit_calcOmega( bigX+epsX, bigP+epsP, rvecX, rvecF, rvecW )
+	omegaDatAtMM = extFit_calcOmega( bigX-epsX, bigP-epsP, rvecX, rvecF, rvecW );
+	omegaDatAtM0 = extFit_calcOmega( bigX-epsX, bigP,      rvecX, rvecF, rvecW );
+	omegaDatAtMP = extFit_calcOmega( bigX-epsX, bigP+epsP, rvecX, rvecF, rvecW );
+	omegaDatAt0M = extFit_calcOmega( bigX,      bigP-epsP, rvecX, rvecF, rvecW );
+	omegaDatAt00 = extFit_calcOmega( bigX,      bigP,      rvecX, rvecF, rvecW );
+	omegaDatAt0P = extFit_calcOmega( bigX,      bigP+epsP, rvecX, rvecF, rvecW );
+	omegaDatAtPM = extFit_calcOmega( bigX+epsX, bigP-epsP, rvecX, rvecF, rvecW );
+	omegaDatAtP0 = extFit_calcOmega( bigX+epsX, bigP,      rvecX, rvecF, rvecW );
+	omegaDatAtPP = extFit_calcOmega( bigX+epsX, bigP+epsP, rvecX, rvecF, rvecW );
 	%
 	% Unpack some stuff.
-	omega0 = omegaDat00.omega;
-	rvecRhoMM = omegaDatMM.rvecRho;
-	rvecRhoM0 = omegaDatM0.rvecRho;
-	rvecRhoMP = omegaDatMP.rvecRho;
-	rvecRho0M = omegaDat0M.rvecRho;
-	rvecRho00 = omegaDat00.rvecRho;
-	rvecRho0P = omegaDat0P.rvecRho;
-	rvecRhoPM = omegaDatPM.rvecRho;
-	rvecRhoP0 = omegaDatP0.rvecRho;
-	rvecRhoPP = omegaDatPP.rvecRho;
+	omega0 = omegaDatAt00.omega;
+	rvecRhoAtMM = omegaDatAtMM.rvecRho;
+	rvecRhoAtM0 = omegaDatAtM0.rvecRho;
+	rvecRhoAtMP = omegaDatAtMP.rvecRho;
+	rvecRhoAt0M = omegaDatAt0M.rvecRho;
+	rvecRhoAt00 = omegaDatAt00.rvecRho;
+	rvecRhoAt0P = omegaDatAt0P.rvecRho;
+	rvecRhoAtPM = omegaDatAtPM.rvecRho;
+	rvecRhoAtP0 = omegaDatAtP0.rvecRho;
+	rvecRhoAtPP = omegaDatAtPP.rvecRho;
 	%
 	% Derivatives of rvecRho.
-	rvecRho0 = rvecRho00;
-	rvecRhoX = ( rvecRhoP0 - rvecRhoM0 ) / ( 2.0*epsX );
-	rvecRhoP = ( rvecRho0P - rvecRho0M ) / ( 2.0*epsP );
-	rvecRhoXX = ( rvecRhoP0 + rvecRhoM0 - 2.0*rvecRho00 ) / ( epsX*epsX );
-	rvecRhoPP = ( rvecRho0P + rvecRho0M - 2.0*rvecRho00 ) / ( epsP*epsP );
-	rvecRhoXP = ( rvecRhoPP + rvecRhoMM - rvecRhoPM - rvecRhoMP ) / ( 4.0*epsX*epsP );
+	rvecRhoD0 = rvecRhoAt00;
+	rvecRhoDX = ( rvecRhoAtP0 - rvecRhoAtM0 ) / ( 2.0*epsX )
+	rvecRhoDP = ( rvecRhoAt0P - rvecRhoAt0M ) / ( 2.0*epsP )
+	rvecRhoDXX = ( rvecRhoAtP0 + rvecRhoAtM0 - 2.0*rvecRhoAt00 ) / ( epsX*epsX )
+	rvecRhoDPP = ( rvecRhoAt0P + rvecRhoAt0M - 2.0*rvecRhoAt00 ) / ( epsP*epsP ) %AUGH
+	rvecRhoDXP = ( rvecRhoAtPP + rvecRhoAtMM - rvecRhoAtPM - rvecRhoAtMP ) / ( 4.0*epsX*epsP )
 	%
-	sigma0X = sum( rvecW .* rvecRho0 .* rvecRhoX );
-	sigma0P = sum( rvecW .* rvecRho0 .* rvecRhoP );
-	sigmaXX = sum( rvecW .* rvecRhoX .* rvecRhoX );
-	sigmaPP = sum( rvecW .* rvecRhoP .* rvecRhoP );
-	sigmaXP = sum( rvecW .* rvecRhoX .* rvecRhoP );
-	sigma0XX = sum( rvecW .* rvecRho0 .* rvecRhoXX );
-	sigma0PP = sum( rvecW .* rvecRho0 .* rvecRhoPP );
-	sigma0XP = sum( rvecW .* rvecRho0 .* rvecRhoXP );
+	sigma0X = sum( rvecW .* rvecRhoD0 .* rvecRhoDX );
+	sigma0P = sum( rvecW .* rvecRhoD0 .* rvecRhoDP );
+	sigmaXX = sum( rvecW .* rvecRhoDX .* rvecRhoDX );
+	sigmaPP = sum( rvecW .* rvecRhoDP .* rvecRhoDP );
+	sigmaXP = sum( rvecW .* rvecRhoDX .* rvecRhoDP );
+	sigma0XX = sum( rvecW .* rvecRhoD0 .* rvecRhoDXX );
+	sigma0PP = sum( rvecW .* rvecRhoD0 .* rvecRhoDPP );
+	sigma0XP = sum( rvecW .* rvecRhoD0 .* rvecRhoDXP );
 	%
 	vecG = [ sigma0X; sigma0P ];
 	matH1 = [ sigmaXX, sigmaXP; sigmaXP, sigmaPP ];
