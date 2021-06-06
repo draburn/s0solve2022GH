@@ -30,6 +30,7 @@
 	prm = [];
 	%
 	mu = extFit_findMuOfOmega( omegaLim, omega0, vecG, matH, matR, prm );
+	return;
 	[ muLim, retCode, datOut ] = extFit_findMuLim( omegaLim, omega0, vecG, matH, matR, prm );
 	vecDeltaLim = -(matH + muLim*matR)\vecG;
 	%

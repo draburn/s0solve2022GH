@@ -56,6 +56,7 @@ function [ mu, retCode, datOut ] = extFit_findMuOfOmega( omegaTarget, omega0, ve
 	rvecLamda = eig(matH,matR); % Returns eig( matR^-1 * matH ), right?
 	lambdaMin = min(rvecLamda);
 	datOut.lambdaMin = lambdaMin;
+	msg_main( verbLev, thisFile, __LINE__, sprintf( "lambdaMin = %f.", lambdaMin ) );
 	%
 	epsMu = sqrt(eps)*muScale + sqrt(eps)*max([-lambdaMin,0.0]);
 	epsMu = mygetfield( prm, "epsMu", epsMu );
@@ -65,10 +66,11 @@ function [ mu, retCode, datOut ] = extFit_findMuOfOmega( omegaTarget, omega0, ve
 	mu = max([ -lambdaMin + epsMu, 0.0 ]);
 	vecDelta = -(matH + mu*matR)\vecG;
 	omega = omega0 + vecDelta'*vecG + 0.5*vecDelta'*matH*vecDelta;
-	msg_main( verbLev, thisFile, __LINE__, sprintf( "Calculation %d, %g, (%g), %g.", 0, mu, norm(vecDelta), omega ) );
+	msg_main( verbLev, thisFile, __LINE__, sprintf( ...
+	  " %3d, %10.3e, (%10.3e), %11.3e, %11.3e.", 0, mu, norm(vecDelta), omega, omega-omegaTarget ) );
 	%
 	if ( abs(omega-omegaTarget) <= omegaTol )
-		msg_main( verbLev, thisFile, __LINE__, "Success." );
+		msg_main( verbLev, thisFile, __LINE__, sprintf( "Success. Returning mu = %10.3e.", mu ) );
 		retCode = RETCODE__SUCCESS;
 		return;
 	elseif ( omega > omegaTarget )
@@ -106,10 +108,11 @@ function [ mu, retCode, datOut ] = extFit_findMuOfOmega( omegaTarget, omega0, ve
 		trialCount++;
 		vecDelta = -(matH + mu*matR)\vecG;
 		omega = omega0 + vecDelta'*vecG + 0.5*vecDelta'*matH*vecDelta;
-		msg_main( verbLev, thisFile, __LINE__, sprintf( "Calculation %d, %g, (%g), %g.", trialCount, mu, norm(vecDelta), omega ) );
+		msg_main( verbLev, thisFile, __LINE__, sprintf( ...
+		  "%3d, %10.3e, (%10.3e), %11.3e, %11.3e.", trialCount, mu, norm(vecDelta), omega, omega-omegaTarget ) );
 		%
 		if ( abs(omega-omegaTarget) <= omegaTol )
-			msg_main( verbLev, thisFile, __LINE__, "Success." );
+			msg_main( verbLev, thisFile, __LINE__, sprintf( "Success. Returning mu = %10.3e.", mu ) );
 			retCode = RETCODE__SUCCESS;
 			return;
 		end
