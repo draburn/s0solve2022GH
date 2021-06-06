@@ -87,33 +87,66 @@
 	 + matDeltaP .* ( vecG(2) + matH(2,2)*matDeltaP );
 	%
 	numCurvePts = 53;
-	rvecLambda = linspace( 0.0, 1.0, numCurvePts ).^2;
+	rvecLambda = linspace( 0.0, 1.0, numCurvePts ).^16;
 	for n=1:numCurvePts
 		lambda = rvecLambda(n);
 		if ( lambda < sqrt(eps) )
 			matDelta_levenberg(:,n) = -lambda*( matI \ vecG );
+			matDelta_levMarq(:,n) = -lambda*( matD \ vecG );
 		else
 			mu = (1.0./lambda) - 1.0;
 			matDelta_levenberg(:,n) = -(matH+mu*matI)\vecG;
+			matDelta_levMarq(:,n) = -(matH+mu*matD)\vecG;
 		end
+		rvecDeltaNorm_levenberg(n) = norm( matDelta_levenberg(:,n) );
+		rvecDeltaNorm_levMarq(n) = norm( matDelta_levMarq(:,n) );
 	end
+	dat_levenberg = extFit_calcOmega_mat( ...
+	  bigX0 + matDelta_levenberg(1,:), ...
+	  bigP0 + matDelta_levenberg(2,:), ...
+	  rvecX, rvecF, rvecW );
+	rvecOmega_levenberg = dat_levenberg.matOmega;
+	dat_levMarq = extFit_calcOmega_mat( ...
+	  bigX0 + matDelta_levMarq(1,:), ...
+	  bigP0 + matDelta_levMarq(2,:), ...
+	  rvecX, rvecF, rvecW );
+	rvecOmega_levMarq = dat_levMarq.matOmega;
+	%
+	rvecOmegaModel_levMarq = omega0 ...
+	  + matH(2,1) * matDelta_levMarq(1,:) .* matDelta_levMarq(2,:) ....
+	  + matDelta_levMarq(1,:) .* ( vecG(1) + matH(1,1)*matDelta_levMarq(1,:) ) ...
+	  + matDelta_levMarq(2,:) .* ( vecG(2) + matH(2,2)*matDelta_levMarq(2,:) );
+	rvecOmegaModel_levenberg = omega0 ...
+	  + matH(2,1) * matDelta_levenberg(1,:) .* matDelta_levenberg(2,:) ....
+	  + matDelta_levenberg(1,:) .* ( vecG(1) + matH(1,1)*matDelta_levenberg(1,:) ) ...
+	  + matDelta_levenberg(2,:) .* ( vecG(2) + matH(2,2)*matDelta_levenberg(2,:) );
+	rvecOmegaModel_levMarq = omega0 ...
+	  + matH(2,1) * matDelta_levMarq(1,:) .* matDelta_levMarq(2,:) ....
+	  + matDelta_levMarq(1,:) .* ( vecG(1) + matH(1,1)*matDelta_levMarq(1,:) ) ...
+	  + matDelta_levMarq(2,:) .* ( vecG(2) + matH(2,2)*matDelta_levMarq(2,:) );
 	%
 	%
 	numColors = mygetfield( prm, "numColors", 1000 );
 	matOmega = dat_calcOmega.matOmega;
 	omegaMax = max(max(matOmega));
 	omegaMin = 0.0;
+	%omegaMax = max(max(matOmegaModel));
+	%omegaMin = min(min(matOmegaModel));
+	%
+	%funch_viz = @(om)( om );
+	funch_viz = @(om)( (abs(om)) );
 	%
 	numFigs++; figure(numFigs);
 	%contourf( rvecBigX, rvecBigP, matOmega );
-	image( rvecBigX, rvecBigP, numColors*(matOmega-omegaMin)/(omegaMax-omegaMin) );
+	image( rvecBigX, rvecBigP, numColors*funch_viz( (matOmega-omegaMin)/(omegaMax-omegaMin) ) );
 	axis("square");
 	set( get(gcf,"children"), "ydir", "normal" );
 	colormap(mycmap(numColors));
 	hold on;
 	plot( bigX_secret, bigP_secret, 'w*', 'markersize', 25, 'linewidth', 3 );
 	plot( bigX0, bigP0, 'ws', 'markersize', 20, 'linewidth', 2 );
-	plot( matDelta_levenberg(1,:)+bigX0, matDelta_levenberg(2,:)+bigP0, 'wo-' );
+	plot( matDelta_levenberg(1,:)+bigX0, matDelta_levenberg(2,:)+bigP0, 'w^-' );
+	plot( matDelta_levMarq(1,:)+bigX0, matDelta_levMarq(2,:)+bigP0, 'kv-' );
 	hold off;
 	grid on;
 	xlabel( "bigX" );
@@ -122,18 +155,32 @@
 	%
 	numFigs++; figure(numFigs);
 	%contourf( rvecBigX, rvecBigP, matOmegaModel1 );
-	image( rvecBigX, rvecBigP, numColors*(matOmegaModel-omegaMin)/(omegaMax-omegaMin) );
+	image( rvecBigX, rvecBigP, numColors*funch_viz( (matOmegaModel-omegaMin)/(omegaMax-omegaMin) ) );
 	axis("square");
 	set( get(gcf,"children"), "ydir", "normal" );
 	colormap(mycmap(numColors));
 	hold on;
 	plot( bigX_secret, bigP_secret, 'w*', 'markersize', 25, 'linewidth', 3 );
 	plot( bigX0, bigP0, 'ws', 'markersize', 20, 'linewidth', 2 );
-	plot( matDelta_levenberg(1,:)+bigX0, matDelta_levenberg(2,:)+bigP0, 'wo-' );
+	plot( matDelta_levenberg(1,:)+bigX0, matDelta_levenberg(2,:)+bigP0, 'w^-' );
+	plot( matDelta_levMarq(1,:)+bigX0, matDelta_levMarq(2,:)+bigP0, 'kv-' );
 	hold off;
 	grid on;
 	xlabel( "bigX" );
 	ylabel( "bigP" );
 	title( "omegaModel vs bigX, bigP" );
+	%
+	numFigs++; figure(numFigs);
+	plot( ...
+	  rvecDeltaNorm_levenberg, rvecOmega_levenberg, 'o-', ...
+	  rvecDeltaNorm_levMarq, rvecOmega_levMarq, 'x-' );
+	grid on;
+	xlabel( "delta norm" );
+	ylabel( "omega" );
+	title( "omega vs delta norm" );
+	legend( ...
+	  "lev", ...
+	  "levMarq", ...
+	  "location", "northEast" );
 return;
 %end
