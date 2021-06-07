@@ -264,12 +264,13 @@ function datOut = extFit_viz( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm=[] )
 	sizeBigX = 201;
 	sizeBigP = 203;
 	%
-	bigXLo = bigX0 + min([ min(matDelta_h1d0(2,:)), min(matDelta_h1d1(2,:)) ]);
-	bigXHi = bigX0 + max([ max(matDelta_h1d0(2,:)), max(matDelta_h1d1(2,:)) ]);
+	bigXLo = bigX0 + min([ min(matDelta_h1d0(1,:)), min(matDelta_h1d1(1,:)) ]);
+	bigXHi = bigX0 + max([ max(matDelta_h1d0(1,:)), max(matDelta_h1d1(1,:)) ]);
 	bigPLo = bigP0 + min([ min(matDelta_h1d0(2,:)), min(matDelta_h1d1(2,:)) ]);
 	bigPHi = bigP0 + max([ max(matDelta_h1d0(2,:)), max(matDelta_h1d1(2,:)) ]);
 	rvecBigX = 0.5*(bigXHi+bigXLo)+0.5*1.3*(bigXHi-bigXLo)*linspace( -1.0, 1.0, sizeBigX );
-	rvecBigP = linspace( bigPLo*0.5, bigPHi*2.0, sizeBigP );
+	bigPBuffer = (bigPHi/bigPLo)^0.2;
+	rvecBigP = linspace( bigPLo/bigPBuffer, bigPHi*bigPBuffer, sizeBigP );
 	[ matBigX, matBigP ] = meshgrid( rvecBigX, rvecBigP );
 	dat_calcOmega = extFit_calcOmega_mat( matBigX, matBigP, rvecX, rvecF, rvecW );
 	matOmegaAc = dat_calcOmega.matOmega;

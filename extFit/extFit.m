@@ -50,6 +50,7 @@ function [ datOut, retCode ] = extFit( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm
 	%
 	commondefs; thisFile = "extFit";
 	msg( thisFile, __LINE__, "Note that I may be better than diag(diag(H))." );
+	msg( thisFile, __LINE__, "TODO: Include bounds in X!" );
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__WARN );
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	datOut = [];
