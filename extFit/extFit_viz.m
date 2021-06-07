@@ -1,6 +1,8 @@
 %function datOut = extFit_viz( bigX, bigP, rvecX, rvecF, rvecW=[], prm=[] )
 	clear;
-	setprngstates(5932672);
+	setprngstates(77077008);
+	%setprngstates(5932672)
+	%setprngstates(5932672);
 	%setprngstates(30660864); % Start on wrong side of a point???
 	%setprngstates(58467872);
 	%setprngstates(26846592); % Massive slowdown. And, ?!?!?!?!
@@ -13,11 +15,12 @@
 	bigA_secret = randn()*exp(abs(3.0*randn()));
 	bigB_secret = randn()*exp(abs(3.0*randn()));
 	rvecX = sort(bigX_secret + randn(1,numPts));
-	funchF = @(x)( bigA_secret + bigB_secret * abs( rvecX - bigX_secret ).^bigP_secret );
+	funchF = @(x)( bigA_secret + bigB_secret * abs( x - bigX_secret ).^bigP_secret );
 	rvecF = funchF(rvecX);
 	rvecW = [];
 	prm = [];
 	index0 = 1;
+	if ( bigB_secret > 0 )
 	while (1)
 		if ( (index0==numPts) )
 			break;
@@ -27,6 +30,18 @@
 			index0++;
 			continue;
 		end
+	end
+	elseif ( bigB_secret < 0 )
+	while (1)
+		if ( (index0==numPts) )
+			break;
+		elseif ( rvecF(index0+1) < rvecF(index0) )
+			break;
+		else
+			index0++;
+			continue;
+		end
+	end
 	end
 	if ( 1==index0 )
 		bigX0 = (rvecX(1)+rvecX(2))/2.0
@@ -53,6 +68,20 @@
 	assert( isrealarray(rvecX,[1,numPts]) );
 	assert( isrealarray(rvecF,[1,numPts]) );
 	assert( isrealarray(rvecW,[1,numPts]) );
+	%
+	%
+	%
+	rvecX_first = linspace(min(rvecX),max(rvecX),101);
+	rvecF_first = funchF(rvecX_first);
+	numFigs++; figure(numFigs);
+	plot( ...
+	  rvecX, rvecF, 'o', 'markersize', 20, ...
+	  rvecX_first, rvecF_first, '*-', ...
+	  bigX0*[1,1], [min(rvecF_first),max(rvecF_first)], 'k-' );
+	xlabel( "x" );
+	ylabel( "f" );
+	title( "f vx x" );
+	grid on;
 	%
 	%
 	%
@@ -181,7 +210,7 @@
 	  "H2D1", ...
 	  "H2D2", ...
 	  "location", "north" );
-	ylabel( "lambda" );
+	xlabel( "lambda" );
 	ylabel( "delta norm" );
 	title( "delta norm vs lambda" );
 	grid on;
