@@ -1,6 +1,7 @@
 %function datOut = extFit_viz( bigX, bigP, rvecX, rvecF, rvecW=[], prm=[] )
 	clear;
-	setprngstates(30660864); % Start on wrong side of a point???
+	setprngstates(5932672);
+	%setprngstates(30660864); % Start on wrong side of a point???
 	%setprngstates(58467872);
 	%setprngstates(26846592); % Massive slowdown. And, ?!?!?!?!
 	%setprngstates(98584480);
@@ -16,7 +17,24 @@
 	rvecF = funchF(rvecX);
 	rvecW = [];
 	prm = [];
-	bigX0 = bigX_secret + randn()
+	index0 = 1;
+	while (1)
+		if ( (index0==numPts) )
+			break;
+		elseif ( rvecF(index0+1) > rvecF(index0) )
+			break;
+		else
+			index0++;
+			continue;
+		end
+	end
+	if ( 1==index0 )
+		bigX0 = (rvecX(1)+rvecX(2))/2.0
+	elseif ( numPts==index0)
+		bigX0 = (rvecX(numPts)+rvecX(numPts-1))/2.0
+	else
+		bigX0 = (rvecX(index0+1)+rvecX(index0-1))/2.0
+	end
 	bigP0 = 2.0
 	%
 	%
@@ -40,21 +58,21 @@
 	%
 	prm_calcGradHess = mygetfield( prm, "prm_calcGradHess", [] );
 	dat_calcGradHess = extFit_calcGradHess( bigX0, bigP0, rvecX, rvecF, rvecW, prm_calcGradHess );
-	omega0 = dat_calcGradHess.omega0
-	vecG = dat_calcGradHess.vecG
-	matH1 = dat_calcGradHess.matH1
+	omega0 = dat_calcGradHess.omega0;
+	vecG = dat_calcGradHess.vecG;
+	matH1 = dat_calcGradHess.matH1;
 	assert( 0==sum( diag(matH1)<=0.0 ) );
-	matH2 = dat_calcGradHess.matH2
+	matH2 = dat_calcGradHess.matH2;
 	matD0 = eye(2,2);
 	matD1 = diag(diag(matH1));
 	matD2 = diag(abs(diag(matH2)));
 	%
 	prm_findMuOfOmega = mygetfield( prm, "prm_findMuOfOmega", [] );
-	muMin_h1d0 = 0.0
-	muMin_h1d1 = 0.0
-	[ muMin_h2d0, retCode_d0 ] = extFit_findMuOfOmega( 0.0, omega0, vecG, matH2, matD0, prm_findMuOfOmega )
-	[ muMin_h2d1, retCode_d1 ] = extFit_findMuOfOmega( 0.0, omega0, vecG, matH2, matD1, prm_findMuOfOmega )
-	[ muMin_h2d2, retCode_d2 ] = extFit_findMuOfOmega( 0.0, omega0, vecG, matH2, matD2, prm_findMuOfOmega )
+	muMin_h1d0 = 0.0;
+	muMin_h1d1 = 0.0;
+	[ muMin_h2d0, retCode_d0 ] = extFit_findMuOfOmega( 0.0, omega0, vecG, matH2, matD0, prm_findMuOfOmega );
+	[ muMin_h2d1, retCode_d1 ] = extFit_findMuOfOmega( 0.0, omega0, vecG, matH2, matD1, prm_findMuOfOmega );
+	[ muMin_h2d2, retCode_d2 ] = extFit_findMuOfOmega( 0.0, omega0, vecG, matH2, matD2, prm_findMuOfOmega );
 	% DRaburn 2021.06.06.
 	% We could reject results based on retCode.
 	% But, we probably don't want to ultimately use H2 anyway.
@@ -230,8 +248,16 @@
 	numColors = mygetfield( prm, "numColors", 1000 );
 	sizeBigX = 201;
 	sizeBigP = 203;
-	rvecBigX = sort( bigX0 + 2.0*(bigX_secret-bigX0)*linspace( -0.5, 1.5, sizeBigX ) );
-	rvecBigP = sort( bigP0 + 2.0*(bigP_secret-bigP0)*linspace( -0.5, 1.5, sizeBigP ) );
+	bigXLo = bigX0 + min([ min(matDelta_h1d0(1,:)), min(matDelta_h1d1(1,:)) ]);
+	bigXLo = min([ bigXLo, bigX_secret ]);
+	bigXHi = bigX0 + max([ max(matDelta_h1d0(1,:)), max(matDelta_h1d1(1,:)) ]);
+	bigXHi = max([ bigXHi, bigX_secret ]);
+	bigPLo = bigP0 + min([ min(matDelta_h1d0(2,:)), min(matDelta_h1d1(2,:)) ]);
+	bigPLo = min([ bigPLo, bigP_secret ]);
+	bigPHi = bigP0 + max([ max(matDelta_h1d0(2,:)), max(matDelta_h1d1(2,:)) ]);
+	bigPHi = max([ bigPHi, bigP_secret ]);
+	rvecBigX = linspace( bigXLo-0.3*(bigXHi-bigXLo), bigXHi+0.3*(bigXHi-bigXLo), sizeBigX );
+	rvecBigP = linspace( bigPLo-0.3*(bigPHi-bigPLo), bigPHi+0.3*(bigPHi-bigPLo), sizeBigP );
 	[ matBigX, matBigP ] = meshgrid( rvecBigX, rvecBigP );
 	dat_calcOmega = extFit_calcOmega_mat( matBigX, matBigP, rvecX, rvecF, rvecW );
 	matOmegaAc = dat_calcOmega.matOmega;

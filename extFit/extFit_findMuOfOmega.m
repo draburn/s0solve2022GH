@@ -78,6 +78,11 @@ function [ mu, retCode, datOut ] = extFit_findMuOfOmega( omegaTarget, omega0, ve
 		retCode = RETCODE__ALGORITHM_BREAKDOWN;
 		return;
 	end
+	%if ( lambdaMin > 0.0 )
+	%	msg( thisFile, __LINE__, sprintf( "Forcing return for pos-def Hessian. Returning mu = %10.3e.", mu ) );
+	%	retCode = RETCODE__SUCCESS;
+	%	return;
+	%end
 	%
 	%
 	% Prep for iterative solver.
