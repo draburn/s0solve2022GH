@@ -15,7 +15,7 @@ function datOut = extFit_calcGradHess( bigX, bigP, rvecX, rvecF, rvecW=[], prm=[
 	epsX_default = ...
 	  min([ 0.001*(max(rvecX)-min(rvecX)), ...
 	   0.01*min(abs(diff(rvecX))) ]);
-	epsP_default = 0.001;
+	epsP_default = min([ 0.001, 0.1*abs(bigP) ]);
 	epsX = mygetfield( prm, "epsX", epsX_default );
 	epsP = mygetfield( prm, "epsP", epsP_default );
 	%
@@ -40,6 +40,19 @@ function datOut = extFit_calcGradHess( bigX, bigP, rvecX, rvecF, rvecW=[], prm=[
 	rvecRhoAtPM = omegaDatAtPM.rvecRho;
 	rvecRhoAtP0 = omegaDatAtP0.rvecRho;
 	rvecRhoAtPP = omegaDatAtPP.rvecRho;
+	if (!isrealarray(rvecRhoAt0M) )
+		echo__bigX = bigX
+		echo__bigP = bigP
+		echo__epsP = epsP
+		echo__rvecX = rvecX
+		echo__rvecF = rvecF
+		echo__rvecRhoAt0M = rvecRhoAt0M
+	end
+	assert( isrealarray(rvecRhoAtM0,[1,numPts]) );
+	assert( isrealarray(rvecRhoAt0M,[1,numPts]) );
+	assert( isrealarray(rvecRhoAt00,[1,numPts]) );
+	assert( isrealarray(rvecRhoAtP0,[1,numPts]) );
+	assert( isrealarray(rvecRhoAt0P,[1,numPts]) );
 	%
 	% Derivatives of rvecRho.
 	rvecRhoD0 = rvecRhoAt00;
