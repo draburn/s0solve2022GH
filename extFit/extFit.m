@@ -1,8 +1,9 @@
-%function [ datOut, retCode ] = extFit( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm=[] )
+function [ datOut, retCode ] = extFit( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm=[] )
 	clear;
-	setprngstates();
+	%setprngstates();
 	%setprngstates(19719664); % eye(2,2) may be better here.
 	%setprngstates(77173824); % Better initial guess would help; goes negative in P.
+	setprngstates(80489888);
 	numPts = 5 + round(abs(randn()*exp(abs(randn()))))
 	bigX_secret = randn()*exp(abs(3.0*randn()))
 	bigP_secret = 1.0 + 3.0*abs(randn())
@@ -48,6 +49,7 @@
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%
 	commondefs; thisFile = "extFit";
+	msg( thisFile, __LINE__, "Note that I may be better than diag(diag(H))." );
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__WARN );
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	datOut = [];
@@ -62,6 +64,13 @@
 	assert( isrealarray(rvecX,[1,numPts]) );
 	assert( isrealarray(rvecF,[1,numPts]) );
 	assert( isrealarray(rvecW,[1,numPts]) );
+	%
+	datOut.bigX0 = bigX0;
+	datOut.bigP0 = bigP0;
+	datOut.rvecX = rvecX;
+	datOut.rvecF = rvecF;
+	datOut.rvecW = rvecW;
+	datOut.prm = prm;
 	%
 	%dat0 = extFit_calcOmega( bigX0, bigP0, rvecX, rvecF, rvecW );
 	%omega0 = dat0.omega0;
@@ -93,6 +102,8 @@
 		msg_main( verbLev, thisFile, __LINE__, sprintf( ...
 		  "Initial guess is converged (%g <= %g).", omega, omegaTol ) );
 		retCode = RETCODE__SUCCESS;
+		datOut.bigX = bigX;
+		datOut.bigP = bigP;
 		return;
 	end
 	vecG = dat_calcGradHess.vecG;
@@ -100,6 +111,8 @@
 	if ( sum(diag(matH)<=0.0) != 0 )
 		msg_warn( verbLev, thisFile, __LINE__, "Hessian diagonal has a non-positive element." );
 		retCode = RETCODE__ALGORITHM_BREAKDOWN;
+		datOut.bigX = bigX;
+		datOut.bigP = bigP;
 		return;
 	end
 	matD = diag(abs(diag(matH)));
@@ -152,17 +165,16 @@
 			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
 			  "Converged (%g <= %g).", omega_trial, omegaTol ) );
 			retCode = RETCODE__SUCCESS;
+			datOut.bigX = bigX;
+			datOut.bigP = bigP;
 			return;
 		elseif ( abs(deltaVec_trial(1)) <= deltaXTol && abs(deltaVec_trial(2)) <= deltaPTol )
 			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
 			  "Found local extermum (|%g| <= %g, |%g| <= %g).", ...
 			  deltaVec_trial(1), deltaXTol, deltaVec_trial(2), deltaPTol ) );
-			echo__bigX = bigX
-			echo__bigP = bigP
-			echo__matH = matH
-			echo__vecG = vecG
-			echo__matD = matD
 			retCode = RETCODE__SUCCESS;
+			datOut.bigX = bigX;
+			datOut.bigP = bigP;
 			return;
 		elseif ( trialIsValid && omega_trial < omega )
 			% Move, update grad & hess, and continue.
@@ -176,6 +188,8 @@
 			if ( sum(diag(matH)<=0.0) != 0 )
 				msg_warn( verbLev, thisFile, __LINE__, "Hessian diagonal has a non-positive element." );
 				retCode = RETCODE__ALGORITHM_BREAKDOWN;
+				datOut.bigX = bigX;
+				datOut.bigP = bigP;
 				return;
 			end
 			matD = diag(abs(diag(matH)));
@@ -185,9 +199,9 @@
 		elseif ( iterCount >= iterLimit )
 			msg_notify( verbLev, thisFile, __LINE__, sprintf( ...
 			  "Reached iterLimit (%d).", iterLimit ) );
-			echo_bigX = bigX
-			echo_bigP = bigP
 			retCode = RETCODE__IMPOSED_STOP;
+			datOut.bigX = bigX;
+			datOut.bigP = bigP;
 			return;
 		else
 			% Increase mu and try again.
@@ -200,5 +214,4 @@
 		end
 	end
 	%
-return;
-%end
+end
