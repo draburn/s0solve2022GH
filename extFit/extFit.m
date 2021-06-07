@@ -3,8 +3,8 @@ function [ datOut, retCode ] = extFit( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm
 	commondefs; thisFile = "extFit";
 	msg( thisFile, __LINE__, "Note that I may be better than diag(diag(H))." );
 	msg( thisFile, __LINE__, "TODO: Include bounds in X!" );
-	%verbLev = mygetfield( prm, "verbLev", VERBLEV__WARN );
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__WARN );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	datOut = [];
 	retCode = RETCODE__NOT_SET;
 	%
@@ -32,15 +32,15 @@ function [ datOut, retCode ] = extFit( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm
 	assert( isrealscalar(iterLimit) );
 	assert( iterLimit >= 1 );
 	%
-	omegaTol = mygetfield( prm, "omegaTol", 0.5*eps*sum(rvecF.^2) )
+	omegaTol = mygetfield( prm, "omegaTol", 0.5*eps*sum(rvecF.^2) );
 	assert( isrealscalar(omegaTol) );
 	assert( omegaTol > 0.0 );
 	%
 	deltaXTol = sqrt(eps)*(max(rvecX)-min(rvecX));
-	deltaXTol = mygetfield( prm, "deltaXTol", deltaXTol )
+	deltaXTol = mygetfield( prm, "deltaXTol", deltaXTol );
 	assert( isrealscalar(deltaXTol) );
 	assert( deltaXTol > 0.0 );
-	deltaPTol = mygetfield( prm, "deltaPTol", sqrt(sqrt(eps)) )
+	deltaPTol = mygetfield( prm, "deltaPTol", sqrt(sqrt(eps)) );
 	assert( isrealscalar(deltaPTol) );
 	assert( deltaPTol > 0.0 );
 	%
@@ -133,6 +133,8 @@ function [ datOut, retCode ] = extFit( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm
 			% Move, update grad & hess, and continue.
 			bigX = bigX_trial;
 			bigP = bigP_trial;
+			datOut.bigX = bigX;
+			datOut.bigP = bigP;
 			%
 			dat_calcGradHess = extFit_calcGradHess( bigX, bigP, rvecX, rvecF, rvecW, prm_calcGradHess );
 			omega = dat_calcGradHess.omega0;

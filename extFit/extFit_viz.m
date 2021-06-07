@@ -12,6 +12,17 @@ function datOut = extFit_viz( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm=[] )
 	assert( isrealarray(rvecF,[1,numPts]) );
 	assert( isrealarray(rvecW,[1,numPts]) );
 	%
+	haveBigXSecret = false; % Unless...
+	haveBigPSecret = false; % Unless...
+	bigX_secret = mygetfield( prm, "bigX_secret", [] );
+	bigP_secret = mygetfield( prm, "bigP_secret", [] );
+	if (!isempty(bigX_secret))
+		haveBigXSecret = true;
+	end
+	if (!isempty(bigP_secret))
+		haveBigPSecret = true;
+	end
+	%
 	%
 	%
 	prm_calcGradHess = mygetfield( prm, "prm_calcGradHess", [] );
@@ -125,13 +136,56 @@ function datOut = extFit_viz( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm=[] )
 	plot_marker_h2d1 = '+-';
 	plot_marker_h2d2 = '*-';
 	%
+	%
+	%
+	numColors = mygetfield( prm, "numColors", 1000 );
+	sizeBigX = 201;
+	sizeBigP = 203;
+	%
+	bigXLo = bigX0 + min([ min(matDelta_h1d0(1,:)), min(matDelta_h1d1(1,:)) ]);
+	bigXHi = bigX0 + max([ max(matDelta_h1d0(1,:)), max(matDelta_h1d1(1,:)) ]);
+	if ( haveBigXSecret )
+		bigXLo = min([ bigXLo, bigX_secret ]);
+		bigXHi = max([ bigXHi, bigX_secret ]);
+	end
+	bigPLo = bigP0 + min([ min(matDelta_h1d0(2,:)), min(matDelta_h1d1(2,:)) ]);
+	bigPHi = bigP0 + max([ max(matDelta_h1d0(2,:)), max(matDelta_h1d1(2,:)) ]);
+	if ( haveBigPSecret )
+		bigPLo = min([ bigPLo, bigP_secret ]);
+		bigPHi = max([ bigPLo, bigP_secret ]);
+	end
+	rvecBigX = 0.5*(bigXHi+bigXLo)+0.5*1.3*(bigXHi-bigXLo)*linspace( -1.0, 1.0, sizeBigX );
+	bigPBuffer = (bigPHi/bigPLo)^0.2;
+	rvecBigP = linspace( bigPLo/bigPBuffer, bigPHi*bigPBuffer, sizeBigP );
+	[ matBigX, matBigP ] = meshgrid( rvecBigX, rvecBigP );
+	dat_calcOmega = extFit_calcOmega_mat( matBigX, matBigP, rvecX, rvecF, rvecW );
+	matOmegaAc = dat_calcOmega.matOmega;
+	%
+	rvecDeltaX = rvecBigX - bigX0;
+	rvecDeltaP = rvecBigP - bigP0;
+	[ matDeltaX, matDeltaP ] = meshgrid( rvecDeltaX, rvecDeltaP );
+	matOmegaM1 = omega0 + matH1(2,1) * matDeltaX .* matDeltaP ....
+	 + matDeltaX .* ( vecG(1) + 0.5*matH1(1,1)*matDeltaX ) ...
+	 + matDeltaP .* ( vecG(2) + 0.5*matH1(2,2)*matDeltaP );
+	matOmegaM2 = omega0 + matH2(2,1) * matDeltaX .* matDeltaP ....
+	 + matDeltaX .* ( vecG(1) + 0.5*matH2(1,1)*matDeltaX ) ...
+	 + matDeltaP .* ( vecG(2) + 0.5*matH2(2,2)*matDeltaP );
+	%
+	omegaMax = max(max(matOmegaAc));
+	omegaMin = 0.0;
+	%omegaMax = max(max(matOmegaM1));
+	%omegaMin = min(min(matOmegaM1));
+	funch_viz = @(om)( 1 + round((numColors-1)*cap( (om-omegaMin)/(omegaMax-omegaMin) ,0.0,1.0)) );
+	%
+	%
+	%
 	numFigs++; figure(numFigs);
 	plot( ...
-	  rvecLambda, rvecMu_h1d0, plot_marker_h1d0, 'color', plot_color_h1d0, ...
-	  rvecLambda, rvecMu_h1d1, plot_marker_h1d1, 'color', plot_color_h1d1, ...
-	  rvecLambda, rvecMu_h2d0, plot_marker_h2d0, 'color', plot_color_h2d0, ...
-	  rvecLambda, rvecMu_h2d1, plot_marker_h2d1, 'color', plot_color_h2d1, ...
-	  rvecLambda, rvecMu_h2d2, plot_marker_h2d2, 'color', plot_color_h2d2 );
+	  rvecDeltaNorm_h1d0, rvecOmegaAc_h1d0, plot_marker_h1d0, 'color', plot_color_h1d0, ...
+	  rvecDeltaNorm_h1d1, rvecOmegaAc_h1d1, plot_marker_h1d1, 'color', plot_color_h1d1, ...
+	  rvecDeltaNorm_h2d0, rvecOmegaAc_h2d0, plot_marker_h2d0, 'color', plot_color_h2d0, ...
+	  rvecDeltaNorm_h2d1, rvecOmegaAc_h2d1, plot_marker_h2d1, 'color', plot_color_h2d1, ...
+	  rvecDeltaNorm_h2d2, rvecOmegaAc_h2d2, plot_marker_h2d2, 'color', plot_color_h2d2 );
 	legend( ...
 	  "H1D0", ...
 	  "H1D1", ...
@@ -139,10 +193,33 @@ function datOut = extFit_viz( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm=[] )
 	  "H2D1", ...
 	  "H2D2", ...
 	  "location", "north" );
-	xlabel( "lambda" );
-	ylabel( "mu" );
-	title( "mu vs lambda" );
+	xlabel( "delta norm" );
+	ylabel( "omega actual" );
+	title( "omega actual vs delta norm" );
 	grid on;
+	%
+	numFigs++; figure(numFigs);
+	image( rvecBigX, rvecBigP, funch_viz(matOmegaAc) );
+	axis("square");
+	set( get(gcf,"children"), "ydir", "normal" );
+	colormap(mycmap(numColors));
+	hold on;
+	plot( bigX0, bigP0, 'ws', 'markersize', 20, 'linewidth', 2 );
+	if ( haveBigXSecret && haveBigPSecret )
+		plot( bigX_secret, bigP_secret, 'w*', 'markersize', 25, 'linewidth', 3 );
+	end
+	plot( ...
+	  bigX0+matDelta_h1d0(1,:), bigP0+matDelta_h1d0(2,:), plot_marker_h1d0, 'color', plot_color_h1d0, ...
+	  bigX0+matDelta_h1d1(1,:), bigP0+matDelta_h1d1(2,:), plot_marker_h1d1, 'color', plot_color_h1d1, ...
+	  bigX0+matDelta_h2d0(1,:), bigP0+matDelta_h2d0(2,:), plot_marker_h2d0, 'color', plot_color_h2d0, ...
+	  bigX0+matDelta_h2d1(1,:), bigP0+matDelta_h2d1(2,:), plot_marker_h2d1, 'color', plot_color_h2d1, ...
+	  bigX0+matDelta_h2d2(1,:), bigP0+matDelta_h2d2(2,:), plot_marker_h2d2, 'color', plot_color_h2d2 );
+	hold off;
+	grid on;
+	xlabel( "bigX" );
+	ylabel( "bigP" );
+	title( "omega vs bigX, bigP" );
+	msg( thisFile, __LINE__, "Calling return" );
 	%
 	numFigs++; figure(numFigs);
 	plot( ...
@@ -161,6 +238,26 @@ function datOut = extFit_viz( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm=[] )
 	xlabel( "mu" );
 	ylabel( "omega actual" );
 	title( "omega actual vs mu" );
+	grid on;
+	return
+	%
+	numFigs++; figure(numFigs);
+	plot( ...
+	  rvecLambda, rvecMu_h1d0, plot_marker_h1d0, 'color', plot_color_h1d0, ...
+	  rvecLambda, rvecMu_h1d1, plot_marker_h1d1, 'color', plot_color_h1d1, ...
+	  rvecLambda, rvecMu_h2d0, plot_marker_h2d0, 'color', plot_color_h2d0, ...
+	  rvecLambda, rvecMu_h2d1, plot_marker_h2d1, 'color', plot_color_h2d1, ...
+	  rvecLambda, rvecMu_h2d2, plot_marker_h2d2, 'color', plot_color_h2d2 );
+	legend( ...
+	  "H1D0", ...
+	  "H1D1", ...
+	  "H2D0", ...
+	  "H2D1", ...
+	  "H2D2", ...
+	  "location", "north" );
+	xlabel( "lambda" );
+	ylabel( "mu" );
+	title( "mu vs lambda" );
 	grid on;
 	%
 	numFigs++; figure(numFigs);
@@ -203,25 +300,6 @@ function datOut = extFit_viz( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm=[] )
 	%
 	numFigs++; figure(numFigs);
 	plot( ...
-	  rvecDeltaNorm_h1d0, rvecOmegaAc_h1d0, plot_marker_h1d0, 'color', plot_color_h1d0, ...
-	  rvecDeltaNorm_h1d1, rvecOmegaAc_h1d1, plot_marker_h1d1, 'color', plot_color_h1d1, ...
-	  rvecDeltaNorm_h2d0, rvecOmegaAc_h2d0, plot_marker_h2d0, 'color', plot_color_h2d0, ...
-	  rvecDeltaNorm_h2d1, rvecOmegaAc_h2d1, plot_marker_h2d1, 'color', plot_color_h2d1, ...
-	  rvecDeltaNorm_h2d2, rvecOmegaAc_h2d2, plot_marker_h2d2, 'color', plot_color_h2d2 );
-	legend( ...
-	  "H1D0", ...
-	  "H1D1", ...
-	  "H2D0", ...
-	  "H2D1", ...
-	  "H2D2", ...
-	  "location", "north" );
-	xlabel( "delta norm" );
-	ylabel( "omega actual" );
-	title( "omega actual vs delta norm" );
-	grid on;
-	%
-	numFigs++; figure(numFigs);
-	plot( ...
 	  rvecDeltaNorm_h1d0, rvecOmegaM1_h1d0, plot_marker_h1d0, 'color', plot_color_h1d0, ...
 	  rvecDeltaNorm_h1d1, rvecOmegaM1_h1d1, plot_marker_h1d1, 'color', plot_color_h1d1, ...
 	  rvecDeltaNorm_h2d0, rvecOmegaM1_h2d0, plot_marker_h2d0, 'color', plot_color_h2d0, ...
@@ -260,58 +338,6 @@ function datOut = extFit_viz( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm=[] )
 	%
 	%
 	%
-	numColors = mygetfield( prm, "numColors", 1000 );
-	sizeBigX = 201;
-	sizeBigP = 203;
-	%
-	bigXLo = bigX0 + min([ min(matDelta_h1d0(1,:)), min(matDelta_h1d1(1,:)) ]);
-	bigXHi = bigX0 + max([ max(matDelta_h1d0(1,:)), max(matDelta_h1d1(1,:)) ]);
-	bigPLo = bigP0 + min([ min(matDelta_h1d0(2,:)), min(matDelta_h1d1(2,:)) ]);
-	bigPHi = bigP0 + max([ max(matDelta_h1d0(2,:)), max(matDelta_h1d1(2,:)) ]);
-	rvecBigX = 0.5*(bigXHi+bigXLo)+0.5*1.3*(bigXHi-bigXLo)*linspace( -1.0, 1.0, sizeBigX );
-	bigPBuffer = (bigPHi/bigPLo)^0.2;
-	rvecBigP = linspace( bigPLo/bigPBuffer, bigPHi*bigPBuffer, sizeBigP );
-	[ matBigX, matBigP ] = meshgrid( rvecBigX, rvecBigP );
-	dat_calcOmega = extFit_calcOmega_mat( matBigX, matBigP, rvecX, rvecF, rvecW );
-	matOmegaAc = dat_calcOmega.matOmega;
-	%
-	rvecDeltaX = rvecBigX - bigX0;
-	rvecDeltaP = rvecBigP - bigP0;
-	[ matDeltaX, matDeltaP ] = meshgrid( rvecDeltaX, rvecDeltaP );
-	matOmegaM1 = omega0 + matH1(2,1) * matDeltaX .* matDeltaP ....
-	 + matDeltaX .* ( vecG(1) + 0.5*matH1(1,1)*matDeltaX ) ...
-	 + matDeltaP .* ( vecG(2) + 0.5*matH1(2,2)*matDeltaP );
-	matOmegaM2 = omega0 + matH2(2,1) * matDeltaX .* matDeltaP ....
-	 + matDeltaX .* ( vecG(1) + 0.5*matH2(1,1)*matDeltaX ) ...
-	 + matDeltaP .* ( vecG(2) + 0.5*matH2(2,2)*matDeltaP );
-	%
-	omegaMax = max(max(matOmegaAc));
-	omegaMin = 0.0;
-	%omegaMax = max(max(matOmegaM1));
-	%omegaMin = min(min(matOmegaM1));
-	funch_viz = @(om)( 1 + round((numColors-1)*cap( (om-omegaMin)/(omegaMax-omegaMin) ,0.0,1.0)) );
-	%
-	%
-	%
-	numFigs++; figure(numFigs);
-	image( rvecBigX, rvecBigP, funch_viz(matOmegaAc) );
-	axis("square");
-	set( get(gcf,"children"), "ydir", "normal" );
-	colormap(mycmap(numColors));
-	hold on;
-	plot( bigX0, bigP0, 'ws', 'markersize', 20, 'linewidth', 2 );
-	plot( ...
-	  bigX0+matDelta_h1d0(1,:), bigP0+matDelta_h1d0(2,:), plot_marker_h1d0, 'color', plot_color_h1d0, ...
-	  bigX0+matDelta_h1d1(1,:), bigP0+matDelta_h1d1(2,:), plot_marker_h1d1, 'color', plot_color_h1d1, ...
-	  bigX0+matDelta_h2d0(1,:), bigP0+matDelta_h2d0(2,:), plot_marker_h2d0, 'color', plot_color_h2d0, ...
-	  bigX0+matDelta_h2d1(1,:), bigP0+matDelta_h2d1(2,:), plot_marker_h2d1, 'color', plot_color_h2d1, ...
-	  bigX0+matDelta_h2d2(1,:), bigP0+matDelta_h2d2(2,:), plot_marker_h2d2, 'color', plot_color_h2d2 );
-	hold off;
-	grid on;
-	xlabel( "bigX" );
-	ylabel( "bigP" );
-	title( "omega vs bigX, bigP" );
-	%
 	numFigs++; figure(numFigs);
 	image( rvecBigX, rvecBigP, funch_viz(matOmegaM1) );
 	axis("square");
@@ -319,6 +345,9 @@ function datOut = extFit_viz( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm=[] )
 	colormap(mycmap(numColors));
 	hold on;
 	plot( bigX0, bigP0, 'ws', 'markersize', 20, 'linewidth', 2 );
+	if ( haveBigXSecret && haveBigPSecret )
+		plot( bigX_secret, bigP_secret, 'w*', 'markersize', 25, 'linewidth', 3 );
+	end
 	plot( ...
 	  bigX0+matDelta_h1d0(1,:), bigP0+matDelta_h1d0(2,:), plot_marker_h1d0, 'color', plot_color_h1d0, ...
 	  bigX0+matDelta_h1d1(1,:), bigP0+matDelta_h1d1(2,:), plot_marker_h1d1, 'color', plot_color_h1d1, ...
@@ -338,6 +367,9 @@ function datOut = extFit_viz( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm=[] )
 	colormap(mycmap(numColors));
 	hold on;
 	plot( bigX0, bigP0, 'ws', 'markersize', 20, 'linewidth', 2 );
+	if ( haveBigXSecret && haveBigPSecret )
+		plot( bigX_secret, bigP_secret, 'w*', 'markersize', 25, 'linewidth', 3 );
+	end
 	plot( ...
 	  bigX0+matDelta_h1d0(1,:), bigP0+matDelta_h1d0(2,:), plot_marker_h1d0, 'color', plot_color_h1d0, ...
 	  bigX0+matDelta_h1d1(1,:), bigP0+matDelta_h1d1(2,:), plot_marker_h1d1, 'color', plot_color_h1d1, ...
