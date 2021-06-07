@@ -10,11 +10,16 @@ function datOut = extFit_calcGradHess( bigX, bigP, rvecX, rvecF, rvecW=[], prm=[
 	assert( isrealarray(rvecX,[1,numPts]) );
 	assert( isrealarray(rvecF,[1,numPts]) );
 	assert( isrealarray(rvecW,[1,numPts]) );
+	assert( 0==sum(diff(rvecX)<=0.0) );
 	%
+	%epsX_default = ...
+	%  min([ sqrt(eps)*(max(rvecX)-min(rvecX)), ...
+	%   sqrt(sqrt(eps))*min(abs(diff(rvecX))) ]);
+	%epsP_default = sqrt(eps);
 	epsX_default = ...
-	  min([ sqrt(eps)*(max(rvecX)-min(rvecX)), ...
-	   sqrt(sqrt(eps))*min(abs(diff(rvecX))) ]);
-	epsP_default = sqrt(eps);
+	  min([ 0.001*(max(rvecX)-min(rvecX)), ...
+	   0.01*min(abs(diff(rvecX))) ]);
+	epsP_default = 0.001;
 	epsX = mygetfield( prm, "epsX", epsX_default );
 	epsP = mygetfield( prm, "epsP", epsP_default );
 	%

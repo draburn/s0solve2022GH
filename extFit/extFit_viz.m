@@ -1,6 +1,7 @@
 %function datOut = extFit_viz( bigX, bigP, rvecX, rvecF, rvecW=[], prm=[] )
 	clear;
-	setprngstates(58467872);
+	setprngstates(30660864); % Start on wrong side of a point???
+	%setprngstates(58467872);
 	%setprngstates(26846592); % Massive slowdown. And, ?!?!?!?!
 	%setprngstates(98584480);
 	%setprngstates(40121600); % Here, H2 might be better.
@@ -10,7 +11,7 @@
 	bigP_secret = 1.0 + 3.0*abs(randn())
 	bigA_secret = randn()*exp(abs(3.0*randn()));
 	bigB_secret = randn()*exp(abs(3.0*randn()));
-	rvecX = bigX_secret + randn(1,numPts);
+	rvecX = sort(bigX_secret + randn(1,numPts));
 	funchF = @(x)( bigA_secret + bigB_secret * abs( rvecX - bigX_secret ).^bigP_secret );
 	rvecF = funchF(rvecX);
 	rvecW = [];
@@ -260,9 +261,12 @@
 	colormap(mycmap(numColors));
 	hold on;
 	plot( bigX_secret, bigP_secret, 'w*', 'markersize', 25, 'linewidth', 2 );
-	plot( bigX0, bigP0, 'ws', 'markersize', 20, 'linewidth', 2 );
-	plot( bigX0+matDelta_h1d0(1,:), bigP0+matDelta_h1d0(2,:), 'ko-' );
-	plot( bigX0+matDelta_h2d0(1,:), bigP0+matDelta_h2d0(2,:), 'rv-' );
+	plot( ...
+	  bigX0+matDelta_h1d0(1,:), bigP0+matDelta_h1d0(2,:), plot_marker_h1d0, 'color', plot_color_h1d0, ...
+	  bigX0+matDelta_h1d1(1,:), bigP0+matDelta_h1d1(2,:), plot_marker_h1d1, 'color', plot_color_h1d1, ...
+	  bigX0+matDelta_h2d0(1,:), bigP0+matDelta_h2d0(2,:), plot_marker_h2d0, 'color', plot_color_h2d0, ...
+	  bigX0+matDelta_h2d1(1,:), bigP0+matDelta_h2d1(2,:), plot_marker_h2d1, 'color', plot_color_h2d1, ...
+	  bigX0+matDelta_h2d2(1,:), bigP0+matDelta_h2d2(2,:), plot_marker_h2d2, 'color', plot_color_h2d2 );
 	hold off;
 	grid on;
 	xlabel( "bigX" );
@@ -276,9 +280,12 @@
 	colormap(mycmap(numColors));
 	hold on;
 	plot( bigX_secret, bigP_secret, 'w*', 'markersize', 25, 'linewidth', 2 );
-	plot( bigX0, bigP0, 'ws', 'markersize', 20, 'linewidth', 2 );
-	plot( bigX0+matDelta_h1d0(1,:), bigP0+matDelta_h1d0(2,:), 'ko-' );
-	plot( bigX0+matDelta_h2d0(1,:), bigP0+matDelta_h2d0(2,:), 'rv-' );
+	plot( ...
+	  bigX0+matDelta_h1d0(1,:), bigP0+matDelta_h1d0(2,:), plot_marker_h1d0, 'color', plot_color_h1d0, ...
+	  bigX0+matDelta_h1d1(1,:), bigP0+matDelta_h1d1(2,:), plot_marker_h1d1, 'color', plot_color_h1d1, ...
+	  bigX0+matDelta_h2d0(1,:), bigP0+matDelta_h2d0(2,:), plot_marker_h2d0, 'color', plot_color_h2d0, ...
+	  bigX0+matDelta_h2d1(1,:), bigP0+matDelta_h2d1(2,:), plot_marker_h2d1, 'color', plot_color_h2d1, ...
+	  bigX0+matDelta_h2d2(1,:), bigP0+matDelta_h2d2(2,:), plot_marker_h2d2, 'color', plot_color_h2d2 );
 	hold off;
 	grid on;
 	xlabel( "bigX" );
@@ -292,9 +299,12 @@
 	colormap(mycmap(numColors));
 	hold on;
 	plot( bigX_secret, bigP_secret, 'w*', 'markersize', 25, 'linewidth', 2 );
-	plot( bigX0, bigP0, 'ws', 'markersize', 20, 'linewidth', 2 );
-	plot( bigX0+matDelta_h1d0(1,:), bigP0+matDelta_h1d0(2,:), 'ko-' );
-	plot( bigX0+matDelta_h2d0(1,:), bigP0+matDelta_h2d0(2,:), 'rv-' );
+	plot( ...
+	  bigX0+matDelta_h1d0(1,:), bigP0+matDelta_h1d0(2,:), plot_marker_h1d0, 'color', plot_color_h1d0, ...
+	  bigX0+matDelta_h1d1(1,:), bigP0+matDelta_h1d1(2,:), plot_marker_h1d1, 'color', plot_color_h1d1, ...
+	  bigX0+matDelta_h2d0(1,:), bigP0+matDelta_h2d0(2,:), plot_marker_h2d0, 'color', plot_color_h2d0, ...
+	  bigX0+matDelta_h2d1(1,:), bigP0+matDelta_h2d1(2,:), plot_marker_h2d1, 'color', plot_color_h2d1, ...
+	  bigX0+matDelta_h2d2(1,:), bigP0+matDelta_h2d2(2,:), plot_marker_h2d2, 'color', plot_color_h2d2 );
 	hold off;
 	grid on;
 	xlabel( "bigX" );
