@@ -1,6 +1,8 @@
 %function datOut = extFit_viz( bigX, bigP, rvecX, rvecF, rvecW=[], prm=[] )
 	clear;
-	setprngstates(77077008);
+	setprngstates();
+	%setprngstates(10743664); % Image plots glitched. Turn off axis(suqare), "a", zoom out.
+	%setprngstates(77077008);
 	%setprngstates(5932672)
 	%setprngstates(5932672);
 	%setprngstates(30660864); % Start on wrong side of a point???
@@ -316,6 +318,7 @@
 	colormap(mycmap(numColors));
 	hold on;
 	plot( bigX_secret, bigP_secret, 'w*', 'markersize', 25, 'linewidth', 2 );
+	plot( bigX0, bigP0, 'ws', 'markersize', 20, 'linewidth', 2 );
 	plot( ...
 	  bigX0+matDelta_h1d0(1,:), bigP0+matDelta_h1d0(2,:), plot_marker_h1d0, 'color', plot_color_h1d0, ...
 	  bigX0+matDelta_h1d1(1,:), bigP0+matDelta_h1d1(2,:), plot_marker_h1d1, 'color', plot_color_h1d1, ...
@@ -335,6 +338,7 @@
 	colormap(mycmap(numColors));
 	hold on;
 	plot( bigX_secret, bigP_secret, 'w*', 'markersize', 25, 'linewidth', 2 );
+	plot( bigX0, bigP0, 'ws', 'markersize', 20, 'linewidth', 2 );
 	plot( ...
 	  bigX0+matDelta_h1d0(1,:), bigP0+matDelta_h1d0(2,:), plot_marker_h1d0, 'color', plot_color_h1d0, ...
 	  bigX0+matDelta_h1d1(1,:), bigP0+matDelta_h1d1(2,:), plot_marker_h1d1, 'color', plot_color_h1d1, ...
@@ -354,6 +358,7 @@
 	colormap(mycmap(numColors));
 	hold on;
 	plot( bigX_secret, bigP_secret, 'w*', 'markersize', 25, 'linewidth', 2 );
+	plot( bigX0, bigP0, 'ws', 'markersize', 20, 'linewidth', 2 );
 	plot( ...
 	  bigX0+matDelta_h1d0(1,:), bigP0+matDelta_h1d0(2,:), plot_marker_h1d0, 'color', plot_color_h1d0, ...
 	  bigX0+matDelta_h1d1(1,:), bigP0+matDelta_h1d1(2,:), plot_marker_h1d1, 'color', plot_color_h1d1, ...
