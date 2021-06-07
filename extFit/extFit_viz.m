@@ -16,7 +16,10 @@
 	bigP_secret = 1.0 + 3.0*abs(randn())
 	bigA_secret = randn()*exp(abs(3.0*randn()));
 	bigB_secret = randn()*exp(abs(3.0*randn()));
-	rvecX = sort(bigX_secret + randn(1,numPts));
+	rvecX = sort([ ...
+	  bigX_secret - abs(randn(1,2)), ...
+	  bigX_secret + abs(randn(1,2)), ...
+	  bigX_secret + randn(1,numPts-4) ]);
 	funchF = @(x)( bigA_secret + bigB_secret * abs( x - bigX_secret ).^bigP_secret );
 	rvecF = funchF(rvecX);
 	rvecW = [];
@@ -45,13 +48,7 @@
 		end
 	end
 	end
-	if ( 1==index0 )
-		bigX0 = (rvecX(1)+rvecX(2))/2.0
-	elseif ( numPts==index0)
-		bigX0 = (rvecX(numPts)+rvecX(numPts-1))/2.0
-	else
-		bigX0 = (rvecX(index0+1)+rvecX(index0-1))/2.0
-	end
+	bigX0 = (rvecX(index0+1)+rvecX(index0-1))/2.0
 	bigP0 = 2.0
 	%
 	%
@@ -279,16 +276,12 @@
 	numColors = mygetfield( prm, "numColors", 1000 );
 	sizeBigX = 201;
 	sizeBigP = 203;
-	bigXLo = bigX0 + min([ min(matDelta_h1d0(1,:)), min(matDelta_h1d1(1,:)) ]);
-	bigXLo = min([ bigXLo, bigX_secret ]);
-	bigXHi = bigX0 + max([ max(matDelta_h1d0(1,:)), max(matDelta_h1d1(1,:)) ]);
-	bigXHi = max([ bigXHi, bigX_secret ]);
+	rvecBigX = linspace( rvecX(index0-1), rvecX(index0+1), sizeBigX );
 	bigPLo = bigP0 + min([ min(matDelta_h1d0(2,:)), min(matDelta_h1d1(2,:)) ]);
 	bigPLo = min([ bigPLo, bigP_secret ]);
 	bigPHi = bigP0 + max([ max(matDelta_h1d0(2,:)), max(matDelta_h1d1(2,:)) ]);
 	bigPHi = max([ bigPHi, bigP_secret ]);
-	rvecBigX = linspace( bigXLo-0.3*(bigXHi-bigXLo), bigXHi+0.3*(bigXHi-bigXLo), sizeBigX );
-	rvecBigP = linspace( bigPLo-0.3*(bigPHi-bigPLo), bigPHi+0.3*(bigPHi-bigPLo), sizeBigP );
+	rvecBigP = linspace( bigPLo*0.5, bigPHi*2.0, sizeBigP );
 	[ matBigX, matBigP ] = meshgrid( rvecBigX, rvecBigP );
 	dat_calcOmega = extFit_calcOmega_mat( matBigX, matBigP, rvecX, rvecF, rvecW );
 	matOmegaAc = dat_calcOmega.matOmega;
