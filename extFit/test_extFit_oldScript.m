@@ -1,4 +1,52 @@
 function [ datOut, retCode ] = extFit( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm=[] )
+	clear;
+	%setprngstates();
+	%setprngstates(19719664); % eye(2,2) may be better here.
+	%setprngstates(77173824); % Better initial guess would help; goes negative in P.
+	setprngstates(80489888);
+	numPts = 5 + round(abs(randn()*exp(abs(randn()))))
+	bigX_secret = randn()*exp(abs(3.0*randn()))
+	bigP_secret = 1.0 + 3.0*abs(randn())
+	bigA_secret = randn()*exp(abs(3.0*randn()));
+	bigB_secret = randn()*exp(abs(3.0*randn()));
+	rvecX = sort([ ...
+	  bigX_secret - abs(randn(1,2)), ...
+	  bigX_secret + abs(randn(1,2)), ...
+	  bigX_secret + randn(1,numPts-4) ]);
+	funchF = @(x)( bigA_secret + bigB_secret * abs( x - bigX_secret ).^bigP_secret );
+	rvecF = funchF(rvecX);
+	rvecW = [];
+	prm = [];
+	index0 = 1;
+	if ( bigB_secret > 0 )
+	while (1)
+		if ( (index0==numPts) )
+			break;
+		elseif ( rvecF(index0+1) > rvecF(index0) )
+			break;
+		else
+			index0++;
+			continue;
+		end
+	end
+	elseif ( bigB_secret < 0 )
+	while (1)
+		if ( (index0==numPts) )
+			break;
+		elseif ( rvecF(index0+1) < rvecF(index0) )
+			break;
+		else
+			index0++;
+			continue;
+		end
+	end
+	end
+	bigX0 = (rvecX(index0+1)+rvecX(index0-1))/2.0
+	bigP0 = 2.0
+	%
+	%
+	%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%
 	commondefs; thisFile = "extFit";
 	msg( thisFile, __LINE__, "Note that I may be better than diag(diag(H))." );
@@ -84,7 +132,7 @@ function [ datOut, retCode ] = extFit( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm
 			dat_trial = extFit_calcOmega( bigX_trial, bigP_trial, rvecX, rvecF, rvecW );
 			omega_trial = dat_trial.omega;
 			msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
-				  " %3d;  %11.3e, %11.3e, %11.3e;  %11.3e, %11.3e, %11.3e; %2d, %11.3e, %11.3e, %11.3e; %11.3e", ...
+				  "%3d;  %11.3e, %11.3e, %11.3e;  %11.3e, %11.3e, %11.3e; %2d, %11.3e, %11.3e, %11.3e; %11.3e", ...
 			  iterCount, ...
 			  bigX, ...
 			  bigP, ...
