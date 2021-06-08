@@ -27,6 +27,23 @@ function [ omega, rho, bigA, bigB ] = extFit_calcOmega( xVals, fVals, bigX, bigP
 	end
 	assert( isrealarray(wVals,[1,numPts]) );
 	%
+	if ( 1==size1 && 1==size2 )
+		dVals = abs(xVals-bigX).^bigP;
+		wdVals = wVals.*dVals;
+		sigma1 = sum(wVals);
+		sigmaF = sum(wVals.*fVals);
+		sigmaD  = sum(wdVals);
+		sigmaDD = sum(wdVals.*dVals);
+		sigmaDF = sum(wdVals.*fVals);
+		%
+		denom = sigma1 * sigmaDD - (sigmaD.*sigmaD);
+		bigA = ( sigmaDD * sigmaF  - sigmaD * sigmaDF ) ./ denom;
+		bigB = ( sigma1  * sigmaDF - sigmaD * sigmaF  ) ./ denom;
+		rho = bigA + bigB * dVals - fVals;
+		omega = 0.5 * sum( wVals .* rho .* rho );
+	return;
+	end
+	%
 	ary3D   = zeros(size1,size2,numPts);
 	ary3WD  = zeros(size1,size2,numPts);
 	ary3WDD = zeros(size1,size2,numPts);

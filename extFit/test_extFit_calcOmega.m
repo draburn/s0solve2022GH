@@ -62,6 +62,7 @@
 	[ omegaMin, bigPIndexOfMin, bigXIndexOfMin ] = minmin(omegaMesh)
 	bigXOfMin = bigXVals(bigXIndexOfMin)
 	bigPOfMin = bigPVals(bigPIndexOfMin)
+	singlePt_omega = extFit_calcOmega( xVals, fVals, bigXOfMin, bigPOfMin )
 	%
 	blurCoeff = 0.01;
 	tempMesh = (  (1.0-blurCoeff)*omegaMesh(2:end-1,:)  +  blurCoeff * ...
