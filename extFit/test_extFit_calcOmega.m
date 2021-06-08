@@ -5,6 +5,7 @@
 	%
 	%
 	%
+	%for n=1:1000 %%%
 	for n=1:1 %%%
 	setprngstates();
 	%setprngstates(6373056); % Very streched.
@@ -14,21 +15,29 @@
 	%setprngstates(91546736); % Blur helps!
 	%setprngstates(43730992); % Blur (even 0.1) makes things worse, but basin is broad anyway.
 	%setprngstates(4117536); % Blur 0.1 makes things worse.
-	setprngstates(56938368); % Narrow but blur hurts.
+	%setprngstates(56938368); % Narrow but blur hurts.
+	%
+	% 1900
+	%setprngstates(44883728);  % Rare case where BOTH non-blur and blur are bad.
+	%setprngstates(90472720); % Blur is very far.
+	%setprngstates(94811216); % Both are bad.
+	%setprngstates(28378336); % A below-tol point.
+	setprngstates(13835520); % Both are quite bad.
 	%
 	%
 	%
-	bigA_secret = randn()
-	bigB_secret = randn()
-	bigX_secret = randn()
-	bigP_secret = 2.0 + abs(randn())
+	bigA_secret = randn();
+	bigB_secret = randn();
+	bigX_secret = randn();
+	bigP_secret = 2.0 + abs(randn());
 	funchF = @(x)( bigA_secret + bigB_secret * abs( x - bigX_secret ) .^ bigP_secret );
 	%
 	numPts = round(5 + abs(randn()*exp(randn())));
+	xScale = 0.1;
 	xVals = sort([ ...
-	  bigX_secret-abs(randn(1,2)), ...
-	  bigX_secret+abs(randn(1,2)), ...
-	  bigX_secret+randn(1,numPts-4) ]);
+	  bigX_secret-xScale*abs(randn(1,2)), ...
+	  bigX_secret+xScale*abs(randn(1,2)), ...
+	  bigX_secret+xScale*randn(1,numPts-4) ]);
 	fVals = funchF(xVals);
 	%
 	omegaTol = eps * sum( fVals.^2 );
@@ -65,10 +74,10 @@
 		msg( thisFile, __LINE__, "Found a below-tol point!" );
 	end
 	%
-	[ omegaMin, bigPIndexOfMin, bigXIndexOfMin ] = minmin(omegaMesh)
-	bigXOfMin = bigXVals(bigXIndexOfMin)
-	bigPOfMin = bigPVals(bigPIndexOfMin)
-	singlePt_omega = extFit_calcOmega( xVals, fVals, bigXOfMin, bigPOfMin )
+	[ omegaMin, bigPIndexOfMin, bigXIndexOfMin ] = minmin(omegaMesh);
+	bigXOfMin = bigXVals(bigXIndexOfMin);
+	bigPOfMin = bigPVals(bigPIndexOfMin);
+	singlePt_omega = extFit_calcOmega( xVals, fVals, bigXOfMin, bigPOfMin );
 	%
 	blurCoeff = 0.5;
 	tempMesh = ...
@@ -78,18 +87,19 @@
 	   (1.0-blurCoeff) * tempMesh(:,2:end-1)  ...
 	 + (blurCoeff/2.0) * ( tempMesh(:,3:end) + tempMesh(:,1:end-2) );
 	%
-	[ omegaBlurMin, bigPIndexOfBlurMin, bigXIndexOfBlurMin ] = minmin(omegaBlurMesh)
-	bigXOfBlurMin = bigXVals(bigXIndexOfBlurMin+1)
-	bigPOfBlurMin = bigPVals(bigPIndexOfBlurMin+1)
+	[ omegaBlurMin, bigPIndexOfBlurMin, bigXIndexOfBlurMin ] = minmin(omegaBlurMesh);
+	bigXOfBlurMin = bigXVals(bigXIndexOfBlurMin+1);
+	bigPOfBlurMin = bigPVals(bigPIndexOfBlurMin+1);
 	%
 	%
-	bigXRes = abs(bigX_secret-bigXOfBlurMin);
-	bigPRes = abs(bigP_secret-bigPOfBlurMin);
-	if ( bigXRes > 0.2 || bigPRes > 1.0 )
-		"BREAK!"
+	bigXRes = abs(bigX_secret-bigXOfMin);
+	bigPRes = abs(bigP_secret-bigPOfMin);
+	bigXBlurRes = abs(bigX_secret-bigXOfBlurMin);
+	bigPBlurRes = abs(bigP_secret-bigPOfBlurMin);
+	if (  (bigXRes > 0.2 || bigPRes > 1.0)  &&  (bigXBlurRes > 0.2 || bigPBlurRes > 1.0)  )
+		msg( thisFile, __LINE__, "BREAK!" );
 		break;
 	else
-		"CONTINUE!"
 		continue;
 	end
 	end %%%
