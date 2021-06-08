@@ -5,7 +5,7 @@
 	%
 	%
 	%
-	for n=1:1000 %%%
+	for n=1:1 %%%
 	setprngstates();
 	%setprngstates(6373056); % Very streched.
 	%setprngstates(75511728); % A very streched case.
@@ -37,8 +37,14 @@
 	%
 	sizeBigX = 101;
 	sizeBigP = 102;
-	bigXLo = min(xVals);
-	bigXHi = max(xVals);
+	indexOfExt = 2;
+	while ( (fVals(indexOfExt+1)-fVals(indexOfExt)) * (fVals(2)-fVals(1)) > 0 )
+		indexOfExt++;
+	end
+	bigXLo = xVals(indexOfExt-1);
+	bigXHi = xVals(indexOfExt+1);
+	%bigXLo = min(xVals);
+	%bigXHi = max(xVals);
 	bigPLo = 0.5;
 	bigPHi = 10.0;
 	bigXVals = linspace( bigXLo, bigXHi, sizeBigX );
@@ -64,11 +70,13 @@
 	bigPOfMin = bigPVals(bigPIndexOfMin)
 	singlePt_omega = extFit_calcOmega( xVals, fVals, bigXOfMin, bigPOfMin )
 	%
-	blurCoeff = 0.01;
-	tempMesh = (  (1.0-blurCoeff)*omegaMesh(2:end-1,:)  +  blurCoeff * ...
-	  ( omegaMesh(3:end,:) + omegaMesh(1:end-2,:) )  ) / 3.0;
-	omegaBlurMesh = (  (1.0-blurCoeff)*tempMesh(:,2:end-1)  +  blurCoeff * ...
-	  ( tempMesh(:,3:end)  + tempMesh(:,1:end-2)  )  ) / 3.0;
+	blurCoeff = 0.5;
+	tempMesh = ...
+	   (1.0-blurCoeff) * omegaMesh(2:end-1,:)  ...
+	 + (blurCoeff/2.0) * ( omegaMesh(3:end,:) + omegaMesh(1:end-2,:) );
+	omegaBlurMesh = ...
+	   (1.0-blurCoeff) * tempMesh(:,2:end-1)  ...
+	 + (blurCoeff/2.0) * ( tempMesh(:,3:end) + tempMesh(:,1:end-2) );
 	%
 	[ omegaBlurMin, bigPIndexOfBlurMin, bigXIndexOfBlurMin ] = minmin(omegaBlurMesh)
 	bigXOfBlurMin = bigXVals(bigXIndexOfBlurMin+1)
