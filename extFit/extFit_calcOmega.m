@@ -1,4 +1,4 @@
-function [ omega, rho, bigA, bigB ] = extFit_calcOmega( xVals, fVals, bigX, bigP, prm = [] );
+function [ omega, rho, bigA, bigB ] = extFit_calcOmega( xVals, fVals, bigX, bigP, wVals = [] );
 	thisFile = "extFit_calcOmega";
 	%
 	% The logic:
@@ -21,7 +21,6 @@ function [ omega, rho, bigA, bigB ] = extFit_calcOmega( xVals, fVals, bigX, bigP
 	size2 = size(bigX,2);
 	assert( isrealarray(bigX,[size1,size2]) );
 	assert( isrealarray(bigP,[size1,size2]) );
-	wVals = mygetfield( prm, "wVals", [] );
 	if (isempty(wVals))
 		wVals = ones(1,numPts);
 	end
