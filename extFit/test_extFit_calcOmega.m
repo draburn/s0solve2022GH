@@ -26,26 +26,25 @@
 	%
 	%
 	%
-	bigA_secret = randn();
-	bigB_secret = randn();
-	bigX_secret = randn();
-	bigP_secret = 2.0 + abs(randn());
+	bigA_secret = randn()
+	bigB_secret = randn()
+	bigX_secret = randn()
+	bigP_secret = 2.0 + abs(randn())
 	funchF = @(x)( bigA_secret + bigB_secret * abs( x - bigX_secret ) .^ bigP_secret );
 	%
 	numPts = round(5 + abs(randn()*exp(randn())));
-	xScale = 0.1;
 	xVals = sort([ ...
-	  bigX_secret-xScale*abs(randn(1,2)), ...
-	  bigX_secret+xScale*abs(randn(1,2)), ...
-	  bigX_secret+xScale*randn(1,numPts-4) ]);
+	  bigX_secret-abs(randn(1,2)), ...
+	  bigX_secret+abs(randn(1,2)), ...
+	  bigX_secret+randn(1,numPts-4) ]);
 	fVals = funchF(xVals);
 	%
 	omegaTol = eps * sum( fVals.^2 );
 	%
 	%
 	%
-	sizeBigX = 101;
-	sizeBigP = 102;
+	sizeBigX = 51;
+	sizeBigP = 52;
 	indexOfExt = 2;
 	while ( (fVals(indexOfExt+1)-fVals(indexOfExt)) * (fVals(2)-fVals(1)) > 0 )
 		indexOfExt++;
@@ -75,9 +74,12 @@
 	end
 	%
 	[ omegaMin, bigPIndexOfMin, bigXIndexOfMin ] = minmin(omegaMesh);
-	bigXOfMin = bigXVals(bigXIndexOfMin);
-	bigPOfMin = bigPVals(bigPIndexOfMin);
-	singlePt_omega = extFit_calcOmega( xVals, fVals, bigXOfMin, bigPOfMin );
+	bigXOfMin = bigXVals(bigXIndexOfMin)
+	bigPOfMin = bigPVals(bigPIndexOfMin)
+	[ ofMin_omega, ofMin_rhoVec, ofMin_bigA, ofMin_bigB ] = extFit_calcOmega( xVals, fVals, bigXOfMin, bigPOfMin );
+	echo__ofMin_omega = ofMin_omega
+	echo__ofMin_bigA = ofMin_bigA
+	echo__ofMin_bigB = ofMin_bigB
 	%
 	blurCoeff = 0.5;
 	tempMesh = ...
@@ -88,8 +90,8 @@
 	 + (blurCoeff/2.0) * ( tempMesh(:,3:end) + tempMesh(:,1:end-2) );
 	%
 	[ omegaBlurMin, bigPIndexOfBlurMin, bigXIndexOfBlurMin ] = minmin(omegaBlurMesh);
-	bigXOfBlurMin = bigXVals(bigXIndexOfBlurMin+1);
-	bigPOfBlurMin = bigPVals(bigPIndexOfBlurMin+1);
+	bigXOfBlurMin = bigXVals(bigXIndexOfBlurMin+1)
+	bigPOfBlurMin = bigPVals(bigPIndexOfBlurMin+1)
 	%
 	%
 	bigXRes = abs(bigX_secret-bigXOfMin);
