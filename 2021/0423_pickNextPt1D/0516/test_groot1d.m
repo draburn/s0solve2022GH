@@ -19,7 +19,7 @@ case (0)
 case (1)
 	msg_main( verbLev, thisFile, __LINE__, ...
 	  sprintf("Case: Simple glancing zero, 'complex behavior'.") );
-	funchF = @(x)( (x-(pi-1.0)).^20.0 );
+	funchF = @(x)( abs(x-(pi-1.0)).^3.0 );
 	x1 = 1.0;
 	x2 = 3.0;
 case (2)

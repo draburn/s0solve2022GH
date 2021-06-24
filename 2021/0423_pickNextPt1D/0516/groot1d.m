@@ -29,7 +29,7 @@ function [ xFinal, retCode, datOut ] = groot1d( funchF, x1, x2, prm=[], datIn=[]
 	%
 	% Stopping criteria.
 	fNormTol = mygetfield( prm, "fNormTol", 1E-12 ); % Success.
-	exeTimeLimit = mygetfield( prm, "exeTimeLimit", 3.0 ); % Imposed stop.
+	exeTimeLimit = mygetfield( prm, "exeTimeLimit", -1.0 ); % Imposed stop.
 	fevalCountLimit = mygetfield( prm, "fevalCountLimit", 200 ); % Imposed stop.
 	stopsigCheckInterval = mygetfield( prm, "stopsigCheckInterval", -1.0 ); % Imposed stop.
 	assert( isrealscalar(fNormTol) );
@@ -38,6 +38,7 @@ function [ xFinal, retCode, datOut ] = groot1d( funchF, x1, x2, prm=[], datIn=[]
 	assert( isrealscalar(fevalCountLimit) );
 	assert( isrealscalar(stopsigCheckInterval) );
 	stopsigCheckTimePrev = startTime;
+	doExtFitViz = mygetfield( prm, "doExtFitViz", true );
 	%
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -140,6 +141,10 @@ function [ xFinal, retCode, datOut ] = groot1d( funchF, x1, x2, prm=[], datIn=[]
 			   fVals_raw(end) )  );
 			reportTimePrev = time();
 		end
+		end
+		%
+		if ( doExtFitViz )
+			groot1d_extFitViz( xVals_sorted, fVals_sorted, prm );
 		end
 	end
 	%
