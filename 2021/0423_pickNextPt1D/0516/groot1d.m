@@ -80,6 +80,10 @@ function [ xFinal, retCode, datOut ] = groot1d( funchF, x1, x2, prm=[], datIn=[]
 		[ xVals_sorted, evalIndex_sorted ] = sort( xVals_raw );
 		fVals_sorted = fVals_raw(evalIndex_sorted);
 		%
+		if ( doExtFitViz )
+			groot1d_extFitViz( xVals_sorted, fVals_sorted, prm );
+		end
+		%
 		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		% CHECK STOP
 		%
@@ -141,10 +145,6 @@ function [ xFinal, retCode, datOut ] = groot1d( funchF, x1, x2, prm=[], datIn=[]
 			   fVals_raw(end) )  );
 			reportTimePrev = time();
 		end
-		end
-		%
-		if ( doExtFitViz )
-			groot1d_extFitViz( xVals_sorted, fVals_sorted, prm );
 		end
 	end
 	%

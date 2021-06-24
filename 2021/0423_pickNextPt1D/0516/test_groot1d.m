@@ -4,7 +4,7 @@ thisFile = "test_groot1d";
 tic();
 
 verbLev = VERBLEV__COPIOUS;
-caseNum = 1;
+caseNum = 2;
 
 prm = []; % Unless overwritten by case.
 datIn = []; % Unless overwritten by case.
