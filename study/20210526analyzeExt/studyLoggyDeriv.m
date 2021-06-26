@@ -3,7 +3,7 @@ commondefs;
 thisFile = "studyLoggyDeriv";
 numFigs = 0;
 
-caseNum = 0;
+caseNum = 1;
 switch (caseNum)
 case 0
 	bigX = 0.0;
@@ -14,9 +14,9 @@ case 0
 case 1
 	setprngstates(0);
 	bigX = randn()*exp(abs(randn()));
-	bigF0 = randn();
+	bigF0 = 1e-6*abs(randn());
 	bigF1 = randn();
-	bigP = abs(randn());
+	bigP = 2.0+abs(randn());
 	funchF = @(x)( bigF0 + bigF1*( abs(x-bigX).^bigP ) );
 case 2
 	funchF = @(x)( exp(-1./(x.^2)) );
@@ -25,7 +25,7 @@ otherwise
 end
 %
 numPts = 1000;
-x = 2*linspace(-1,1,numPts)';
+x = bigX+0.5*linspace(-1,1,numPts)';
 f = funchF(x);
 
 numFigs++; figure(numFigs);
