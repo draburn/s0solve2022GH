@@ -31,9 +31,13 @@ f = funchF(x);
 numFigs++; figure(numFigs);
 plot( x, f, 'o-' );
 grid on;
+xlabel( "x" );
+ylabel( "f" );
+title( "f vs x" );
 
 for n=1:5
 	dx = 10.0^(n-5);
+	dxVals(n) = dx;
 	xl = x-dx;
 	xr = x+dx;
 	fl = funchF(xl);
@@ -56,6 +60,22 @@ plot( ...
   x, fodf(:,4), 'o-', ...
   x, fodf(:,5), 'o-' );
 grid on;
+xlabel( "x" );
+ylabel( "f/f'" );
+title( "f/f' vs x" );
+
+dfof = sign(fodf)./( eps^0.5 + abs(fodf) );
+numFigs++; figure(numFigs);
+plot( ...
+  x, dfof(:,1), 'o-', ...
+  x, dfof(:,2), 'o-', ...
+  x, dfof(:,3), 'o-', ...
+  x, dfof(:,4), 'o-', ...
+  x, dfof(:,5), 'o-' );
+grid on;
+xlabel( "x" );
+ylabel( "f'/f" );
+title( "f'/f vs x" );
 
 for n=1:5
 	fodf_mod(:,n) = fodf(:,n).*( 1.0 + 0.001*abs(x).^(-2) );
@@ -68,6 +88,9 @@ plot( ...
   x, fodf_mod(:,4), 'o-', ...
   x, fodf_mod(:,5), 'o-' );
 grid on;
+xlabel( "x" );
+ylabel( "f/f' mod" );
+title( "f/f' mod vs x" );
 
 numFigs++; figure(numFigs);
 plot( ...
@@ -77,6 +100,9 @@ plot( ...
   x, dfoddf(:,4), 'o-', ...
   x, dfoddf(:,5), 'o-' );
 grid on;
+xlabel( "x" );
+ylabel( "f'/f''" );
+title( "f'/f'' vs x" );
 
 %numFigs++; figure(numFigs);
 %plot( ...
