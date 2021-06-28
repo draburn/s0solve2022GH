@@ -1,0 +1,3 @@
+These (probably) aren't the files you're looking for.
+20210625loggyDeriv was abandoned early.
+20210526analyzeExt is where most subsequent work was done.
