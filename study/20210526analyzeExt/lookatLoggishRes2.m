@@ -82,10 +82,12 @@ ptweX = xVals(ptweIndex);
 n = ptweIndex;
 if ( xVals(n-1) < xVals(n) - 10.0*( xVals(n+1) - xVals(n) ) )
 	xBalanceL = xVals(n) - 5.0*( xVals(n+1) - xVals(n) )
+	error( "Don't forget to use xBalanceL!" );
 	return
 end
 if ( xVals(n+1) > xVals(n) + 10.0*( xVals(n) - xVals(n-1) ) )
 	xBalanceR = xVals(n) + 5.0*( xVals(n) - xVals(n-1) )
+	error( "Don't forget to use xBalanceR!" );
 	return
 end
 %
@@ -132,13 +134,13 @@ funchLoggyGB = @(x)( funchDGB(x)./abs(funchDDGB(x)) );
 
 
 viz_numPts = 5000;
-%viz_xVals = linspace(-1.6,1.6,viz_numPts);
-viz_xVals = linspace(-1.0,-0.8,viz_numPts);
+viz_xVals = linspace(-1.6,1.6,viz_numPts);
+%viz_xVals = linspace(-1.0,-0.8,viz_numPts);
 viz_xAVals = linspace(min(vecXA),max(vecXA),viz_numPts);
 viz_xBVals = linspace(min(vecXB),max(vecXB),viz_numPts);
 %
 numFigs++; figure(numFigs);
-semilogy( ...
+plot( ...
   viz_xVals, funchF(viz_xVals), 'o-', ...
   viz_xVals, funchGA(viz_xVals), '^-', ...
   viz_xVals, funchGB(viz_xVals), 'v-', ...
