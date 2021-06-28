@@ -41,7 +41,7 @@ end
 %xVals = sort([ -0.886, -0.880, xVals ]); % Force an absMax.
 %
 % Lets re-do...
-xVals = sort([ -1.00057993392590, -1.0, -0.971949673093843, 0.0 ])
+xVals = sort([ -1.00057993392590, -1.0, -0.971949673093843, 0.0 ]);
 xVals = sort([ -0.831698038563058, xVals ]); %xbalanceR
 xVals = sort([ -0.897832, xVals ]);
 xVals = sort([ -0.868437, xVals ]);
@@ -57,6 +57,25 @@ xVals = sort([ -0.8890615, xVals ]);
 xVals = sort([ -0.8906340, xVals ]);
 %xVals = sort([ -0.8906723, xVals ]);
 %xVals = sort([ -0.89086380000000, xVals ]); % ptweAbsF =    8.81227741557147e-13
+%
+% Try with avg...
+xVals = sort([ -1.00057993392590, -1.0, -0.971949673093843, 0.0 ]);
+xVals = sort([ -0.831698038563058, xVals ]);
+xVals = sort([ -0.897620231966365, xVals ]);
+xVals = sort([ -0.867992251154230, xVals ]);
+xVals = sort([ -0.88284017185230, xVals ]);
+xVals = sort([ -0.887137697860992, xVals ]); % xB goes past data.
+xVals = sort([ -0.886078607798801, xVals ]);
+xVals = sort([ -0.890138678468405, xVals ]); % xB goes way past data!
+xVals = sort([ -0.889487776317036, xVals ]); % must balance...
+xVals = sort([ -0.893393189225250, xVals ]);
+xVals = sort([ -0.890922389166615, xVals ]); % xB goes past...
+xVals = sort([ -0.890775831691018, xVals ]); % must balance...
+xVals = sort([ -0.891655176544600, xVals ]);
+xVals = sort([ -0.890874186962029, xVals ]); %1E-16.
+% Allowing going past by a little bit, as long as avg is well-behaved.
+%xVals = sort([ , xVals ]);
+%
 msg( thisFile, __LINE__, "THIS IS CONVERGING TO THAT LOCAL MAX!!!" );
 msg( thisFile, __LINE__, "CHECK FOR PTWISE LOCAL MAX AND CHOP TO PREVENT THIS!" );
 msg( thisFile, __LINE__, "Even so, it may be easier to find an ext than identify whether max or min." );
@@ -114,10 +133,15 @@ vecFB = fVals(indexB-1:indexB+1)';
 matXB = [ ones(3,1), vecXB, vecXB.^2 ];
 vecCB = matXB\vecFB;
 funchGB   = @(x)( vecCB(1) + vecCB(2)*x + vecCB(3)*x.^2 );
-xExtB = -vecCB(2)/(2.0*vecCB(3)) %FWIW
+xExtB = -vecCB(2)/(2.0*vecCB(3))
 if ( vecCB(3) < 0.0 )
 	msg( thisFile, __LINE__, "Model B has wrong curvature." );
+elseif ( xExtB < vecXB(1) )
+	msg( thisFile, __LINE__, "extB is past left data point." );
+elseif ( xExtB > vecXB(3) )
+	msg( thisFile, __LINE__, "extB is past right data point." );
 end
+xAvg = (xExtA+xExtB)/2.0
 
 
 epsFD = sqrt(sqrt(eps));
