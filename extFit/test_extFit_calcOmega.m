@@ -15,14 +15,14 @@
 	%setprngstates(91546736); % Blur helps!
 	%setprngstates(43730992); % Blur (even 0.1) makes things worse, but basin is broad anyway.
 	%setprngstates(4117536); % Blur 0.1 makes things worse.
-	setprngstates(56938368); % Narrow but blur hurts.
+	%setprngstates(56938368); % Narrow but blur hurts.
 	%
 	% 1900
 	%setprngstates(44883728);  % Rare case where BOTH non-blur and blur are bad.
 	%setprngstates(90472720); % Blur is very far.
 	%setprngstates(94811216); % Both are bad.
 	%setprngstates(28378336); % A below-tol point.
-	%setprngstates(13835520); % Both are quite bad.
+	setprngstates(13835520); % Both are quite bad.
 	%
 	%
 	%
@@ -32,7 +32,7 @@
 	bigP_secret = 2.0 + abs(randn())
 	funchF = @(x)( bigA_secret + bigB_secret * abs( x - bigX_secret ) .^ bigP_secret );
 	%
-	numPts = round(5 + abs(randn()*exp(randn())));
+	numPts = round(50 + abs(randn()*exp(randn())));
 	xVals = sort([ ...
 	  bigX_secret-abs(randn(1,2)), ...
 	  bigX_secret+abs(randn(1,2)), ...
@@ -111,6 +111,56 @@
 	%end
 	%end %%%
 	%
+	% 2021.06.27.
+	doLogishSolve = true;
+	if (doLogishSolve)
+		%zzz
+		polyOrder = 2;
+		for nLo = 1:numPts-polyOrder
+			nHi = nLo+polyOrder;
+			vecX = xVals(nLo:nHi)';
+			matX = ones(polyOrder+1,1);
+			for m=1:polyOrder
+				matX = [ matX, vecX.^m ];
+			end
+			vecF = fVals(nLo:nHi)';
+			vecC = matX\vecF;
+			%
+			thisX = (vecX(1) + vecX(end))/2.0;
+			%
+			thisF = vecC(1);
+			for m=1:polyOrder
+				thisF += vecC(m+1) * (thisX.^m);
+			end
+			thisFP = vecC(2);
+			for m=2:polyOrder
+				thisFP += vecC(m+1) * (m.*thisX.^(m-1));
+			end
+			thisFPP = 2.0*vecC(3);
+			for m=3:polyOrder
+				thisFPP += vecC(m+1) * (m.*(m-1.0).*thisX.^(m-2));
+			end
+			%
+			calcd_index = nLo;
+			calcd_x(calcd_index) = thisX;
+			calcd_f(calcd_index) = thisF;
+			calcd_fp(calcd_index) = thisFP;
+			calcd_fpp(calcd_index) = thisFPP;
+		end
+		calcd_fofp = calcd_f./calcd_fp;
+		calcd_fpof = calcd_fp./calcd_f;
+		calcd_fpoabsfpp = calcd_fp./abs(calcd_fpp);
+		%
+		numFigs++; figure(numFigs);
+		plot( ...
+		  calcd_x, calcd_fpoabsfpp, 'o-', ...
+		  calcd_x, 0*calcd_x, 'k-' );
+		grid on;
+		xlabel( "x" );
+		ylabel( "f' / |f''|" );
+		title( "f' / |f''| vs x" );
+	end
+	%
 	numFigs++; figure(numFigs);
 	%imagesc( bigXVals, bigPVals, omegaMesh );
 	imagesc( bigXVals(2:end-1), bigPVals(2:end-1), omegaBlurMesh );
@@ -142,7 +192,8 @@
 	viz_fVals = funchF( viz_xVals );
 	plot( ...
 	  xVals, fVals, 'kx', 'linewidth', 4, 'markersize', 15, ...
-	  viz_xVals, viz_fVals, 'o-', 'linewidth', 1, 'markersize', 4 );
+	  viz_xVals, viz_fVals, 'o-', 'linewidth', 1, 'markersize', 4, ...
+	  bigX_secret, funchF(bigX_secret), 'r^', 'linewidth', 3, 'markersize', 20 );
 	hold on;
 	if (doActualSolve)
 		solver_bigX = dat_extFit.bigX;
@@ -151,8 +202,10 @@
 		  xVals, fVals, solver_bigX, solver_bigP, wVals );
 		funchFModel = @(x)( solver_bigA + solver_bigB * abs( x - solver_bigX ).^solver_bigP );
 		viz_fModelVals = funchFModel( viz_xVals );
-		plot( viz_xVals, viz_fModelVals, 'g^-', 'linewidth', 1, 'markersize', 4 );
+		plot( viz_xVals, viz_fModelVals, 'g^-', 'linewidth', 1, 'markersize', 4, ...
+		solver_bigX, funchFModel(solver_bigX), 'cv', 'linewidth', 3, 'markersize', 20 )
 	end
+	%
 	hold off;
 	grid on;
 	xlabel( 'x' );

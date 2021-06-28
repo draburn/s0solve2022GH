@@ -3,7 +3,7 @@ commondefs;
 thisFile = "studyLoggyDeriv";
 numFigs = 0;
 
-caseNum = 1;
+caseNum = 3;
 switch (caseNum)
 case 0
 	bigX = 0.0;
@@ -19,13 +19,26 @@ case 1
 	bigP = 2.0+abs(randn());
 	funchF = @(x)( bigF0 + bigF1*( abs(x-bigX).^bigP ) );
 case 2
+	bigX = 0.0;
 	funchF = @(x)( exp(-1./(x.^2)) );
+case 3
+	bigX = 0.0;
+	bigF0 = 0.001;
+	bigF1L = 1.0;
+	bigF1R = 3.0;
+	bigPL = 5.5;
+	bigPR = 0.6;
+	funchFL = @(x)( bigF0 + bigF1L*( abs(x-bigX).^bigPL ) );
+	funchFR = @(x)( bigF0 + bigF1R*( abs(x-bigX).^bigPR ) );
+	funchF = @(x)( funchFL(x) + (x>bigX).*( funchFR(x) - funchFL(x) ) );
 otherwise
 	error(["Invalid value of caseNum (", num2str(caseNum), ")."]);
 end
 %
 numPts = 1000;
-x = bigX+0.5*linspace(-1,1,numPts)';
+%x = bigX+0.3*linspace(-1,1,numPts)';
+%x = bigX+0.5*linspace(-1,1,numPts)';
+x = bigX+1.5*linspace(-1,1,numPts)';
 f = funchF(x);
 
 numFigs++; figure(numFigs);
@@ -44,13 +57,36 @@ for n=1:5
 	fr = funchF(xr);
 	df = (fr-fl)./(xr-xl);
 	ddf = 2.0*(fr+fl-2.0*f)./( (xr-xl).^2 );
+	neo_df(:,n) = df;
+	neo_ddf(:,n) = ddf;
 	fodf(:,n) = f./df;
 	dfoddf(:,n) = df./ddf;
+	dfoabsddf(:,n) = df./abs(ddf);
 	%foddf(:,n) = f./ddf;
 	%
 	twoPtStencil_f = (fl+fr)/2.0;
 	twoPtStencil_fodf(:,n) = twoPtStencil_f./df;
 end
+
+numFigs++; figure(numFigs);
+plot( ...
+  x, neo_df(:,1), 'o-', ...
+  x, neo_df(:,2), 'o-', ...
+  x, neo_df(:,3), 'o-' );
+grid on;
+xlabel( "x" );
+ylabel( "f'" );
+title( "f' vs x" );
+
+numFigs++; figure(numFigs);
+plot( ...
+  x, neo_ddf(:,1), 'o-', ...
+  x, neo_ddf(:,2), 'o-', ...
+  x, neo_ddf(:,3), 'o-' );
+grid on;
+xlabel( "x" );
+ylabel( "f''" );
+title( "f'' vs x" );
 
 numFigs++; figure(numFigs);
 plot( ...
@@ -103,6 +139,18 @@ grid on;
 xlabel( "x" );
 ylabel( "f'/f''" );
 title( "f'/f'' vs x" );
+
+numFigs++; figure(numFigs);
+plot( ...
+  x, dfoabsddf(:,1), 'o-', ...
+  x, dfoabsddf(:,2), 'o-', ...
+  x, dfoabsddf(:,3), 'o-', ...
+  x, dfoabsddf(:,4), 'o-', ...
+  x, dfoabsddf(:,5), 'o-' );
+grid on;
+xlabel( "x" );
+ylabel( "f'/|f''|" );
+title( "f'/|f''| vs x" );
 
 %numFigs++; figure(numFigs);
 %plot( ...
