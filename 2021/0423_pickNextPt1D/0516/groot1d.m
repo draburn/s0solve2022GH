@@ -14,8 +14,8 @@ function [ xFinal, retCode, datOut ] = groot1d( funchF, x1, x2, prm=[], datIn=[]
 	% PARSE INPUT
 	%
 	% Verbosity.
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
-	%verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	reportInterval = mygetfield( prm, "reportInterval", 0.0 );
 	assert( isrealscalar(verbLev) );
 	assert( isrealscalar(reportInterval) );
@@ -61,6 +61,7 @@ function [ xFinal, retCode, datOut ] = groot1d( funchF, x1, x2, prm=[], datIn=[]
 		%
 		groot1d__getXNew; thisFile = "groot1d";
 		msg_copious( verbLev, thisFile, __LINE__, sprintf( "xNew = %f.", xNew ) );
+		echo__xNew = xNew
 		%
 		assert( isrealscalar(xNew) );
 		fNew = funchF(xNew); fevalCount++;

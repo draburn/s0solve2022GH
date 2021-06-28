@@ -3,7 +3,8 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 	commondefs;
 	thisFile = "findGoodCand.m";
 	%
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__WARN );
 	%
 	% Check data types...
 	numPts = size(xVals,2);
@@ -98,6 +99,7 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 	end
 	assert( fValsAllHaveSameSign );
 	%
+	if ( mygetfield(prm,"usefofprime",false) )
 	% 3-pt reciprocal logarithmic derivative interp aka "fofprime".
 	% This is good for glancing roots of order > 2.
 	% But, we want to be strict about when we use it.
@@ -111,6 +113,7 @@ function xCand = findGoodCand( xVals, fVals, prm = [] )
 		  "  xNew via 'f over f prime'." );
 		xCand = xTemp;
 		return;
+	end
 	end
 	%
 	%
