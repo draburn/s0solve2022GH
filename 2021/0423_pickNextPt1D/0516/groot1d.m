@@ -38,7 +38,7 @@ function [ xFinal, retCode, datOut ] = groot1d( funchF, x1, x2, prm=[], datIn=[]
 	assert( isrealscalar(fevalCountLimit) );
 	assert( isrealscalar(stopsigCheckInterval) );
 	stopsigCheckTimePrev = startTime;
-	doExtFitViz = mygetfield( prm, "doExtFitViz", true );
+	doExtFitViz = mygetfield( prm, "doExtFitViz", false );
 	%
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
