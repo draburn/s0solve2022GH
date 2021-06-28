@@ -15,6 +15,7 @@ case 0
 	xSecret = randn*exp(abs(randn));
 	fPreSecret = funchF_pre(xSecret);
 	funchF = @(x)( funchF_pre(x) - fPreSecret ).^2;
+	x_secret = -0.890874387338734; % This is the left abs min.
 otherwise
 	error(["Invalid value of caseNum (", num2str(caseNum), ")."]);
 end
@@ -29,13 +30,48 @@ end
 % Iterate
 %xVals = sort([ -1.00057993392590, -1.0, -0.971949673093843, -0.897832, -0.868436, -0.831698038563058, 0.0 ])
 % And... Here, this new tech does something different! -0.883699
-xVals = sort([ -0.883699, -1.00057993392590, -1.0, -0.971949673093843, -0.897832, -0.883145836017872, -0.868436, -0.831698038563058, 0.0 ])
+%xVals = sort([ -0.883699, -1.00057993392590, -1.0, -0.971949673093843, -0.897832, -0.883145836017872, -0.868436, -0.831698038563058, 0.0 ])
 % -0.883555201402426
-xVals = sort([ -0.883555201402426, xVals ]);
-% Looks like cnvg may be getting slow????
+%xVals = sort([ -0.883555201402426, xVals ]);
+%xVals = sort([ -0.884206, xVals ]);
+%xVals = sort([ -0.884889, xVals ]);
+%
+%
+%xVals = sort([ -0.883555201402426, -0.883699, -1.00057993392590, -1.0, -0.971949673093843, -0.897832, -0.883145836017872, -0.868436, -0.831698038563058])
+%xVals = sort([ -0.886, -0.880, xVals ]); % Force an absMax.
+%
+% Lets re-do...
+xVals = sort([ -1.00057993392590, -1.0, -0.971949673093843, 0.0 ])
+xVals = sort([ -0.831698038563058, xVals ]); %xbalanceR
+xVals = sort([ -0.897832, xVals ]);
+xVals = sort([ -0.868437, xVals ]);
+xVals = sort([ -0.883142, xVals ]);
+xVals = sort([ -0.883701, xVals ]);
+xVals = sort([ -0.886496000000000, xVals ]); %xBalanceL
+xVals = sort([ -0.886247, xVals ]);
+xVals = sort([ -0.887741000000000, xVals ]);
+xVals = sort([ -0.888869, xVals ]);
+xVals = sort([ -0.889642, xVals ]);
+xVals = sort([ -0.893507000000000, xVals ]);
+xVals = sort([ -0.8890615, xVals ]);
+xVals = sort([ -0.8906340, xVals ]);
+%xVals = sort([ -0.8906723, xVals ]);
+%xVals = sort([ -0.89086380000000, xVals ]); % ptweAbsF =    8.81227741557147e-13
+msg( thisFile, __LINE__, "THIS IS CONVERGING TO THAT LOCAL MAX!!!" );
+msg( thisFile, __LINE__, "CHECK FOR PTWISE LOCAL MAX AND CHOP TO PREVENT THIS!" );
+msg( thisFile, __LINE__, "Even so, it may be easier to find an ext than identify whether max or min." );
 numPts = size(xVals,2);
 fVals = funchF(xVals)
 
+% Confirm no ptwise absMax
+for n=2:numPts-1
+if ( abs(fVals(n)) >= abs(fVals(n-1)) ...
+  && abs(fVals(n)) >= abs(fVals(n+1))  )
+	msg( thisFile, __LINE__, sprintf( ...
+	  "Found a local max at %d!", n ) );
+	error( "Found a local max." );
+end
+end
 
 % point-wise extremum
 [ ptweAbsF, ptweIndex ] = min( abs(fVals) )
@@ -46,9 +82,11 @@ ptweX = xVals(ptweIndex);
 n = ptweIndex;
 if ( xVals(n-1) < xVals(n) - 10.0*( xVals(n+1) - xVals(n) ) )
 	xBalanceL = xVals(n) - 5.0*( xVals(n+1) - xVals(n) )
+	return
 end
 if ( xVals(n+1) > xVals(n) + 10.0*( xVals(n) - xVals(n-1) ) )
 	xBalanceR = xVals(n) + 5.0*( xVals(n) - xVals(n-1) )
+	return
 end
 %
 vecXA = xVals(ptweIndex-1:ptweIndex+1)';
@@ -56,6 +94,7 @@ vecFA = fVals(ptweIndex-1:ptweIndex+1)';
 matXA = [ ones(3,1), vecXA, vecXA.^2 ];
 vecCA = matXA\vecFA;
 funchGA = @(x)( vecCA(1) + vecCA(2)*x + vecCA(3)*x.^2 );
+assert( 0.0 <= vecCA(3) );
 %
 xExtA = -vecCA(2)/(2.0*vecCA(3))
 msg( thisFile, __LINE__, ...
@@ -74,6 +113,9 @@ matXB = [ ones(3,1), vecXB, vecXB.^2 ];
 vecCB = matXB\vecFB;
 funchGB   = @(x)( vecCB(1) + vecCB(2)*x + vecCB(3)*x.^2 );
 xExtB = -vecCB(2)/(2.0*vecCB(3)) %FWIW
+if ( vecCB(3) < 0.0 )
+	msg( thisFile, __LINE__, "Model B has wrong curvature." );
+end
 
 
 epsFD = sqrt(sqrt(eps));
@@ -89,13 +131,14 @@ funchLoggyGB = @(x)( funchDGB(x)./abs(funchDDGB(x)) );
 
 
 
-viz_numPts = 1000;
-viz_xVals = linspace(-1.6,1.6,viz_numPts);
+viz_numPts = 5000;
+%viz_xVals = linspace(-1.6,1.6,viz_numPts);
+viz_xVals = linspace(-1.0,-0.8,viz_numPts);
 viz_xAVals = linspace(min(vecXA),max(vecXA),viz_numPts);
 viz_xBVals = linspace(min(vecXB),max(vecXB),viz_numPts);
 %
 numFigs++; figure(numFigs);
-plot( ...
+semilogy( ...
   viz_xVals, funchF(viz_xVals), 'o-', ...
   viz_xVals, funchGA(viz_xVals), '^-', ...
   viz_xVals, funchGB(viz_xVals), 'v-', ...
@@ -119,9 +162,10 @@ plot( ...
   vecXA, funchLoggyGA(vecXA), '^', 'markersize', 25, 'linewidth', 4, ...
   vecXB, funchLoggyGB(vecXB), 'v', 'markersize', 25, 'linewidth', 4, ...
   xCrossVals, [funchLoggyGB(xCrossVals(1)),funchLoggyGA(xCrossVals(2))], 's-', 'markersize', 25, 'linewidth', 4, ...
+  x_secret, 0.0, 'y*', 'markersize', 30, 'linewidth', 3, ...
   viz_xVals, 0*viz_xVals, 'k-' );
 grid on;
 xlabel( "x" );
 ylabel( "f'/|f''|)" );
 title( "f'/|f''| vs x" );
-%axis([-1.05 -0.9 -0.1 0.1]);
+axis([-0.9 -0.86 -0.1 0.1]);
