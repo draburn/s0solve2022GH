@@ -1,7 +1,7 @@
 clear;
 commondefs;
 thisFile = "test_biQuadInterp";
-numFigs = 0;
+numFigs = 2;
 %
 %
 caseNum = 0;
@@ -21,28 +21,34 @@ otherwise
 end
 %
 % Lets re-do...
-xVals = sort([ -1.00057993392590, -1.0, -0.971949673093843, 0.0 ]);
+xVals0 = sort([ -1.00057993392590, -1.0, -0.971949673093843, 0.0 ]);
+xVals1 = [];
 for n=1:15
+	xVals = sort([ xVals0, xVals1 ]);
 	fVals = funchF(xVals);
 	xNext = biQuadInterp( xVals, fVals );
 	fNext = funchF(xNext);
 	msg( thisFile, __LINE__, sprintf( ...
 	  "%3d,   %12.8f,   %10.3e", n, xNext, fNext ) );
-	xVals = sort([ xNext, xVals ]);
+	xVals1 = [ xVals1, xNext ];
 end
-fVals = funchF(xVals);
 
-epsFD = sqrt(sqrt(eps));
-funchDF = @(x)( (funchF(x+epsFD)-funchF(x-epsFD))/(2.0*epsFD) );
-funchDDF = @(x)( (funchF(x+epsFD)+funchF(x-epsFD)-2*funchF(x))/(epsFD^2) );
+xVals1 = xVals1(2:end);
 
+fVals0 = funchF(xVals0);
+fVals1 = funchF(xVals1);
+
+%epsFD = sqrt(sqrt(eps));
+%funchDF = @(x)( (funchF(x+epsFD)-funchF(x-epsFD))/(2.0*epsFD) );
+%funchDDF = @(x)( (funchF(x+epsFD)+funchF(x-epsFD)-2*funchF(x))/(epsFD^2) );
 viz_numPts = 5000;
-viz_xVals = linspace(-1.6,1.6,viz_numPts);
+%viz_xVals = linspace(-1.6,1.6,viz_numPts);
+viz_xVals = linspace(min(xVals1),max(xVals1),viz_numPts);
 
 numFigs++; figure(numFigs);
 plot( ...
   viz_xVals, funchF(viz_xVals), 'o-', ...
-  xVals, fVals, 'ko', 'linewidth', 2, 'markersize', 25, ...
+  xVals1, fVals1, 'ko-', 'linewidth', 2, 'markersize', 25, ...
   xNext, fNext, 'g*', 'linewidth', 4, 'markersize', 25, ...
   viz_xVals, 0*viz_xVals, 'k-' );
 grid on;
