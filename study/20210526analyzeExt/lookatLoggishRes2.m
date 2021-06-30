@@ -143,6 +143,31 @@ elseif ( xExtB > vecXB(3) )
 end
 xAvg = (xExtA+xExtB)/2.0
 
+if (1)
+	vecXC = xVals(4:7)';
+	vecFC = fVals(4:7)';
+	matXC = [ ones(4,1), vecXC, vecXC.^2 ];
+	vecCC = matXC\vecFC;
+	%matWC = diag( 1.0./sqrt(sqrt(abs(vecFC))) );
+	%vecCC = (matWC*matXC)\(matWC*vecFC);
+	funchGC = @(x)( vecCC(1) + vecCC(2)*x + vecCC(3)*x.^2 );
+	x4ptQuad = -vecCC(2)/(2.0*vecCC(3))
+	%
+	% two-plus-two quad, approximately
+	vecXD = xVals(4:7)';
+	vecFD = fVals(4:7)';
+	matXD = [ ones(4,1), vecXD, vecXD.^2 ];
+	matWD = diag([ 1.0, 1e8, 1e8, 1.0 ]');
+	%matWD = diag([ 1.0, 1e8, 1e8, 1.0 ]'./sqrt(abs(vecFD)));
+	vecCD = (matWD*matXD)\(matWD*vecFD);
+	funchGD = @(x)( vecCD(1) + vecCD(2)*x + vecCD(3)*x.^2 );
+	xApprox2p2Quad = -vecCD(2)/(2.0*vecCD(3))
+	%
+	funchF([ xAvg, x4ptQuad, xApprox2p2Quad ])
+	return;
+end
+
+
 
 epsFD = sqrt(sqrt(eps));
 funchDF = @(x)( (funchF(x+epsFD)-funchF(x-epsFD))/(2.0*epsFD) );
