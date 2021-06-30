@@ -97,8 +97,8 @@ function [ xCand, meritCand, datOut ] = biQuadInterp( xVals, fVals, prm=[], datI
 	meritCand = -1.0;
 	% May override below.
 	
-	msg_copious( verbLev, thisFile, __LINE__, ...
-	  "Toggle this \"return\", balancing to see merit of bi-quad." );
+	%msg_copious( verbLev, thisFile, __LINE__, ...
+	%  "Toggle this \"return\", balancing to see merit of bi-quad." );
 	%return;
 	
 	%
@@ -149,7 +149,17 @@ function [ xCand, meritCand, datOut ] = biQuadInterp( xVals, fVals, prm=[], datI
 		msg_copious( verbLev, thisFile, __LINE__, "Adjacent model has bad curvature." );
 		return;
 	end
-	yExtB = -vecCB(2)./(2.0*vecCB(3));
+	yExtB = -vecCB(2)./(2.0*vecCB(3))
+	
+		%yExtB = cap( yExtB, yIntervalLo, yIntervalHi );
+		%%yExtB = cap( yExtB, yVals(nOfMin-1), yVals(nOfMin+1) );
+		%yExt = (yExt+yExtB)/2.0;
+		%xCand = x0 + (x1*yExt);
+		%return;
+	
+	
+	
+	
 	if (0)
 	%yExtB = cap( yExtB, yVals(nOfMin-1), yVals(nOfMin+1) ); % This doesn't work.
 	if ( yExtB < yIntervalLo )

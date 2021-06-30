@@ -66,7 +66,7 @@ otherwise
 end
 %
 xVals1 = [];
-for n=1:5
+for n=1:15
 	xVals = sort([ xVals0, xVals1 ]);
 	fVals = funchF(xVals);
 	xNext = biQuadInterp( xVals, fVals );
