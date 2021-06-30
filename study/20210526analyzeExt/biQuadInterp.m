@@ -55,6 +55,7 @@ function [ xCand, meritCand, datOut ] = biQuadInterp( xVals, fVals, prm=[], datI
 	assert( isrealscalar(ratioTarget) );
 	assert( 1.0 <= ratioTarget );
 	assert( ratioTarget < maxRatioAllowed );
+	if (0)
 	if ( xVals(nOfMin-1) < xVals(nOfMin) - maxRatioAllowed*(xVals(nOfMin+1)-xVals(nOfMin)) )
 		xCand = xVals(nOfMin) - ratioTarget*(xVals(nOfMin+1)-xVals(nOfMin));
 		meritCand = -1.0;
@@ -70,6 +71,7 @@ function [ xCand, meritCand, datOut ] = biQuadInterp( xVals, fVals, prm=[], datI
 		  "Right-balancing ( %12.8f, %12.8f, [%12.8f], %12.8f ).", ...
 		  xVals(nOfMin-1), xVals(nOfMin), xCand, xVals(nOfMin+1) ) );
 		return;
+	end
 	end
 	%
 	% Scale values to improve accuracy...?
@@ -94,7 +96,11 @@ function [ xCand, meritCand, datOut ] = biQuadInterp( xVals, fVals, prm=[], datI
 	xCand = x0 + (x1*yExt);
 	meritCand = -1.0;
 	% May override below.
+	
+	msg_copious( verbLev, thisFile, __LINE__, ...
+	  "Toggle this \"return\", balancing to see merit of bi-quad." );
 	%return;
+	
 	%
 	% If we have only 3 points and hit the ptwise ext exactly,
 	%  we should instead eval nearby, like ~1/5 way through the interval.

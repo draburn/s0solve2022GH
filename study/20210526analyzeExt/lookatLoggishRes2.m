@@ -72,7 +72,7 @@ xVals = sort([ -0.893393189225250, xVals ]);
 xVals = sort([ -0.890922389166615, xVals ]); % xB goes past...
 xVals = sort([ -0.890775831691018, xVals ]); % must balance...
 xVals = sort([ -0.891655176544600, xVals ]);
-xVals = sort([ -0.890874186962029, xVals ]); %1E-16.
+%xVals = sort([ -0.890874186962029, xVals ]); %1E-16.
 % Allowing going past by a little bit, as long as avg is well-behaved.
 %xVals = sort([ , xVals ]);
 %
@@ -143,7 +143,7 @@ elseif ( xExtB > vecXB(3) )
 end
 xAvg = (xExtA+xExtB)/2.0
 
-if (1)
+if (0)
 	vecXC = xVals(4:7)';
 	vecFC = fVals(4:7)';
 	matXC = [ ones(4,1), vecXC, vecXC.^2 ];
