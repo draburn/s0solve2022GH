@@ -17,6 +17,13 @@ function [ xCand, meritCand, datOut ] = biQuadInterp( xVals, fVals, prm=[], datI
 	gVals = signF * fVals;
 	fValsAllHaveSameSign = (0==sum( 0.0 >= gVals ));
 	assert( fValsAllHaveSameSign );
+	
+	% IN CONTRAST WITH lookatLoggishRes2.m,
+	% BI-QUAD DOES NOT HELP?!?!
+	
+	% Everything needs rewriting.
+	% Also needs testing.
+	
 	%
 	%
 	% Identify point-wise minimum of g.
@@ -37,6 +44,9 @@ function [ xCand, meritCand, datOut ] = biQuadInterp( xVals, fVals, prm=[], datI
 	end
 	ptwiseAbsMinIsNotOnEdge = ( 2 <= nOfMin ) && ( numPts-1 >= nOfMin );
 	assert( ptwiseAbsMinIsNotOnEdge );
+	%
+	% Add full inspection of |f| values,
+	% ensuring exactly one local minimum (or an adjacent tie)?
 	%
 	maxRatioAllowed = mygetfield( prm, "maxRatioAllowed", 10.0 );
 	ratioTarget = mygetfield( prm, "ratioTarget", 5.0 );
@@ -134,6 +144,7 @@ function [ xCand, meritCand, datOut ] = biQuadInterp( xVals, fVals, prm=[], datI
 		return;
 	end
 	yExtB = -vecCB(2)./(2.0*vecCB(3));
+	if (0)
 	%yExtB = cap( yExtB, yVals(nOfMin-1), yVals(nOfMin+1) ); % This doesn't work.
 	if ( yExtB < yIntervalLo )
 		msg_copious( verbLev, thisFile, __LINE__, "Capping adj to yIntervalLo." );
@@ -143,8 +154,9 @@ function [ xCand, meritCand, datOut ] = biQuadInterp( xVals, fVals, prm=[], datI
 		yExtB = yIntervalHi;
 	end
 	%yExtB = cap( yExtB, yIntervalLo, yIntervalHi );
-	%if ( yExtB*(yExtB-yVals(nOfPtB)) < 0.0 )
-	if (1)
+	end
+	if ( yExtB*(yExtB-yVals(nOfPtB)) < 0.0 )
+	%if (1)
 		% yExtB is between YVals(nOfPtB) and yVals(nOfMin).
 		yExt = (yExt+yExtB)/2.0;
 		xCand = x0 + (x1*yExt);

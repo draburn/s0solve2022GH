@@ -1,10 +1,10 @@
 clear;
 commondefs;
 thisFile = "test_biQuadInterp";
-numFigs = 2;
+numFigs = 4;
 %
 %
-caseNum = 0;
+caseNum = 1;
 switch (caseNum)
 case 0
 	setprngstates(44236336);
@@ -16,12 +16,20 @@ case 0
 	fPreSecret = funchF_pre(xSecret);
 	funchF = @(x)( funchF_pre(x) - fPreSecret ).^2;
 	x_secret = -0.890874387338734; % This is the left abs min.
+	xVals0 = sort([ -1.00057993392590, -1.0, -0.971949673093843, 0.0 ]);
+case 1
+	bigA = 0.0;
+	bigB = 1.0;
+	bigX = pi/2.0;
+	bigP = 4.0;
+	funchF = @(x)( bigA + bigB*abs(x-bigX).^bigP );
+	xVals0 = [0.5,1.0,2.2];
+	x_secret = bigX;
 otherwise
 	error(["Invalid value of caseNum (", num2str(caseNum), ")."]);
 end
 %
 % Lets re-do...
-xVals0 = sort([ -1.00057993392590, -1.0, -0.971949673093843, 0.0 ]);
 xVals1 = [];
 for n=1:15
 	xVals = sort([ xVals0, xVals1 ]);
@@ -32,9 +40,8 @@ for n=1:15
 	  "%3d,   %12.8f,   %10.3e", n, xNext, fNext ) );
 	xVals1 = [ xVals1, xNext ];
 end
-
-xVals1 = xVals1(2:end);
-
+%funchFOrig = funchF;
+%funchF = @(x)( funchFOrig(x).^(1.0/10.0) );
 fVals0 = funchF(xVals0);
 fVals1 = funchF(xVals1);
 
@@ -55,3 +62,12 @@ grid on;
 xlabel( "x" );
 ylabel( "f" );
 title( "f vs x" );
+
+numFigs++; figure(numFigs);
+semilogy( ...
+  fVals1, 'o-', ...
+  abs(xVals1-x_secret), 'x-' );
+grid on;
+xlabel( "n" );
+ylabel( "f" );
+title( "f vs n" );
