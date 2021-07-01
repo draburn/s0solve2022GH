@@ -17,33 +17,75 @@ function [ xCand, meritCand, datOut ] = biQuadInterp( xVals, fVals, prm=[], datI
 	gVals = signF * fVals;
 	fValsAllHaveSameSign = (0==sum( 0.0 >= gVals ));
 	assert( fValsAllHaveSameSign );
+	%
+	%
+	% Validate gVals...
+	for n=1:numPts
+		if ( n==numPts )
+		error( "Bad absFVals: No internal ptwise min; last point is actual min." );
+		end
+		if ( gVals(n+1) >= gVals(n) )
+			break;
+		end
+	end
+	nOfMin = n;
+	%
+	if ( gVals(nOfMin+1) == gVals(nOfMin) )
+		% Very unlike in real-world scenarios,
+		% so, efficient handling is unimportant.
+		for n=nOfMin+1:numPts-1
+		if ( gVals(n+1) <= gVals(n) )
+			error( "Bad absFVals: Ptwise min is not unique and/or there is a ptwise local max." );
+		end
+		end
+		xCand = ( xVals(nOfMin+1) + xVals(nOfMin) ) / 2.0;
+		meritCand = -1.0;
+		return;
+	end
+	%
+	if ( 1 == nOfMin )
+		error( "Bad absFVals: No internal ptwise min; first point is actual min." );
+	end
+	%
+	for n=nOfMin:numPts-1
+	if ( gVals(n+1) <= gVals(n) )
+		error( "Bad absFVals: Ptwise min is not unique and/or there is a ptwise local max." );
+	end
+	end
+	%
+	%
+	% Do work...
+	
+	% Calculate upfront.
+	% Then decide what to do.
+	%
+	% Calc c, l, and r 3pt quad, as relevant.
+	% For each, check 
+	%
+	% Report what xCand *would* be regardless of what it actually is.
+	
+	% Consider 3pt quad centerd on nOfMin;
+	% take this (now) if the following criteria are met...
+	%  we have at least one adj pt that matches well,
+	%  any comprably close pts on the other side also match well,
+	%  the ext is at least some epsilon away from any of the pts.
+	%
+	% Identify which interval we're looking at.
+	%
+	% Consider balancing...
+	%
+	% Consider adjacent 3pt quad model.
+	%  ~ Is there some analytic reason for this to help?
+	%
+	% 
+	
+	return;
 	
 	% IN CONTRAST WITH lookatLoggishRes2.m,
 	% BI-QUAD DOES NOT HELP?!?!
 	
 	% Everything needs rewriting.
 	% Also needs testing.
-	
-	%
-	%
-	% Identify point-wise minimum of g.
-	[ gOfMin, nOfMin ] = min( gVals );
-	% Allow exactly equal values of ptwise min.
-	% Ignore this issue except where it would prohibit calculation:
-	%  when the ptwise min is at the edge.
-	if ( 1 == nOfMin )
-	if ( gVals(2) == gVals(1) )
-		nOfMin = 2;
-	end
-	end
-	if ( numPts == nOfMin )
-	if ( gVals(numPts-1) == gVals(numPts) )
-		% I believe min() will never do this, but let's be safe.
-		nOfMin = numPts-1;
-	end
-	end
-	ptwiseAbsMinIsNotOnEdge = ( 2 <= nOfMin ) && ( numPts-1 >= nOfMin );
-	assert( ptwiseAbsMinIsNotOnEdge );
 	%
 	% Add full inspection of |f| values,
 	% ensuring exactly one local minimum (or an adjacent tie)?
@@ -94,6 +136,7 @@ function [ xCand, meritCand, datOut ] = biQuadInterp( xVals, fVals, prm=[], datI
 	assert( extIsInBounds );
 	%
 	xCand = x0 + (x1*yExt);
+	xExtA = xCand;
 	meritCand = -1.0;
 	% May override below.
 	
@@ -149,7 +192,8 @@ function [ xCand, meritCand, datOut ] = biQuadInterp( xVals, fVals, prm=[], datI
 		msg_copious( verbLev, thisFile, __LINE__, "Adjacent model has bad curvature." );
 		return;
 	end
-	yExtB = -vecCB(2)./(2.0*vecCB(3))
+	yExtB = -vecCB(2)./(2.0*vecCB(3));
+	xExtB = x0 + (x1*yExtB);
 	
 		%yExtB = cap( yExtB, yIntervalLo, yIntervalHi );
 		%%yExtB = cap( yExtB, yVals(nOfMin-1), yVals(nOfMin+1) );
@@ -178,7 +222,9 @@ function [ xCand, meritCand, datOut ] = biQuadInterp( xVals, fVals, prm=[], datI
 		xCand = x0 + (x1*yExt);
 		meritCand = -1.0;
 	else
-		msg_copious( verbLev, thisFile, __LINE__, "Adjacent model is out of bounds." );
+		msg_copious( verbLev, thisFile, __LINE__, sprintf( ...
+		  "Adjacent model is out of bounds: %12.8f vs %12.8f ~ %12.8f, %12.8f.", ...
+		  xExtB, xVals(nOfMin), xVals(nOfPtB), xExtA ) );
 		return;
 	end
 	%
