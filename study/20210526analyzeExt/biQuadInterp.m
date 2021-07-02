@@ -1,6 +1,10 @@
 function [ xCand, meritCand, datOut ] = biQuadInterp( xVals, fVals, prm=[], datIn=[] )
 	commondefs;
 	thisFile = "biQuadInterp";
+	
+	msg( thisFile, __LINE__, "THIS FILE IS BROKEN. It was never good at its job." );
+	return;
+	
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	datOut = [];
 	%
