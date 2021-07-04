@@ -26,10 +26,10 @@ case 1
 	xVals = sort([ -0.890138678468405, xVals ]); % xB goes way past data!
 	xVals = sort([ -0.889487776317036, xVals ]); % must balance...
 	xVals = sort([ -0.893393189225250, xVals ]);
-	xVals = sort([ -0.890922389166615, xVals ]); % xB goes past...
-	xVals = sort([ -0.890775831691018, xVals ]); % must balance...
-	xVals = sort([ -0.891655176544600, xVals ]);
-	xVals = sort([ -0.890874186962029, xVals ]); %1E-16.
+	%xVals = sort([ -0.890922389166615, xVals ]); % xB goes past...
+	%xVals = sort([ -0.890775831691018, xVals ]); % must balance...
+	%xVals = sort([ -0.891655176544600, xVals ]);
+	%xVals = sort([ -0.890874186962029, xVals ]); %1E-16.
 case 2
 	x_secret = 0.8;
 	funchF = @(x)( abs(x-x_secret).^6.5 );
@@ -38,6 +38,17 @@ case 3
 	x_secret = 0.8;
 	funchF = @(x)( abs(x-x_secret).^6.5 );
 	xVals = x_secret+linspace(-1.0,1.0,8)-0.3;
+case 4
+	setprngstates(44236336);
+	c = randn(20,1);
+	funchF_pre = @(x)( c(1) + c(2)*x + 0*c(3)*x.^2 + 0*c(4)*x.^3 ...
+	 + c(5) * cos( c(6) + c(7)*x ) + c(8) * cos( c(8) + c(9) * x ) ...
+	 + c(10) * cos( c(11) + c(12)*cos( c(13) + c(14)*x) ) );
+	xSecret = randn*exp(abs(randn));
+	fPreSecret = funchF_pre(xSecret);
+	funchF = @(x)( funchF_pre(x) - fPreSecret ).^2;
+	x_secret = -0.890874387338734; % This is the left abs min.
+	xVals = x_secret + 1e-6*linspace(-1.0,1.0,8);
 otherwise
 	error(["Invalid value of caseNum (", num2str(caseNum), ")."]);
 end
@@ -62,9 +73,36 @@ funchHC = @(x)( ( vecC(2) + 2.0*vecC(3)*x ) ./ abs(2.0*vecX(3)) );
 xExtC = -vecC(2)/(2.0*vecC(3));
 xAvgC = xAvg;
 xVarC = xVar;
-
-
 xExtCRes = xExtC-x_secret
+
+%if ( xExtC > xVals(nC) )
+%	extFit_xVals = xVals(nC-1:nC+2);
+%	extFit_fVals = fVals(nC-1:nC+2);
+%else
+%	extFit_xVals = xVals(nC-2:nC+1);
+%	extFit_fVals = fVals(nC-2:nC+1);
+%end
+extFit_xVals = xVals(nC+1:nC+4);
+extFit_fVals = fVals(nC+1:nC+4);
+extFitPrm = [];
+%extFitPrm.verbLev = VERBLEV__COPIOUS;
+extFitPrm.iterLimit = 1000;
+extFitDat = extFit( xVals(nC), 3.0, extFit_xVals, extFit_fVals, [], extFitPrm );
+bigP = extFitDat.bigP
+[ extFit_omea, extFit_rho, extFit_bigA, extFit_bigB ] = extFit_calcOmega( ...
+  extFit_xVals, extFit_fVals, extFitDat.bigX, extFitDat.bigP, [] );
+funchFExtFit = @(x)( extFit_bigA + extFit_bigB*abs(x-extFitDat.bigX).^extFitDat.bigP );
+xExtFit = extFitDat.bigX
+xExtFitRes = xExtFit-x_secret
+
+%
+numFigs++; figure(numFigs);
+extFit_viz( extFit_xVals, extFit_fVals, ...
+  xVals(nC-1), xVals(nC+1), 1.0, 10.0 );
+%  x_secret-1e-6, x_secret+1e-6, 5.40, 5.44 );
+hold on;
+plot( x_secret*[1,1], [1.0,10.0], 'r-' );
+hold off;
 
 %
 if (0)
@@ -115,7 +153,8 @@ xVarR = xVar;
 %
 %
 %
-xVals = xVals(nC-2:nC+2);
+%%%xVals = xVals(nC-2:nC+2);
+%%%xVals = xVals(6:end-6);
 fVals = funchF(xVals);
 %
 %
@@ -143,6 +182,7 @@ plot( ...
   viz_xVals, funchFL(viz_xVals), '^-', "color", [0.8,0.0,0.0], "markersize", 4, ...
   viz_xVals, funchFC(viz_xVals), 's-', "color", [0.0,0.6,0.0], "markersize", 4, ...
   viz_xVals, funchFR(viz_xVals), 'v-', "color", [0.0,0.0,0.9], "markersize", 4, ...
+  viz_xVals, funchFExtFit(viz_xVals), "x-", "color", [0.7,0.0,0.8], "markersize", 4, ...
   xExtL*[1,1], [viz_fValMin,viz_fValMax], '^-', "linewidth", 2, "markersize", 25, "color", [0.9,0.3,0.3], ...
   xExtC*[1,1], [viz_fValMin,viz_fValMax], 's-', "linewidth", 2, "markersize", 25, "color", [0.3,0.8,0.3], ...
   xExtR*[1,1], [viz_fValMin,viz_fValMax], 'v-', "linewidth", 2, "markersize", 25, "color", [0.3,0.3,1.0], ...

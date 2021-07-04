@@ -4,7 +4,7 @@ addpath( "common" );
 addpath( "linsolf" );
 addpath( "demoFunc" );
 %addpath( "groot" );
-%addpath( "extFit" );
+addpath( "extFit" );
 addpath( "postproc" );
 addpath( "misc" );
 commondefs;
