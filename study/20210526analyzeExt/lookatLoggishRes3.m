@@ -36,8 +36,9 @@ case 2
 	xVals = x_secret+1e-1*sort([ -5, -2, 1, 4, 7 ]);
 case 3
 	x_secret = 0.8;
-	funchF = @(x)( abs(x-x_secret).^6.5 );
-	xVals = x_secret+linspace(-1.0,1.0,8)-0.3;
+	funchF = @(x)( abs(x-x_secret).^7.3 );
+	%%%xVals = x_secret+linspace(-1.0,1.0,8)-0.3;
+	xVals = x_secret+linspace(-1.0,1.0,12)-0.3;
 case 4
 	setprngstates(44236336);
 	c = randn(20,1);
@@ -48,7 +49,21 @@ case 4
 	fPreSecret = funchF_pre(xSecret);
 	funchF = @(x)( funchF_pre(x) - fPreSecret ).^2;
 	x_secret = -0.890874387338734; % This is the left abs min.
-	xVals = x_secret + 1e-6*linspace(-1.0,1.0,8);
+	xVals = x_secret + 1e-3*linspace(-1.0,1.0,8);
+case 5
+	funchF = @(x)( x + 1.0./x );
+	x_secret = 1.0;
+	xVals = 0.01+linspace(0.0,3.0,11);
+case 6
+	secret_bigA = 1.0;
+	secret_bigB = 1.0;
+	secret_bigC = 1.0;
+	secret_bigS = 1.0;
+	secret_bigP = 2.1;
+	secret_foo = secret_bigB/(secret_bigC*secret_bigP);
+	x_secret = secret_bigS - sign(secret_foo)*abs(secret_foo)^(1.0/(secret_bigP-1.0));
+	funchF = @(x)( secret_bigA + secret_bigB*x + secret_bigC*abs(x-secret_bigS).^secret_bigP );
+	xVals = x_secret+0.01+linspace(-1.0,1.0,11);
 otherwise
 	error(["Invalid value of caseNum (", num2str(caseNum), ")."]);
 end
@@ -82,27 +97,75 @@ xExtCRes = xExtC-x_secret
 %	extFit_xVals = xVals(nC-2:nC+1);
 %	extFit_fVals = fVals(nC-2:nC+1);
 %end
-extFit_xVals = xVals(nC+1:nC+4);
-extFit_fVals = fVals(nC+1:nC+4);
+%extFit_xVals = xVals(nC-1:nC+3);
+%extFit_fVals = fVals(nC-1:nC+3);
+extFit_xVals = xVals(nC-2:nC+2);
+extFit_fVals = fVals(nC-2:nC+2);
+%extFit_xVals = xVals(nC:nC+3);
+%extFit_fVals = fVals(nC:nC+3);
+%extFit_xVals = xVals(nC-3:nC);
+%extFit_fVals = fVals(nC-3:nC);
+%extFit_xVals = xVals(nC+1:nC+4);
+%extFit_fVals = fVals(nC+1:nC+4);
+extFit_wVals = 1.0./sqrt(sqrt(eps)+extFit_fVals-fVals(nC))
+useNewExtFitModel = true;
 extFitPrm = [];
 %extFitPrm.verbLev = VERBLEV__COPIOUS;
-extFitPrm.iterLimit = 1000;
-extFitDat = extFit( xVals(nC), 3.0, extFit_xVals, extFit_fVals, [], extFitPrm );
-bigP = extFitDat.bigP
-[ extFit_omea, extFit_rho, extFit_bigA, extFit_bigB ] = extFit_calcOmega( ...
-  extFit_xVals, extFit_fVals, extFitDat.bigX, extFitDat.bigP, [] );
+extFitPrm.iterLimit = 100;
+if (useNewExtFitModel)
+%extFitDat = extFit( xVals(nC), 3.0, extFit_xVals, extFit_fVals, [], extFitPrm );
+msg( thisFile, __LINE__, "..." );
+extFitDat = extFit( xExtC, 3.0, extFit_xVals, extFit_fVals, extFit_wVals, extFitPrm );
+msg( thisFile, __LINE__, "..." );
+%extFitDat = extFit( secret_bigS, secret_bigP, extFit_xVals, extFit_fVals, extFit_wVals, extFitPrm );
+[ extFit_omega, extFit_rho, extFit_bigA, extFit_bigB, extFit_bigC ] = extFit_calcOmega( ...
+  extFit_xVals, extFit_fVals, extFitDat.bigX, extFitDat.bigP, extFit_wVals );
+msg( thisFile, __LINE__, "..." );
+echo__extFit_omega = extFit_omega
+echo__extFit_rho = extFit_rho
+echo__extFit_bigX = extFitDat.bigX
+echo__extFit_bigP = extFitDat.bigP
+echo__extFit_bigA = extFit_bigA
+echo__extFit_bigB = extFit_bigB
+echo__extFit_bigC = extFit_bigC
+funchFExtFit = @(x)( extFit_bigA + extFit_bigB*x ...
+  + extFit_bigC*abs(x-extFitDat.bigX).^extFitDat.bigP );
+extFit_shiftyX = extFit_bigB / ( extFit_bigC * extFitDat.bigP )
+xExtFit = extFitDat.bigX - sign(extFit_shiftyX)*abs(extFit_shiftyX)^(1.0/(extFitDat.bigP-1.0))
+else
+%extFitDat = extFit( xVals(nC), 3.0, extFit_xVals, extFit_fVals, [], extFitPrm );
+extFitDat = extFit( xExtC, 2.0, extFit_xVals, extFit_fVals, extFit_wVals, extFitPrm );
+[ extFit_omega, extFit_rho, extFit_bigA, extFit_bigB ] = extFit_calcOmega( ...
+  extFit_xVals, extFit_fVals, extFitDat.bigX, extFitDat.bigP, extFit_wVals );
+echo__extFit_omega = extFit_omega
+echo__extFit_rho = extFit_rho
+echo__extFit_bigA = extFit_bigA
+echo__extFit_bigB = extFit_bigB
 funchFExtFit = @(x)( extFit_bigA + extFit_bigB*abs(x-extFitDat.bigX).^extFitDat.bigP );
 xExtFit = extFitDat.bigX
+end
 xExtFitRes = xExtFit-x_secret
 
 %
+extFitVizPrm = [];
+extFitVizPrm.wVals = extFit_wVals;
+extFit_deltaX = sqrt(eps)*(xVals(nC+1)-xVals(nC-1));
 numFigs++; figure(numFigs);
 extFit_viz( extFit_xVals, extFit_fVals, ...
-  xVals(nC-1), xVals(nC+1), 1.0, 10.0 );
-%  x_secret-1e-6, x_secret+1e-6, 5.40, 5.44 );
-hold on;
-plot( x_secret*[1,1], [1.0,10.0], 'r-' );
-hold off;
+  min(xVals), max(xVals), 1.5, 2.5 );
+%  secret_bigS-1e0, secret_bigS+1e0, 1.70, 2.20, extFitVizPrm );
+%  xVals(nC-1)+extFit_deltaX, xVals(nC+1)-extFit_deltaX, 1.5, 3.0 );
+%hold on;
+%plot( x_secret*[1,1], [1.0,10.0], 'r-' );
+%hold off;
+
+
+	msg( thisFile, __LINE__, "" );
+	msg( thisFile, __LINE__, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" );
+	msg( thisFile, __LINE__, sprintf( "QuadC  residual = %g.", xExtC-x_secret ) );
+	msg( thisFile, __LINE__, sprintf( "ExtFit residual = %g.", xExtFit-x_secret ) );
+	msg( thisFile, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" );
+	msg( thisFile, __LINE__, "" );
 
 %
 if (0)
@@ -186,6 +249,7 @@ plot( ...
   xExtL*[1,1], [viz_fValMin,viz_fValMax], '^-', "linewidth", 2, "markersize", 25, "color", [0.9,0.3,0.3], ...
   xExtC*[1,1], [viz_fValMin,viz_fValMax], 's-', "linewidth", 2, "markersize", 25, "color", [0.3,0.8,0.3], ...
   xExtR*[1,1], [viz_fValMin,viz_fValMax], 'v-', "linewidth", 2, "markersize", 25, "color", [0.3,0.3,1.0], ...
+  xExtFit*[1,1], [viz_fValMin,viz_fValMax], 'x-', "linewidth", 2, "markersize", 25, "color", [0.9,0.3,1.0], ...
   x_secret*[1,1], [viz_fValMin,viz_fValMax], '*-', 'linewidth', 2, 'markersize', 25, "color", [0.8,0.6,0.0], ...
   viz_xVals, 0*viz_xVals, 'k-' );
 grid on;

@@ -1,18 +1,23 @@
 function extFit_viz( xVals, fVals, bigXLo, bigXHi, bigPLo, bigPHi, prm=[] )
 	commondefs;
 	thisFile = "extFit_viz";
-	echo__bigPHi = bigPHi
 	numFigs = mygetfield( prm, "numFigs", 0 );
 	%
 	omegaTol = eps * sum( fVals.^2 );
 	%
 	numColors = 1000;
-	sizeBigX = 501;
-	sizeBigP = 502;
+	sizeBigX = 51;
+	sizeBigP = 52;
 	bigXVals = linspace( bigXLo, bigXHi, sizeBigX );
 	bigPVals = linspace( bigPLo, bigPHi, sizeBigP );
 	[ bigXMesh, bigPMesh ] = meshgrid( bigXVals, bigPVals );
-	[ omegaMesh, rhoAry3, bigAMesh, bigBMesh ] = extFit_calcOmega( xVals, fVals, bigXMesh, bigPMesh );
+	wVals = mygetfield( prm, "wVals", [] );
+	%msg( thisFile, __LINE__, "" );
+	%msg( thisFile, __LINE__, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" );
+	%extFit_calcOmega( xVals, fVals, 1.0*ones(2,2), 2.1*ones(2,2), wVals )
+	[ omegaMesh ] = extFit_calcOmega( xVals, fVals, bigXMesh, bigPMesh, wVals );
+	%msg( thisFile, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" );
+	%msg( thisFile, __LINE__, "" );
 	%
 	belowTolMesh = (omegaMesh<omegaTol);
 	if ( sum(sum(belowTolMesh)) > 0 )
@@ -22,13 +27,12 @@ function extFit_viz( xVals, fVals, bigXLo, bigXHi, bigPLo, bigPHi, prm=[] )
 		msg( thisFile, __LINE__, "Found a below-tol point!" );
 	end
 	%
+	omegaMesh = log(eps+omegaMesh);
+	%
 	[ omegaMin, bigPIndexOfMin, bigXIndexOfMin ] = minmin(omegaMesh);
 	bigXOfMin = bigXVals(bigXIndexOfMin)
 	bigPOfMin = bigPVals(bigPIndexOfMin)
 	[ ofMin_omega, ofMin_rhoVec, ofMin_bigA, ofMin_bigB ] = extFit_calcOmega( xVals, fVals, bigXOfMin, bigPOfMin );
-	echo__ofMin_omega = ofMin_omega
-	echo__ofMin_bigA = ofMin_bigA
-	echo__ofMin_bigB = ofMin_bigB
 	%
 	blurCoeff = 0.5;
 	tempMesh = ...
@@ -55,8 +59,8 @@ function extFit_viz( xVals, fVals, bigXLo, bigXHi, bigPLo, bigPHi, prm=[] )
 	%%%end
 	%
 	numFigs++; figure(numFigs);
-	%imagesc( bigXVals, bigPVals, omegaMesh );
-	imagesc( bigXVals(2:end-1), bigPVals(2:end-1), omegaBlurMesh );
+	imagesc( bigXVals, bigPVals, omegaMesh );
+	%imagesc( bigXVals(2:end-1), bigPVals(2:end-1), omegaBlurMesh );
 	axis("square");
 	set( get(gcf,"children"), "ydir", "normal" );
 	colormap(mycmap(numColors));

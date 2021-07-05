@@ -1,5 +1,141 @@
-function [ omega, rho, bigA, bigB ] = extFit_calcOmega( xVals, fVals, bigX, bigP, wVals = [] );
+function [ omega, rho, bigA, bigB, bigC ] = extFit_calcOmega( xVals, fVals, bigX, bigP, wVals = [] );
 	thisFile = "extFit_calcOmega";
+	
+	if (1)
+	% New model.
+	assert( bigP < 50.0 );
+	%
+	[ foo, nOfPtWiseMin ] = min( fVals );
+	numPts = size(fVals,2);
+	nOfPtWiseMin = median([ nOfPtWiseMin, 2, numPts-1 ]);
+	fOfPtWiseMin = fVals(nOfPtWiseMin);
+	for i1=1:size(bigX,1)
+	for i2=1:size(bigX,2)
+		this_bigX = bigX(i1,i2);
+		this_bigP = bigP(i1,i2);
+		this_bigD = abs( xVals - this_bigX ).^this_bigP;
+		%
+		vecX = xVals(nOfPtWiseMin-1:nOfPtWiseMin+1)';
+		vecD = this_bigD(nOfPtWiseMin-1:nOfPtWiseMin+1)';
+		vecF = fVals(nOfPtWiseMin-1:nOfPtWiseMin+1)';
+		matM = [ ones(3,1), vecX, vecD ];
+		if (0)
+		msg( thisFile, __LINE__, "..." );
+		msg( thisFile, __LINE__, sprintf( "  this_bigX = %g.", this_bigX ) );
+		msg( thisFile, __LINE__, sprintf( "  this_bigP = %g.", this_bigP ) );
+		abs( xVals - this_bigX )
+		echo__vecD = vecD'
+		echo__matM = matM
+		msg( thisFile, __LINE__, "..." );
+		assert( isrealarray(matM,[3,3]) );
+		msg( thisFile, __LINE__, "..." );
+		end
+		vecC = matM\vecF;
+		%msg( thisFile, __LINE__, "..." );
+		if (0)
+		rc = rcond(matM);
+		if (rc<eps)
+			msg( thisFile, __LINE__, sprintf( "rcond(matM) = %g...", rc ) );
+			msg( thisFile, __LINE__, sprintf( "  this_bigX = %g.", this_bigX ) );
+			msg( thisFile, __LINE__, sprintf( "  this_bigP = %g.", this_bigP ) );
+			%echo__matM = matM
+			%echo__vecX = vecX'
+			%echo__vecD = vecD'
+			%echo__vecF = vecF'
+			%echo__vecC = vecC'
+		end
+		end
+		this_bigA = vecC(1);
+		this_bigB = vecC(2);
+		this_bigC = vecC(3);
+		this_rho = this_bigA + this_bigB*xVals + this_bigC*this_bigD - fVals;	
+		%
+		this_omega = 0.5*sum(this_rho.^2);
+		omega(i1,i2) = this_omega;
+		rho(i1,i2,:) = this_rho;
+		bigA(i1,i2) = this_bigA;
+		bigB(i1,i2) = this_bigB;
+		bigC(i1,i2) = this_bigC;
+	end
+	end
+	if ( isrealscalar(bigX) )
+		rho = this_rho;
+	end
+	return
+	end
+	
+	bigC = [];
+	
+	if (0)
+	% Least squares on 3 closes pts.
+	[ foo, nOfPtWiseMin ] = min( fVals );
+	numPts = size(fVals,2);
+	nOfPtWiseMin = median([ nOfPtWiseMin, 2, numPts-1 ]);
+	fOfPtWiseMin = fVals(nOfPtWiseMin);
+	for i1=1:size(bigX,1)
+	for i2=1:size(bigX,2)
+		this_bigX = bigX(i1,i2);
+		this_bigP = bigP(i1,i2);
+		this_bigD = abs( xVals - this_bigX ).^this_bigP;
+		%
+		vecD = this_bigD(nOfPtWiseMin-1:nOfPtWiseMin+1)';
+		vecF = fVals(nOfPtWiseMin-1:nOfPtWiseMin+1)';
+		vecC = [ ones(3,1), vecD ] \ vecF;
+		this_bigA = vecC(1);
+		this_bigB = vecC(2);
+		%
+		assert( isrealscalar(this_bigB) );
+		assert( isrealscalar(this_bigA) );
+		this_rho = this_bigA + this_bigB*this_bigD - fVals;
+		this_omega = 0.5*sum(this_rho.^2);
+		omega(i1,i2) = this_omega;
+		rho(i1,i2,:) = this_rho;
+		bigA(i1,i2) = this_bigA;
+		bigB(i1,i2) = this_bigB;
+	end
+	end
+	if ( isrealscalar(bigX) )
+		rho = this_rho;
+	end
+	return;
+	end
+	
+	
+	if (1)
+	% Hit C exactly, least squares for L&R.
+	% May be wrong.
+	% Does not seem to work very well.
+	[ foo, nOfPtWiseMin ] = min( fVals );
+	numPts = size(fVals,2);
+	nOfPtWiseMin = median([ nOfPtWiseMin, 2, numPts-1 ]);
+	fOfPtWiseMin = fVals(nOfPtWiseMin);
+	for i1=1:size(bigX,1)
+	for i2=1:size(bigX,2)
+		this_bigX = bigX(i1,i2);
+		this_bigP = bigP(i1,i2);
+		this_bigD = abs( xVals - this_bigX ).^this_bigP;
+		fooD = this_bigD([nOfPtWiseMin-1,nOfPtWiseMin+1]) - this_bigD(nOfPtWiseMin);
+		fooF = fVals([nOfPtWiseMin-1,nOfPtWiseMin+1]) - fVals(nOfPtWiseMin);
+		this_bigB = sum(fooF.*fooD) / sum(fooD.^2);
+		this_bigA = fOfPtWiseMin - this_bigB*abs( xVals(nOfPtWiseMin) - this_bigX ).^this_bigP;
+		assert( isrealscalar(this_bigB) );
+		assert( isrealscalar(this_bigA) );
+		this_rho = this_bigA + this_bigB*this_bigD - fVals;
+		this_omega = 0.5*sum(this_rho.^2);
+		omega(i1,i2) = this_omega;
+		rho(i1,i2,:) = this_rho;
+		bigA(i1,i2) = this_bigA;
+		bigB(i1,i2) = this_bigB;
+	end
+	end
+	if ( isrealscalar(bigX) )
+		rho = this_rho;
+	end
+	return;
+	end
+	
+	
+	
 	%
 	% The logic:
 	%  d_n = abs( x_n - X )^P

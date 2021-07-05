@@ -48,9 +48,11 @@ function [ datOut, retCode ] = extFit( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm
 	bigP = bigP0;
 	iterCount = 0;
 	%
+	msg( thisFile, __LINE__, "..." );
 	prm_calcGradHess = mygetfield( prm, "prm_calcGradHess", [] );
 	dat_calcGradHess = extFit_calcGradHess( bigX, bigP, rvecX, rvecF, rvecW, prm_calcGradHess );
 	omega = dat_calcGradHess.omega0;
+	msg( thisFile, __LINE__, "..." );
 	if ( omega <= omegaTol )
 		msg_main( verbLev, thisFile, __LINE__, sprintf( ...
 		  "Initial guess is converged (%g <= %g).", omega, omegaTol ) );
@@ -68,10 +70,12 @@ function [ datOut, retCode ] = extFit( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm
 		datOut.bigP = bigP;
 		return;
 	end
+	msg( thisFile, __LINE__, "..." );
 	matD = diag(abs(diag(matH)));
 	%matD = eye(2,2);
 	mu_trial = 0.0;
 	while (1)
+		msg( thisFile, __LINE__, "..." );
 		iterCount++;
 		trialIsValid = true;
 		deltaVec_trial = - ( matH + mu_trial*matD )	\ vecG;
@@ -79,9 +83,14 @@ function [ datOut, retCode ] = extFit( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm
 		bigP_trial = bigP + deltaVec_trial(2);
 		if ( bigP_trial <= 0.0 )
 			trialIsValid = false;
+		elseif ( abs(deltaVec_trial(2)) > 1.0 + abs(bigP) )
+			trialIsValid = false;
 		end
+		msg( thisFile, __LINE__, "..." );
 		if ( trialIsValid )
+		msg( thisFile, __LINE__, "..." );
 			omega_trial = extFit_calcOmega( rvecX, rvecF, bigX_trial, bigP_trial, rvecW );
+		msg( thisFile, __LINE__, "..." );
 			msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
 				  " %3d;  %11.3e, %11.3e, %11.3e;  %11.3e, %11.3e, %11.3e; %2d, %11.3e, %11.3e, %11.3e; %11.3e", ...
 			  iterCount, ...
@@ -97,6 +106,7 @@ function [ datOut, retCode ] = extFit( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm
 			  omega_trial, ...
 			  omega_trial - omega ) );
 		else
+		msg( thisFile, __LINE__, "..." );
 			msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
 				  "%3d;  %11.3e, %11.3e, %11.3e;  %11.3e, %11.3e, %11.3e; %2d, %11.3e, %11.3e, %11.3e; %11.3e", ...
 			  iterCount, ...
@@ -112,6 +122,7 @@ function [ datOut, retCode ] = extFit( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm
 			  -1.0, ...
 			  -1.0 ) );
 		end
+		msg( thisFile, __LINE__, "..." );
 		%
 		if ( trialIsValid && omega_trial <= omegaTol )
 			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
@@ -167,5 +178,6 @@ function [ datOut, retCode ] = extFit( bigX0, bigP0, rvecX, rvecF, rvecW=[], prm
 			continue;
 		end
 	end
+	msg( thisFile, __LINE__, "..." );
 	%
 end

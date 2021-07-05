@@ -43,3 +43,5 @@ msg( "init", __LINE__, "Adding path \"study/20210526analyzeExt\"." );
 addpath( "study/20210526analyzeExt" );
 %%%msg( "init", __LINE__, "Adding path \"study/20210625loggyDeriv\"." );
 %%%addpath( "study/20210625loggyDeriv" );
+%msg( "init", __LINE__, "Adding path \"study/20210704compareExtFinder\"." );
+%addpath( "study/20210704compareExtFinder" );
