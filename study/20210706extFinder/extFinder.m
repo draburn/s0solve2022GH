@@ -1,4 +1,7 @@
 % function [ xOfCand, meritOfCand, datOut ] = extFinder( xVals, fVals, prm = [], datIn = [] );
+	setprngstates(0);
+	xVals = sort(randn(1,20));
+	fVals = abs(xVals).^4
 	prm = [];
 	datIn = [];
 	%
@@ -53,6 +56,43 @@
 	  xVals, gVals, 'o-', ...
 	  xVals, funchGModel(xVals), 'x-' );
 	grid on;
+	%
+	tic();
+	extFinder_getOmega( bigS, bigP, xVals, fVals, nOfPtWiseMin )
+	extFinder_getOmega( bigS, 7.5, xVals, fVals, nOfPtWiseMin )
+	extFinder_getOmega( 0.0, bigP, xVals, fVals, nOfPtWiseMin )
+	extFinder_getOmega( 0.0, 7.5, xVals, fVals, nOfPtWiseMin )
+	%
+	epsS = 1e-5;
+	epsP = 1e-2;
+	omegaMM = extFinder_getOmega( bigS-epsS, bigP-epsP, xVals, fVals, nOfPtWiseMin );
+	omegaM0 = extFinder_getOmega( bigS-epsS, bigP,      xVals, fVals, nOfPtWiseMin );
+	omegaMP = extFinder_getOmega( bigS-epsS, bigP+epsP, xVals, fVals, nOfPtWiseMin );
+	omega0M = extFinder_getOmega( bigS,      bigP-epsP, xVals, fVals, nOfPtWiseMin );
+	omega00 = extFinder_getOmega( bigS,      bigP,      xVals, fVals, nOfPtWiseMin );
+	omega0P = extFinder_getOmega( bigS,      bigP+epsP, xVals, fVals, nOfPtWiseMin );
+	omegaPM = extFinder_getOmega( bigS+epsS, bigP-epsP, xVals, fVals, nOfPtWiseMin );
+	omegaP0 = extFinder_getOmega( bigS+epsS, bigP,      xVals, fVals, nOfPtWiseMin );
+	omegaPP = extFinder_getOmega( bigS+epsS, bigP+epsP, xVals, fVals, nOfPtWiseMin );
+	%
+	omegaDS = ( omegaP0 - omegaM0 ) / (2.0*epsS)
+	omegaDP = ( omega0P - omega0M ) / (2.0*epsP)
+	omegaDDS = ( omegaP0 + omegaM0 - 2*omega00 ) / ( epsS^2 )
+	omegaDDP = ( omega0P + omega0M - 2*omega00 ) / ( epsP^2 )
+	%
+	deltaS = -omegaDS/omegaDDS
+	deltaP = -omegaDP/omegaDDP
+	extFinder_getOmega( bigS + 1.0*deltaS, bigP + 1.0*deltaP, xVals, fVals, nOfPtWiseMin )
+	extFinder_getOmega( bigS + 0.9*deltaS, bigP + 0.9*deltaP, xVals, fVals, nOfPtWiseMin )
+	extFinder_getOmega( bigS + 0.8*deltaS, bigP + 0.8*deltaP, xVals, fVals, nOfPtWiseMin )
+	extFinder_getOmega( bigS + 0.5*deltaS, bigP + 0.5*deltaP, xVals, fVals, nOfPtWiseMin )
+	extFinder_getOmega( bigS + 0.2*deltaS, bigP + 0.2*deltaP, xVals, fVals, nOfPtWiseMin )
+	extFinder_getOmega( bigS + 0.1*deltaS, bigP + 0.1*deltaP, xVals, fVals, nOfPtWiseMin )
+	extFinder_getOmega( bigS + 0.01*deltaS, bigP + 0.01*deltaP, xVals, fVals, nOfPtWiseMin )
+	extFinder_getOmega( bigS, bigP, xVals, fVals, nOfPtWiseMin )
+	toc();
+	bigS += 0.2*deltaS
+	bigP += 0.2*deltaP
 	%
 	%
 return;
