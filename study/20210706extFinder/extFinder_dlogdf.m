@@ -44,7 +44,7 @@ function [ bigX, bigP, datOut ] = extFinder_dlogdf( xVals, fVals, prm=[], datIn=
 	% Linear fit, with weight...
 	vecX = xVals_h';
 	vecH = hVals_h';
-	vecW = 1.0./( abs(vecH) + sqrt(eps)*hScale );
+	vecW = 1.0./( sqrt(abs(vecH)) + sqrt(eps*hScale) );
 	matX = [ vecX, ones(numPts_h,1) ];
 	matW = diag(vecW);
 	vecCoeff = (matW*matX)\(matW*vecH);

@@ -59,14 +59,14 @@
 	if ( nOfPtWiseMin >= 4 )
 		n = 2;
 		p = polyfit( xVals(n-1:n+1), gVals(n-1:n+1), 2 );
-		msg( thisFile, __LINE__, sprintf( ...
+		msg_copious( verbLev, thisFile, __LINE__, sprintf( ...
 		  "    [ %3d,   %g,   %g ]", n, xVals(n), p(2) ) );
 		curvatureOnLeftIsOkay = abs(p(1)) > sqrt(eps)*abs(p(2));
 		assert( curvatureOnLeftIsOkay );
 		pToCompare = p;
 		for n=3:nOfPtWiseMin-2
 			p = polyfit( xVals(n-1:n+1), gVals(n-1:n+1), 2 );
-			msg( thisFile, __LINE__, sprintf( ...
+			msg_copious( verbLev, thisFile, __LINE__, sprintf( ...
 			  "    [ %3d,   %g,   %g ]", n, xVals(n), p(2) ) );
 			curvatureOnLeftIsOkay = abs(p(1)) > sqrt(eps)*abs(p(2));
 			assert( curvatureOnLeftIsOkay );
@@ -77,14 +77,14 @@
 	if ( nOfPtWiseMin <= numPts-3 )
 		n = numPts-1;
 		p = polyfit( xVals(n-1:n+1), gVals(n-1:n+1), 2 );
-		msg( thisFile, __LINE__, sprintf( ...
+		msg_copious( verbLev, thisFile, __LINE__, sprintf( ...
 		  "    [ %3d,   %g,   %g ]", n, xVals(n), p(2) ) );
 		curvatureOnRightIsOkay = abs(p(1)) > sqrt(eps)*abs(p(2));
 		assert( curvatureOnRightIsOkay );
 		curvatureRight = p(1);
 		for n=nOfPtWiseMin+2:numPts-2
 			p = polyfit( xVals(n-1:n+1), gVals(n-1:n+1), 2 );
-			msg( thisFile, __LINE__, sprintf( ...
+			msg_copious( verbLev, thisFile, __LINE__, sprintf( ...
 			  "    [ %3d,   %g,   %g ]", n, xVals(n), p(2) ) );
 			curvatureOnRightIsOkay = abs(p(1)) > sqrt(eps)*abs(p(2));
 			assert( curvatureOnRightIsOkay );
