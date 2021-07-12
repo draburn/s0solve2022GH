@@ -4,11 +4,28 @@ setprngstates(0);
 numFigs = 0;
 
 
-x = linspace(-1,1,10000)*100;
 %d = @(x)( x - round(x) );
 %p = @(x)( sign(d(x)) .* abs(2.0*d(x)).^4 );
 %y = @(x)( p(x) + 2.0*round(x) );
+r = @(n) randn(n,1);
 s = @(x)( x + sin(x) );
+%t = @(x,c)( s( c(1) + c(2)*s( c(3) + c(4)*s( c(5) + c(6)*x ) ) ) );
+t = @(x,c)( s( c(1) + abs(c(2))*s( c(3) + abs(c(4))*s( c(5) + abs(c(6))*x ) ) ) );
+u = @(x,c)( t( x, c(1:6) ) + t( x, c(7:12) ) );
+v = @(x,c)( u(u( x, c(1:12) ),c(13:24)) );
+y = @(x,c)( v(x,c) );
+%xzLo = -1e8;
+%xzHi = 1e8;
+%z = @(x,c)( y(x,c) * (xzHi-xzLo)/( y(xzHi,c) - y(xzLo,c) ) );
+%
+x = linspace(-1,1,10000)*10;
+%plot( x, y(x,10*r(24)), 'o-' );
+plot( x, cos(y(x,4*r(24))), 'o-' );
+grid on;
+return;
+
+
+
 %z = @(x)( s(s(x)) );
 z = @(x)( s(s(s(x))) );
 %z = @(x)( s(s(s(s(s(x))))) );

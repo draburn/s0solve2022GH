@@ -1,9 +1,23 @@
 clear;
-thisFile = "prc_cubic2"
+setprngstates(0); % Doesn't matter?
+thisFile = "prc_cubic2";
 tic();
 %
-funch_fx = @(x,y)( 0.5 - x .* (x-1.0) .* (x+1.0) );
-funch_fy = @(x,y)( y );
+%funch_fx = @(x,y)( 0.5 - x .* (x-1.0) .* (x+1.0) );
+%funch_fy = @(x,y)( y );
+%funch_f = @(x,y)[ funch_fx(x,y); funch_fy(x,y) ];
+%
+sizeX = 2;
+vecX0 = zeros(sizeX,1);
+seedPrm = demoFunc0101_genSeedPrm("easy");
+seedPrm.sizeX = sizeX;
+seedPrm.sizeF = sizeX;
+seedPrm.vecX0 = vecX0;
+funcPrm = demoFunc0101_genFuncPrm(seedPrm);
+funch_vecFVec = @(vecX)( demoFunc0101_eval( vecX, funcPrm ) );
+%
+funch_fx = @(x,y)( funch_vecFVec([x;y])'*[1;0] );
+funch_fy = @(x,y)( funch_vecFVec([x;y])'*[0;1] );
 funch_f = @(x,y)[ funch_fx(x,y); funch_fy(x,y) ];
 funch_omega = @(x,y)( sqrt(sum(funch_f(x,y).^2, 1)) );
 %
@@ -11,9 +25,9 @@ funch_omega = @(x,y)( sqrt(sum(funch_f(x,y).^2, 1)) );
 %
 epsX = sqrt(eps);
 epsY = sqrt(eps);
-vecR0 = [ -0.5; 0.0 ];
+vecR0 = [ 0.0; 0.0 ];
 vecR = vecR0;
-for n=1:10
+for n=1:0
 	vecF = funch_f(vecR(1),vecR(2));
 	omega = norm(vecF);
 	%msg( thisFile, __LINE__, sprintf( "%3d,  %g", n, omega ) );
@@ -55,14 +69,14 @@ matJExt = [ ...
 %
 numFigs = 0;
 use12Label = false;
-multiArgLevel_fx = 2;
-multiArgLevel_fy = 2;
-multiArgLevel_omega = 1;
+multiArgLevel_fx = 0;
+multiArgLevel_fy = 0;
+multiArgLevel_omega = 0;
 %ax = [ vecR(1)-0.01, vecR(1)+0.01, vecR(2)-0.01, vecR(2)+0.01 ];
+ax = [ -8, 2, -5, 5 ];
 %ax = [ -1.4, 1.4, -1.4, 1.4 ];
-ax = [ -1.0, 1.3, -0.6, 0.6 ];
-sizeX = 201;
-sizeY = 203;
+sizeX = 11;
+sizeY = 13;
 [ gridX, gridY, gridFX ] = gridfunch( funch_fx, multiArgLevel_fx, ax, sizeX, sizeY );
 [ gridX, gridY, gridFY ] = gridfunch( funch_fy, multiArgLevel_fy, ax, sizeX, sizeY );
 [ gridX, gridY, gridOmega ] = gridfunch( funch_omega, multiArgLevel_omega, ax, sizeX, sizeY );
