@@ -2,7 +2,7 @@ clear;
 %setprngstates
 setprngstates(0);
 numFigs = 0;
-thisFile = "chaoticSignal0712"
+thisFile = "chaoticSignal0711b"
 %
 r = @(n) randn(n,1);
 s = @(x)( x + sin(x) );
