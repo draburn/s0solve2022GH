@@ -2,6 +2,7 @@ clear;
 %
 setprngstates
 %setprngstates(0);
+%setprngstates(67938960);
 numYTerms = 4;
 yScale = 50.0;
 ya0_orig = 0.0;
@@ -63,6 +64,16 @@ grid on;
 %
 xLo = xOfMax-0.05*(xOfMax-xOfMin);
 xHi = xOfMax+0.05*(xOfMax-xOfMin);
+xVals = linspace(xLo,xHi,10001);
+numFigs++; figure(numFigs);
+plot( xVals, funch_f(xVals), 'gs-' );
+grid on;
+numFigs++; figure(numFigs);
+plot( xVals, funch_f(funch_y(xVals)), 'r^-' );
+grid on;
+%
+xLo = xOfMax+xOfMin-0.05*(xOfMax-xOfMin);
+xHi = xOfMax+xOfMax+0.05*(xOfMax-xOfMin);
 xVals = linspace(xLo,xHi,10001);
 numFigs++; figure(numFigs);
 plot( xVals, funch_f(xVals), 'gs-' );
