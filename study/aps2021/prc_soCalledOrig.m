@@ -1,25 +1,40 @@
 clear;
-setprngstates(0); % Doesn't matter?
-thisFile = "prc_cubic2";
+thisFile = "prc_soCalledOrig"
 tic();
+numFigs = 0;
 %
-%funch_fx = @(x,y)( 0.5 - x .* (x-1.0) .* (x+1.0) );
-%funch_fy = @(x,y)( y );
-%funch_f = @(x,y)[ funch_fx(x,y); funch_fy(x,y) ];
+if (0)
+	funch_map_theta = @(x,y)( 0.2*pi*( (x-1.0).^2  + y.^2 ) );
+	%ax = [ -0.183, -0.181, 0.233, 0.236 ];
+elseif (1)
+	funch_map_theta = @(x,y)( 0.4*pi*( (x-1.0).^2  + y.^2 ) );
+	%ax = [ 0.223, 0.226, -0.248, -0.245 ];
+elseif (1)
+	funch_map_theta = @(x,y)( 0.5*pi*( (x-1.0).^2  + y.^2 ) );
+	%ax = [ 0.129, 0.131, -0.320, -0.317 ];
+	%ax += [ -0.5, 0.5, -0.5, 0.5 ];
+elseif (0)
+	funch_map_theta = @(x,y)( pi*( (x-1.0).^2  + y.^2 ) );
+else
+	funch_map_theta = @(x,y)( 0*x );
+end
+funch_map_x = @(x,y)( ...
+   (cos(funch_map_theta(x,y)).*x) ...
+ - (sin(funch_map_theta(x,y)).*y) );
+funch_map_y = @(x,y)( ...
+   (sin(funch_map_theta(x,y)).*x) ...
+ + (cos(funch_map_theta(x,y)).*y) );
+funch_gx = @(x,y)( 0.5 + (x.*((x-1.0).^2)) );
+funch_gy = @(x,y)( y );
+funch_fx = @(x,y)( funch_gx(funch_map_x(x,y),funch_map_y(x,y)) );
+funch_fy = @(x,y)( funch_gy(funch_map_x(x,y),funch_map_y(x,y)) );
 %
-sizeX = 2;
-vecX0 = zeros(sizeX,1);
-seedPrm = demoFunc0101_genSeedPrm("easy");
-seedPrm.sizeX = sizeX;
-seedPrm.sizeF = sizeX;
-seedPrm.vecX0 = vecX0;
-funcPrm = demoFunc0101_genFuncPrm(seedPrm);
-funch_vecFVec = @(vecX)( demoFunc0101_eval( vecX, funcPrm ) );
-%
-funch_fx = @(x,y)( funch_vecFVec([x;y])'*[1;0] );
-funch_fy = @(x,y)( funch_vecFVec([x;y])'*[0;1] );
 funch_f = @(x,y)[ funch_fx(x,y); funch_fy(x,y) ];
 funch_omega = @(x,y)( sqrt(sum(funch_f(x,y).^2, 1)) );
+%
+funch_soCalledR0 = @(x,y)( funch_gx(x,y).^2 + funch_gy(x,y).^2 );
+funch_soCalledR1 = @(x,y)( funch_soCalledR0(funch_map_x(x,y),funch_map_y(x,y)) );
+funch_soCalledZ0 = @(x,y)( asinh(10000.0*funch_soCalledR1(x,y))/10000.0 );
 %
 %
 %
@@ -67,19 +82,20 @@ matJExt = [ ...
 %
 %
 %
-numFigs = 0;
 use12Label = false;
-multiArgLevel_fx = 0;
-multiArgLevel_fy = 0;
-multiArgLevel_omega = 0;
+multiArgLevel_fx = 2;
+multiArgLevel_fy = 2;
+multiArgLevel_omega = 1;
+multiArgLevel_soCalledR1 = 1;
 %ax = [ vecR(1)-0.01, vecR(1)+0.01, vecR(2)-0.01, vecR(2)+0.01 ];
-ax = [ -8, 2, -5, 5 ];
-%ax = [ -1.4, 1.4, -1.4, 1.4 ];
-sizeX = 11;
-sizeY = 13;
+%ax = [ -0.5, 1.5, -1.0, 1.0 ];
+ax = [ -0.3, 1.3, -0.8, 0.5 ];
+sizeX = 51;
+sizeY = 53;
 [ gridX, gridY, gridFX ] = gridfunch( funch_fx, multiArgLevel_fx, ax, sizeX, sizeY );
 [ gridX, gridY, gridFY ] = gridfunch( funch_fy, multiArgLevel_fy, ax, sizeX, sizeY );
 [ gridX, gridY, gridOmega ] = gridfunch( funch_omega, multiArgLevel_omega, ax, sizeX, sizeY );
+[ gridX, gridY, gridSoCalledZ0 ] = gridfunch( funch_soCalledZ0, multiArgLevel_omega, ax, sizeX, sizeY );
 valsFX = reshape(gridFX,1,[]);
 valsFY = reshape(gridFY,1,[]);
 valsOmega = reshape(gridOmega,1,[]);
@@ -129,6 +145,44 @@ hold on;
 plot( vecR(1), vecR(2), "x", "color", [0.8,0.0,0.0], "linewidth", 3, "markersize", 20 );
 hold off;
 grid on;
+
+
+%
+numFigs++; figure(numFigs);
+gridViz = gridSoCalledZ0;
+contourf( gridX, gridY, gridViz, numContours );
+cMap = 0.6 + (0.4*jet(numColors));
+z0 = ( 0.0 - min(min(gridViz)) ) / ( max(max(gridViz)) - min(min(gridViz)) );
+i0 = 1 + round( (numColors-1)*z0 );
+if ( 0==i0 || -1==i0 ) % HA~ACK
+	i0 = 1;
+end
+if ( 1 <= i0 && i0 <= numColors )
+	%cMap(i0,:) *= 0.25;
+	%cMap(i0,:) = 0.75 + 0.25*cMap(i0,:);
+	cMap(i0,:) = 0.50 - 0.50*cMap(i0,:);
+end
+colormap(cMap);
+if (use12Label)
+	xlabel( "x_1" );
+	ylabel( "x_2" );
+	title( "So-Called Z0 vs x_1, x_2" );
+else
+	xlabel( "x" );
+	ylabel( "y" );
+	title( "So-Called Z0 vs x, y" );
+end
+hold on;
+plot( vecR(1), vecR(2), "x", "color", [0.8,0.0,0.0], "linewidth", 3, "markersize", 20 );
+hold off;
+grid on;
+
+%
+%
+%
+toc();
+thisFile = [ "RETURN FROM " thisFile ];
+return;
 %
 %
 numFigs++; figure(numFigs);
@@ -185,86 +239,6 @@ end
 hold on;
 plot( vecR(1), vecR(2), "x", "color", [0.8,0.0,0.0], "linewidth", 3, "markersize", 20 );
 hold off;
-grid on;
-%
-%
-%
-toc();
-thisFile = [ "RETURN FROM " thisFile ];
-return;
-
-
-
-
-
-
-numFigs++; figure(numFigs);
-gridViz = gridOmegaA;
-contourf( gridX, gridY, gridViz, numContours );
-cMap = 0.6 + (0.4*jet(numColors));
-z0 = ( 0.0 - min(min(gridViz)) ) / ( max(max(gridViz)) - min(min(gridViz)) );
-i0 = 1 + round( (numColors-1)*z0 );
-if ( 1 <= i0 && i0 <= numColors )
-	%cMap(i0,:) *= 0.25;
-	%cMap(i0,:) = 0.75 + 0.25*cMap(i0,:);
-	cMap(i0,:) = 0.50 - 0.50*cMap(i0,:);
-end
-colormap(cMap);
-if (use12Label)
-	xlabel( "x_1" );
-	ylabel( "x_2" );
-	title( "||J_{ext}^T F|| vs x_1, x_2" );
-else
-	xlabel( "x" );
-	ylabel( "y" );
-	title( "||J_{ext}^T F|| vs x, y" );
-end
-grid on;
-%
-numFigs++; figure(numFigs);
-gridViz = abs(gridFExtHatTF);
-contourf( gridX, gridY, gridViz, numContours );
-cMap = 0.6 + (0.4*jet(numColors));
-z0 = ( 0.0 - min(min(gridViz)) ) / ( max(max(gridViz)) - min(min(gridViz)) );
-i0 = 1 + round( (numColors-1)*z0 );
-if ( 1 <= i0 && i0 <= numColors )
-	%cMap(i0,:) *= 0.25;
-	%cMap(i0,:) = 0.75 + 0.25*cMap(i0,:);
-	cMap(i0,:) = 0.50 - 0.50*cMap(i0,:);
-end
-colormap(cMap);
-if (use12Label)
-	xlabel( "x_1" );
-	ylabel( "x_2" );
-	title( "|F_{ext}^{hat T} F| vs x_1, x_2" );
-else
-	xlabel( "x" );
-	ylabel( "y" );
-	title( "|F_{ext}^{hat T} F| vs x, y" );
-end
-grid on;
-%
-numFigs++; figure(numFigs);
-gridViz = gridOmega - abs(gridFExtHatTF);
-contourf( gridX, gridY, gridViz, numContours );
-cMap = 0.6 + (0.4*jet(numColors));
-z0 = ( 0.0 - min(min(gridViz)) ) / ( max(max(gridViz)) - min(min(gridViz)) );
-i0 = 1 + round( (numColors-1)*z0 );
-if ( 1 <= i0 && i0 <= numColors )
-	%cMap(i0,:) *= 0.25;
-	%cMap(i0,:) = 0.75 + 0.25*cMap(i0,:);
-	cMap(i0,:) = 0.50 - 0.50*cMap(i0,:);
-end
-colormap(cMap);
-if (use12Label)
-	xlabel( "x_1" );
-	ylabel( "x_2" );
-	title( "||F|| - |F_{ext}^{hat} * F| vs x_1, x_2" );
-else
-	xlabel( "x" );
-	ylabel( "y" );
-	title( "||F|| - |F_{ext}^{hat} * F| vs x, y" );
-end
 grid on;
 %
 %
