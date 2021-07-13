@@ -8,6 +8,8 @@ if (0)
 	%ax = [ -0.183, -0.181, 0.233, 0.236 ];
 elseif (1)
 	funch_map_theta = @(x,y)( 0.4*pi*( (x-1.0).^2  + y.^2 ) );
+	%
+	% The local min are at [1.0,0.0] and about [ 0.663846; -0.747869 ];
 	%ax = [ 0.223, 0.226, -0.248, -0.245 ];
 elseif (1)
 	funch_map_theta = @(x,y)( 0.5*pi*( (x-1.0).^2  + y.^2 ) );
@@ -32,30 +34,31 @@ funch_fy = @(x,y)( funch_gy(funch_map_x(x,y),funch_map_y(x,y)) );
 funch_f = @(x,y)[ funch_fx(x,y); funch_fy(x,y) ];
 funch_omega = @(x,y)( sqrt(sum(funch_f(x,y).^2, 1)) );
 %
-funch_soCalledR0 = @(x,y)( funch_gx(x,y).^2 + funch_gy(x,y).^2 );
-funch_soCalledR1 = @(x,y)( funch_soCalledR0(funch_map_x(x,y),funch_map_y(x,y)) );
-funch_soCalledZ0 = @(x,y)( asinh(10000.0*funch_soCalledR1(x,y))/10000.0 );
+%%%funch_soCalledR0 = @(x,y)( funch_gx(x,y).^2 + funch_gy(x,y).^2 );
+%%%funch_soCalledR1 = @(x,y)( funch_soCalledR0(funch_map_x(x,y),funch_map_y(x,y)) );
+%%%funch_soCalledZ0 = @(x,y)( asinh(10000.0*funch_soCalledR1(x,y))/10000.0 );
 %
 %
 %
 epsX = sqrt(eps);
 epsY = sqrt(eps);
-vecR0 = [ 0.0; 0.0 ];
+%vecR0 = [ 1.0; 0.0 ];
+vecR0 = [ 0.663846; -0.747869 ];
 vecR = vecR0;
-for n=1:0
+for n=1:10
 	vecF = funch_f(vecR(1),vecR(2));
 	omega = norm(vecF);
-	%msg( thisFile, __LINE__, sprintf( "%3d,  %g", n, omega ) );
+	msg( thisFile, __LINE__, sprintf( "%3d,  %g", n, omega ) );
 	matJ = [ ...
 	  ( funch_f(vecR(1)+epsX,vecR(2)) - funch_f(vecR(1)-epsX,vecR(2)) ) / (2.0*epsX), ...
 	  ( funch_f(vecR(1),vecR(2)+epsY) - funch_f(vecR(1),vecR(2)-epsY) ) / (2.0*epsY) ];
 	vecDelta = - matJ \ vecF;
 	for lambda_trial = [ 1.0, 0.99, 0.9, 0.8, 0.5, 0.2, 0.1, ...
-	  1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8  ]
+	  1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10  ]
 		vecR_trial = vecR + lambda_trial*vecDelta;
 		vecF_trial = funch_f(vecR_trial(1),vecR_trial(2));
 		omega_trial = norm(vecF_trial);
-		%msg( thisFile, __LINE__, sprintf( "   %g,  %g", lambda_trial, omega_trial ) );
+		msg( thisFile, __LINE__, sprintf( "   %g,  %g", lambda_trial, omega_trial ) );
 		if ( omega_trial < omega )
 			break;
 		end
@@ -65,7 +68,8 @@ for n=1:0
 	end
 	vecR = vecR_trial;
 end
-%msg( thisFile, __LINE__, sprintf( "%3d,  %g", n, omega ) );
+%vecR = [ 0.663846; -0.747869 ];
+msg( thisFile, __LINE__, sprintf( "%3d,  %g", n, omega ) );
 vecRExt = vecR
 vecFExt = funch_f(vecRExt(1),vecRExt(2))
 fExtNorm = sqrt( vecFExt(1)^2 + vecFExt(2)^2 );
@@ -86,16 +90,16 @@ use12Label = false;
 multiArgLevel_fx = 2;
 multiArgLevel_fy = 2;
 multiArgLevel_omega = 1;
-multiArgLevel_soCalledR1 = 1;
 %ax = [ vecR(1)-0.01, vecR(1)+0.01, vecR(2)-0.01, vecR(2)+0.01 ];
 %ax = [ -0.5, 1.5, -1.0, 1.0 ];
 ax = [ -0.3, 1.3, -0.8, 0.5 ];
-sizeX = 51;
-sizeY = 53;
+%ax = [ 0.4, 0.9, -0.9, -0.6 ];
+%ax = [ 0.663846, 0.663847, -0.747869, -0.747868 ];
+sizeX = 201;
+sizeY = 203;
 [ gridX, gridY, gridFX ] = gridfunch( funch_fx, multiArgLevel_fx, ax, sizeX, sizeY );
 [ gridX, gridY, gridFY ] = gridfunch( funch_fy, multiArgLevel_fy, ax, sizeX, sizeY );
 [ gridX, gridY, gridOmega ] = gridfunch( funch_omega, multiArgLevel_omega, ax, sizeX, sizeY );
-[ gridX, gridY, gridSoCalledZ0 ] = gridfunch( funch_soCalledZ0, multiArgLevel_omega, ax, sizeX, sizeY );
 valsFX = reshape(gridFX,1,[]);
 valsFY = reshape(gridFY,1,[]);
 valsOmega = reshape(gridOmega,1,[]);
@@ -113,8 +117,8 @@ gridOmegaB = reshape( valsOmegaB, sizeX, sizeY );
 %
 %
 %
-numColors = 21;
-numContours = 20;
+numColors = 51;
+numContours = 50;
 assert( numColors <= numContours+1 );
 %
 numFigs++; figure(numFigs);
@@ -145,44 +149,7 @@ hold on;
 plot( vecR(1), vecR(2), "x", "color", [0.8,0.0,0.0], "linewidth", 3, "markersize", 20 );
 hold off;
 grid on;
-
-
 %
-numFigs++; figure(numFigs);
-gridViz = gridSoCalledZ0;
-contourf( gridX, gridY, gridViz, numContours );
-cMap = 0.6 + (0.4*jet(numColors));
-z0 = ( 0.0 - min(min(gridViz)) ) / ( max(max(gridViz)) - min(min(gridViz)) );
-i0 = 1 + round( (numColors-1)*z0 );
-if ( 0==i0 || -1==i0 ) % HA~ACK
-	i0 = 1;
-end
-if ( 1 <= i0 && i0 <= numColors )
-	%cMap(i0,:) *= 0.25;
-	%cMap(i0,:) = 0.75 + 0.25*cMap(i0,:);
-	cMap(i0,:) = 0.50 - 0.50*cMap(i0,:);
-end
-colormap(cMap);
-if (use12Label)
-	xlabel( "x_1" );
-	ylabel( "x_2" );
-	title( "So-Called Z0 vs x_1, x_2" );
-else
-	xlabel( "x" );
-	ylabel( "y" );
-	title( "So-Called Z0 vs x, y" );
-end
-hold on;
-plot( vecR(1), vecR(2), "x", "color", [0.8,0.0,0.0], "linewidth", 3, "markersize", 20 );
-hold off;
-grid on;
-
-%
-%
-%
-toc();
-thisFile = [ "RETURN FROM " thisFile ];
-return;
 %
 %
 numFigs++; figure(numFigs);
