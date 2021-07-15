@@ -1,4 +1,4 @@
-function [ bigA, bigB, bigC ] = extFinder_getFit( bigS, bigP, xVals, gVals, nOfPtWiseMin, prm=[] );
+function [ bigA, bigB, bigC ] = extFinder_getFit( bigS, bigP, xVals, gVals, nOfPtWiseMin, prm=[] )
 	thisFile = "extFinder_getFit";
 	if ( mygetfield( prm, "beFast", false ) )
 		n = nOfPtWiseMin;

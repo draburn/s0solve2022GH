@@ -1,6 +1,6 @@
 % function [ xOfCand, meritOfCand, datOut ] = extFinder( xVals, fVals, prm = [], datIn = [] );
 	setprngstates(0);
-	xVals = sort(randn(1,20));
+	xVals = sort(randn(1,200));
 	fVals = abs(xVals).^4
 	prm = [];
 	datIn = [];

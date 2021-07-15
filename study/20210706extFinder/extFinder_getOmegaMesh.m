@@ -1,4 +1,4 @@
-function [ omegaMesh ] = extFinder_getOmegaMesh( ...
+function [ omegaMesh, bigAMesh, bigBMesh, bigCMesh ] = extFinder_getOmegaMesh( ...
   bigSMesh, bigPMesh, xVals, gVals, nOfPtWiseMin, prm=[] );
 	thisFile = "extFinder_getOmegaMesh";
 	%
@@ -31,12 +31,17 @@ function [ omegaMesh ] = extFinder_getOmegaMesh( ...
 	vecG = gVals(n-1:n+1)';
 	vecY = ( vecG - bigG0 ) / bigG1;
 	%
+	matX = [ vecX.^2, vecX, ones(3,1) ];
+	vecCoeff = matX\vecG;
+	assert( vecCoeff(1) > 0.0 );
+	xOfQuadMin = -vecCoeff(2)/(2.0*vecCoeff(1));
+	%
 	maskVals = logical(ones(size(xVals)));
 	maskVals(nOfPtWiseMin-1:nOfPtWiseMin+1) = 0;
 	%wVals = mygetfield( prm, "wVals", (1.0/sum(1.0./sqrt(gVals(maskVals))))./sqrt(gVals) );
 	wVals = mygetfield( prm, "wVals", [] );
 	if ( isempty(wVals) )
-		wVals = 1.0./gVals;
+		wVals = 1.0./(gVals.^0.0);
 		wVals /= sum(wVals);
 	end
 	assert( isrealarray(wVals,[1,numPts]) );
@@ -47,19 +52,19 @@ function [ omegaMesh ] = extFinder_getOmegaMesh( ...
 	assert( isrealscalar(wSus) );
 	assert( wSus >= 0.0 );
 	%
-	epsA = mygetfield( prm, "epsA", eps^0.75 );
+	epsA = mygetfield( prm, "epsA", eps^1.5 );
 	assert( isrealscalar( epsA ) );
 	assert( 0.0 <= epsA );
-	epsB = mygetfield( prm, "epsB", eps^0.50 );
+	epsB = mygetfield( prm, "epsB", eps^1.5 );
 	assert( isrealscalar( epsB ) );
 	assert( 0.0 < epsB );
-	epsC = mygetfield( prm, "epsC", eps^0.75 );
+	epsC = mygetfield( prm, "epsC", eps^1.5 );
 	assert( isrealscalar( epsC ) );
 	assert( 0.0 <= epsC );
-	epsS = mygetfield( prm, "epsS", eps^0.75 );
+	epsS = mygetfield( prm, "epsS", eps^1.5 );
 	assert( isrealscalar( epsS ) );
 	assert( 0.0 <= epsS );
-	epsP = mygetfield( prm, "epsP", eps^0.75 );
+	epsP = mygetfield( prm, "epsP", eps^1.5 );
 	assert( isrealscalar( epsP ) );
 	assert( 0.0 <= epsP );
 	%
@@ -85,12 +90,17 @@ function [ omegaMesh ] = extFinder_getOmegaMesh( ...
 		 + epsA*vecCoeff(1)^2 ...
 		 + epsB*vecCoeff(2)^2 ...
 		 + epsC*vecCoeff(3)^2 ...
-		 + epsS*(bigSMesh(i1,i2)-xOfPtWiseMin)^2 ...
+		 + epsS*((bigSMesh(i1,i2)-xOfQuadMin)/bigDelta)^2 ...
 		 + epsP*(bigPMesh(i1,i2)-2.0)^2 );
+		omegaMesh(i1,i2) = omegaFit + omegaRegu;
 		%omegaMesh(i1,i2) = omegaFit * ( 1.0 + omegaSus ) + omegaRegu;
-		omegaMesh(i1,i2) = omegaFit;% + omegaRegu/sqrt(eps);
+		%omegaMesh(i1,i2) = omegaFit;% + omegaRegu/sqrt(eps);
+		bigAMesh(i1,i2) = vecCoeff(1);
+		bigBMesh(i1,i2) = vecCoeff(2);
+		bigCMesh(i1,i2) = vecCoeff(3);
 	end
 	end
+	omegaMesh = sqrt( omegaMesh );
 	%
 	%
 	%
