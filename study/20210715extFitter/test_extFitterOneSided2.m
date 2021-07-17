@@ -5,7 +5,8 @@
 	%
 	%
 	setprngstates(0);
-	xVals = 0.1+sort(abs(randn(1,20)));
+	%xVals = 0.3+sort(abs(randn(1,20)));
+	xVals = 1.0+sort(abs(randn(1,20)));
 	%xVals = linspace(0.2,1.0,5);
 	secret_xExt = 0.0;
 	secret_fExt = 0.0;
@@ -17,7 +18,7 @@
 	fVals = funchF(xVals);
 	nOfClosestPt = 1;
 	
-	doAuxPlots = false;
+	doAuxPlots = true;
 	if (doAuxPlots)
 		sValsA = linspace(-4.2,0.1,5001);
 		%sValsA = linspace(-0.76,-0.75,5001);
@@ -51,6 +52,10 @@
 	numColors = numContours+1;
 	sVals = linspace(-5.0,0.0,51);
 	pVals = linspace(0.1,10.0,51);
+
+	
+	sVals = linspace(-5.0,-2.0,51);
+	pVals = linspace(4.0,10.0,51);
 	
 	if (0)
 	sVals = linspace(-1.0,0.0,51);
@@ -120,10 +125,12 @@
 	  sMesh, pMesh, xVals, fVals, nOfClosestPt );
 	xExtMesh = dat.bigX0 + dat.bigX1*sMesh;
 	[ omegaCrit, i1Crit, i2Crit ] = minmin(omegaMesh);
-	%echo__omegaCrit = omegaCrit
-	%i1Crit = 50
-	%i2Crit = 2
-	omegaCrit = omegaMesh(i1Crit,i2Crit)
+	if (doAuxPlots)
+		echo__omegaCrit = omegaCrit
+		i1Crit = 40
+		i2Crit = 19
+		omegaCrit = omegaMesh(i1Crit,i2Crit)
+	end
 	sCrit = sMesh(i1Crit,i2Crit)
 	pCrit = pMesh(i1Crit,i2Crit)
 	bigF0Crit = bigF0Mesh(i1Crit,i2Crit)
@@ -198,6 +205,51 @@
 	ylabel( "g - f" );
 	title( "g - f vs x" );
 	%
+	numFigs++; figure(numFigs);
+	plot( ...
+	  viz_xVals, viz_gVals, 'x-', 'linewidth', 1, 'markersize', 10, ...
+	  xVals, fVals, 'k+', 'linewidth', 5, 'markersize', 30 );
+	grid on;
+	xlabel( "x" );
+	ylabel( "f" );
+	title( "f vs x" );
 	%
-	return;
+	%
+	
+	
+	%
+	%
+	%
+	meshZ = (pMesh-1.0)./(2.0*sMesh); strZ = "alpha thing";
+	meshZ = abs(meshZ+1.04);
+	numFigs++; figure(numFigs);
+	semilogy( sMesh(i1Crit+[-1,0,1],:)', meshZ(i1Crit+[-1,0,1],:)', 'o-' );
+	grid on;
+	xlabel( "s" );
+	ylabel( strZ );
+	title( [ strZ " vs s" ] );
+	%
+	numFigs++; figure(numFigs);
+	semilogy( pMesh(:,i2Crit+[-1,0,1]), meshZ(:,i2Crit+[-1,0,1]), 'o-' );
+	grid on;
+	xlabel( "p" );
+	ylabel( strZ );
+	title( [ strZ " vs p" ] );
+	%
+	numFigs++; figure(numFigs);
+	contourf( sVals, pVals, meshZ, numContours );
+	axis("square");
+	%axis("equal");
+	set( get(gcf,"children"), "ydir", "normal" );
+	colormap(mycmap(numColors));
+	grid on;
+	xlabel( "s" );
+	ylabel( "p" );
+	title( [ strZ " vs s, p" ] );
+	hold on;
+	if (doAuxPlots)
+		plot( sValsA, pValsA, 'o-', sValsA, pValsA2, 'x-' );
+	end
+	plot( sCrit, pCrit, 'wo', 'linewidth', 3, 'markersize', 25 );
+	hold off;
 
