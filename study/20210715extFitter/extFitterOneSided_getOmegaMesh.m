@@ -23,6 +23,11 @@ function [ omegaMesh, bigG0Mesh, bigG1Mesh, datOut ] = extFitterOneSided_getOmeg
 	bigX1 = (xVals(end)-xVals(1))/2.0;
 	datOut.bigX1 = bigX1;
 	%
+	if (0)
+		bigX0 = xVals(nOfClosestPt);
+		bigF1 = (max(fVals)-min(fVals))/2.0;
+		bigF0 = fVals(nOfClosestPt);
+	else
 	n = median([ nOfClosestPt, 2, numPts-1 ]);
 	vecX = xVals(n-1:n+1)';
 	vecF = fVals(n-1:n+1)';
@@ -39,6 +44,7 @@ function [ omegaMesh, bigG0Mesh, bigG1Mesh, datOut ] = extFitterOneSided_getOmeg
 	clear matX;
 	clear vecF;
 	clear vecX;
+	end
 	datOut.bigX0 = bigX0;
 	datOut.bigF1 = bigF1;
 	datOut.bigF0 = bigF0;

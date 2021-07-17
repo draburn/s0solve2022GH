@@ -5,7 +5,8 @@
 	%
 	%
 	setprngstates(0);
-	xVals = sort(abs(randn(1,10)));
+	%xVals = sort(abs(randn(1,5)));
+	xVals = linspace(0.2,1.0,5);
 	fVals = abs(xVals).^4;
 	%
 	%
@@ -14,7 +15,8 @@
 	%
 	%sVals = linspace(-0.1,0.0,31);
 	%pVals = linspace(3.8,4.2,51);
-	sVals = linspace(-0.2,0.2,51);
+	%sVals = linspace(-0.6,-0.4,51);
+	sVals = linspace(-1.0,0.0,51);
 	pVals = linspace(3.0,5.0,51);
 	[ sMesh, pMesh ] = meshgrid( sVals, pVals );
 	size1 = size(sMesh,1);
@@ -24,6 +26,8 @@
 	xExtMesh = dat.bigX0 + dat.bigX1*sMesh;
 	fExtMesh = dat.bigF0 + dat.bigF1*bigG0Mesh;
 	sqrtOmegaMesh = sqrt(omegaMesh);
+	%
+	viz_xVals = linspace(min(xVals),max(xVals),1001);
 	%
 	%
 	%
@@ -54,6 +58,31 @@
 	xlabel( "s" );
 	ylabel( "p" );
 	title( [ strZ " vs s, p" ] );
+	%
+	%
+	%
+	numFigs++; figure(numFigs);
+	plot( xVals, fVals, 'ko', 'linewidth', 7, 'markersize', 25 );
+	grid on;
+	xlabel( "x" );
+	ylabel( "f" );
+	hold on;
+	yVals = ( xVals - dat.bigX0 ) / dat.bigX1;
+	viz_yVals = ( viz_xVals - dat.bigX0 ) / dat.bigX1;
+	plot( viz_xVals, dat.bigF0 + dat.bigF1 * viz_yVals.^2, 'gs-', 'linewidth', 2, 'markersize', 5 );
+	for i1=(size1+[-3,1,3])/2
+	for i2=(size2+[-3,1,3])/2
+		gModelVals = bigG0Mesh(i1,i2) ...
+		  + bigG1Mesh(i1,i2)*(abs(viz_yVals-sMesh(i1,i2)).^pMesh(i1,i2));
+		viz_fModelVals = dat.bigF0 + dat.bigF1*gModelVals;
+		plot( viz_xVals, viz_fModelVals, 'x-', 'linewidth', 2, 'markersize', 5 );
+	end
+	end
+	hold off;
+	%
+	%
+	%
+	return;
 	%
 	%
 	%
@@ -190,25 +219,6 @@
 		  + bigG1Mesh(i1,i2)*(abs(yVals-sMesh(i1,i2)).^pMesh(i1,i2));
 		fModelVals = dat.bigF0 + dat.bigF1*gModelVals;
 		plot( xVals, fModelVals, 'x-', 'linewidth', 3, 'markersize', 10 );
-	end
-	end
-	hold off;
-	%
-	%
-	%
-	numFigs++; figure(numFigs);
-	semilogy( xVals, fVals, 'ko-', 'linewidth', 5, 'markersize', 20 );
-	grid on;
-	xlabel( "x" );
-	ylabel( "f" );
-	hold on;
-	yVals = ( xVals - dat.bigX0 ) / dat.bigX1;
-	for i1=(size1+[-3,1,3])/2
-	for i2=(size2+[-3,1,3])/2
-		gModelVals = bigG0Mesh(i1,i2) ...
-		  + bigG1Mesh(i1,i2)*(abs(yVals-sMesh(i1,i2)).^pMesh(i1,i2));
-		fModelVals = dat.bigF0 + dat.bigF1*gModelVals;
-		semilogy( xVals, fModelVals, 'x-', 'linewidth', 3, 'markersize', 10 );
 	end
 	end
 	hold off;
