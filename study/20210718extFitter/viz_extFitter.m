@@ -11,12 +11,12 @@
 	funchF = @(x)( secret_fExt + secret_f1*abs(x-secret_xExt).^secret_p );
 	%%%funchF = @(x)( (x<0).*abs(x).^4.0 + (x>0).*abs(x).^0.5 );
 	%
-	numPts = 5;
-	xVals = 0.3+sort(abs(randn(1,numPts)));
-	%xVals = sort(randn(1,numPts));
+	numPts = 20;
+	%xVals = 0.3+sort(abs(randn(1,numPts)));
+	xVals = sort(randn(1,numPts));
 	%
 	fVals = funchF(xVals);
-	fVals .*= 1.0 + 0.01*randn(1,numPts);
+	%fVals .*= 1.0 + 0.01*randn(1,numPts);
 	%
 	%
 	[ foo, nC ] = min(abs(fVals));
@@ -72,8 +72,25 @@
 	size1 = size(sMesh,1);
 	size2 = size(sMesh,2);
 	%
+	if (1)
+		%
+		[ sSolved, pSolved ] = extFit_iterSolve( 0.1, 2.0, xVals, fVals, nFit )
+		%
+		for i1=1:size1
+		for i2=1:size2
+			[ omega, bigF0, bigF1 ] = extFit_getOmega( ...
+			  sMesh(i1,i2), pMesh(i1,i2), xVals, fVals, nFit );
+			omegaMesh1(i1,i2) = omega;
+			bigF0Mesh1(i1,i2) = bigF0;
+			bigF1Mesh1(i1,i2) = bigF1;
+		end
+		end
+		dat1.bigX0 = 0.0;
+		dat1.bigX1 = 1.0;
+	else
 	[ omegaMesh1, bigF0Mesh1, bigF1Mesh1, dat1 ] = extFitter_onePtFit( ...
 	  sMesh, pMesh, xVals, fVals, nFit );
+	end
 	xExtMesh1 = dat1.bigX0 + dat1.bigX1*sMesh;
 	[ omegaCrit1, i1Crit1, i2Crit1 ] = minmin(omegaMesh1);
 	sCrit1 = sMesh(i1Crit1,i2Crit1);
