@@ -11,12 +11,12 @@
 	funchF = @(x)( secret_fExt + secret_f1*abs(x-secret_xExt).^secret_p );
 	%%%funchF = @(x)( (x<0).*abs(x).^4.0 + (x>0).*abs(x).^0.5 );
 	%
-	numPts = 200;
-	%xVals = 0.3+sort(abs(randn(1,numPts)));
-	xVals = sort(randn(1,numPts));
+	numPts = 5;
+	xVals = 0.3+sort(abs(randn(1,numPts)));
+	%xVals = sort(randn(1,numPts));
 	%
 	fVals = funchF(xVals);
-	fVals .*= 1.0 + 0.0*randn(1,numPts);
+	fVals .*= 1.0 + 0.01*randn(1,numPts);
 	%
 	%
 	[ foo, nC ] = min(abs(fVals));
@@ -64,7 +64,7 @@
 	sMin = sLo-0.01*(sHi-sLo);
 	sMax = sHi+0.01*(sHi-sLo);
 	sVals = linspace(sMin,sMax,50);
-	pVals = linspace(1.0,6.0,50);
+	pVals = linspace(0.1,10.0,50);
 	%sVals = linspace(xVals(nC)-0.1,xVals(nC)+0.1,101);
 	%pVals = linspace(4.0,6.0,21);
 	%
@@ -99,8 +99,8 @@
 	%
 	%
 	%
-	%meshZ = omegaMesh1.^0.5; strZ = "omega1^{0.5}";
-	meshZ = log(omegaMesh1); strZ = "log(omega1)";
+	meshZ = omegaMesh1.^0.5; strZ = "omega1^{0.5}";
+	%meshZ = log(omegaMesh1); strZ = "log(omega1)";
 	i1CritVals1 = cap( i1Crit1+[-1,0,1], 1, size1 );
 	numFigs++; figure(numFigs);
 	plot( sMesh(i1CritVals1,:)', meshZ(i1CritVals1,:)', 'o-' );
@@ -135,8 +135,8 @@
 	%
 	%
 	%
-	%meshZ = omegaMesh2.^0.5; strZ = "omega2^{0.5}";
-	meshZ = log(omegaMesh2); strZ = "log(omega2)";
+	meshZ = omegaMesh2.^0.5; strZ = "omega2^{0.5}";
+	%meshZ = log(omegaMesh2); strZ = "log(omega2)";
 	numFigs++; figure(numFigs);
 	i1CritVals2 = cap( i1Crit2+[-1,0,1], 1, size1 );
 	plot( sMesh(i1CritVals2,:)', meshZ(i1CritVals2,:)', 'o-' );
