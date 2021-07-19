@@ -4,11 +4,12 @@
 	numFigs = 0;
 	setprngstates(0);
 	%
-	secret_xExt = 0.0;
-	secret_fExt = 0.0;
-	secret_p = 4.0;
-	secret_f1 = 1.0;
+	secret_p = 3.23
+	secret_xExt = 0.14
+	secret_fExt = 0.024
+	secret_f1 = 0.76;
 	funchF = @(x)( secret_fExt + secret_f1*abs(x-secret_xExt).^secret_p );
+	%%%funchF = @(x)( (x<0).*abs(x).^4.0 + (x>0).*abs(x).^3.0 );
 	%
 	numPts = 10;
 	%xVals = 0.3+sort(abs(randn(1,numPts)));
@@ -68,9 +69,9 @@
 	xExtMesh1 = dat1.bigX0 + dat1.bigX1*sMesh;
 	[ omegaCrit1, i1Crit1, i2Crit1 ] = minmin(omegaMesh1);
 	sCrit1 = sMesh(i1Crit1,i2Crit1);
-	pCrit1 = pMesh(i1Crit1,i2Crit1);
-	xExtCrit1 = xExtMesh1(i1Crit1,i2Crit1);
-	fExtCrit1 = bigF0Mesh1(i1Crit1,i2Crit1);
+	pCrit1 = pMesh(i1Crit1,i2Crit1)
+	xExtCrit1 = xExtMesh1(i1Crit1,i2Crit1)
+	fExtCrit1 = bigF0Mesh1(i1Crit1,i2Crit1)
 	bigF0Crit1 = bigF0Mesh1(i1Crit1,i2Crit1);
 	bigF1Crit1 = bigF1Mesh1(i1Crit1,i2Crit1);
 	pLMesh = pMesh;
@@ -80,10 +81,10 @@
 	xExtMesh2 = dat1.bigX0 + dat1.bigX1*sMesh;
 	[ omegaCrit2, i1Crit2, i2Crit2 ] = minmin(omegaMesh2);
 	sCrit2 = sMesh(i1Crit2,i2Crit2);
-	pLCrit2 = pLMesh(i1Crit2,i2Crit2);
-	pRCrit2 = pRMesh(i1Crit2,i2Crit2);
-	xExtCrit2 = xExtMesh2(i1Crit2,i2Crit2);
-	fExtCrit2 = bigF0Mesh2(i1Crit2,i2Crit2);
+	pLCrit2 = pLMesh(i1Crit2,i2Crit2)
+	pRCrit2 = pRMesh(i1Crit2,i2Crit2)
+	xExtCrit2 = xExtMesh2(i1Crit2,i2Crit2)
+	fExtCrit2 = bigF0Mesh2(i1Crit2,i2Crit2)
 	bigF0Crit2 = bigF0Mesh2(i1Crit2,i2Crit2);
 	bigFLCrit2 = bigFLMesh2(i1Crit2,i2Crit2);
 	bigFRCrit2 = bigFRMesh2(i1Crit2,i2Crit2);
@@ -186,7 +187,7 @@
 	  xExtCrit1, fExtCrit1, 'x', 'linewidth', 3, 'markersize', 35, ...
 	  xExtCrit2, fExtCrit2, '+', 'linewidth', 3, 'markersize', 35, ...
 	  secret_xExt, secret_fExt, 'ko', 'linewidth', 3, 'markersize', 35, ...
-	  viz_xVals, viz_fVals, 'k-', 'linewidth', 1, 'markersize', 10, ...
+	  viz_xVals, viz_fVals, 'ko-', 'linewidth', 1, 'markersize', 10, ...
 	  xVals, fVals, 'ko', 'linewidth', 4, 'markersize', 20 );
 	grid on;
 	xlabel( "x" );
