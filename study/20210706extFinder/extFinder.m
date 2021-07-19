@@ -95,4 +95,5 @@
 	bigP += 0.2*deltaP
 	%
 	%
+	extFinder_viz( xVals, fVals, -0.02, 0.02, 3.8, 4.2 );
 return;
