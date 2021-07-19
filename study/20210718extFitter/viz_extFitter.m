@@ -10,7 +10,7 @@
 	secret_f1 = 1.0;
 	funchF = @(x)( secret_fExt + secret_f1*abs(x-secret_xExt).^secret_p );
 	%
-	numPts = 200;
+	numPts = 10;
 	%xVals = 0.3+sort(abs(randn(1,numPts)));
 	xVals = sort(randn(1,numPts));
 	%
@@ -52,8 +52,8 @@
 	%
 	numContours = 30;
 	numColors = numContours+1;
-	sMin = sLo-0.0*(sHi-sLo);
-	sMax = sHi+0.0*(sHi-sLo);
+	sMin = sLo-0.01*(sHi-sLo);
+	sMax = sHi+0.01*(sHi-sLo);
 	sVals = linspace(sMin,sMax,50);
 	pVals = linspace(1.0,6.0,50);
 	%sVals = linspace(xVals(nC)-0.1,xVals(nC)+0.1,101);

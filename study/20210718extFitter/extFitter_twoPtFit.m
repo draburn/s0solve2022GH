@@ -52,12 +52,27 @@ function [ omegaMesh, bigF0Mesh, bigFLMesh, bigFRMesh, datOut ] = extFitter_twoP
 		lL = abs( yL - s ).^pL;
 		lVals = (yVals<=yL).*abs( yVals - s ).^pL;
 		rVals = (yVals>=yR).*abs( yVals - s ).^pR;
-		cVals = 1.0 - lVals/lL - rVals/rR;
-		dVals = fVals - fL*lVals/lL - fR*rVals/rR;
-		bigF0 = sum( wVals .* cVals .* dVals ) / sum( wVals .* cVals .* cVals );
-		bigFL = ( fL - bigF0 ) / lL;
-		bigFR = ( fR - bigF0 ) / rR;
-		omega = 0.5 * sum( wVals .* ( bigF0*cVals - dVals ).^2 );
+		%
+		if ( lL < sqrt(eps)*rR )
+			cVals = lVals - lL * ( 1.0 - rVals / rR );
+			dVals = fVals - fL * ( 1.0 - rVals / rR ) - fR * rVals / rR;
+			bigFL = sum( wVals .* cVals .* dVals ) / sum( wVals .* cVals .* cVals );
+			bigF0 = fL - bigFL * lL;
+			bigFR = ( fR - bigF0 ) / rR;
+		elseif ( rR < sqrt(eps)*lL )
+			cVals = rVals - rR * ( 1.0 - lVals / lL );
+			dVals = fVals - fL * lVals / lL - fR * ( 1.0 - lVals / lL );
+			bigFR = sum( wVals .* cVals .* dVals ) / sum( wVals .* cVals .* cVals );
+			bigF0 = fR - bigFR * rR;
+			bigFL = ( fL - bigF0 ) / lL;
+		else
+			cVals = 1.0 - lVals/lL - rVals/rR;
+			dVals = fVals - fL*lVals/lL - fR*rVals/rR;
+			bigF0 = sum( wVals .* cVals .* dVals ) / sum( wVals .* cVals .* cVals );
+			bigFL = ( fL - bigF0 ) / lL;
+			bigFR = ( fR - bigF0 ) / rR;
+		end
+		omega = 0.5 * sum( wVals .* ( bigF0 + bigFL*lVals + bigFR*rVals - fVals ).^2 );
 		%
 		bigF0Mesh(i1,i2) = bigF0;
 		bigFLMesh(i1,i2) = bigFL;
