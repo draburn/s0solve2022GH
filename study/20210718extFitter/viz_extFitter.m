@@ -15,6 +15,7 @@
 	xVals = sort(randn(1,numPts));
 	%
 	fVals = funchF(xVals);
+	fVals .*= 1.0 + 0.1*randn(1,numPts);
 	%
 	%
 	[ foo, nC ] = min(abs(fVals));
@@ -49,12 +50,14 @@
 	  "nFit = %d, nL = %d, nR = %d, numPts = %d.", nFit, nL, nR, numPts ) );
 	%
 	%
-	sMin = sLo-0.1*(sHi-sLo);
-	sMax = sHi+0.1*(sHi-sLo);
 	numContours = 30;
 	numColors = numContours+1;
+	sMin = sLo-0.1*(sHi-sLo);
+	sMax = sHi+0.1*(sHi-sLo);
 	sVals = linspace(sMin,sMax,50);
 	pVals = linspace(1.0,6.0,50);
+	%sVals = linspace(xVals(nC)-0.1,xVals(nC)+0.1,101);
+	%pVals = linspace(4.0,6.0,21);
 	%
 	[ sMesh, pMesh ] = meshgrid( sVals, pVals );
 	size1 = size(sMesh,1);
@@ -127,7 +130,8 @@
 	meshZ = log(omegaMesh2); strZ = "log(omega2)";
 	numFigs++; figure(numFigs);
 	i1CritVals2 = cap( i1Crit2+[-1,0,1], 1, size1 );
-	semilogy( sMesh(i1CritVals2,:)', meshZ(i1CritVals2,:)', 'o-' );
+	plot( sMesh(i1CritVals2,:)', meshZ(i1CritVals2,:)', 'o-' );
+	%semilogy( sMesh(i1CritVals2,:)', meshZ(i1CritVals2,:)', 'o-' );
 	grid on;
 	xlabel( "s" );
 	ylabel( strZ );
@@ -135,7 +139,8 @@
 	%
 	numFigs++; figure(numFigs);
 	i2CritVals2 = cap( i2Crit2+[-1,0,1], 1, size2 );
-	semilogy( pMesh(:,i2CritVals2), meshZ(:,i2CritVals2), 'o-' );
+	plot( pMesh(:,i2CritVals2), meshZ(:,i2CritVals2), 'o-' );
+	%semilogy( pMesh(:,i2CritVals2), meshZ(:,i2CritVals2), 'o-' );
 	grid on;
 	xlabel( "p" );
 	ylabel( strZ );

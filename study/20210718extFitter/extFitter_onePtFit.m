@@ -45,13 +45,21 @@ function [ omegaMesh, bigF0Mesh, bigF1Mesh, datOut ] = extFitter_onePtFit( ...
 		s = sMesh(i1,i2);
 		p = pMesh(i1,i2);
 		%
-		gFit = abs( yFit -s ).^p;
+		gFit = abs( yFit - s ).^p;
 		gVals = abs( yVals - s).^p;
-		cVals = 1.0 - gVals/gFit;
-		dVals = fVals - fFit*gVals/gFit;
-		bigF0 = sum( wVals .* cVals .* dVals ) / sum( wVals .* cVals .* cVals );
-		bigF1 = ( fFit - bigF0 ) / gFit;
-		omega = 0.5 * sum( wVals .* ( bigF0*cVals - dVals ).^2 );
+		if (1)
+			cVals = gVals - gFit;
+			dVals = fVals - fFit;
+			bigF1 = sum( wVals .* cVals .* dVals ) / sum( wVals .* cVals .* cVals );
+			bigF0 = fFit - bigF1*gFit;
+		else
+			% This form goes singular when we hit a data point.
+			cVals = 1.0 - gVals/gFit;
+			dVals = fVals - fFit*gVals/gFit;
+			bigF0 = sum( wVals .* cVals .* dVals ) / sum( wVals .* cVals .* cVals );
+			bigF1 = ( fFit - bigF0 ) / gFit;
+		end
+		omega = 0.5 * sum( wVals .* ( bigF0 + bigF1*gVals - fVals ).^2 );
 		%
 		bigF0Mesh(i1,i2) = bigF0;
 		bigF1Mesh(i1,i2) = bigF1;
