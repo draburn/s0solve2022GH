@@ -45,13 +45,13 @@ function [ omegaMesh, bigF0Mesh, bigFLMesh, bigFRMesh, datOut ] = extFitter_twoP
 	parfor i1=1:size1
 	parfor i2=1:size2
 		s = sMesh(i1,i2);
-		pL = pRMesh(i1,i2);
+		pL = pLMesh(i1,i2);
 		pR = pRMesh(i1,i2);
 		%
-		rR = abs( yR - s ).^pR;
 		lL = abs( yL - s ).^pL;
-		lVals = (yVals<=yL).*abs( yVals - s ).^pL;
-		rVals = (yVals>=yR).*abs( yVals - s ).^pR;
+		rR = abs( yR - s ).^pR;
+		lVals = (yVals<s).*abs( yVals - s ).^pL;
+		rVals = (yVals>s).*abs( yVals - s ).^pR;
 		%
 		if ( lL < sqrt(eps)*rR )
 			cVals = lVals - lL * ( 1.0 - rVals / rR );

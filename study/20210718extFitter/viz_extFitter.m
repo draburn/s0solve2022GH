@@ -9,9 +9,9 @@
 	secret_fExt = 0.024
 	secret_f1 = 0.76;
 	funchF = @(x)( secret_fExt + secret_f1*abs(x-secret_xExt).^secret_p );
-	%%%funchF = @(x)( (x<0).*abs(x).^4.0 + (x>0).*abs(x).^3.0 );
+	%%%funchF = @(x)( (x<0).*abs(x).^4.0 + (x>0).*abs(x).^0.5 );
 	%
-	numPts = 10;
+	numPts = 200;
 	%xVals = 0.3+sort(abs(randn(1,numPts)));
 	xVals = sort(randn(1,numPts));
 	%
@@ -34,6 +34,12 @@
 	else
 		sLo = xVals(nC-1);
 		sHi = xVals(nC+1);
+		if (0)
+		% DRaburn 2021.07.18.
+		% No, we can't use quad fit;
+		% For twoPt fit, we MUST have points on either side of s.
+		% We could do this by adjusting the points based on s,
+		% but, for fixed s, we must step out to either side.
 		vecX = xVals(nC-1:nC+1)';
 		vecF = fVals(nC-1:nC+1)';
 		matX = [ ones(3,1), vecX, vecX.^2 ];
@@ -46,10 +52,12 @@
 			nL = nC-1;
 			nR = nC;
 		end
+		end
+		nL = nC-1;
+		nR = nC+1;
 	end
 	msg( thisFile, __LINE__, sprintf( ...
 	  "nFit = %d, nL = %d, nR = %d, numPts = %d.", nFit, nL, nR, numPts ) );
-	%
 	%
 	numContours = 30;
 	numColors = numContours+1;
