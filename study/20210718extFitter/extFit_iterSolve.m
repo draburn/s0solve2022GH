@@ -36,12 +36,12 @@ function [ s, p, datOut, retCode ] = extFit_iterSolve( ...
 	prm_getOmega = mygetfield( prm, "prm_getOmega", [] );
 	omega0 = extFit_getOmega( s0, p0, xVals, fVals, nFit, wVals, prm_getOmega );
 	%
-	iterLimit = mygetfield( prm, "iterLimit", 10 );
+	iterLimit = mygetfield( prm, "iterLimit", 100 );
 	omegaTol = mygetfield( prm, "omegaTol", eps*sum(fVals.^2) )
 	deltaSTol = mygetfield( prm, "deltaSTol", sqrt(eps)*(max(xVals)-min(xVals)) );
 	deltaPTol = mygetfield( prm, "deltaPTol", sqrt(sqrt(eps)) );
-	epsS = mygetfield( prm, "epsS", (eps^0.75)*(max(xVals)-min(xVals)) );
-	epsP = mygetfield( prm, "epsP", eps^0.75 );
+	epsS = mygetfield( prm, "epsS", sqrt(eps)*(max(xVals)-min(xVals)) )
+	epsP = mygetfield( prm, "epsP", sqrt(sqrt(eps)) )
 	if ( doChecks )
 		assert( isrealscalar(iterLimit) );
 		assert( iterLimit >= 1 );
