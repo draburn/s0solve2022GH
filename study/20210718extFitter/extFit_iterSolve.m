@@ -1,28 +1,24 @@
-function [ s, p, datOut, retCode ] = extFit_iterSolve( s0, p0, xVals, fVals, nFit, prm=[], datIn=[] )
+function [ s, p, datOut, retCode ] = extFit_iterSolve( ...
+  s0, p0, xVals, fVals, nFit, wVals=[], prm=[], datIn=[] )
 	commondefs;
 	thisFile = "extFit_iterSolve";
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	datOut = [];
 	%
-	wVals = mygetfield( prm, "wVals", ones(size(xVals)) );
-	prm_getOmega = mygetfield( prm, "prm_getOmega", [] );
-	omega0 = extFit_getOmega( s0, p0, xVals, fVals, nFit, prm_getOmega );
-	iterLimit = mygetfield( prm, "iterLimit", 10 );
-	omegaTol = mygetfield( prm, "omegaTol", eps*sum(fVals.^2) )
-	deltaSTol = mygetfield( prm, "deltaSTol", sqrt(eps)*(max(xVals)-min(xVals)) );
-	deltaPTol = mygetfield( prm, "deltaPTol", sqrt(sqrt(eps)) );
-	epsS = mygetfield( prm, "epsS", sqrt(eps)*deltaSTol );
-	epsP = mygetfield( prm, "epsP", sqrt(eps)*deltaPTol );
+	numPts = size(xVals,2);
+	if (isempty(wVals))
+		wVals = ones(size(xVals));
+	end
 	doChecks = mygetfield( prm, "doChecks", true );
-	%
 	if ( doChecks )
 		assert( isrealscalar(s0) );
 		assert( isrealscalar(p0) );
 		assert( 0.0 < p0 );
 		%
-		numPts = size(xVals,2);
-		assert( numPts >= 4 ); % Really, we should have 5+ points.
+		assert( numPts >= 3 ); % Really, we should have 5+ points.
 		assert( isrealarray(xVals,[1,numPts]) );
+		xValsAreStrictlyIncreasing = (0==sum( 0.0 >= diff(xVals) ));
+		assert( xValsAreStrictlyIncreasing );
 		assert( isrealarray(fVals,[1,numPts]) );
 		%
 		assert( isrealscalar(nFit) );
@@ -30,32 +26,33 @@ function [ s, p, datOut, retCode ] = extFit_iterSolve( s0, p0, xVals, fVals, nFi
 		assert( 1 <= nFit );
 		assert( nFit <= numPts );
 		%
-		xValsAreStrictlyIncreasing = (0==sum( 0.0 >= diff(xVals) ));
-		assert( xValsAreStrictlyIncreasing );
-		%
-		%
-		%
 		assert( isrealarray(wVals,[1,numPts]) );
 		noWValIsNegative = (0==sum(wVals<0.0));
 		assert( noWValIsNegative );
 		atLeastOneWValIsPositive = (1<=sum(wVals>0.0));
 		assert( atLeastOneWValIsPositive );
-		%
+	end
+	%
+	prm_getOmega = mygetfield( prm, "prm_getOmega", [] );
+	omega0 = extFit_getOmega( s0, p0, xVals, fVals, nFit, wVals, prm_getOmega );
+	%
+	iterLimit = mygetfield( prm, "iterLimit", 10 );
+	omegaTol = mygetfield( prm, "omegaTol", eps*sum(fVals.^2) )
+	deltaSTol = mygetfield( prm, "deltaSTol", sqrt(eps)*(max(xVals)-min(xVals)) );
+	deltaPTol = mygetfield( prm, "deltaPTol", sqrt(sqrt(eps)) );
+	epsS = mygetfield( prm, "epsS", (eps^0.75)*(max(xVals)-min(xVals)) );
+	epsP = mygetfield( prm, "epsP", eps^0.75 );
+	if ( doChecks )
 		assert( isrealscalar(iterLimit) );
 		assert( iterLimit >= 1 );
-		%
 		assert( isrealscalar(omegaTol) );
 		assert( omegaTol > 0.0 );
-		%
 		assert( isrealscalar(deltaSTol) );
 		assert( deltaSTol > 0.0 );
-		%
 		assert( isrealscalar(deltaPTol) );
 		assert( deltaPTol > 0.0 );
-		%
 		assert( isrealscalar(epsS) );
 		assert( epsS > 0.0 );
-		%
 		assert( isrealscalar(epsP) );
 		assert( epsP > 0.0 );
 	end
@@ -142,6 +139,5 @@ function [ s, p, datOut, retCode ] = extFit_iterSolve( s0, p0, xVals, fVals, nFi
 		p = p_trial;
 		omega = omega_trial;
 	end
-	return
-return;
+% This line should be unreachable.
 end

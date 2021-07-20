@@ -1,4 +1,4 @@
-function [ omega, bigF0, bigF1 ] = extFit_getOmega( s, p, xVals, fVals, nFit, prm=[] )
+function [ omega, bigF0, bigF1 ] = extFit_getOmega( s, p, xVals, fVals, nFit, wVals=[], prm=[] )
 	thisFile = "extFit_getOmega";
 	doChecks_default = true;
 	%
@@ -24,10 +24,6 @@ function [ omega, bigF0, bigF1 ] = extFit_getOmega( s, p, xVals, fVals, nFit, pr
 	cVals = gVals - gFit;
 	dVals = fVals - fFit;
 	%
-	wVals = mygetfield( prm, "wVals", [] );
-	%wVals_default = 1.0./( abs(fVals) + eps*max(abs(fVals)) );
-	%wVals_default /= sum(wVals_default);
-	%wVals = mygetfield( prm, "wVals", wVals_default );
 	if ( isempty(wVals) )
 		bigF1 = sum( cVals .* dVals ) / sum( cVals .* cVals );
 		bigF0 = fFit - bigF1*gFit;

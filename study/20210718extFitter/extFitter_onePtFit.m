@@ -35,8 +35,9 @@ function [ omegaMesh, bigF0Mesh, bigF1Mesh, datOut ] = extFitter_onePtFit( ...
 	%
 	yVals = (xVals-bigX0)/bigX1;
 	yFit = (xFit-bigX0)/bigX1;
-	wVals_default = 1.0./( abs(fVals) + eps*max(abs(fVals)) );
-	wVals_default /= sum(wVals_default);
+	%wVals_default = 1.0./( abs(fVals) + eps*max(abs(fVals)) );
+	%wVals_default /= sum(wVals_default);
+	wVals_default = ones(size(xVals));
 	wVals = mygetfield( prm, "wVals", wVals_default );
 	assert( isrealarray(wVals,[1,numPts]) );
 	%
