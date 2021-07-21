@@ -1,5 +1,5 @@
 clear;
-thisFile = "prc_soCalledOrig"
+thisFile = "prc_soCalledOrig_zoomOnOther"
 tic();
 numFigs = 0;
 %
@@ -92,10 +92,10 @@ multiArgLevel_fy = 2;
 multiArgLevel_omega = 1;
 %ax = [ vecR(1)-0.01, vecR(1)+0.01, vecR(2)-0.01, vecR(2)+0.01 ];
 %ax = [ -0.5, 1.5, -1.0, 1.0 ];
-%ax = [ -0.3, 1.3, -0.8, 0.5 ];
+ax = [ -0.3, 1.3, -0.8, 0.5 ];
 %ax = [ 0.4, 0.9, -0.9, -0.6 ];
 %ax = [ 0.663846, 0.663847, -0.747869, -0.747868 ];
-ax = [ 0.663, 0.665, -0.749, -0.747 ];
+%ax = [ 0.663, 0.665, -0.749, -0.747 ];
 sizeX = 201;
 sizeY = 203;
 [ gridX, gridY, gridFX ] = gridfunch( funch_fx, multiArgLevel_fx, ax, sizeX, sizeY );

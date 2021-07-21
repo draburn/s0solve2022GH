@@ -5,8 +5,8 @@ addpath( "linsolf" );
 addpath( "demoFunc" );
 %ddpath( "groot" );
 %addpath( "extFit" );
-addpath( "postproc" );
-addpath( "misc" );
+%addpath( "postproc" );
+%addpath( "misc" );
 commondefs;
 %
 %msg("init",__LINE__,"Adding path \"study/badlocmin0429\".");
