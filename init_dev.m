@@ -4,9 +4,7 @@ addpath( "common" );
 addpath( "linsolf" );
 addpath( "demoFunc" );
 %addpath( "groot" );
-%addpath( "extFit" );
-addpath( "postproc" );
-addpath( "misc" );
+addpath( "extFit" );
 commondefs;
 %
 %msg("init",__LINE__,"Adding path \"study/badlocmin0429\".");
@@ -47,5 +45,5 @@ commondefs;
 %addpath( "study/20210706extFinder" );
 %msg( "init", __LINE__, "Adding path \"study/20210715extFitter\"." );
 %addpath( "study/20210715extFitter" );
-msg( "init", __LINE__, "Adding path \"study/20210718extFitter\"." );
-addpath( "study/20210718extFitter" );
+%msg( "init", __LINE__, "Adding path \"study/20210718extFitter\"." );
+%addpath( "study/20210718extFitter" );
