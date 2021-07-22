@@ -33,6 +33,11 @@
 	%prm.pLo = 2.0;
 	%prm.pHi = 6.0;
 	viz_extFitPt( xVals, fVals, nC, 0.0, 2.0, [], prm );
+	s = 0.0;
+	p = 2.0;
+	for n=1:10
+		[ s, p ] = extFit__findStep( s, p, xVals, fVals, nC, [] );
+	end
 	toc
 	return;
 	

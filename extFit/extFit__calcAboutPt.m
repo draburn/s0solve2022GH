@@ -1,4 +1,4 @@
-function [ bigF0, bigF1, rhoVals, omega, vecG, matH, matH2 ] = extFit__calcAboutPt( ...
+function [ rhoVals, bigF0, bigF1, omega, vecG, matH, matH2 ] = extFit__calcAboutPt( ...
   s, p, xVals, fVals, nExactFit, wVals=[], prm=[] )
 	%
 	thisFile = "extFit__calcAboutPt";
@@ -17,8 +17,7 @@ function [ bigF0, bigF1, rhoVals, omega, vecG, matH, matH2 ] = extFit__calcAbout
 		xValsAreStrictlyIncreasing = (0==sum( 0.0 >= diff(xVals) ));
 		assert( xValsAreStrictlyIncreasing );
 		assert( isrealarray(fVals,[1,numPts]) );
-		assert( isrealscalar(nExactFit) );
-		assert( fleq(nExactFit,round(nExactFit)) );
+		assert( isposintscalar(nExactFit) );
 		assert( 1 <= nExactFit );
 		assert( nExactFit <= numPts );
 		assert( isrealarray(wVals,[1,numPts]) );
