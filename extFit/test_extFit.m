@@ -20,6 +20,12 @@
 	%
 	%
 	[ foo, nC ] = min(abs(fVals));
+	tic
+	viz_extFitPt( xVals, fVals, nC, 0.0, 2.0 );
+	toc
+	return;
+	
+	
 	nFit = nC;
 	if ( 1==nC )
 		nL = 1;
