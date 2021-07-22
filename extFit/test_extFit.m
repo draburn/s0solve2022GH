@@ -4,15 +4,20 @@
 	numFigs = 0;
 	setprngstates(0);
 	%
-	secret_p = 3.23
-	secret_xExt = 0.14
-	secret_fExt = 0.024
-	secret_f1 = 0.76;
+	%secret_p = 3.23
+	%secret_xExt = 0.14
+	%secret_fExt = 0.024
+	%secret_f1 = 0.76;
+	secret_xExt = 0.0
+	secret_p = 4.0
+	secret_fExt = 0.0
+	secret_f1 = 1.0;
 	funchF = @(x)( secret_fExt + secret_f1*abs(x-secret_xExt).^secret_p );
 	%%%funchF = @(x)( (x<0).*abs(x).^4.0 + (x>0).*abs(x).^0.5 );
 	%
 	numPts = 20;
-	%xVals = 0.3+sort(abs(randn(1,numPts)));
+	%xVals = 1.0+abs(randn(1,numPts));
+	xVals = randn(1,numPts);
 	xVals = sort(randn(1,numPts));
 	%
 	fVals = funchF(xVals);
@@ -21,7 +26,13 @@
 	%
 	[ foo, nC ] = min(abs(fVals));
 	tic
-	viz_extFitPt( xVals, fVals, nC, 0.0, 2.0 );
+	%viz_extFitPt( xVals, fVals, nC, 0.2, 4.0 );
+	prm = [];
+	%prm.sLo = -0.2;
+	%prm.sHi = 0.2;
+	%prm.pLo = 2.0;
+	%prm.pHi = 6.0;
+	viz_extFitPt( xVals, fVals, nC, 0.0, 2.0, [], prm );
 	toc
 	return;
 	

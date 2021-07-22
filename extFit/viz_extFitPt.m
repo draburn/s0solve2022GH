@@ -14,8 +14,7 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 		xValsAreStrictlyIncreasing = (0==sum( 0.0 >= diff(xVals) ));
 		assert( xValsAreStrictlyIncreasing );
 		assert( isrealarray(fVals,[1,numPts]) );
-		assert( isrealscalar(nExactFit) );
-		assert( fleq(nExactFit,round(nExactFit)) );
+		assert( isposintscalar(nExactFit) );
 		assert( 1 <= nExactFit );
 		assert( nExactFit <= numPts );
 		assert( isrealarray(wVals,[1,numPts]) );
@@ -27,36 +26,69 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 	%
 	%
 	%
-	if ( ~isempty(s0) || ~isempty(p0) )
-		if ( doChecks )
-			assert( isrealscalar(s0) );
-			assert( isrealscalar(p0) );
-			assert( 0.0 < p0 );
-		end
-		prm_calcAboutPt = mygetfield( prm, "prm_calcAboutPt", [] );
-		[ bigF0, bigF1, rhoVals, omega, vecG, matH, matH2 ] = extFit__calcAboutPt( ...
-		  s0, p0, xVals, fVals, nExactFit, wVals, prm_calcAboutPt );
-		matD = diag(abs(diag(matH)));
+	if ( isempty(s0) )
+		s0 = xVals(nExactFit);
+	end
+	if ( isempty(p0) )
+		p0 = 2.0;
+	end
+	if ( doChecks )
+		assert( isrealscalar(s0) );
+		assert( isrealscalar(p0) );
+		assert( 0.0 < p0 );
+	end
+	%
+	prm_calcAboutPt = mygetfield( prm, "prm_calcAboutPt", [] );
+	[ bigF0, bigF1, rhoVals, omega, vecG, matH, matH2 ] = extFit__calcAboutPt( ...
+	  s0, p0, xVals, fVals, nExactFit, wVals, prm_calcAboutPt );
+	vecDeltaNewton = -matH\vecG;
+	s1 = s0 + vecDeltaNewton(1);
+	p1 = p0 + vecDeltaNewton(2);
+	%
+	%
+	%
+	genLevCurve = mygetfield( prm, "genLevCurve", true );
+	if ( genLevCurve )
+		tempCurve.vecG = vecG;
+		tempCurve.matH = matH;
+		tempCurve.matD = eye(2,2)*norm(diag(diag(matH)));
+		tempCurve.numPts = 100;
 		%
-		vecDelta = -matH\vecG;
-		s1 = s0 + vecDelta(1);
-		p1 = p0 + vecDelta(2);
-		%
-		numCurvePts = 100;
-		matA = matH - matD;
-		funchY_forCurve = @(x)(norm(x*( (matD+x*matA)\vecG )));
-		lambdaVals_forCurve = daclinspace( 0.0, 1.0, numCurvePts, funchY_forCurve );
-		for n = 1 : numCurvePts
-			lambda = lambdaVals_forCurve(n);
-			if ( eps >= lambda )
-				vecDelta = -lambda*(matD\vecG);
-			else
-				mu = (1.0/lambda)-1.0;
-				vecDelta = -( matH + mu*matD ) \ vecG;
-			end
-			sVals_forCurve(n) = s0 + vecDelta(1);
-			pVals_forCurve(n) = p0 + vecDelta(2);
+		tempCurve.matA = tempCurve.matH - tempCurve.matD;
+		tempCurve.funchDeltaVec = @(lambda)( ...
+		  -lambda * (( tempCurve.matD + lambda*tempCurve.matA ) \ vecG) );
+		tempCurve.funchY = @(lambda) sqrt(sum( (tempCurve.funchDeltaVec(lambda)).^2 ));
+		tempCurve.lambdaVals = daclinspace( 0.0, 1.0, tempCurve.numPts, tempCurve.funchY );
+		for n=1:tempCurve.numPts
+			tempCurve.vecDeltaVals(:,n) = tempCurve.funchDeltaVec(tempCurve.lambdaVals(n));
 		end
+		tempCurve.sVals = s0 + tempCurve.vecDeltaVals(1,:);
+		tempCurve.pVals = p0 + tempCurve.vecDeltaVals(2,:);
+		%
+		levCurve = tempCurve;
+		clear tempCurve;
+	end
+	%
+	genLevMarqCurve = mygetfield( prm, "genLevMarqCurve", true );
+	if ( genLevMarqCurve )
+		tempCurve.vecG = vecG;
+		tempCurve.matH = matH;
+		tempCurve.matD = diag(diag(matH));
+		tempCurve.numPts = 100;
+		%
+		tempCurve.matA = tempCurve.matH - tempCurve.matD;
+		tempCurve.funchDeltaVec = @(lambda)( ...
+		  -lambda * (( tempCurve.matD + lambda*tempCurve.matA ) \ vecG) );
+		tempCurve.funchY = @(lambda) sqrt(sum( (tempCurve.funchDeltaVec(lambda)).^2 ));
+		tempCurve.lambdaVals = daclinspace( 0.0, 1.0, tempCurve.numPts, tempCurve.funchY );
+		for n=1:tempCurve.numPts
+			tempCurve.vecDeltaVals(:,n) = tempCurve.funchDeltaVec(tempCurve.lambdaVals(n));
+		end
+		tempCurve.sVals = s0 + tempCurve.vecDeltaVals(1,:);
+		tempCurve.pVals = p0 + tempCurve.vecDeltaVals(2,:);
+		%
+		levMarqCurve = tempCurve;
+		clear tempCurve;
 	end
 	%
 	%
@@ -71,10 +103,14 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 		sLo = xVals(nExactFit-1);
 		sHi = xVals(nExactFit+1);
 	end
+	sLo = min([ sLo, s0 ]);
+	sHi = max([ sHi, s0 ]);
+	pLo = min([ 1.0, p0 ]);
+	pHi = max([ 10.0, p0 ]);
 	sLo = mygetfield( prm, "sLo", sLo );
 	sHi = mygetfield( prm, "sHi", sHi );
-	pLo = mygetfield( prm, "pLo", 1.0 );
-	pHi = mygetfield( prm, "pHi", 10.0 );
+	pLo = mygetfield( prm, "pLo", pLo );
+	pHi = mygetfield( prm, "pHi", pHi );
 	sSize = mygetfield( prm, "sSize", 200 );
 	pSize = mygetfield( prm, "pSize", 201 );
 	if ( doChecks )
@@ -115,9 +151,11 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 	%
 	%
 	zMesh = sqrt(omegaMesh);
+	zMesh = cap( zMesh, 0.0, (numContours+1.0)/(numContours-1.0)*max([ median(reshape(zMesh,1,[])), sqrt(omega) ]) );
 	numFigs++; figure(numFigs);
 	contourf( sVals_forMesh, pVals_forMesh, zMesh.^0.5, numContours );
 	axis("square");
+	%axis("equal");
 	set( get(gcf,"children"), "ydir", "normal" );
 	cmap = mycmap(numColors);
 	colormap(cmap);
@@ -125,15 +163,18 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 	xlabel( "s" );
 	ylabel( "p" );
 	title( "sqrt(omega) vs s, p" );
-	if ( ~isempty(s0) || ~isempty(p0) )
-		hold on; % Continue omega contour graph.
-		plot( ...
-		  s0, p0, "s", "linewidth", 3, "markersize", 20, "color", [0.9,0.0,0.0], ...
-		  s0, p0, "+", "linewidth", 3, "markersize", 20, "color", [0.9,0.0,0.0],
-		  s1, p1, "s", "linewidth", 3, "markersize", 20, "color", [0.0,0.0,1.0], ...
-		  s1, p1, "x", "linewidth", 3, "markersize", 20, "color", [0.0,0.0,1.0] );
-		plot( sVals_forCurve, pVals_forCurve, "ko-" );
-		hold off;
+	hold on;
+	plot( ...
+	  s0, p0, "s", "linewidth", 3, "markersize", 20, "color", [0.9,0.0,0.0], ...
+	  s0, p0, "+", "linewidth", 3, "markersize", 20, "color", [0.9,0.0,0.0],
+	  s1, p1, "s", "linewidth", 3, "markersize", 20, "color", [0.0,0.0,1.0], ...
+	  s1, p1, "x", "linewidth", 3, "markersize", 20, "color", [0.0,0.0,1.0] );
+	if ( genLevCurve )
+		plot( levCurve.sVals, levCurve.pVals, "wo-" );
 	end
+	if ( genLevMarqCurve )
+		plot( levMarqCurve.sVals, levMarqCurve.pVals, "ko-" );
+	end
+	hold off;
 return;
 end
