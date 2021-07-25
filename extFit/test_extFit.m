@@ -4,22 +4,23 @@
 	numFigs = 0;
 	setprngstates(0);
 	%
-	%secret_p = 3.23
-	%secret_xExt = 0.14
-	%secret_fExt = 0.024
-	%secret_f1 = 0.76;
-	secret_xExt = 0.0
-	secret_p = 4.0
-	secret_fExt = 0.0
-	secret_f1 = 1.0;
+	secret_p = 3.23
+	secret_xExt = 0.14
+	secret_fExt = 0.024
+	secret_f1 = 0.76;
+	%secret_xExt = 0.0
+	%secret_p = 4.0
+	%secret_fExt = 0.0
+	%secret_f1 = 1.0;
 	funchF = @(x)( secret_fExt + secret_f1*abs(x-secret_xExt).^secret_p );
 	%%%funchF = @(x)( (x<0).*abs(x).^4.0 + (x>0).*abs(x).^0.5 );
 	%
-	numPts = 20;
-	%xVals = 1.0+abs(randn(1,numPts));
-	xVals = randn(1,numPts);
-	xVals = sort(randn(1,numPts));
+	%numPts = 20;
+	%xVals = randn(1,numPts);
+	numPts = 5;
+	xVals = 1.0+abs(randn(1,numPts));
 	%
+	xVals = sort(randn(1,numPts));
 	fVals = funchF(xVals);
 	%fVals .*= 1.0 + 0.01*randn(1,numPts);
 	%
@@ -36,7 +37,7 @@
 	s = 0.0;
 	p = 2.0;
 	for n=1:10
-		[ s, p ] = extFit__findStep( s, p, xVals, fVals, nC, [] );
+		[ s, p ] = extFit__findStep( s, p, xVals, fVals, nC, [] )
 	end
 	toc
 	return;

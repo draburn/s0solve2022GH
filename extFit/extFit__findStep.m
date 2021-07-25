@@ -111,6 +111,7 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 			mu *= muStep;
 		end
 		iterNum++;
+		echo__lmu = log(mu)
 		if ( mu > mu1 )
 			break;
 		end
