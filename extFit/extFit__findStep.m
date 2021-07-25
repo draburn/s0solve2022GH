@@ -31,14 +31,13 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 	datOut.s0 = s0;
 	datOut.p0 = p0;
 	prm_calcAboutPt = mygetfield( prm, "prm_calcAboutPt", [] );
-	[ rhoVals, bigF0, bigF1, omega, vecG, matH, matH2 ] = extFit__calcAboutPt( ...
+	[ rhoVals, bigF0, bigF1, omega, vecG, matH ] = extFit__calcAboutPt( ...
 	  s0, p0, xVals, fVals, nPtWiseExt, wVals, prm_calcAboutPt );
 	datOut.bigF0 = bigF0;
 	datOut.bigF1 = bigF1;
 	datOut.omega = omega;
 	datOut.vecG = vecG;
 	datOut.matH = matH;
-	datOut.matH2 = matH2;
 	if ( omega == 0.0 )
 		msg_notify( verbLev, thisFile, __LINE__, "Input omega is already zero." );
 		retCode = RETCODE__IMPOSED_STOP;
@@ -48,24 +47,9 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 	assert( matH(2,2) >= 0.0 );
 	%
 	if ( mygetfield( prm, "useLevMarq", false ) )
-		matDiag = diag(diag(matH));
+		matD = diag(diag(matH));
 	else
-		matDiag = eye(2,2)*sqrt(sum(sum(matH.^2)));
-	end
-	rcond_matDiag = rcond(matDiag);
-	rcond_matDiag_tol = mygetfield( prm, "rcond_matDiag_tol", 10*eps );
-	if ( doChecks )
-		assert( isrealscalar(rcond_matDiag_tol) );
-		assert( 0.0 < rcond_matDiag_tol );
-	end
-	if ( rcond_matDiag < rcond_matDiag_tol )
-		msg_notify( verbLev, thisFile, __LINE__, sprintf( ...
-		  "NOTIFY: rcond(matDiag) = %g < %g.", rcond_matDiag, rcond_matDiag_tol ) );
-	end
-	if ( mygetfield( prm, "useH2", false ) )
-		matHess = matH2;
-	else
-		matHess = matH;
+		matD = eye(2,2);
 	end
 	%
 	%
@@ -91,32 +75,47 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 	end
 	pMin = 1.0;
 	pMax = 20.0;
-	muVals = [ 0.0, 0.01, 0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 1E2, 1E3, 1E4, 1E5, 1E6, 1E7, 1E8 ];
 	%
 	sMin = mygetfield( prm, "sMin", sMin );
 	sMax = mygetfield( prm, "sMax", sMax );
 	pMin = mygetfield( prm, "pMin", pMin );
 	pMax = mygetfield( prm, "pMax", pMax );
-	muVals = mygetfield( prm, "muVals", muVals );
-	numMuVals = max(size(muVals));
+	mu0 = mygetfield( prm, "mu0", sqrt(eps) );
+	mu1 = mygetfield( prm, "mu1", 1.0/sqrt(eps) );
+	muStep = mygetfield( prm, "muStep", 10.0 );
 	if ( doChecks )
-		assert( isrealarray(muVals,[1,numMuVals]) || isrealarray(muVals,[numMuVals,1]) );
 		assert( isrealscalar(sMin) );
 		assert( isrealscalar(sMax) );
 		assert( isrealscalar(pMin) );
 		assert( isrealscalar(pMax) );
+		assert( isrealscalar(mu0) );
+		assert( isrealscalar(mu1) );
 		assert( sMin <= s0 );
 		assert( s0 <= sMax );
+		assert( 0.0 < pMin );
 		assert( pMin <= p0 );
 		assert( p0 <= pMax );
+		assert( 0.0 < mu0 );
+		assert( mu0 < mu1 );
+		assert( 1.0 < muStep );
 	end
 	%
-	for n = 1 : numMuVals
-		mu = muVals(n);
-		matA = matHess + (mu*matDiag);
-		if ( rcond(matA) < 10*eps )
-			continue;
+	iterNum = 0;
+	while (1)
+		switch (iterNum)
+		case 0
+			mu = 0.0;
+		case 1
+			mu = mu0;
+		otherwise
+			mu *= muStep;
 		end
+		iterNum++;
+		if ( mu > mu1 )
+			break;
+		end
+		%
+		matA = matH + (mu*matD);
 		vecDelta_trial = -matA\vecG;
 		s_trial = s0 + vecDelta_trial(1);
 		p_trial = p0 + vecDelta_trial(2);

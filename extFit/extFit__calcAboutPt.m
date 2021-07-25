@@ -1,4 +1,4 @@
-function [ rhoVals, bigF0, bigF1, omega, vecG, matH, matH2 ] = extFit__calcAboutPt( ...
+function [ rhoVals, bigF0, bigF1, omega, vecG, matH ] = extFit__calcAboutPt( ...
   s, p, xVals, fVals, nExactFit, wVals=[], prm=[] )
 	%
 	thisFile = "extFit__calcAboutPt";
@@ -55,20 +55,5 @@ function [ rhoVals, bigF0, bigF1, omega, vecG, matH, matH2 ] = extFit__calcAbout
 	vecG = [ sigma0S; sigma0P ];
 	matH = [ sigmaSS, sigmaSP; sigmaSP, sigmaPP ];
 	%
-	matH2 = [];
-	if ( mygetfield( prm, "calcH2", false ) )
-		% Note that eps needs to be set properly for these to be accurate.
-		rhoVals_pp = extFit__calcAtPt( s+epsS, p+epsP, xVals, fVals, nExactFit, wVals, prm_calcAtPt );
-		rhoVals_pm = extFit__calcAtPt( s+epsS, p-epsP, xVals, fVals, nExactFit, wVals, prm_calcAtPt );
-		rhoVals_mp = extFit__calcAtPt( s-epsS, p+epsP, xVals, fVals, nExactFit, wVals, prm_calcAtPt );
-		rhoVals_mm = extFit__calcAtPt( s-epsS, p-epsP, xVals, fVals, nExactFit, wVals, prm_calcAtPt );		
-		rhoDSDSVals = ( rhoVals_p0 + rhoVals_m0 - 2.0*rhoVals ) / ( epsS^2 );
-		rhoDPDPVals = ( rhoVals_0p + rhoVals_0m - 2.0*rhoVals ) / ( epsP^2 );
-		rhoDSDPVals = ( rhoVals_pp + rhoVals_mm - rhoVals_mp - rhoVals_pm ) / ( 4.0 * epsS * epsP );
-		sigma0SS = sum( wVals .* rhoVals .* rhoDSDSVals );
-		sigma0PP = sum( wVals .* rhoVals .* rhoDPDPVals );
-		sigma0SP = sum( wVals .* rhoVals .* rhoDSDPVals );
-		matH2 = matH + [ sigma0SS, sigma0SP; sigma0SP, sigma0PP ];
-	end
 return;
 end

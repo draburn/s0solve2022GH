@@ -39,7 +39,7 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 	end
 	%
 	prm_calcAboutPt = mygetfield( prm, "prm_calcAboutPt", [] );
-	[ rhoVals, bigF0, bigF1, omega, vecG, matH, matH2 ] = extFit__calcAboutPt( ...
+	[ rhoVals, bigF0, bigF1, omega, vecG, matH ] = extFit__calcAboutPt( ...
 	  s0, p0, xVals, fVals, nExactFit, wVals, prm_calcAboutPt );
 	vecDeltaNewton = -matH\vecG;
 	s1 = s0 + vecDeltaNewton(1);
