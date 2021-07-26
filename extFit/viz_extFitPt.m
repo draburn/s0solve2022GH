@@ -40,7 +40,7 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 	%
 	prm_calcAboutPt = mygetfield( prm, "prm_calcAboutPt", [] );
 	[ rhoVals, bigF0, bigF1, omega, vecG, matH ] = extFit__calcAboutPt( ...
-	  s0, p0, xVals, fVals, nExactFit, wVals, prm_calcAboutPt );
+	  s0, p0, xVals, fVals, nExactFit, wVals, prm_calcAboutPt )
 	vecDeltaNewton = -matH\vecG;
 	s1 = s0 + vecDeltaNewton(1);
 	p1 = p0 + vecDeltaNewton(2);
@@ -54,19 +54,28 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 	prm_daclinspace.numIterLimit = 100;
 	genLevCurve = mygetfield( prm, "genLevCurve", true );
 	if ( genLevCurve )
+		tempCurve.omega0 = omega;
 		tempCurve.vecG = vecG;
 		tempCurve.matH = matH;
 		tempCurve.matD = eye(2,2)*norm(diag(diag(matH)));
-		tempCurve.numPts = 100;
+		tempCurve.numPts = 1000;
 		%
 		tempCurve.matA = tempCurve.matH - tempCurve.matD;
 		tempCurve.funchDeltaVec = @(lambda)( ...
 		  -lambda * (( tempCurve.matD + lambda*tempCurve.matA ) \ vecG) );
-		tempCurve.lambdaVals = daclinspace( 0.0, 1.0, tempCurve.numPts, ...
-		  tempCurve.funchDeltaVec, prm_daclinspace );
+		if (0)
+			tempCurve.lambdaVals = daclinspace( 0.0, 1.0, tempCurve.numPts, ...
+			  tempCurve.funchDeltaVec, prm_daclinspace );
+		else
+			tempCurve.muVals = [ -1.0, eps.^linspace(-0.4,0.4,tempCurve.numPts-2), 0.0 ];
+			tempCurve.lambdaVals = [ 0.0, 1.0./(1.0+tempCurve.muVals(2:end)) ];
+		end
 		%
 		for n=1:tempCurve.numPts
 			tempCurve.vecDeltaVals(:,n) = tempCurve.funchDeltaVec(tempCurve.lambdaVals(n));
+			tempCurve.omegaModelVals(:,n) = tempCurve.omega0 ...
+			 + tempCurve.vecDeltaVals(:,n)'*tempCurve.vecG ...
+			 + 0.5*tempCurve.vecDeltaVals(:,n)'*tempCurve.matH*+ tempCurve.vecDeltaVals(:,n);
 		end
 		tempCurve.sVals = s0 + tempCurve.vecDeltaVals(1,:);
 		tempCurve.pVals = p0 + tempCurve.vecDeltaVals(2,:);
@@ -78,6 +87,11 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 		tempCurve.deltaNormVals = sqrt(sum(tempCurve.vecDeltaVals.^2,1));
 		[ tempCurve.bigF0Vals, tempCurve.bigF1Vals, tempCurve.omegaVals ] = extFit__calcMesh( ...
 		  tempCurve.sVals, tempCurve.pVals, xVals, fVals, nExactFit, wVals, prm_calcMesh );
+		%tempCurve.alphaVals = -(tempCurve.matD\tempCurve.vecG)' * tempCurve.vecDeltaVals ...
+		%  ./ ( norm(tempCurve.matD\tempCurve.vecG) * tempCurve.deltaNormVals );
+		tempCurve.vecDDeltaVals = tempCurve.vecDeltaVals(:,2:end) - tempCurve.vecDeltaVals(:,1:end-1);
+		tempCurve.alphaVals = (-(tempCurve.matD\tempCurve.vecG)' * tempCurve.vecDDeltaVals) ...
+		 ./ ( norm(tempCurve.matD\tempCurve.vecG) * sqrt(sum(tempCurve.vecDDeltaVals.^2,1)) );
 		%
 		levCurve = tempCurve;
 		clear tempCurve;
@@ -85,19 +99,28 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 	%
 	genLevMarqCurve = mygetfield( prm, "genLevMarqCurve", true );
 	if ( genLevMarqCurve )
+		tempCurve.omega0 = omega;
 		tempCurve.vecG = vecG;
 		tempCurve.matH = matH;
 		tempCurve.matD = diag(diag(matH));
-		tempCurve.numPts = 100;
+		tempCurve.numPts = 1000;
 		%
 		tempCurve.matA = tempCurve.matH - tempCurve.matD;
 		tempCurve.funchDeltaVec = @(lambda)( ...
 		  -lambda * (( tempCurve.matD + lambda*tempCurve.matA ) \ vecG) );
-		tempCurve.lambdaVals = daclinspace( 0.0, 1.0, tempCurve.numPts, ...
-		  tempCurve.funchDeltaVec, prm_daclinspace );
+		if (0)
+			tempCurve.lambdaVals = daclinspace( 0.0, 1.0, tempCurve.numPts, ...
+			  tempCurve.funchDeltaVec, prm_daclinspace );
+		else
+			tempCurve.muVals = [ -1.0, eps.^linspace(-0.4,0.4,tempCurve.numPts-2), 0.0 ];
+			tempCurve.lambdaVals = [ 0.0, 1.0./(1.0+tempCurve.muVals(2:end)) ];
+		end
 		%
 		for n=1:tempCurve.numPts
 			tempCurve.vecDeltaVals(:,n) = tempCurve.funchDeltaVec(tempCurve.lambdaVals(n));
+			tempCurve.omegaModelVals(:,n) = tempCurve.omega0 ...
+			 + tempCurve.vecDeltaVals(:,n)'*tempCurve.vecG ...
+			 + 0.5*tempCurve.vecDeltaVals(:,n)'*tempCurve.matH*+ tempCurve.vecDeltaVals(:,n);
 		end
 		tempCurve.sVals = s0 + tempCurve.vecDeltaVals(1,:);
 		tempCurve.pVals = p0 + tempCurve.vecDeltaVals(2,:);
@@ -109,7 +132,12 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 		tempCurve.deltaNormVals = sqrt(sum(tempCurve.vecDeltaVals.^2,1));
 		[ tempCurve.bigF0Vals, tempCurve.bigF1Vals, tempCurve.omegaVals ] = extFit__calcMesh( ...
 		  tempCurve.sVals, tempCurve.pVals, xVals, fVals, nExactFit, wVals, prm_calcMesh );
-		%
+		%tempCurve.alphaVals = -(tempCurve.matD\tempCurve.vecG)' * tempCurve.vecDeltaVals ...
+		%  ./ ( norm(tempCurve.matD\tempCurve.vecG) * tempCurve.deltaNormVals );
+		tempCurve.vecDDeltaVals = tempCurve.vecDeltaVals(:,2:end) - tempCurve.vecDeltaVals(:,1:end-1);
+		tempCurve.alphaVals = (-(tempCurve.matD\tempCurve.vecG)' * tempCurve.vecDDeltaVals) ...
+		 ./ ( norm(tempCurve.matD\tempCurve.vecG) * sqrt(sum(tempCurve.vecDDeltaVals.^2,1)) );
+		%		
 		levMarqCurve = tempCurve;
 		clear tempCurve;
 	end
@@ -204,30 +232,85 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 	numFigs++; figure(numFigs);
 	loglog( ...
 	  1.0./levCurve.lambdaVals(2:end-1) - 1.0, levCurve.omegaVals(2:end-1), 'o-', ...
-	  1.0./levMarqCurve.lambdaVals(2:end-1) - 1.0, levMarqCurve.omegaVals(2:end-1), 'x-' );
+	  1.0./levMarqCurve.lambdaVals(2:end-1) - 1.0, levMarqCurve.omegaVals(2:end-1), 'x-', ...
+	  1.0./levCurve.lambdaVals(2:end-1) - 1.0, levCurve.omegaModelVals(2:end-1), 'o-', ...
+	  1.0./levMarqCurve.lambdaVals(2:end-1) - 1.0, levMarqCurve.omegaModelVals(2:end-1), 'x-' );
 	xlabel( "mu" );
 	ylabel( "omega" );
 	title( "omega vs mu" );
 	legend( ...
 	  "Lev", ...
 	  "LevMarq", ...
-	  "location", "NorthEast" );
+	  "Lev (model)", ...
+	  "LevMarq (model)", ...
+	  "location", "SouthEast" );
 	grid on;
 	%
 	if ( mygetfield(prm,"showMuLimits",false) )
 		numFigs++; figure(numFigs);
 		loglog( ...
 		  1.0./(eps+levCurve.lambdaVals) - 1.0 + 2*eps, levCurve.omegaVals, 'o-', ...
-		  1.0./(eps+levMarqCurve.lambdaVals) - 1.0 + 2*eps, levMarqCurve.omegaVals, 'x-' );
+		  1.0./(eps+levMarqCurve.lambdaVals) - 1.0 + 2*eps, levMarqCurve.omegaVals, 'x-',...
+		  1.0./(eps+levCurve.lambdaVals) - 1.0 + 2*eps, levCurve.omegaModelVals, 'o-', ...
+		  1.0./(eps+levMarqCurve.lambdaVals) - 1.0 + 2*eps, levMarqCurve.omegaModelVals, 'x-' );
 		xlabel( "mu" );
 		ylabel( "omega" );
 		title( "omega vs mu" );
 		legend( ...
 		  "Lev", ...
 		  "LevMarq", ...
+		  "Lev (model)", ...
+		  "LevMarq (model)", ...
 		  "location", "NorthEast" );
 		grid on;
 	end
+	%
+	%
+	%
+	numFigs++; figure(numFigs);
+	semilogx( ...
+	  levCurve.muVals(2:end), levCurve.deltaNormVals(2:end), 'o-', ...
+	  levMarqCurve.muVals(2:end), levMarqCurve.deltaNormVals(2:end), 'x-' );
+	xlabel( "mu" );
+	ylabel( "||delta||" );
+	title( "||delta|| vs mu" );
+	legend( ...
+	  "Lev", ...
+	  "LevMarq", ...
+	  "location", "SouthEast" );
+	grid on;
+	%
+	%
+	%
+	numFigs++; figure(numFigs);
+	semilogx( ...
+	  levCurve.muVals(2:end), levCurve.alphaVals, 'o-', ...
+	  levMarqCurve.muVals(2:end), levMarqCurve.alphaVals, 'x-' );
+	xlabel( "mu" );
+	ylabel( "alpha" );
+	title( "alpha vs mu" );
+	legend( ...
+	  "Lev", ...
+	  "LevMarq", ...
+	  "location", "SouthEast" );
+	grid on;
+	%
+	%
+	%
+	numFigs++; figure(numFigs);
+	semilogx( ...
+	  cent(levCurve.muVals(2:end)), diff(levCurve.alphaVals)./diff(levCurve.muVals(2:end)), 'o-', ...
+	  cent(levMarqCurve.muVals(2:end)), diff(levMarqCurve.alphaVals)./diff(levMarqCurve.muVals(2:end)), 'x-' );
+	xlabel( "mu" );
+	ylabel( "d alpha / d mu" );
+	title( "d alpha / d mu vs mu" );
+	legend( ...
+	  "Lev", ...
+	  "LevMarq", ...
+	  "location", "SouthEast" );
+	grid on;
+	%
+	return;
 	%
 	%
 	%
