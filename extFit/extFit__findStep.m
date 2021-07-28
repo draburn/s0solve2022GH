@@ -49,12 +49,11 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 	%
 	%
 	%
-	msg( thisFile, __LINE__, "Add an omega0 tolerance check based on vecG and matH!" );
 	if ( omega0 == 0.0 )
 		msg_notify( verbLev, thisFile, __LINE__, "Initial omega is already zero." );
 		s = s0;
 		p = p0;
-		retCode = RETCODE__SUCCESS;
+		retCode = RETCODE__ALGORITHM_BREAKDOWN;
 		return;
 	end
 	if ( norm(vecG) == 0.0 )
@@ -76,6 +75,28 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 	datOut.matD = matD;
 	rcondTol = mygetfield( prm, "rcondTol", eps^0.75 );
 	assert( rcond(matD) > rcondTol );
+	%
+	if ( rcond(matH) > rcondTol )
+		vecDeltaN = -matH\vecG;
+	else
+		vecDelta1 = -(matH+(1.0*epsMu*matD))\vecG;
+		vecDelta2 = -(matH+(2.0*epsMu*matD))\vecG;
+		vecDelta3 = -(matH+(3.0*epsMu*matD))\vecG;
+		%
+		%vecDeltaN0 = vecDelta1; % Cnst
+		%vecDeltaN1 = (2.0*vecDelta1) - vecDelta2; % Linear.
+		vecDeltaN2 = 3.0*(vecDelta1-vecDelta2) + vecDelta3; %Quadratic.
+		vecDeltaN = vecDeltaN2;
+	end
+	omegaModelN = funch_omegaModel(vecDeltaN);
+	if ( omegaModelN >= omega0*(1.0-eps^0.75) )
+		msg_main( verbLev, thisFile, __LINE__, sprintf( ...
+		  "Local model indicates we can't decrease from %g.", omega0 )  );
+		s = s0;
+		p = p0;
+		retCode = RETCODE__ALGORITHM_BREAKDOWN;
+		return;
+	end
 	%
 	%
 	%
@@ -106,9 +127,11 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 	sMax = mygetfield( prm, "sMax", sMax );
 	pMin = mygetfield( prm, "pMin", pMin );
 	pMax = mygetfield( prm, "pMax", pMax );
-	mu0 = mygetfield( prm, "mu0", sqrt(eps) );
-	mu1 = mygetfield( prm, "mu1", 1.0/sqrt(eps) );
+	mu0 = mygetfield( prm, "mu0", (eps) );
+	mu1 = mygetfield( prm, "mu1", 1.0/(eps) );
 	muStep = mygetfield( prm, "muStep", 10.0 );
+	epsMu = mygetfield( prm, "epsMu", eps^0.5 );
+	sufficientDecreaseCoeff = mygetfield( prm, "sufficientDecreaseCoeff", 0.01 );
 	if ( doChecks )
 		assert( isrealscalar(sMin) );
 		assert( isrealscalar(sMax) );
@@ -116,6 +139,8 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 		assert( isrealscalar(pMax) );
 		assert( isrealscalar(mu0) );
 		assert( isrealscalar(mu1) );
+		assert( isrealscalar(muStep) );
+		assert( isrealscalar(epsMu) );
 		assert( sMin <= s0 );
 		assert( s0 <= sMax );
 		assert( 0.0 < pMin );
@@ -124,137 +149,46 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 		assert( 0.0 < mu0 );
 		assert( mu0 < mu1 );
 		assert( 1.0 < muStep );
+		assert( 0.0 < epsMu );
 	end
 	%
 	%
 	%
 	% DO WORK.
-	% Check full (/"Newton") step.
-	epsMu = mygetfield( prm, "epsMu", eps^0.5 );
-	if ( rcond(matH) > rcondTol )
-		vecDeltaN = -matH\vecG;
-	else
-		vecDelta1 = -(matH+(epsMu*matD))\vecG;
-		vecDelta2 = -(matH+(2.0*epsMu*matD))\vecG;
-		vecDeltaN = (2.0*vecDelta1) - vecDelta2;
-	end
-	%
-	sufficientDecreaseCoeff = mygetfield( prm, "sufficientDecreaseCoeff", 0.01 );
-	assert( isrealscalar(sufficientDecreaseCoeff) );
-	assert( 0.0 < sufficientDecreaseCoeff );
-	assert( 1.0 >= sufficientDecreaseCoeff );
-	vecDelta_trial = vecDeltaN;
-	s_trial = s0 + vecDeltaN(1);
-	p_trial = p0 + vecDeltaN(2);
-	if ( s_trial >= sMin ...
-	  && s_trial <= sMax ...
-	  && p_trial >= pMin ...
-	  && p_trial <= pMax )
-		[ rhoVals_trial, bigF0_trial, bigF1_trial, omega_trial ] = extFit__calcAtPt( ...
-		  s_trial, p_trial, xVals, fVals, nPtWiseExt, wVals, prm_calcAboutPt );
-		if (  omega_trial < omega0 ...
-		  &&  abs(omega_trial-omega0) >= sufficientDecreaseCoeff*abs(funch_omegaModel(vecDelta_trial)-omega0)  )
-			msg_main( verbLev, thisFile, __LINE__, "Full Newton step is good." )
-			s = s_trial;
-			p = p_trial;
-			retCode = RETCODE__SUCCESS;
-			return;
-		end
-	end
 	%
 	%
-	msg( thisFile, __LINE__, "PLACEHOLDER HACK!..." );
-	mu = sqrt(eps)
-	matA = matH + (mu*matD);
-	assert( rcond(matA) > rcondTol );
-	vecDelta_trial = -(matA\vecG);
-	s_trial = s0 + vecDelta_trial(1);
-	p_trial = p0 + vecDelta_trial(2);
-	if ( s_trial >= sMin ...
-	  && s_trial <= sMax ...
-	  && p_trial >= pMin ...
-	  && p_trial <= pMax )
-		[ rhoVals_trial, bigF0_trial, bigF1_trial, omega_trial ] = extFit__calcAtPt( ...
-		  s_trial, p_trial, xVals, fVals, nPtWiseExt, wVals, prm_calcAboutPt );
-		echo__omega_trial = omega_trial
-		if (  omega_trial < omega0 ...
-		  &&  abs(omega_trial-omega0) >= sufficientDecreaseCoeff*abs(funch_omegaModel(vecDelta_trial)-omega0)  )
-			msg_main( verbLev, thisFile, __LINE__, "THIS PLACEHOLDER HACK STEP is good." )
-			s = s_trial;
-			p = p_trial;
-			retCode = RETCODE__SUCCESS;
-			return;
-		end
-	end
 	%
-	while (mu < 1.0./sqrt(eps) )
-	mu *= 10.0
-	matA = matH + (mu*matD);
-	assert( rcond(matA) > rcondTol );
-	vecDelta_trial = -(matA\vecG);
-	s_trial = s0 + vecDelta_trial(1);
-	p_trial = p0 + vecDelta_trial(2);
-	if ( s_trial >= sMin ...
-	  && s_trial <= sMax ...
-	  && p_trial >= pMin ...
-	  && p_trial <= pMax )
-		[ rhoVals_trial, bigF0_trial, bigF1_trial, omega_trial ] = extFit__calcAtPt( ...
-		  s_trial, p_trial, xVals, fVals, nPtWiseExt, wVals, prm_calcAboutPt );
-		echo__omega_trial = omega_trial
-		if (  omega_trial < omega0 ...
-		  &&  abs(omega_trial-omega0) >= sufficientDecreaseCoeff*abs(funch_omegaModel(vecDelta_trial)-omega0)  )
-			msg_main( verbLev, thisFile, __LINE__, "THIS PLACEHOLDER HACK STEP is good." )
-			s = s_trial;
-			p = p_trial;
-			retCode = RETCODE__SUCCESS;
-			return;
-		end
-	end
-	end
-	%
-	msg_main( verbLev, thisFile, __LINE__, "THIS PLACEHOLDER HACK failed." )
-	s = s0;
-	p = p0;
-	retCode = RETCODE__IMPOSED_STOP;
-return;
-	%
-	iterNum = 0;
+	iterCount = 0;
 	while (1)
-		switch (iterNum)
-		case 0
-			mu = 0.0;
+		iterCount++;
+		switch (iterCount)
 		case 1
-			mu = mu0;
+			mu_trial = 0.0;
+			vecDelta_trial = vecDeltaN;
+		case 2
+			mu_trial = mu0;
+			vecDelta_trial = -(matH + (mu_trial*matD))\vecG;
 		otherwise
-			mu *= muStep;
+			mu_trial *= muStep;
+			vecDelta_trial = -(matH + (mu_trial*matD))\vecG;
 		end
-		iterNum++;
-		%echo__mu = mu
-		if ( mu > mu1 )
+		if ( mu_trial > mu1 )
 			break;
 		end
 		%
-		matA = matH + (mu*matD);
-		vecDelta_trial = -matA\vecG;
 		s_trial = s0 + vecDelta_trial(1);
 		p_trial = p0 + vecDelta_trial(2);
-		if ( p_trial < 1.0 )
-			continue;
-		elseif ( s_trial < sMin )
-			continue;
-		elseif ( s_trial > sMax )
+		omegaModel_trial = funch_omegaModel( vecDelta_trial );
+		if ( omegaModel_trial >= omega0*(1.0-eps^0.75) )
+			break;
+		end
+		if ( s_trial < sMin || s_trial > sMax ...
+		  || p_trial < pMin || p_trial > pMax )
 			continue;
 		end
-		%
-		datOut.s_trial = s_trial;
-		datOut.p_trial = p_trial;
 		[ rhoVals_trial, bigF0_trial, bigF1_trial, omega_trial ] = extFit__calcAtPt( ...
 		  s_trial, p_trial, xVals, fVals, nPtWiseExt, wVals, prm_calcAboutPt );
-		datOut.rhoVals_trial = rhoVals_trial;
-		datOut.bigF0_trial = bigF0_trial;
-		datOut.bigF1_trial = bigF1_trial;
-		datOut.omega_trial = omega_trial;
-		if ( omega_trial >= omega )
+		if ( omega_trial > omega0 - sufficientDecreaseCoeff*abs(omegaModel_trial-omega0) )
 			continue;
 		end
 		%
@@ -265,6 +199,7 @@ return;
 		retCode = RETCODE__SUCCESS;
 		return;
 	end
+	%
 	msg_main( verbLev, thisFile, __LINE__, sprintf( ...
 	  "Failed to decrease omega from %g.", omega0 )  );
 	s = s0;
