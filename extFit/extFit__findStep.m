@@ -64,13 +64,14 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 		return;
 	end
 	%
+	hScale = sqrt(sum(sum(matH.^2)));
 	if ( mygetfield( prm, "useLevMarq", false ) )
-		epsRelLevMarq = mygetfield( prm, "epsRelLevMarq", eps^0.75 );
+		epsRelLevMarq = mygetfield( prm, "epsRelLevMarq", eps );
 		assert( isrealscalar(epsRelLevMarq) );
 		assert( 0.0 < epsRelLevMarq );
-		matD = diag(abs(diag(matH))) + sqrt(sum(sum(matH.^2)))*epsRelLevMarq*eye(2,2);
+		matD = sqrt( diag(diag(matH'*matH)) + hScale^2*epsRelLevMarq*eye(2,2) );
 	else
-		matD = eye(2,2);
+		matD = hScale*eye(2,2);
 	end
 	datOut.matD = matD;
 	rcondTol = mygetfield( prm, "rcondTol", eps^0.75 );
@@ -188,6 +189,9 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 		end
 		[ rhoVals_trial, bigF0_trial, bigF1_trial, omega_trial ] = extFit__calcAtPt( ...
 		  s_trial, p_trial, xVals, fVals, nPtWiseExt, wVals, prm_calcAboutPt );
+		if ( omega_trial >= omega0 )
+			continue;
+		end
 		if ( omega_trial > omega0 - sufficientDecreaseCoeff*abs(omegaModel_trial-omega0) )
 			continue;
 		end
