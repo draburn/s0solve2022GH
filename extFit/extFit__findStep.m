@@ -28,16 +28,9 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 		assert( atLeastOneWValIsPositive );
 	end
 	%
-	datOut.s0 = s0;
-	datOut.p0 = p0;
 	prm_calcAboutPt = mygetfield( prm, "prm_calcAboutPt", [] );
 	[ rhoVals, bigF0, bigF1, omega0, vecG, matH ] = extFit__calcAboutPt( ...
 	  s0, p0, xVals, fVals, nPtWiseExt, wVals, prm_calcAboutPt );
-	datOut.bigF0 = bigF0;
-	datOut.bigF1 = bigF1;
-	datOut.omega0 = omega0;
-	datOut.vecG = vecG;
-	datOut.matH = matH;
 	assert( omega0 >= 0.0 );
 	assert( matH(1,1) >= 0.0 );
 	assert( matH(2,2) >= 0.0 );
@@ -45,10 +38,6 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 	assert( fleq(matH(1,2),matH(2,1)) );
 	assert(~(  0.0 == matH(1,1)  &&  0.0 ~= vecG(1)  ));
 	assert(~(  0.0 == matH(2,2)  &&  0.0 ~= vecG(2)  ));
-	funch_omegaModel = @(vecD)( omega0 + vecD'*vecG + 0.5*vecD'*matH*vecD );
-	%
-	%
-	%
 	if ( omega0 == 0.0 )
 		msg_notify( verbLev, thisFile, __LINE__, "Initial omega is already zero." );
 		s = s0;
@@ -63,41 +52,10 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 		retCode = RETCODE__ALGORITHM_BREAKDOWN;
 		return;
 	end
+	funch_deltaOmegaModel = @(vecD)( vecD'*vecG + 0.5*vecD'*matH*vecD );
 	%
-	hScale = sqrt(sum(sum(matH.^2)));
-	if ( mygetfield( prm, "useLevMarq", false ) )
-		epsRelLevMarq = mygetfield( prm, "epsRelLevMarq", eps );
-		assert( isrealscalar(epsRelLevMarq) );
-		assert( 0.0 < epsRelLevMarq );
-		matD = sqrt( diag(diag(matH'*matH)) + hScale^2*epsRelLevMarq*eye(2,2) );
-	else
-		matD = hScale*eye(2,2);
-	end
-	datOut.matD = matD;
-	rcondTol = mygetfield( prm, "rcondTol", eps^0.75 );
-	assert( rcond(matD) > rcondTol );
 	%
-	if ( rcond(matH) > rcondTol )
-		vecDeltaN = -matH\vecG;
-	else
-		vecDelta1 = -(matH+(1.0*epsMu*matD))\vecG;
-		vecDelta2 = -(matH+(2.0*epsMu*matD))\vecG;
-		vecDelta3 = -(matH+(3.0*epsMu*matD))\vecG;
-		%
-		%vecDeltaN0 = vecDelta1; % Cnst
-		%vecDeltaN1 = (2.0*vecDelta1) - vecDelta2; % Linear.
-		vecDeltaN2 = 3.0*(vecDelta1-vecDelta2) + vecDelta3; %Quadratic.
-		vecDeltaN = vecDeltaN2;
-	end
-	omegaModelN = funch_omegaModel(vecDeltaN);
-	if ( omegaModelN >= omega0*(1.0-eps^0.75) )
-		msg_main( verbLev, thisFile, __LINE__, sprintf( ...
-		  "Local model indicates we can't decrease from %g.", omega0 )  );
-		s = s0;
-		p = p0;
-		retCode = RETCODE__ALGORITHM_BREAKDOWN;
-		return;
-	end
+	%
 	%
 	%
 	%
@@ -124,16 +82,21 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 	pMin = min([ p0, 1.0 ]);
 	pMax = max([ p0, 20.0 ]);
 	%
+	reguCoeff = mygetfield( prm, "reguCoeff", eps075 );
+	rcondTol = mygetfield( prm, "rcondTol", eps075 );
+	epsMu = mygetfield( prm, "epsMu", eps075 );
 	sMin = mygetfield( prm, "sMin", sMin );
 	sMax = mygetfield( prm, "sMax", sMax );
 	pMin = mygetfield( prm, "pMin", pMin );
 	pMax = mygetfield( prm, "pMax", pMax );
-	mu0 = mygetfield( prm, "mu0", (eps) );
-	mu1 = mygetfield( prm, "mu1", 1.0/(eps) );
+	mu0 = mygetfield( prm, "mu0", eps050 );
+	mu1 = mygetfield( prm, "mu1", 1.0/eps075 );
 	muStep = mygetfield( prm, "muStep", 10.0 );
-	epsMu = mygetfield( prm, "epsMu", eps^0.5 );
 	sufficientDecreaseCoeff = mygetfield( prm, "sufficientDecreaseCoeff", 0.01 );
 	if ( doChecks )
+		assert( isrealscalar(reguCoeff) );
+		assert( isrealscalar(rcondTol) );
+		assert( isrealscalar(epsMu) );
 		assert( isrealscalar(sMin) );
 		assert( isrealscalar(sMax) );
 		assert( isrealscalar(pMin) );
@@ -141,21 +104,38 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 		assert( isrealscalar(mu0) );
 		assert( isrealscalar(mu1) );
 		assert( isrealscalar(muStep) );
-		assert( isrealscalar(epsMu) );
+		assert( 0.0 < reguCoeff );
+		assert( 0.0 < rcondTol );
+		assert( 0.0 < epsMu );
 		assert( sMin <= s0 );
 		assert( s0 <= sMax );
 		assert( 0.0 < pMin );
 		assert( pMin <= p0 );
 		assert( p0 <= pMax );
-		assert( 0.0 < mu0 );
+		assert( epsMu < mu0 );
 		assert( mu0 < mu1 );
 		assert( 1.0 < muStep );
-		assert( 0.0 < epsMu );
 	end
 	%
 	%
 	%
 	% DO WORK.
+	rvecHTHDiag = sum(matH.^2,1);
+	hScale = sqrt(sum(rvecHTHDiag)/2.0);
+	matD = sqrt( diag(rvecHTHDiag) + (hScale^2)*reguCoeff*eye(2,2) );
+	%
+	if ( rcond(matH) > rcondTol )
+		vecDeltaN = -matH\vecG;
+	else
+		vecDelta1 = -(matH+(1.0*epsMu*matD))\vecG;
+		vecDelta2 = -(matH+(2.0*epsMu*matD))\vecG;
+		vecDelta3 = -(matH+(3.0*epsMu*matD))\vecG;
+		%
+		vecDeltaN0 = vecDelta1; % Cnst
+		vecDeltaN1 = (2.0*vecDelta1) - vecDelta2; % Linear.
+		vecDeltaN2 = 3.0*(vecDelta1-vecDelta2) + vecDelta3; %Quadratic.
+		vecDeltaN = vecDeltaN2;
+	end
 	%
 	%
 	%
@@ -174,13 +154,21 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 			vecDelta_trial = -(matH + (mu_trial*matD))\vecG;
 		end
 		if ( mu_trial > mu1 )
+			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
+			  "Only excessive backtracking (%g > %g) might reduce residual (%g).", ...
+			   mu_trial, mu1, omega0 ) );
 			break;
 		end
 		%
 		s_trial = s0 + vecDelta_trial(1);
 		p_trial = p0 + vecDelta_trial(2);
-		omegaModel_trial = funch_omegaModel( vecDelta_trial );
-		if ( omegaModel_trial >= omega0*(1.0-eps^0.75) )
+		deltaOmegaModel_trial = funch_deltaOmegaModel( vecDelta_trial );
+		assert( 0.0 > deltaOmegaModel_trial );
+		if ( abs(deltaOmegaModel_trial) < omega0*eps075 )
+			% No hope.
+			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
+			  "Model suggests only insignificant decrease (%g) from omega (%g) is possible.", ...
+			   deltaOmegaModel_trial, omega0 ) );
 			break;
 		end
 		if ( s_trial < sMin || s_trial > sMax ...
@@ -192,7 +180,7 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 		if ( omega_trial >= omega0 )
 			continue;
 		end
-		if ( omega_trial > omega0 - sufficientDecreaseCoeff*abs(omegaModel_trial-omega0) )
+		if ( omega_trial > omega0 - sufficientDecreaseCoeff*abs(deltaOmegaModel_trial) )
 			continue;
 		end
 		%
