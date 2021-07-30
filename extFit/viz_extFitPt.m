@@ -264,19 +264,13 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 	title( "sqrt(omega) vs s, p" );
 	hold on;
 	plot( ...
-	  s0, p0, "s", "linewidth", 3, "markersize", 20, "color", [0.9,0.0,0.0], ...
-	  s0, p0, "+", "linewidth", 3, "markersize", 20, "color", [0.9,0.0,0.0],
-	  s1, p1, "s", "linewidth", 3, "markersize", 20, "color", [0.0,0.0,1.0], ...
-	  s1, p1, "x", "linewidth", 3, "markersize", 20, "color", [0.0,0.0,1.0] );
-	if ( genLevCurve )
-		plot( levCurve.sVals, levCurve.pVals, "wo-" );
-	end
-	if ( genLevMarqCurve )
-		plot( levMarqCurve.sVals, levMarqCurve.pVals, "ko-" );
-	end
-	if (1)
-		plot( levMarqModCurve.sVals, levMarqModCurve.pVals, "ro-" );
-	end
+	  levCurve.sVals, levCurve.pVals, 'o-', ...
+	  levMarqCurve.sVals, levMarqCurve.pVals, 'x-', ...
+	  levMarqModCurve.sVals, levMarqModCurve.pVals, '^-', ...
+	  s0, p0, "s", "linewidth", 3, "markersize", 20, "color", [0.9,0.5,0.5], ...
+	  s0, p0, "+", "linewidth", 3, "markersize", 20, "color", [0.9,0.5,0.5],
+	  s1, p1, "s", "linewidth", 3, "markersize", 20, "color", [0.5,0.5,1.0], ...
+	  s1, p1, "x", "linewidth", 3, "markersize", 20, "color", [0.5,0.5,1.0] );
 	hold off;
 	%
 	%

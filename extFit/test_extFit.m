@@ -34,12 +34,14 @@
 	%prm.pLo = 2.0;
 	%prm.pHi = 6.0;
 	%s = 0.2; p = 2.0;
-	s = 0.0; p = 2.0;
-	%s = 0.2; p = 4.0;
+	%s = 0.0; p = 2.0;
+	s = 0.0; p = 4.0;
 	%s = 0.175; p = 2.3925;
 	[ s1, p1 ] = extFit__mainLoop( s, p, xVals, fVals, nC, [] );
-	return;
 	viz_extFitPt( xVals, fVals, nC, s, p, [], prm );
+	return
+	
+	
 	for n=1:15
 		[ s, p ] = extFit__findStep( s, p, xVals, fVals, nC, [] );
 	end
