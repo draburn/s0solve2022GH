@@ -40,12 +40,12 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 	%
 	prm_calcAboutPt = mygetfield( prm, "prm_calcAboutPt", [] );
 	[ rhoVals, bigF0, bigF1, omega, vecG, matH ] = extFit__calcAboutPt( ...
-	  s0, p0, xVals, fVals, nExactFit, wVals, prm_calcAboutPt )
+	  s0, p0, xVals, fVals, nExactFit, wVals, prm_calcAboutPt );
 	vecDeltaNewton = -matH\vecG;
 	s1 = s0 + vecDeltaNewton(1);
 	p1 = p0 + vecDeltaNewton(2);
-	rvecHTHDiag = sum(matH.^2,1)
-	hScale = sqrt(sum(rvecHTHDiag)/2.0)
+	rvecHTHDiag = sum(matH.^2,1);
+	hScale = sqrt(sum(rvecHTHDiag)/2.0);
 	%
 	%
 	%
@@ -149,7 +149,7 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 		tempCurve.omega0 = omega;
 		tempCurve.vecG = vecG;
 		tempCurve.matH = matH;
-		matDMod =  sqrt( diag(rvecHTHDiag) + (hScale^2)*reguCoeff*eye(2,2) )
+		matDMod =  sqrt( diag(rvecHTHDiag) + (hScale^2)*reguCoeff*eye(2,2) );
 		tempCurve.matD = matDMod;
 		%%%tempCurve.matD = diag(abs(diag(matH))) + hScale*reguCoeff*eye(2,2);
 		tempCurve.numPts = 1000;

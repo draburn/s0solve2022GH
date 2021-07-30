@@ -1,4 +1,5 @@
-function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPtWiseExt, wVals=[], prm=[] )
+function [ s, p, retCode, datOut ] = extFit__findStep( ...
+  s0, p0, xVals, fVals, nExactFit, wVals=[], prm=[] )
 	commondefs;
 	thisFile = "extFit__findStep";
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__NOTIFY );
@@ -18,9 +19,9 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 		xValsAreStrictlyIncreasing = (0==sum( 0.0 >= diff(xVals) ));
 		assert( xValsAreStrictlyIncreasing );
 		assert( isrealarray(fVals,[1,numPts]) );
-		assert( isposintscalar(nPtWiseExt) );
-		assert( 1 <= nPtWiseExt );
-		assert( nPtWiseExt <= numPts );
+		assert( isposintscalar(nExactFit) );
+		assert( 1 <= nExactFit );
+		assert( nExactFit <= numPts );
 		assert( isrealarray(wVals,[1,numPts]) );
 		noWValIsNegative = (0==sum(wVals<0.0));
 		assert( noWValIsNegative );
@@ -30,7 +31,7 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 	%
 	prm_calcAboutPt = mygetfield( prm, "prm_calcAboutPt", [] );
 	[ rhoVals, bigF0, bigF1, omega0, vecG, matH ] = extFit__calcAboutPt( ...
-	  s0, p0, xVals, fVals, nPtWiseExt, wVals, prm_calcAboutPt );
+	  s0, p0, xVals, fVals, nExactFit, wVals, prm_calcAboutPt );
 	assert( omega0 >= 0.0 );
 	assert( matH(1,1) >= 0.0 );
 	assert( matH(2,2) >= 0.0 );
@@ -71,56 +72,41 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 	%
 	%
 	%
-	%
-	%
-	%
-	% Set defaults for pMin and pMax.
-	if ( 1 == nPtWiseExt )
-		sMin = min(xVals) - 1.0*(max(xVals)-min(xVals));
-		sMax = xVals(2)
-	elseif ( numPts == nPtWiseExt )
-		sMin = xVals(numPts-1);
-		sMax = max(xVals) + 1.0*(max(xVals)-min(xVals));
-	else
-		if (doChecks)
-		if ( isempty(mygetfield( prm, "sMin", [] ))  || isempty(mygetfield( prm, "sMax", [] )) )
-		if ( 0.0 < ...
-		    ( fVals(nPtWiseExt+1) - fVals(nPtWiseExt) ) ...
-		  * ( fVals(nPtWiseExt) - fVals(nPtWiseExt-1) )  )
-			msg_warn( verbLev, thisFile, __LINE__, "WARNING: nPtWiseExt is not an exterma." );
-			msg_warn( verbLev, thisFile, __LINE__, "  But, default sMin/Max are set on this basis." );
-		end
-		end
-		sMin = xVals(nPtWiseExt-1);
-		sMax = xVals(nPtWiseExt+1);
-	end
-	pMin = min([ p0, 1.0 ]);
-	pMax = max([ p0, 20.0 ]);
-	%
-	sMin = mygetfield( prm, "sMin", sMin );
-	sMax = mygetfield( prm, "sMax", sMax );
-	pMin = mygetfield( prm, "pMin", pMin );
-	pMax = mygetfield( prm, "pMax", pMax );
+	sMin = mygetfield( prm, "sMin", [] );
+	sMax = mygetfield( prm, "sMax", [] );
+	pMin = mygetfield( prm, "pMin", 0.0 );
+	pMax = mygetfield( prm, "pMax", [] );
 	mu0 = mygetfield( prm, "mu0", eps050 );
 	mu1 = mygetfield( prm, "mu1", 1.0/eps075 );
 	muStep = mygetfield( prm, "muStep", 10.0 );
 	sufficientDecreaseCoeff = mygetfield( prm, "sufficientDecreaseCoeff", 0.01 );
 	if ( doChecks )
-		assert( isrealscalar(sMin) );
-		assert( isrealscalar(sMax) );
-		assert( isrealscalar(pMin) );
-		assert( isrealscalar(pMax) );
+		if (~isempty(sMin))
+			assert( isrealscalar(sMin) );
+			assert( sMin <= s0 );
+		end
+		if (~isempty(sMax))
+			assert( isrealscalar(sMax) );
+			assert( s0 <= sMax );
+		end
+		if (~isempty(pMin))
+			assert( isrealscalar(pMin) );
+			assert( 0.0 <= pMin );
+			assert( pMin <= p0 );
+		end
+		if (~isempty(pMax))
+			assert( isrealscalar(pMax) );
+			assert( p0 <= pMax );
+		end
 		assert( isrealscalar(mu0) );
 		assert( isrealscalar(mu1) );
 		assert( isrealscalar(muStep) );
-		assert( sMin <= s0 );
-		assert( s0 <= sMax );
-		assert( 0.0 < pMin );
-		assert( pMin <= p0 );
-		assert( p0 <= pMax );
 		assert( 0.0 < mu0 );
 		assert( mu0 < mu1 );
 		assert( 1.0 < muStep );
+		assert( isrealscalar(sufficientDecreaseCoeff) );
+		assert( 0.0 <= sufficientDecreaseCoeff );
+		assert( sufficientDecreaseCoeff < 1.0 );
 	end
 	%
 	%
@@ -147,6 +133,27 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 		vecDelta_trial = -(matH + (mu_trial*matD))\vecG;
 		s_trial = s0 + vecDelta_trial(1);
 		p_trial = p0 + vecDelta_trial(2);
+		if ( !isempty(sMin) )
+		if ( s_trial < sMin )
+			continue;
+		end
+		end
+		if ( !isempty(sMax) )
+		if ( s_trial > sMax )
+			continue;
+		end
+		end
+		if ( !isempty(pMin) )
+		if ( p_trial < pMin )
+			continue;
+		end
+		end
+		if ( !isempty(pMax) )
+		if ( p_trial > pMax )
+			continue;
+		end
+		end
+		%
 		deltaOmegaModel_trial = funch_deltaOmegaModel( vecDelta_trial );
 		assert( 0.0 > deltaOmegaModel_trial );
 		if ( abs(deltaOmegaModel_trial) < omega0*eps075 )
@@ -155,12 +162,9 @@ function [ s, p, retCode, datOut ] = extFit__findStep( s0, p0, xVals, fVals, nPt
 			   deltaOmegaModel_trial, omega0 ) );
 			break;
 		end
-		if ( s_trial < sMin || s_trial > sMax ...
-		  || p_trial < pMin || p_trial > pMax )
-			continue;
-		end
+		%
 		[ rhoVals_trial, bigF0_trial, bigF1_trial, omega_trial ] = extFit__calcAtPt( ...
-		  s_trial, p_trial, xVals, fVals, nPtWiseExt, wVals, prm_calcAboutPt );
+		  s_trial, p_trial, xVals, fVals, nExactFit, wVals, prm_calcAboutPt );
 		if ( omega_trial >= omega0 )
 			continue;
 		end
