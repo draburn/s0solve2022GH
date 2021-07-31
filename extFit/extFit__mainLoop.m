@@ -67,9 +67,9 @@ function [ s, p, retCode, datOut ] = extFit__mainLoop( ...
 	%prm_findStep.useLevMarq = false;
 	%
 	% mainLoop params...
-	omegaTol = eps075*sqrt(sum((fVals.*wVals).^2));
+	omegaTol = eps*0.5*sum((fVals.*wVals).^2);
 	deltaSThresh = max([ eps050*(sMax-sMin), eps075*(max(xVals)-min(xVals)) ]);
-	deltaPThresh = eps025;
+	deltaPThresh = eps050;
 	omegaRelThresh = eps025;
 	numIterLimit = 100;
 	omegaTol = mygetfield( prm, "omegaTol", omegaTol );

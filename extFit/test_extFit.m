@@ -28,17 +28,22 @@
 	[ foo, nC ] = min(abs(fVals));
 	tic
 	%viz_extFitPt( xVals, fVals, nC, 0.2, 4.0 );
-	prm = [];
+	prm_viz = [];
 	%prm.sLo = -0.2;
 	%prm.sHi = 0.2;
 	%prm.pLo = 2.0;
 	%prm.pHi = 6.0;
 	%s = 0.2; p = 2.0;
 	%s = 0.0; p = 2.0;
-	s = 0.0; p = 4.0;
+	s = 0.0; p = 3.0;
+	%s = 0.0; p = 4.0;
 	%s = 0.175; p = 2.3925;
-	[ s1, p1 ] = extFit__mainLoop( s, p, xVals, fVals, nC, [] );
-	viz_extFitPt( xVals, fVals, nC, s, p, [], prm );
+	%
+	wVals = [];
+	prm_mainLoop = [];
+	prm_mainLoop.prm_findStep.useLevMarq = true;
+	[ s1, p1 ] = extFit__mainLoop( s, p, xVals, fVals, nC, wVals, prm_mainLoop );
+	viz_extFitPt( xVals, fVals, nC, s, p, wVals, prm_viz );
 	return
 	
 	
