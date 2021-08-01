@@ -36,10 +36,12 @@ function [ s, p, retCode, datOut ] = extFit__mainLoop( ...
 	% findStep params...
 	if ( 1 == nExactFit )
 		sMin = min(xVals) - 1.0*(max(xVals)-min(xVals));
+		sMin = min([ s0-eps, sMin ]);
 		sMax = xVals(2);
 	elseif ( numPts == nExactFit )
 		sMin = xVals(numPts-1);
 		sMax = max(xVals) + 1.0*(max(xVals)-min(xVals));
+		sMax = max([ s0+eps, sMax ]);
 	else
 		if (doChecks)
 		if ( isempty(mygetfield( prm, "sMin", [] ))  || isempty(mygetfield( prm, "sMax", [] )) )

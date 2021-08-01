@@ -16,8 +16,8 @@
 	%%%funchF = @(x)( (x<0).*abs(x).^4.0 + (x>0).*abs(x).^0.5 );
 	%
 	numPts = 5;
-	xVals = randn(1,numPts);
-	%xVals = 1.0+abs(randn(1,numPts));
+	%xVals = randn(1,numPts);
+	xVals = 1.0+abs(randn(1,numPts));
 	%
 	xVals = sort(xVals);
 	numPts = max(size(xVals));
