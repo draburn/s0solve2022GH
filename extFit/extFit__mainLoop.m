@@ -36,7 +36,7 @@ function [ s, p, retCode, datOut ] = extFit__mainLoop( ...
 	% findStep params...
 	if ( 1 == nExactFit )
 		sMin = min(xVals) - 1.0*(max(xVals)-min(xVals));
-		sMax = xVals(2)
+		sMax = xVals(2);
 	elseif ( numPts == nExactFit )
 		sMin = xVals(numPts-1);
 		sMax = max(xVals) + 1.0*(max(xVals)-min(xVals));
@@ -48,6 +48,7 @@ function [ s, p, retCode, datOut ] = extFit__mainLoop( ...
 		  * ( fVals(nExactFit) - fVals(nExactFit-1) )  )
 			msg_warn( verbLev, thisFile, __LINE__, "WARNING: nExactFit is not an exterma." );
 			msg_warn( verbLev, thisFile, __LINE__, "  But, default sMin/Max are set on this basis." );
+		end
 		end
 		end
 		sMin = xVals(nExactFit-1);

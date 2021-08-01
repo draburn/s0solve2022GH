@@ -15,12 +15,12 @@
 	funchF = @(x)( secret_fExt + secret_f1*abs(x-secret_xExt).^secret_p );
 	%%%funchF = @(x)( (x<0).*abs(x).^4.0 + (x>0).*abs(x).^0.5 );
 	%
-	%numPts = 20;
-	%xVals = randn(1,numPts);
 	numPts = 5;
-	xVals = 1.0+abs(randn(1,numPts));
+	xVals = randn(1,numPts);
+	%xVals = 1.0+abs(randn(1,numPts));
 	%
-	xVals = sort(randn(1,numPts));
+	xVals = sort(xVals);
+	numPts = max(size(xVals));
 	fVals = funchF(xVals);
 	%fVals .*= 1.0 + 0.01*randn(1,numPts);
 	%
