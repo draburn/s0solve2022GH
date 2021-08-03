@@ -40,9 +40,9 @@
 	%s = 0.175; p = 2.3925;
 	%
 	wVals = [];
-	prm_mainLoop = [];
-	prm_mainLoop.prm_findStep.useLevMarq = true;
-	[ s1, p1 ] = extFit__mainLoop( s, p, xVals, fVals, nC, wVals, prm_mainLoop );
+	prm_findFit = [];
+	prm_findFit.prm_findStep.useLevMarq = true;
+	[ s1, p1 ] = extFit__findFit( s, p, xVals, fVals, nC, wVals, prm_findFit );
 	viz_extFitPt( xVals, fVals, nC, s, p, wVals, prm_viz );
 	return
 	

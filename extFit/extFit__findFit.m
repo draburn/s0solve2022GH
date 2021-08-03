@@ -1,7 +1,7 @@
-function [ s, p, retCode, datOut ] = extFit__mainLoop( ...
+function [ s, p, retCode, datOut ] = extFit__findFit( ...
   s0, p0, xVals, fVals, nExactFit, wVals=[], prm=[] )
 	commondefs;
-	thisFile = "extFit__mainLoop";
+	thisFile = "extFit__findFit";
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	doChecks = mygetfield( prm, "doChecks", true );
 	datOut = [];
@@ -70,22 +70,26 @@ function [ s, p, retCode, datOut ] = extFit__mainLoop( ...
 	%prm_findStep.useLevMarq = false;
 	%
 	% mainLoop params...
-	omegaTol = eps*0.5*sum((fVals.*wVals).^2);
+	omegaTolCnvg = eps*0.5*sum((fVals.*wVals).^2);
+	omegaTolSucc = eps025*0.5*sum((fVals.*wVals).^2);
 	deltaSThresh = max([ eps050*(sMax-sMin), eps075*(max(xVals)-min(xVals)) ]);
 	deltaPThresh = eps050;
 	omegaRelThresh = eps025;
 	numIterLimit = 100;
-	omegaTol = mygetfield( prm, "omegaTol", omegaTol );
+	omegaTolCnvg = mygetfield( prm, "omegaTolCnvg", omegaTolCnvg );
+	omegaTolSucc = mygetfield( prm, "omegaTolSucc", omegaTolSucc );
 	deltaSThresh = mygetfield( prm, "deltaSThresh", deltaSThresh );
 	deltaPThresh = mygetfield( prm, "deltaPThresh", deltaPThresh );
 	omegaRelThresh = mygetfield( prm, "omegaRelThresh", omegaRelThresh );
 	numIterLimit = mygetfield( prm, "numIterLimit", numIterLimit );
 	if (doChecks)
-		assert( isrealscalar(omegaTol) );
+		assert( isrealscalar(omegaTolCnvg) );
+		assert( isrealscalar(omegaTolSucc) );
 		assert( isrealscalar(deltaSThresh) );
 		assert( isrealscalar(deltaPThresh) );
 		assert( isrealscalar(omegaRelThresh) );
-		assert( 0.0 < omegaTol );
+		assert( 0.0 < omegaTolCnvg );
+		assert( omegaTolCnvg <= omegaTolSucc );
 		assert( 0.0 < deltaSThresh );
 		assert( 0.0 < deltaPThresh );
 		assert( 0.0 < omegaRelThresh );
@@ -114,9 +118,9 @@ function [ s, p, retCode, datOut ] = extFit__mainLoop( ...
 		  "  %3d,   %11.3e, %11.3e,   %11.3e", ...
 		  numIter, s, p, omega ) );
 		% Check success condition first.
-		if ( omega <= omegaTol )
+		if ( omega <= omegaTolCnvg )
 			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
-			  "Converged ( %e <= %e ).", omega, omegaTol ) );
+			  "Converged ( %e <= %e ).", omega, omegaTolCnvg ) );
 			retCode = RETCODE__SUCCESS;
 			return;
 		end
@@ -125,8 +129,8 @@ function [ s, p, retCode, datOut ] = extFit__mainLoop( ...
 		if ( numIter >= numIterLimit )
 			msg_notify( verbLev, thisFile, __LINE__, sprintf( ...
 			  "Reached numIterLimit (%d).", numIterLimit ) );
-			retCode = RETCODE__IMPOSED_STOP;
-			return;
+			retCode = RETCODE__IMPOSED_STOP; % Unless changed below.
+			break;
 		end
 		%
 		%
@@ -136,8 +140,8 @@ function [ s, p, retCode, datOut ] = extFit__mainLoop( ...
 		if ( RETCODE__SUCCESS != retCode )
 			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
 			  "__findStep() was unsuccessful (%d).", retCode ) );
-			retCode = RETCODE__BAD_DEPENDENCY;
-			return; 
+			retCode = RETCODE__BAD_DEPENDENCY; % Unless changed below.
+			break;
 		end
 		if (doChecks)
 			assert( isrealscalar(sNew) );
@@ -166,14 +170,14 @@ function [ s, p, retCode, datOut ] = extFit__mainLoop( ...
 		if ( omega >= omegaPrev )
 			msg_notify( verbLev, thisFile, __LINE__, sprintf( ...
 			  "Failed to decrease omega (%g >= %g).", omega, omegaPrev ) );
-			retCode = RETCODE__ALGORITHM_BREAKDOWN;
-			return;
+			retCode = RETCODE__ALGORITHM_BREAKDOWN; % Unless changed below.
+			break;
 		end
 		if ( abs(omegaPrev-omega) <= abs(omegaPrev*omegaRelThresh) )
 			msg_notify( verbLev, thisFile, __LINE__, sprintf( ...
 			  "Failed to decrease omega sufficiently (%g, %g).", omega, omegaPrev ) );
-			retCode = RETCODE__IMPOSED_STOP;
-			return;
+			retCode = RETCODE__IMPOSED_STOP; % Unless changed below.
+			break;
 		end
 		end
 		%
@@ -189,9 +193,12 @@ function [ s, p, retCode, datOut ] = extFit__mainLoop( ...
 			msg_notify( verbLev, thisFile, __LINE__, sprintf( ...
 			  "Step was too small (%e, %e) vs (%e, %e).", ...
 			  s-sPrev, p-pPrev, deltaSThresh, deltaPThresh ) );
-			retCode = RETCODE__IMPOSED_STOP;
-			return;
+			retCode = RETCODE__IMPOSED_STOP; % Unless changed below.
+			break;
 		end
+	end
+	if ( omega <= omegaTolSucc )
+		retCode = RETCODE__SUCCESS;
 	end
 return;
 end
