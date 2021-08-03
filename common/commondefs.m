@@ -77,9 +77,14 @@ VALLEV__MEDIUM = 200;
 VALLEV__HIGH = 300;
 VALLEV__UNLIMITED = 400;
 
-eps025 = (eps^0.25);
-eps050 = (eps^0.50);
-eps075 = (eps^0.75);
+eps025 = eps^0.25;
+eps050 = eps^0.50;
+eps075 = eps^0.75;
+eps100 = eps;
+eps125 = eps^1.25;
+eps150 = eps^1.50;
+eps175 = eps^1.75;
+eps200 = eps^2;
 
 %!test
 %!	commondefs

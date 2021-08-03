@@ -1,6 +1,6 @@
 	clear;
 	commondefs;
-	thisFile = "viz_extFitter";
+	thisFile = "test_extFit";
 	numFigs = 0;
 	setprngstates(0);
 	%
@@ -16,16 +16,17 @@
 	%%%funchF = @(x)( (x<0).*abs(x).^4.0 + (x>0).*abs(x).^0.5 );
 	%
 	numPts = 5;
-	%xVals = randn(1,numPts);
-	xVals = 1.0+abs(randn(1,numPts));
+	xVals = randn(1,numPts);
+	%xVals = 1.0+abs(randn(1,numPts));
 	%
 	xVals = sort(xVals);
 	numPts = max(size(xVals));
 	fVals = funchF(xVals);
-	%fVals .*= 1.0 + 0.01*randn(1,numPts);
+	fVals .*= 1.0 + 0.01*randn(1,numPts);
 	%
 	%
-	[ foo, nC ] = min(abs(fVals));
+	[ foo, nExactFit ] = min(abs(fVals));
+	wVals = ones(size(fVals));
 	tic
 	%viz_extFitPt( xVals, fVals, nC, 0.2, 4.0 );
 	prm_viz = [];
@@ -33,17 +34,89 @@
 	%prm.sHi = 0.2;
 	%prm.pLo = 2.0;
 	%prm.pHi = 6.0;
-	%s = 0.2; p = 2.0;
-	%s = 0.0; p = 2.0;
-	s = 0.0; p = 3.0;
-	%s = 0.0; p = 4.0;
-	%s = 0.175; p = 2.3925;
+	s0 = 0.0; p0 = 3.0;
 	%
-	wVals = [];
+	prm_viz.numFigs0 = 10;
+	s = s0; p = p0;
+	viz_extFitPt( xVals, fVals, nExactFit, s, p, wVals, prm_viz );
+	%
 	prm_findFit = [];
 	prm_findFit.prm_findStep.useLevMarq = true;
-	[ s1, p1 ] = extFit__findFit( s, p, xVals, fVals, nC, wVals, prm_findFit );
-	viz_extFitPt( xVals, fVals, nC, s, p, wVals, prm_viz );
+	[ s1, p1, retCode ] = extFit__findFit( ...
+	  s0, p0, xVals, fVals, nExactFit, wVals, prm_findFit );
+	msg( thisFile, __LINE__, sprintf( ...
+	  "extFit__findFit() returned %s.", retcode2str(retCode) ) );
+	%
+	prm_calcAboutPt = [];
+	[ rhoVals0, bigF00, bigF10, omega0, vecG0, matH0 ] = extFit__calcAboutPt( ...
+	  s0, p0, xVals, fVals, nExactFit, wVals, prm_calcAboutPt );
+	[ rhoVals1, bigF01, bigF11, omega1, vecG1, matH1 ] = extFit__calcAboutPt( ...
+	  s1, p1, xVals, fVals, nExactFit, wVals, prm_calcAboutPt );
+	funchFModel0 = @(x)(  bigF00 + bigF10 * abs( x - s0 ).^p0  );
+	funchFModel1 = @(x)(  bigF01 + bigF11 * abs( x - s1 ).^p1  );
+	%
+	viz_numPts = 1000;
+	viz_xLo = min(xVals) - 0.3 * ( max(xVals) - min(xVals) );
+	viz_xHi = max(xVals) + 0.3 * ( max(xVals) - min(xVals) );
+	viz_xVals = linspace( viz_xLo, viz_xHi, viz_numPts );
+	%
+	numFigs++; figure(numFigs);
+	plot( ...
+	  xVals, funchFModel1(xVals), 'x', 'linewidth', 3, 'markersize', 15, ...
+	  viz_xVals, funchFModel1(viz_xVals), 'x-', 'linewidth', 1, 'markersize', 5, ...
+	  xVals, funchFModel0(xVals), 'o', 'linewidth', 3, 'markersize', 15, ...
+	  viz_xVals, funchFModel0(viz_xVals), 'o-', 'linewidth', 1, 'markersize', 5, ...
+	  xVals, funchF(xVals), '+', 'linewidth', 3, 'markersize', 15, ...
+	  viz_xVals, funchF(viz_xVals), '+-', 'linewidth', 1, 'markersize', 5, ...
+	  xVals, fVals, 'ko', 'linewidth', 5, 'markersize', 25, ...
+	  xVals, fVals, 'k+', 'linewidth', 5, 'markersize', 25 );
+	grid on;
+	xlabel( "X" );
+	ylabel( "f" );
+	title( "f vs x" );
+	legend( ...
+	  "model 1 pts", ...
+	  "model 1", ...
+	  "model 0 pts", ...
+	  "model 0", ...
+	  "base pts", ...
+	  "base", ...
+	  "actual pts", ...
+	  "actual pts", ...
+	  "location", "north" );
+	%
+	numFigs++; figure(numFigs);
+	plot( ...
+	  xVals, funchFModel1(xVals)-funchF(xVals), 'x', 'linewidth', 3, 'markersize', 15, ...
+	  viz_xVals, funchFModel1(viz_xVals)-funchF(viz_xVals), 'x-', 'linewidth', 1, 'markersize', 5, ...
+	  xVals, fVals-funchF(xVals), 'ko', 'linewidth', 5, 'markersize', 25, ...
+	  xVals, fVals-funchF(xVals), 'k+', 'linewidth', 5, 'markersize', 25 );
+	grid on;
+	xlabel( "X" );
+	ylabel( "f - f base" );
+	title( "f - f base vs x" );
+	legend( ...
+	  "model 1 pts", ...
+	  "model 1", ...
+	  "actual pts", ...
+	  "actual pts", ...
+	  "location", "north" );
+	%
+	numFigs++; figure(numFigs);
+	plot( ...
+	  xVals, funchFModel1(xVals)-fVals, 'x-', 'linewidth', 3, 'markersize', 15, ...
+	  xVals, fVals-fVals, 'ko-', 'linewidth', 5, 'markersize', 25, ...
+	  xVals, fVals-fVals, 'k+-', 'linewidth', 5, 'markersize', 25 );
+	grid on;
+	xlabel( "X" );
+	ylabel( "f - f pts" );
+	title( "f - f pts vs x" );
+	legend( ...
+	  "model 1 pts", ...
+	  "actual pts", ...
+	  "actual pts", ...
+	  "location", "north" );
+	%
 	return
 	
 	

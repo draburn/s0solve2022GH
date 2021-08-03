@@ -70,8 +70,8 @@ function [ s, p, retCode, datOut ] = extFit__findFit( ...
 	%prm_findStep.useLevMarq = false;
 	%
 	% mainLoop params...
-	omegaTolCnvg = eps*0.5*sum((fVals.*wVals).^2);
-	omegaTolSucc = eps025*0.5*sum((fVals.*wVals).^2);
+	omegaTolCnvg = eps100*0.5*sum(wVals.*(fVals.^2));
+	omegaTolSucc = eps025*0.5*sum(wVals.*(fVals.^2));
 	deltaSThresh = max([ eps050*(sMax-sMin), eps075*(max(xVals)-min(xVals)) ]);
 	deltaPThresh = eps050;
 	omegaRelThresh = eps025;
@@ -122,7 +122,7 @@ function [ s, p, retCode, datOut ] = extFit__findFit( ...
 			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
 			  "Converged ( %e <= %e ).", omega, omegaTolCnvg ) );
 			retCode = RETCODE__SUCCESS;
-			return;
+			break;
 		end
 		%
 		% Check imposed stop conditions.
