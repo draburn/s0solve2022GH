@@ -27,10 +27,8 @@
 	%
 	%wVals = ones(size(fVals));
 	wVals = 1.0./(fVals.^2+eps*min(fVals.^2));
-	wVals .^= 0.1;
-	wVals /= sum(wVals)
+	wVals /= sum(wVals);
 	tic
-	%viz_extFitPt( xVals, fVals, nC, 0.2, 4.0 );
 	prm_viz = [];
 	%prm.sLo = -0.2;
 	%prm.sHi = 0.2;
@@ -43,6 +41,8 @@
 	viz_extFitPt( xVals, fVals, s, p, wVals, prm_viz );
 	%
 	prm_findFit = [];
+	prm_findFit.sMin = min(xVals) - 1.0*(max(xVals)-min(xVals));
+	prm_findFit.sMax = max(xVals) + 1.0*(max(xVals)-min(xVals));
 	prm_findFit.prm_findStep.useLevMarq = true;
 	[ s1, p1, retCode ] = extFit__findFit( ...
 	  s0, p0, xVals, fVals, wVals, prm_findFit );

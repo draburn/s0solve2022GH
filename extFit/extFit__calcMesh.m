@@ -19,25 +19,26 @@ function [ bigF0Mesh, bigF1Mesh, omegaMesh ] = extFit__calcMesh( ...
 		assert( atLeastOneWValIsPositive );
 	end
 	%
-	sigma1 = numPts;
-	sigmaF = sum(fVals);
+	sigma1 = sum(wVals);
+	sigmaF = sum(wVals.*fVals);
 	sigmaY = zeros(size1,size2);
 	sigmaYSq = zeros(size1,size2);
 	sigmaYF = zeros(size1,size2);
 	for n=1:numPts
 		yNMesh = abs( xVals(n) - sMesh ).^pMesh;
-		sigmaY += yNMesh;
-		sigmaYSq += (yNMesh.^2);
-		sigmaYF += yNMesh*fVals(n);
+		sigmaY += wVals(n)*yNMesh;
+		sigmaYSq += wVals(n)*(yNMesh.^2);
+		sigmaYF += wVals(n)*yNMesh*fVals(n);
 	end
 	denomMesh = sigma1*sigmaYSq - (sigmaY.^2);
 	bigF0Mesh = ( sigmaYSq*sigmaF - sigmaY.*sigmaYF ) ./ denomMesh;
 	bigF1Mesh = ( sigma1*sigmaYF - sigmaY*sigmaF ) ./ denomMesh;
+	%
 	omegaMesh = zeros(size1,size2);
 	for n=1:numPts
 		yNMesh = abs( xVals(n) - sMesh ).^pMesh;
 		rhoNMesh = bigF0Mesh + bigF1Mesh.*yNMesh - fVals(n);
-		omegaMesh += rhoNMesh.^2;
+		omegaMesh += wVals(n)*(rhoNMesh.^2);
 	end
 	omegaMesh *= 0.5;
 	%

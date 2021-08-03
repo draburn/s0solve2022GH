@@ -11,11 +11,17 @@ function [ rhoVals, bigF0, bigF1, omega, vecG, matH ] = extFit__calcAboutPt( ...
 	%
 	epsS = mygetfield( prm, "epsS", eps^0.25*(max(xVals)-min(xVals)) );
 	epsP = mygetfield( prm, "epsP", eps^0.25 );
+	numPts = size(xVals,2);
 	if ( doChecks )
 		assert( isrealscalar(epsS) );
 		assert( epsS > 0.0 );
 		assert( isrealscalar(epsP) );
 		assert( epsP > 0.0 );
+		assert( isrealarray(wVals,[1,numPts]) );
+		noWValIsNegative = (0==sum(wVals<0.0));
+		assert( noWValIsNegative );
+		atLeastOneWValIsPositive = (1<=sum(wVals>0.0));
+		assert( atLeastOneWValIsPositive );
 	end
 	%
 	prm_calcAtPt = mygetfield( prm, "prm_calcAtPt", [] );
