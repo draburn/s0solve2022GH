@@ -1,4 +1,4 @@
-function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
+function viz_extFitPt( xVals, fVals, s0=[], p0=[], wVals=[], prm=[] )
 	commondefs;
 	thisFile = "viz_extFitPt";
 	doChecks = mygetfield( prm, "doChecks", true );
@@ -14,9 +14,6 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 		xValsAreStrictlyIncreasing = (0==sum( 0.0 >= diff(xVals) ));
 		assert( xValsAreStrictlyIncreasing );
 		assert( isrealarray(fVals,[1,numPts]) );
-		assert( isposintscalar(nExactFit) );
-		assert( 1 <= nExactFit );
-		assert( nExactFit <= numPts );
 		assert( isrealarray(wVals,[1,numPts]) );
 		noWValIsNegative = (0==sum(wVals<0.0));
 		assert( noWValIsNegative );
@@ -26,21 +23,14 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 	%
 	%
 	%
-	if ( isempty(s0) )
-		s0 = xVals(nExactFit);
-	end
-	if ( isempty(p0) )
-		p0 = 2.0;
-	end
 	if ( doChecks )
 		assert( isrealscalar(s0) );
 		assert( isrealscalar(p0) );
-		assert( 0.0 < p0 );
 	end
 	%
 	prm_calcAboutPt = mygetfield( prm, "prm_calcAboutPt", [] );
 	[ rhoVals, bigF0, bigF1, omega, vecG, matH ] = extFit__calcAboutPt( ...
-	  s0, p0, xVals, fVals, nExactFit, wVals, prm_calcAboutPt );
+	  s0, p0, xVals, fVals, wVals, prm_calcAboutPt );
 	vecDeltaNewton = -matH\vecG;
 	s1 = s0 + vecDeltaNewton(1);
 	p1 = p0 + vecDeltaNewton(2);
@@ -88,7 +78,7 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 		end
 		tempCurve.deltaNormVals = sqrt(sum(tempCurve.vecDeltaVals.^2,1));
 		[ tempCurve.bigF0Vals, tempCurve.bigF1Vals, tempCurve.omegaVals ] = extFit__calcMesh( ...
-		  tempCurve.sVals, tempCurve.pVals, xVals, fVals, nExactFit, wVals, prm_calcMesh );
+		  tempCurve.sVals, tempCurve.pVals, xVals, fVals, wVals, prm_calcMesh );
 		%tempCurve.alphaVals = -(tempCurve.matD\tempCurve.vecG)' * tempCurve.vecDeltaVals ...
 		%  ./ ( norm(tempCurve.matD\tempCurve.vecG) * tempCurve.deltaNormVals );
 		tempCurve.vecDDeltaVals = tempCurve.vecDeltaVals(:,2:end) - tempCurve.vecDeltaVals(:,1:end-1);
@@ -133,7 +123,7 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 		end
 		tempCurve.deltaNormVals = sqrt(sum(tempCurve.vecDeltaVals.^2,1));
 		[ tempCurve.bigF0Vals, tempCurve.bigF1Vals, tempCurve.omegaVals ] = extFit__calcMesh( ...
-		  tempCurve.sVals, tempCurve.pVals, xVals, fVals, nExactFit, wVals, prm_calcMesh );
+		  tempCurve.sVals, tempCurve.pVals, xVals, fVals, wVals, prm_calcMesh );
 		%tempCurve.alphaVals = -(tempCurve.matD\tempCurve.vecG)' * tempCurve.vecDeltaVals ...
 		%  ./ ( norm(tempCurve.matD\tempCurve.vecG) * tempCurve.deltaNormVals );
 		tempCurve.vecDDeltaVals = tempCurve.vecDeltaVals(:,2:end) - tempCurve.vecDeltaVals(:,1:end-1);
@@ -180,7 +170,7 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 		end
 		tempCurve.deltaNormVals = sqrt(sum(tempCurve.vecDeltaVals.^2,1));
 		[ tempCurve.bigF0Vals, tempCurve.bigF1Vals, tempCurve.omegaVals ] = extFit__calcMesh( ...
-		  tempCurve.sVals, tempCurve.pVals, xVals, fVals, nExactFit, wVals, prm_calcMesh );
+		  tempCurve.sVals, tempCurve.pVals, xVals, fVals, wVals, prm_calcMesh );
 		%tempCurve.alphaVals = -(tempCurve.matD\tempCurve.vecG)' * tempCurve.vecDeltaVals ...
 		%  ./ ( norm(tempCurve.matD\tempCurve.vecG) * tempCurve.deltaNormVals );
 		tempCurve.vecDDeltaVals = tempCurve.vecDeltaVals(:,2:end) - tempCurve.vecDeltaVals(:,1:end-1);
@@ -193,15 +183,16 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 	%
 	%
 	%
-	if ( 1 == nExactFit )
+	[ foo, nCrit ] = min(fVals);
+	if ( 1 == nCrit )
 		sLo = xVals(1) - 1.0*(xVals(numPts)-xVals(1));
 		sHi = xVals(2);
-	elseif ( numPts == nExactFit )
+	elseif ( numPts == nCrit )
 		sLo = xVals(numPts-1);
 		sHi = xVals(numPts) + 1.0*(xVals(numPts)-xVals(1));
 	else
-		sLo = xVals(nExactFit-1);
-		sHi = xVals(nExactFit+1);
+		sLo = xVals(nCrit-1);
+		sHi = xVals(nCrit+1);
 	end
 	sLo = min([ sLo, s0 ]);
 	sHi = max([ sHi, s0 ]);
@@ -234,7 +225,7 @@ function viz_extFitPt( xVals, fVals, nExactFit, s0=[], p0=[], wVals=[], prm=[] )
 	size2 = size(sMesh,2);
 	%
 	[ bigF0Mesh, bigF1Mesh, omegaMesh ] = extFit__calcMesh( ...
-	  sMesh, pMesh, xVals, fVals, nExactFit, wVals, prm_calcMesh );
+	  sMesh, pMesh, xVals, fVals, wVals, prm_calcMesh );
 	%
 	%
 	%

@@ -1,5 +1,5 @@
 function [ s, p, retCode, datOut ] = extFit__findFit( ...
-  s0, p0, xVals, fVals, nExactFit, wVals=[], prm=[] )
+  s0, p0, xVals, fVals, wVals, prm=[] )
 	commondefs;
 	thisFile = "extFit__findFit";
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
@@ -7,75 +7,35 @@ function [ s, p, retCode, datOut ] = extFit__findFit( ...
 	datOut = [];
 	%
 	numPts = size(xVals,2);
-	if ( isempty(wVals) )
-		wVals = ones(size(xVals));
-	end
 	if ( doChecks )
 		assert( isrealscalar(s0) );
 		assert( isrealscalar(p0) );
-		assert( 0.0 < p0 );
-		assert( numPts >= 3 );
 		assert( isrealarray(xVals,[1,numPts]) );
-		xValsAreStrictlyIncreasing = (0==sum( 0.0 >= diff(xVals) ));
-		assert( xValsAreStrictlyIncreasing );
-		assert( isrealarray(fVals,[1,numPts]) );
-		assert( isposintscalar(nExactFit) );
-		assert( 1 <= nExactFit );
-		assert( nExactFit <= numPts );
-		assert( isrealarray(wVals,[1,numPts]) );
-		noWValIsNegative = (0==sum(wVals<0.0));
-		assert( noWValIsNegative );
-		atLeastOneWValIsPositive = (1<=sum(wVals>0.0));
-		assert( atLeastOneWValIsPositive );
 	end
 	%
 	%
 	%
 	% Process parameters...
+	sMin = mygetfield( prm, "sMin", [] );
+	sMax = mygetfield( prm, "sMax", [] );
+	pMin = mygetfield( prm, "pMin", 0.0 );
+	pMax = mygetfield( prm, "pMax", [] );
 	%
-	% findStep params...
-	if ( 1 == nExactFit )
-		sMin = min(xVals) - 1.0*(max(xVals)-min(xVals));
-		sMin = min([ s0-eps, sMin ]);
-		sMax = xVals(2);
-	elseif ( numPts == nExactFit )
-		sMin = xVals(numPts-1);
-		sMax = max(xVals) + 1.0*(max(xVals)-min(xVals));
-		sMax = max([ s0+eps, sMax ]);
-	else
-		if (doChecks)
-		if ( isempty(mygetfield( prm, "sMin", [] ))  || isempty(mygetfield( prm, "sMax", [] )) )
-		if ( 0.0 < ...
-		    ( fVals(nExactFit+1) - fVals(nExactFit) ) ...
-		  * ( fVals(nExactFit) - fVals(nExactFit-1) )  )
-			msg_warn( verbLev, thisFile, __LINE__, "WARNING: nExactFit is not an exterma." );
-			msg_warn( verbLev, thisFile, __LINE__, "  But, default sMin/Max are set on this basis." );
-		end
-		end
-		end
-		sMin = xVals(nExactFit-1);
-		sMax = xVals(nExactFit+1);
-	end
-	pMin = min([ p0, 1.0 ]);
-	pMax = max([ p0, 20.0 ]);
-	prm_findStep = mygetfield( prm, "prm_findStep", [] );
-	sMin = mygetfield( prm_findStep, "sMin", sMin );
-	sMax = mygetfield( prm_findStep, "sMax", sMax );
-	pMin = mygetfield( prm_findStep, "pMin", pMin );
-	pMax = mygetfield( prm_findStep, "pMax", pMax );
-	prm_findStep.sMin = sMin;
-	prm_findStep.sMax = sMax;
-	prm_findStep.pMin = pMin;
-	prm_findStep.pMax = pMax;
-	%prm_findStep.useLevMarq = false;
-	%
-	% mainLoop params...
+	% Defaults...
 	omegaTolCnvg = eps100*0.5*sum(wVals.*(fVals.^2));
 	omegaTolSucc = eps025*0.5*sum(wVals.*(fVals.^2));
-	deltaSThresh = max([ eps050*(sMax-sMin), eps075*(max(xVals)-min(xVals)) ]);
+	deltaSThresh = eps075*(max(xVals)-min(xVals));
+	if ( ~isempty(sMin)  &&  ~isempty(sMax)  )
+		deltaSThresh = max([ deltaSThresh, eps050*(sMax-sMin) ]);
+	end
 	deltaPThresh = eps050;
+	if ( ~isempty(pMin)  &&  ~isempty(pMax)  )
+		deltaPThresh = max([ deltaPThres, eps050*(pMax-pMin) ]);
+	end
 	omegaRelThresh = eps025;
 	numIterLimit = 100;
+	%
+	% More params...
 	omegaTolCnvg = mygetfield( prm, "omegaTolCnvg", omegaTolCnvg );
 	omegaTolSucc = mygetfield( prm, "omegaTolSucc", omegaTolSucc );
 	deltaSThresh = mygetfield( prm, "deltaSThresh", deltaSThresh );
@@ -97,10 +57,20 @@ function [ s, p, retCode, datOut ] = extFit__findFit( ...
 		assert( isposintscalar(numIterLimit) );
 	end
 	%
-	% calcAtPt params...
 	prm_calcAtPt = mygetfield( prm, "prm_calcAtPt", [] );
+	%
+	prm_findStep = mygetfield( prm, "prm_findStep", [] );
+	prm_findStep.sMin = sMin;
+	prm_findStep.sMax = sMax;
+	prm_findStep.pMin = pMin;
+	prm_findStep.pMax = pMax;
+	%
+	%
+	%
+	% DO WORK
+	%
 	[ rhoVals0, bigF00, bigF10, omega0 ] = extFit__calcAtPt( ...
-	  s0, p0, xVals, fVals, nExactFit, wVals, prm_calcAtPt );
+	  s0, p0, xVals, fVals, wVals, prm_calcAtPt );
 	if (doChecks)
 		assert( isrealscalar(omega0) );
 		assert( 0.0 <= omega0 );
@@ -136,7 +106,7 @@ function [ s, p, retCode, datOut ] = extFit__findFit( ...
 		%
 		%
 		[ sNew, pNew, retCode, datOut_findStep ] = extFit__findStep( ...
-		  s, p, xVals, fVals, nExactFit, wVals, prm_findStep );
+		  s, p, xVals, fVals, wVals, prm_findStep );
 		if ( RETCODE__SUCCESS != retCode )
 			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
 			  "__findStep() was unsuccessful (%d).", retCode ) );
@@ -160,7 +130,7 @@ function [ s, p, retCode, datOut ] = extFit__findFit( ...
 			end
 		end
 		[ rhoValsNew, bigF0New, bigF1New, omegaNew ] = extFit__calcAtPt( ...
-		  sNew, pNew, xVals, fVals, nExactFit, wVals, prm_calcAtPt );
+		  sNew, pNew, xVals, fVals, wVals, prm_calcAtPt );
 		if (doChecks)
 			assert( isrealscalar(omegaNew) );
 			assert( 0.0 <= omegaNew );

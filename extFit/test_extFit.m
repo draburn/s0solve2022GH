@@ -4,20 +4,20 @@
 	numFigs = 0;
 	setprngstates(0);
 	%
-	secret_p = 3.23
-	secret_xExt = 0.14
-	secret_fExt = 0.024
-	secret_f1 = 0.76;
-	%secret_xExt = 0.0
-	%secret_p = 4.0
-	%secret_fExt = 0.0
-	%secret_f1 = 1.0;
+	%secret_p = 3.23
+	%secret_xExt = 0.14
+	%secret_fExt = 0.024
+	%secret_f1 = 0.76;
+	secret_xExt = 0.0
+	secret_p = 6.73
+	secret_fExt = 0.0
+	secret_f1 = 1.0;
 	funchF = @(x)( secret_fExt + secret_f1*abs(x-secret_xExt).^secret_p );
 	%%%funchF = @(x)( (x<0).*abs(x).^4.0 + (x>0).*abs(x).^0.5 );
 	%
-	numPts = 5;
-	xVals = randn(1,numPts);
-	%xVals = 1.0+abs(randn(1,numPts));
+	numPts = 10;
+	%xVals = randn(1,numPts);
+	xVals = 1.0+abs(randn(1,numPts));
 	%
 	xVals = sort(xVals);
 	numPts = max(size(xVals));
@@ -25,8 +25,10 @@
 	fVals .*= 1.0 + 0.01*randn(1,numPts);
 	%
 	%
-	[ foo, nExactFit ] = min(abs(fVals));
-	wVals = ones(size(fVals));
+	%wVals = ones(size(fVals));
+	wVals = 1.0./(fVals.^2+eps*min(fVals.^2));
+	wVals .^= 0.1;
+	wVals /= sum(wVals)
 	tic
 	%viz_extFitPt( xVals, fVals, nC, 0.2, 4.0 );
 	prm_viz = [];
@@ -36,22 +38,22 @@
 	%prm.pHi = 6.0;
 	s0 = 0.0; p0 = 3.0;
 	%
-	prm_viz.numFigs0 = 10;
+	prm_viz.numFigs0 = numFigs+10;
 	s = s0; p = p0;
-	viz_extFitPt( xVals, fVals, nExactFit, s, p, wVals, prm_viz );
+	viz_extFitPt( xVals, fVals, s, p, wVals, prm_viz );
 	%
 	prm_findFit = [];
 	prm_findFit.prm_findStep.useLevMarq = true;
 	[ s1, p1, retCode ] = extFit__findFit( ...
-	  s0, p0, xVals, fVals, nExactFit, wVals, prm_findFit );
+	  s0, p0, xVals, fVals, wVals, prm_findFit );
 	msg( thisFile, __LINE__, sprintf( ...
 	  "extFit__findFit() returned %s.", retcode2str(retCode) ) );
 	%
 	prm_calcAboutPt = [];
 	[ rhoVals0, bigF00, bigF10, omega0, vecG0, matH0 ] = extFit__calcAboutPt( ...
-	  s0, p0, xVals, fVals, nExactFit, wVals, prm_calcAboutPt );
+	  s0, p0, xVals, fVals, wVals, prm_calcAboutPt );
 	[ rhoVals1, bigF01, bigF11, omega1, vecG1, matH1 ] = extFit__calcAboutPt( ...
-	  s1, p1, xVals, fVals, nExactFit, wVals, prm_calcAboutPt );
+	  s1, p1, xVals, fVals, wVals, prm_calcAboutPt );
 	funchFModel0 = @(x)(  bigF00 + bigF10 * abs( x - s0 ).^p0  );
 	funchFModel1 = @(x)(  bigF01 + bigF11 * abs( x - s1 ).^p1  );
 	%

@@ -1,37 +1,20 @@
 function [ s, p, retCode, datOut ] = extFit__findStep( ...
-  s0, p0, xVals, fVals, nExactFit, wVals=[], prm=[] )
+  s0, p0, xVals, fVals, wVals, prm=[] )
 	commondefs;
 	thisFile = "extFit__findStep";
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__NOTIFY );
 	doChecks = mygetfield( prm, "doChecks", true );
 	datOut = [];
 	%
-	if ( isempty(wVals) )
-		wVals = ones(size(xVals));
-	end
 	if ( doChecks )
 		assert( isrealscalar(s0) );
 		assert( isrealscalar(p0) );
 		assert( 0.0 < p0 );
-		numPts = size(xVals,2);
-		assert( numPts >= 3 );
-		assert( isrealarray(xVals,[1,numPts]) );
-		xValsAreStrictlyIncreasing = (0==sum( 0.0 >= diff(xVals) ));
-		assert( xValsAreStrictlyIncreasing );
-		assert( isrealarray(fVals,[1,numPts]) );
-		assert( isposintscalar(nExactFit) );
-		assert( 1 <= nExactFit );
-		assert( nExactFit <= numPts );
-		assert( isrealarray(wVals,[1,numPts]) );
-		noWValIsNegative = (0==sum(wVals<0.0));
-		assert( noWValIsNegative );
-		atLeastOneWValIsPositive = (1<=sum(wVals>0.0));
-		assert( atLeastOneWValIsPositive );
 	end
 	%
 	prm_calcAboutPt = mygetfield( prm, "prm_calcAboutPt", [] );
 	[ rhoVals, bigF0, bigF1, omega0, vecG, matH ] = extFit__calcAboutPt( ...
-	  s0, p0, xVals, fVals, nExactFit, wVals, prm_calcAboutPt );
+	  s0, p0, xVals, fVals, wVals, prm_calcAboutPt );
 	assert( omega0 >= 0.0 );
 	assert( matH(1,1) >= 0.0 );
 	assert( matH(2,2) >= 0.0 );
@@ -164,7 +147,7 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 		end
 		%
 		[ rhoVals_trial, bigF0_trial, bigF1_trial, omega_trial ] = extFit__calcAtPt( ...
-		  s_trial, p_trial, xVals, fVals, nExactFit, wVals, prm_calcAboutPt );
+		  s_trial, p_trial, xVals, fVals, wVals, prm_calcAboutPt );
 		if ( omega_trial >= omega0 )
 			continue;
 		end
