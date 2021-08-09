@@ -11,6 +11,12 @@ function [ s, p, retCode, datOut ] = extFit( xVals, fVals, wVals=[], prm=[] )
 	%  but _genInitialGuess and _findFit are needed below that.
 	% datOut is similarly passed back up.
 	%
+	msg( thisFile, __LINE__, "TODO..." );
+	msg( thisFile, __LINE__, "  * Handle retCode value from _calcAtPt and _calcAboutPT." );
+	msg( thisFile, __LINE__, "  * Set s/p min/max." );
+	msg( thisFile, __LINE__, "  * Broader testing." );
+	msg( thisFile, __LINE__, "  * Replace 'doChecks' with varLev." );
+	%
 	numPts = size(xVals,2);
 	if ( isempty(wVals) )
 		wVals = ones(1,numPts);

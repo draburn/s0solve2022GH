@@ -85,6 +85,8 @@ eps125 = eps^1.25;
 eps150 = eps^1.50;
 eps175 = eps^1.75;
 eps200 = eps^2;
+eps250 = eps^2.50;
+eps300 = eps^3.00;
 
 %!test
 %!	commondefs

@@ -2,8 +2,15 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
   s0, p0, xVals, fVals, wVals, prm=[] )
 	commondefs;
 	thisFile = "extFit__findStep";
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__NOTIFY );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__NOTIFY );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	doChecks = mygetfield( prm, "doChecks", true );
+	%
+	% Default return values.
+	s = s0;
+	p = p0;
+	retCode = RETCODE__NOT_SET;
 	datOut = [];
 	%
 	if ( doChecks )
@@ -12,9 +19,25 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 		assert( 0.0 < p0 );
 	end
 	%
+	%
 	prm_calcAboutPt = mygetfield( prm, "prm_calcAboutPt", [] );
-	[ rhoVals, bigF0, bigF1, omega0, vecG, matH ] = extFit__calcAboutPt( ...
+	[ rhoVals, bigF0, bigF1, omega0, vecG, matH, retCode ] = extFit__calcAboutPt( ...
 	  s0, p0, xVals, fVals, wVals, prm_calcAboutPt );
+	if ( RETCODE__SUCCESS ~= retCode )
+		msg_warn( verbLev, thisFile, __LINE__, "Calculation about initial point failed." );
+		retCode = RETCODE__BAD_INPUT;
+		return;
+	end
+	retCode = RETCODE__NOT_SET;
+	if ( verbLev >= VERBLEV__COPIOUS )
+		msg( thisFile, __LINE__, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" );
+		echo__bigF0 = bigF0
+		echo__bigF1 = bigF1
+		echo__omega0 = omega0
+		echo__matH = matH
+		echo__vecG = vecG
+		msg( thisFile, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" );
+	end
 	assert( omega0 >= 0.0 );
 	assert( matH(1,1) >= 0.0 );
 	assert( matH(2,2) >= 0.0 );
@@ -24,23 +47,17 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 	assert(~(  0.0 == matH(2,2)  &&  0.0 ~= vecG(2)  ));
 	if ( omega0 == 0.0 )
 		msg_notify( verbLev, thisFile, __LINE__, "Initial omega is already zero." );
-		s = s0;
-		p = p0;
 		retCode = RETCODE__ALGORITHM_BREAKDOWN;
 		return;
 	end
 	if ( norm(vecG) == 0.0 )
 		msg_notify( verbLev, thisFile, __LINE__, "Initial gradient is zero." );
-		s = s0;
-		p = p0;
 		retCode = RETCODE__ALGORITHM_BREAKDOWN;
 		return;
 	end
 	if (  0.0 == matH(1,1)  ||  0.0 == matH(2,2)  )
 		msg_notify( verbLev, thisFile, __LINE__, ...
 		  "Hessian has a zero on-diagonal; this case is not supported." );
-		s = s0;
-		p = p0;
 		retCode = RETCODE__ALGORITHM_BREAKDOWN;
 		return;
 	end
@@ -146,8 +163,21 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 			break;
 		end
 		%
-		[ rhoVals_trial, bigF0_trial, bigF1_trial, omega_trial ] = extFit__calcAtPt( ...
+		[ rhoVals_trial, bigF0_trial, bigF1_trial, omega_trial, retCode ] = extFit__calcAtPt( ...
 		  s_trial, p_trial, xVals, fVals, wVals, prm_calcAboutPt );
+		if ( RETCODE__SUCCESS ~= retCode )
+			msg_progress( verbLev, thisFile, __LINE__, sprintf( "Calculation failed for mu = %g.", mu_trial ) );
+			if ( verbLev >= VERBLEV__COPIOUS )
+				msg( thisFile, __LINE__, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" );
+				echo__mu_trial = mu_trial
+				echo__s_trial = s_trial
+				echo__p_trial = p_trial
+				msg( thisFile, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" );
+			end
+			continue;
+		end
+		retCode = RETCODE__NOT_SET;
+		assert( 0.0 <= omega_trial );
 		if ( omega_trial >= omega0 )
 			continue;
 		end
@@ -165,7 +195,5 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 	%
 	msg_main( verbLev, thisFile, __LINE__, sprintf( ...
 	  "Failed to decrease omega from %g.", omega0 )  );
-	s = s0;
-	p = p0;
 return;
 end

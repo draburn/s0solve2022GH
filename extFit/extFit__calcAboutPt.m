@@ -1,6 +1,7 @@
-function [ rhoVals, bigF0, bigF1, omega, vecG, matH ] = extFit__calcAboutPt( ...
+function [ rhoVals, bigF0, bigF1, omega, vecG, matH, retCode ] = extFit__calcAboutPt( ...
   s, p, xVals, fVals, wVals, prm=[] )
 	%
+	commondefs;
 	thisFile = "extFit__calcAboutPt";
 	doChecks = mygetfield( prm, "doChecks", true );
 	%
@@ -25,12 +26,31 @@ function [ rhoVals, bigF0, bigF1, omega, vecG, matH ] = extFit__calcAboutPt( ...
 	end
 	%
 	prm_calcAtPt = mygetfield( prm, "prm_calcAtPt", [] );
-	[ rhoVals, bigF0, bigF1, omega ] = extFit__calcAtPt( ...
+	[ rhoVals, bigF0, bigF1, omega, retCode ] = extFit__calcAtPt(
 	  s, p, xVals, fVals, wVals, prm_calcAtPt );
-	rhoVals_p0 = extFit__calcAtPt( s+epsS, p, xVals, fVals, wVals, prm_calcAtPt );
-	rhoVals_m0 = extFit__calcAtPt( s-epsS, p, xVals, fVals, wVals, prm_calcAtPt );
-	rhoVals_0p = extFit__calcAtPt( s, p+epsP, xVals, fVals, wVals, prm_calcAtPt );
-	rhoVals_0m = extFit__calcAtPt( s, p-epsP, xVals, fVals, wVals, prm_calcAtPt );
+	if ( RETCODE__SUCCESS ~= retCode )
+		return;
+	end
+	[ rhoVals_p0, f0, f1, f2, retCode ] = extFit__calcAtPt( s+epsS, p, xVals, fVals, wVals, prm_calcAtPt );
+	if ( RETCODE__SUCCESS ~= retCode )
+		return;
+	end
+	[ rhoVals_m0, f0, f1, f2, retCode ] = extFit__calcAtPt( s-epsS, p, xVals, fVals, wVals, prm_calcAtPt );
+	if ( RETCODE__SUCCESS ~= retCode )
+		return;
+	end
+	[ rhoVals_0p, f0, f1, f2, retCode ] = extFit__calcAtPt( s, p+epsP, xVals, fVals, wVals, prm_calcAtPt );
+	if ( RETCODE__SUCCESS ~= retCode )
+		return;
+	end
+	[ rhoVals_0m, f0, f1, f2, retCode ] = extFit__calcAtPt( s, p-epsP, xVals, fVals, wVals, prm_calcAtPt );
+	if ( RETCODE__SUCCESS ~= retCode )
+		return;
+	end
+	%rhoVals_p0 = extFit__calcAtPt( s+epsS, p, xVals, fVals, wVals, prm_calcAtPt );
+	%rhoVals_m0 = extFit__calcAtPt( s-epsS, p, xVals, fVals, wVals, prm_calcAtPt );
+	%rhoVals_0p = extFit__calcAtPt( s, p+epsP, xVals, fVals, wVals, prm_calcAtPt );
+	%rhoVals_0m = extFit__calcAtPt( s, p-epsP, xVals, fVals, wVals, prm_calcAtPt );
 	rhoDSVals = ( rhoVals_p0 - rhoVals_m0 ) / ( 2.0*epsS );
 	rhoDPVals = ( rhoVals_0p - rhoVals_0m ) / ( 2.0*epsP );
 	%
@@ -43,5 +63,6 @@ function [ rhoVals, bigF0, bigF1, omega, vecG, matH ] = extFit__calcAboutPt( ...
 	vecG = [ sigma0S; sigma0P ];
 	matH = [ sigmaSS, sigmaSP; sigmaSP, sigmaPP ];
 	%
+	retCode = RETCODE__SUCCESS;
 return;
 end
