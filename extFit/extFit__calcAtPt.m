@@ -24,6 +24,10 @@ function [ rhoVals, bigF0, bigF1, omega ] = extFit__calcAtPt(
 	%
 	% Least-squares fit to f = F0 + F1 * | x - s |^p.
 	yVals = abs( xVals - s ).^p;
+	if ( doChecks )
+		assert( isrealarray(yVals,[1,numPts]) );
+		% 47^209 = Inf, for example.
+	end
 	vecF = fVals';
 	matY = [ ones(numPts,1), yVals' ];
 	matW = diag(sqrt(wVals));
