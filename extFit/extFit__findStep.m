@@ -89,6 +89,9 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 			assert( isrealscalar(sMax) );
 			assert( s0 <= sMax );
 		end
+		if ( ~isempty(sMin) && ~isempty(sMax) )
+			assert( sMin < sMax );
+		end
 		if (~isempty(pMin))
 			assert( isrealscalar(pMin) );
 			assert( 0.0 <= pMin );
@@ -97,6 +100,9 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 		if (~isempty(pMax))
 			assert( isrealscalar(pMax) );
 			assert( p0 <= pMax );
+		end
+		if ( ~isempty(pMin) && ~isempty(pMax) )
+			assert( pMin < pMax );
 		end
 		assert( isrealscalar(mu0) );
 		assert( isrealscalar(mu1) );

@@ -5,6 +5,24 @@ function [ s0, p0, retCode, datOut ] = extFit__genInitialGuess( xVals, fVals, wV
 	doChecks = mygetfield( prm, "doChecks", true );
 	datOut = [];
 	%
+	%
+	%
+	if (1)
+		msg( thisFile, __LINE__, "HACK! Forcing initial guess..." );
+		p0 = 2.0;
+		%s0 = xVals(2)+0.0236742;
+		s0 = xVals(2)+0.0236743;
+		retCode = RETCODE__SUCCESS;
+		return
+	end
+	if (1)
+		msg( thisFile, __LINE__, "HACK! Overiding wVals for initial guess..." );
+		wVals(:) = 0.0;
+		wVals(1:3) = 1.0;
+	end
+	%
+	%
+	%
 	p0 = mygetfield( prm, "p0", 2.0 );
 	assert( isrealscalar(p0) );
 	assert( 0.0 < p0 );

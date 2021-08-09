@@ -1,4 +1,4 @@
-function [ s, p, retCode, datOut ] = extFit__findFit( ...
+function [ s, p, bigF0, bigF1, retCode, datOut ] = extFit__findFit( ...
   s0, p0, xVals, fVals, wVals, prm=[] )
 	commondefs;
 	thisFile = "extFit__findFit";
@@ -75,7 +75,8 @@ function [ s, p, retCode, datOut ] = extFit__findFit( ...
 	[ rhoVals0, bigF00, bigF10, omega0, retCode ] = extFit__calcAtPt( ...
 	  s0, p0, xVals, fVals, wVals, prm_calcAtPt );
 	if ( RETCODE__SUCCESS ~= retCode )
-		msg_error( verbLev, thisFile, __LINE__, "__calcAtPt() failed for initial guess." );
+		msg_error( verbLev, thisFile, __LINE__, sprintf( ...
+		  "__calcAtPt() failed for initial guess (%d).", retCode ) );
 		return;
 	end
 	retCode = RETCODE__NOT_SET;
@@ -88,6 +89,8 @@ function [ s, p, retCode, datOut ] = extFit__findFit( ...
 	%
 	s = s0;
 	p = p0;
+	bigF0 = bigF00;
+	bigF1 = bigF10;
 	omega = omega0;
 	numIter = 0;
 	omegaPrev = -1.0;
@@ -163,9 +166,13 @@ function [ s, p, retCode, datOut ] = extFit__findFit( ...
 		% Accept new values.
 		sPrev = s;
 		pPrev = p;
+		bigF0Prev = bigF0;
+		bigF1Prev = bigF1;
 		omegaPrev = omega;
 		s = sNew;
 		p = pNew;
+		bigF0 = bigF0New;
+		bigF1 = bigF1New;
 		omega = omegaNew;
 		%
 		if ( abs(omegaPrev-omega) <= abs(omegaPrev*omegaRelThresh) )
