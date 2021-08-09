@@ -17,7 +17,7 @@ function [ s, p, retCode, datOut ] = extFit( xVals, fVals, wVals=[], prm=[] )
 	msg( thisFile, __LINE__, "  * Broader testing." );
 	msg( thisFile, __LINE__, "  * Replace 'doChecks' with varLev." );
 	msg( thisFile, __LINE__, "Recently done..." );
-	msg( thisFile, __LINE__, "  * Handle retCode value from _calcAtPt and _calcAboutPT." );
+	msg( thisFile, __LINE__, "  * Check normalization." );
 	%
 	numPts = size(xVals,2);
 	if ( isempty(wVals) )
@@ -76,7 +76,7 @@ function [ s, p, retCode, datOut ] = extFit( xVals, fVals, wVals=[], prm=[] )
 	%
 	% Use retCode and prm directly with __internal.
 	[ s_normalized, p_normalized, retCode, datOut ] = ...
-	  extFit__internal( xVals_normalized, fVals_sorted, wVals_sorted, prm );
+	  extFit__internal( xVals_normalized, fVals_normalized, wVals_normalized, prm );
 	if ( retCode == RETCODE__SUCCESS
 	  || retCode == RETCODE__IMPOSED_STOP
 	  || retCode == RETCODE__ALGORITHM_BREAKDOWN )
@@ -84,7 +84,6 @@ function [ s, p, retCode, datOut ] = extFit( xVals, fVals, wVals=[], prm=[] )
 		% more or less reasonable results.
 		assert( isrealscalar(s_normalized) );
 		assert( isrealscalar(p_normalized) );
-		assert( p_normalized > 0.0 );
 		s = xMin + s_normalized*(xMax-xMin);
 		p = p_normalized;
 		[ rhoVals_normalized, ...
@@ -100,7 +99,7 @@ function [ s, p, retCode, datOut ] = extFit( xVals, fVals, wVals=[], prm=[] )
 		   prm );
 		datOut.rhoVals = fMin + rhoVals_normalized*(fMax-fMin);
 		datOut.bigF0 = fMin + bigF0_normalized*(fMax-fMin);
-		datOut.bigF1 = fMin + bigF1_normalized*(fMax-fMin)/((xMax-xMin)^p);
+		datOut.bigF1 = bigF1_normalized*(fMax-fMin)/((xMax-xMin)^p);
 		datOut.omega = omega_normalized * wSum;
 	else
 		s = (xMax+xMin)/2.0;

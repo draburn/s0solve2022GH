@@ -25,6 +25,7 @@ function [ s, p, retCode, datOut ] = extFit__findFit( ...
 	%
 	% Defaults...
 	omegaTolCnvg = eps100*0.5*sum(wVals.*(fVals.^2));
+	%omegaTolCnvg = eps150*0.5*sum(wVals.*(fVals.^2)); % If you want to be very accurate.
 	omegaTolSucc = eps025*0.5*sum(wVals.*(fVals.^2));
 	deltaSThresh = eps075*(max(xVals)-min(xVals));
 	if ( ~isempty(sMin)  &&  ~isempty(sMax)  )
