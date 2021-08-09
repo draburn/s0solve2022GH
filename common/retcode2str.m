@@ -5,7 +5,16 @@
 %    Generates a string describing the integer return code.
 function str = retcode2str( retCode )
 	commondefs;
-	if ( RETCODE__SUCCESS == retCode )
+	if (isempty(retCode))
+		str = "<< The return code was null ([]). >>";
+		return;
+	elseif (~isrealscalar(retCode))
+		str = "<< The return code is not a real scalar. >>";
+		return;
+	elseif ( abs(retCode-round(retCode)) > eps050*abs(retCode) )
+		str = sprintf( "<< The return code is not an integer (%g). >>", retCode );
+		return;
+	elseif ( RETCODE__SUCCESS == retCode )
 		str0 = "Success";
 	elseif ( RETCODE__IMPOSED_STOP == retCode )
 		str0 = "Imposed Stop";
