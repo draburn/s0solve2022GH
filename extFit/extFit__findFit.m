@@ -11,6 +11,8 @@ function [ s, p, retCode, datOut ] = extFit__findFit( ...
 		assert( isrealscalar(s0) );
 		assert( isrealscalar(p0) );
 		assert( isrealarray(xVals,[1,numPts]) );
+		assert( isrealarray(fVals,[1,numPts]) );
+		assert( isrealarray(wVals,[1,numPts]) );
 	end
 	%
 	%
@@ -85,7 +87,7 @@ function [ s, p, retCode, datOut ] = extFit__findFit( ...
 	omegaPrev = -1.0;
 	while (1)
 		msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
-		  "  %3d,   %11.3e, %11.3e,   %11.3e", ...
+		  "   %3d,   %11.3e, %11.3e,   %11.3e", ...
 		  numIter, s, p, omega ) );
 		% Check success condition first.
 		if ( omega <= omegaTolCnvg )
@@ -110,7 +112,7 @@ function [ s, p, retCode, datOut ] = extFit__findFit( ...
 		if ( RETCODE__SUCCESS != retCode )
 			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
 			  "__findStep() was unsuccessful (%d).", retCode ) );
-			retCode = RETCODE__BAD_DEPENDENCY; % Unless changed below.
+			% Leave retCode as is, unless changed below.
 			break;
 		end
 		if (doChecks)
@@ -129,36 +131,36 @@ function [ s, p, retCode, datOut ] = extFit__findFit( ...
 				assert( pNew <= pMax );
 			end
 		end
+		numIter++;
 		[ rhoValsNew, bigF0New, bigF1New, omegaNew ] = extFit__calcAtPt( ...
 		  sNew, pNew, xVals, fVals, wVals, prm_calcAtPt );
 		if (doChecks)
 			assert( isrealscalar(omegaNew) );
 			assert( 0.0 <= omegaNew );
 		end
-		%
-		if ( omegaPrev > 0.0 )
-		if ( omega >= omegaPrev )
+		if ( omegaNew >= omega )
 			msg_notify( verbLev, thisFile, __LINE__, sprintf( ...
-			  "Failed to decrease omega (%g >= %g).", omega, omegaPrev ) );
+			  "Failed to decrease omega (%g >= %g).", omegaNew, omega ) );
 			retCode = RETCODE__ALGORITHM_BREAKDOWN; % Unless changed below.
 			break;
 		end
-		if ( abs(omegaPrev-omega) <= abs(omegaPrev*omegaRelThresh) )
-			msg_notify( verbLev, thisFile, __LINE__, sprintf( ...
-			  "Failed to decrease omega sufficiently (%g, %g).", omega, omegaPrev ) );
-			retCode = RETCODE__IMPOSED_STOP; % Unless changed below.
-			break;
-		end
-		end
 		%
 		%
-		numIter++;
+		% Accept new values.
 		sPrev = s;
 		pPrev = p;
 		omegaPrev = omega;
 		s = sNew;
 		p = pNew;
 		omega = omegaNew;
+		%
+		if ( abs(omegaPrev-omega) <= abs(omegaPrev*omegaRelThresh) )
+			msg_notify( verbLev, thisFile, __LINE__, sprintf( ...
+			  "Failed to decrease omega sufficiently (%g, %g).", ...
+			  abs(omegaPrev-omega), abs(omegaPrev*omegaRelThresh) ) );
+			retCode = RETCODE__IMPOSED_STOP; % Unless changed below.
+			break;
+		end
 		if (  abs(s-sPrev)<deltaSThresh  &&  abs(p-pPrev)<deltaPThresh  )
 			msg_notify( verbLev, thisFile, __LINE__, sprintf( ...
 			  "Step was too small (%e, %e) vs (%e, %e).", ...
@@ -167,6 +169,8 @@ function [ s, p, retCode, datOut ] = extFit__findFit( ...
 			break;
 		end
 	end
+	msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
+	  "  %3d,   %11.3e, %11.3e,   %11.3e", numIter, s, p, omega ) );
 	if ( omega <= omegaTolSucc )
 		retCode = RETCODE__SUCCESS;
 	end

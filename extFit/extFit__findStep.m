@@ -108,8 +108,8 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 		end
 		if ( mu_trial > mu1 )
 			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
-			  "Only excessive backtracking (%g > %g) might reduce residual (%g).", ...
-			   mu_trial, mu1, omega0 ) );
+			  "Reached maximum backtracking (%g).", mu1 ) );
+			retCode = RETCODE__IMPOSED_STOP; % Unless changed below.
 			break;
 		end
 		%
@@ -141,8 +141,8 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 		assert( 0.0 > deltaOmegaModel_trial );
 		if ( abs(deltaOmegaModel_trial) < omega0*eps075 )
 			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
-			  "Model suggests only insignificant decrease (%g) from omega (%g) is possible.", ...
-			   deltaOmegaModel_trial, omega0 ) );
+			  "Hit local minimum (%g from %g).", -deltaOmegaModel_trial, omega0 ) );
+			retCode = RETCODE__ALGORITHM_BREAKDOWN; % Unless changed below.
 			break;
 		end
 		%
@@ -167,6 +167,5 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 	  "Failed to decrease omega from %g.", omega0 )  );
 	s = s0;
 	p = p0;
-	retCode = RETCODE__IMPOSED_STOP;
 return;
 end
