@@ -71,8 +71,13 @@ function [ s, p, retCode, datOut ] = extFit__findFit( ...
 	%
 	% DO WORK
 	%
-	[ rhoVals0, bigF00, bigF10, omega0 ] = extFit__calcAtPt( ...
+	[ rhoVals0, bigF00, bigF10, omega0, retCode ] = extFit__calcAtPt( ...
 	  s0, p0, xVals, fVals, wVals, prm_calcAtPt );
+	if ( RETCODE__SUCCESS ~= retCode )
+		msg_error( verbLev, thisFile, __LINE__, "__calcAtPt() failed for initial guess." );
+		return;
+	end
+	retCode = RETCODE__NOT_SET;
 	if (doChecks)
 		assert( isrealscalar(omega0) );
 		assert( 0.0 <= omega0 );
@@ -132,8 +137,16 @@ function [ s, p, retCode, datOut ] = extFit__findFit( ...
 			end
 		end
 		numIter++;
-		[ rhoValsNew, bigF0New, bigF1New, omegaNew ] = extFit__calcAtPt( ...
+		[ rhoValsNew, bigF0New, bigF1New, omegaNew, retCode ] = extFit__calcAtPt( ...
 		  sNew, pNew, xVals, fVals, wVals, prm_calcAtPt );
+		if ( RETCODE__SUCCESS ~= retCode )
+			% DRaburn 2021.08.08:
+			% This should actually never happen, since __findStep should have already checked this point.
+			msg_error( verbLev, thisFile, __LINE__, "__calcAtPt() failed." );
+			retCode = RETCODE__ALGORITHM_BREAKDOWN;
+			break;
+		end
+		retCode = RETCODE__NOT_SET;
 		if (doChecks)
 			assert( isrealscalar(omegaNew) );
 			assert( 0.0 <= omegaNew );

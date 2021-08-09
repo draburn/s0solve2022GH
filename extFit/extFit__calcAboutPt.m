@@ -47,10 +47,6 @@ function [ rhoVals, bigF0, bigF1, omega, vecG, matH, retCode ] = extFit__calcAbo
 	if ( RETCODE__SUCCESS ~= retCode )
 		return;
 	end
-	%rhoVals_p0 = extFit__calcAtPt( s+epsS, p, xVals, fVals, wVals, prm_calcAtPt );
-	%rhoVals_m0 = extFit__calcAtPt( s-epsS, p, xVals, fVals, wVals, prm_calcAtPt );
-	%rhoVals_0p = extFit__calcAtPt( s, p+epsP, xVals, fVals, wVals, prm_calcAtPt );
-	%rhoVals_0m = extFit__calcAtPt( s, p-epsP, xVals, fVals, wVals, prm_calcAtPt );
 	rhoDSVals = ( rhoVals_p0 - rhoVals_m0 ) / ( 2.0*epsS );
 	rhoDPVals = ( rhoVals_0p - rhoVals_0m ) / ( 2.0*epsP );
 	%

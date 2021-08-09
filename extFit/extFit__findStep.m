@@ -174,6 +174,7 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 				echo__p_trial = p_trial
 				msg( thisFile, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" );
 			end
+			retCode = RETCODE__NOT_SET;
 			continue;
 		end
 		retCode = RETCODE__NOT_SET;
