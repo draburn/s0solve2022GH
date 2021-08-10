@@ -5,7 +5,7 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__NOTIFY );
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
-	doChecks = mygetfield( prm, "doChecks", true );
+	doChecks = mygetfield( prm, "doChecks", false );
 	%
 	% Default return values.
 	s = s0;
@@ -38,13 +38,15 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 		echo__vecG = vecG
 		msg( thisFile, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" );
 	end
-	assert( omega0 >= 0.0 );
-	assert( matH(1,1) >= 0.0 );
-	assert( matH(2,2) >= 0.0 );
-	assert( matH(1,2).^2 <= matH(1,1)*matH(2,2) );
-	assert( fleq(matH(1,2),matH(2,1)) );
-	assert(~(  0.0 == matH(1,1)  &&  0.0 ~= vecG(1)  ));
-	assert(~(  0.0 == matH(2,2)  &&  0.0 ~= vecG(2)  ));
+	if ( doChecks )
+		assert( omega0 >= 0.0 );
+		assert( matH(1,1) >= 0.0 );
+		assert( matH(2,2) >= 0.0 );
+		assert( matH(1,2).^2 <= matH(1,1)*matH(2,2) );
+		assert( fleq(matH(1,2),matH(2,1)) );
+		assert(~(  0.0 == matH(1,1)  &&  0.0 ~= vecG(1)  ));
+		assert(~(  0.0 == matH(2,2)  &&  0.0 ~= vecG(2)  ));
+	end
 	if ( omega0 == 0.0 )
 		msg_notify( verbLev, thisFile, __LINE__, "Initial omega is already zero." );
 		retCode = RETCODE__ALGORITHM_BREAKDOWN;
@@ -241,6 +243,13 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 			break;
 		end
 		%
+		if ( mygetfield(prm,"useTurbo",true) )
+			[ rhoVals_trial, errFlag ] = extFit__calcRhoVals( s_trial, p_trial, xVals, fVals, dVals );
+			if ( errFlag )
+				continue;
+			end
+			omega_trial = 0.5 * sum(( dVals .* rhoVals_trial ).^2);
+		else %%% NON-TURBO
 		[ rhoVals_trial, bigF0_trial, bigF1_trial, omega_trial, retCode ] = extFit__calcAtPt( ...
 		  s_trial, p_trial, xVals, fVals, wVals, prm_calcAboutPt );
 		if ( RETCODE__SUCCESS ~= retCode )
@@ -257,6 +266,7 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 		end
 		retCode = RETCODE__NOT_SET;
 		assert( 0.0 <= omega_trial );
+		end %%% NON-TURBO
 		if ( omega_trial >= omega0 )
 			continue;
 		end

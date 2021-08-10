@@ -3,7 +3,7 @@ function [ rhoVals, bigF0, bigF1, omega, vecG, matH, retCode ] = extFit__calcAbo
 	%
 	commondefs;
 	thisFile = "extFit__calcAboutPt";
-	doChecks = mygetfield( prm, "doChecks", true );
+	doChecks = mygetfield( prm, "doChecks", false );
 	%
 	if ( doChecks )
 		assert( isrealscalar(s) );
@@ -25,6 +25,19 @@ function [ rhoVals, bigF0, bigF1, omega, vecG, matH, retCode ] = extFit__calcAbo
 		assert( atLeastOneWValIsPositive );
 	end
 	%
+	if ( mygetfield(prm,"useTurbo",true) )
+		dVals = sqrt(wVals);
+		[ rhoVals, bigF0, bigF1, omega, flag_00 ] = extFit__calcAtPt_turbo( s, p, xVals, fVals, dVals );
+		[ rhoVals_p0, flag_p0 ] = extFit__calcRhoVals( s+epsS, p, xVals, fVals, dVals );
+		[ rhoVals_m0, flag_m0 ] = extFit__calcRhoVals( s-epsS, p, xVals, fVals, dVals );
+		[ rhoVals_0p, flag_0p ] = extFit__calcRhoVals( s, p+epsP, xVals, fVals, dVals );
+		[ rhoVals_0m, flag_0m ] = extFit__calcRhoVals( s, p-epsP, xVals, fVals, dVals );
+		if ( flag_00 || flag_p0 || flag_m0 || flag_0m || flag_0p )
+			retCode = RETCODE__BAD_INPUT;
+			return;
+		end
+	else % NOT TURBO
+	%
 	prm_calcAtPt = mygetfield( prm, "prm_calcAtPt", [] );
 	[ rhoVals, bigF0, bigF1, omega, retCode ] = extFit__calcAtPt(
 	  s, p, xVals, fVals, wVals, prm_calcAtPt );
@@ -32,17 +45,6 @@ function [ rhoVals, bigF0, bigF1, omega, vecG, matH, retCode ] = extFit__calcAbo
 		return;
 	end
 	%
-	if ( mygetfield(prm,"useTurbo",true) )
-		dVals = sqrt(wVals);
-		[ rhoVals_p0, flag_p0 ] = extFit__calcRhoVals( s+epsS, p, xVals, fVals, dVals );
-		[ rhoVals_m0, flag_m0 ] = extFit__calcRhoVals( s-epsS, p, xVals, fVals, dVals );
-		[ rhoVals_0p, flag_0p ] = extFit__calcRhoVals( s, p+epsP, xVals, fVals, dVals );
-		[ rhoVals_0m, flag_0m ] = extFit__calcRhoVals( s, p-epsP, xVals, fVals, dVals );
-		if ( flag_p0 || flag_m0 || flag_0m || flag_0p )
-			retCode = RETCODE__BAD_INPUT;
-			return;
-		end
-	else % NOT TURBO
 	[ rhoVals_p0, f0, f1, f2, retCode ] = extFit__calcAtPt( s+epsS, p, xVals, fVals, wVals, prm_calcAtPt );
 	if ( RETCODE__SUCCESS ~= retCode )
 		return;

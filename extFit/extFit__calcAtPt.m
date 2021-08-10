@@ -43,7 +43,7 @@ function [ rhoVals, bigF0, bigF1, omega, retCode ] = extFit__calcAtPt(
 	matY = [ ones(numPts,1), yVals' ];
 	matW = diag(sqrt(wVals));
 	matA = matW*matY;
-	if ( eps300>=rcond(matA'*matA) )
+	if ( eps >= rcond(matA'*matA) )
 		if ( verbLev >= VERBLEV__COPIOUS )
 			msg( thisFile, __LINE__, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" );
 			echo__matY = matY

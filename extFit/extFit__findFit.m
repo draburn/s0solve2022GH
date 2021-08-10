@@ -4,7 +4,7 @@ function [ s, p, bigF0, bigF1, retCode, datOut ] = extFit__findFit( ...
 	thisFile = "extFit__findFit";
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__NOTIFY );
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
-	doChecks = mygetfield( prm, "doChecks", true );
+	doChecks = mygetfield( prm, "doChecks", false );
 	datOut = [];
 	%
 	numPts = size(xVals,2);
