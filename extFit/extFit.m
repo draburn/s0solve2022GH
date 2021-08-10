@@ -5,9 +5,6 @@ function [ s, p, bigF0, bigF1, retCode, datOut ] = extFit( xVals, fVals, wVals=[
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	datOut = [];
 	%
-	% The predominant hierarchy is:
-	%  extFit ---> extFit__internal ---> extFit__genInitalGuess
-	%                                \-> extFit__findFit
 	% prm is passed down directly to __internal,
 	%  but _genInitialGuess and _findFit are needed below that.
 	% datOut is similarly passed back up.
@@ -68,7 +65,7 @@ function [ s, p, bigF0, bigF1, retCode, datOut ] = extFit( xVals, fVals, wVals=[
 	%
 	xVals_normalized = ( xVals_sorted - xMin ) / ( xMax - xMin );
 	fVals_normalized = ( fVals_sorted - fMin ) / ( fMax - fMin );
-	if (~isempty(wVals))
+	if (~isempty(wVals_sorted))
 		wVals_normalized = wVals_sorted / wSum;
 	else
 		wVals_normalized = [];
