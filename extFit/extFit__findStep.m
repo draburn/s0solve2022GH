@@ -2,8 +2,8 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
   s0, p0, xVals, fVals, wVals, prm=[] )
 	commondefs;
 	thisFile = "extFit__findStep";
-	%verbLev = mygetfield( prm, "verbLev", VERBLEV__NOTIFY );
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__NOTIFY );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	doChecks = mygetfield( prm, "doChecks", true );
 	%

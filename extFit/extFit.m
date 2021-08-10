@@ -1,7 +1,8 @@
 function [ s, p, bigF0, bigF1, retCode, datOut ] = extFit( xVals, fVals, wVals=[], prm=[] )
 	commondefs;
 	thisFile = "extFit";
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__NOTIFY );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	datOut = [];
 	%
 	% The predominant hierarchy is:
@@ -11,19 +12,6 @@ function [ s, p, bigF0, bigF1, retCode, datOut ] = extFit( xVals, fVals, wVals=[
 	%  but _genInitialGuess and _findFit are needed below that.
 	% datOut is similarly passed back up.
 	%
-	msg( thisFile, __LINE__, "To-do..." );
-	msg( thisFile, __LINE__, "  * Set initial guess per 3-pt when it makes sense to do so." );
-	msg( thisFile, __LINE__, "  * Handle init guess, wVals, bounds together. " );
-	msg( thisFile, __LINE__, "  * Pass back F0, etc, so needn't know wVals." );
-	msg( thisFile, __LINE__, "  * Bound initial guess per given bounds." );
-	msg( thisFile, __LINE__, "  * Massage initial guess to fit in bounds." );
-	msg( thisFile, __LINE__, "  * Broader testing." );
-	msg( thisFile, __LINE__, "  * Replace 'doChecks' with varLev." );
-	msg( thisFile, __LINE__, "Current work..." );
-	msg( thisFile, __LINE__, "  * Looks like: bounds can hurt!" );
-	msg( thisFile, __LINE__, "Recently done..." );
-	msg( thisFile, __LINE__, "  * Set s/p min/max when it makes sense to do so." );
-	msg( thisFile, __LINE__, "  * Set wVals when it makes sense to do so." );
 	%
 	numPts = size(xVals,2);
 	assert( numPts >= 3 );

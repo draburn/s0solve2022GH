@@ -60,7 +60,7 @@ function [ wVals, s0, p0, sMin, sMax, pMin, pMax, retCode, datOut ] = extFit__ge
 		n++;
 	end
 	nC = n;
-	msg_copious( verbLev, thisFile, __LINE__, sprintf( "nC = %d.", nC ) );
+	%msg_copious( verbLev, thisFile, __LINE__, sprintf( "nC = %d.", nC ) );
 	while (1)
 		if ( n>=numPts )
 			% Didn't find a second change in slope.

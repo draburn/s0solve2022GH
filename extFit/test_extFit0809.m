@@ -1,6 +1,6 @@
 clear;
 commondefs;
-thisFile = "test_extFit";
+thisFile = "test_extFit0809";
 numFigs = 0;
 setprngstates(0);
 %

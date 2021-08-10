@@ -1,7 +1,8 @@
 function [ s, p, bigF0, bigF1, retCode, datOut ] = extFit__internal( xVals, fVals, wVals, prm=[] )
 	commondefs;
 	thisFile = "extFit__internal";
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__NOTIFY );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	doChecks = mygetfield( prm, "doChecks", true );
 	datOut = [];
 	%
@@ -9,7 +10,7 @@ function [ s, p, bigF0, bigF1, retCode, datOut ] = extFit__internal( xVals, fVal
 	%
 	prm_genSimpleFit = mygetfield( prm, "prm_genSimpleFit", [] );
 	[ wVals, s0, p0, sMin, sMax, pMin, pMax, retCode_genSimpleFit, datOut_genSimpleFit ] = ...
-	  extFit__genSimpleFit( xVals, fVals, prm_genSimpleFit )
+	  extFit__genSimpleFit( xVals, fVals, prm_genSimpleFit );
 	datOut.datOut_genSimpleFit = datOut_genSimpleFit;
 	if ( RETCODE__SUCCESS ~= retCode_genSimpleFit )
 		msg_error( verbLev, thisFile, __LINE__, sprintf( ...

@@ -11,8 +11,6 @@ function viz_extFitPt( xVals, fVals, s0=[], p0=[], wVals=[], prm=[] )
 		numPts = size(xVals,2);
 		assert( numPts >= 3 );
 		assert( isrealarray(xVals,[1,numPts]) );
-		xValsAreStrictlyIncreasing = (0==sum( 0.0 >= diff(xVals) ));
-		assert( xValsAreStrictlyIncreasing );
 		assert( isrealarray(fVals,[1,numPts]) );
 		assert( isrealarray(wVals,[1,numPts]) );
 		noWValIsNegative = (0==sum(wVals<0.0));

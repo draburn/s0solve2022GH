@@ -2,7 +2,8 @@ function [ s, p, bigF0, bigF1, retCode, datOut ] = extFit__findFit( ...
   s0, p0, xVals, fVals, wVals, prm=[] )
 	commondefs;
 	thisFile = "extFit__findFit";
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__NOTIFY );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	doChecks = mygetfield( prm, "doChecks", true );
 	datOut = [];
 	%
@@ -35,7 +36,7 @@ function [ s, p, bigF0, bigF1, retCode, datOut ] = extFit__findFit( ...
 	if ( ~isempty(pMin)  &&  ~isempty(pMax)  )
 		deltaPThresh = max([ deltaPThres, eps050*(pMax-pMin) ]);
 	end
-	omegaRelThresh = eps025;
+	omegaRelThresh = eps050;
 	numIterLimit = 100;
 	%
 	% More params...
