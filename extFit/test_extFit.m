@@ -3,6 +3,7 @@ commondefs;
 thisFile = "test_extFit";
 numFigs = 0;
 %
+tic();
 hadBad = false;
 numTests = 100;
 for n=1:numTests
@@ -32,11 +33,16 @@ for n=1:numTests
 		hadBad = true;
 		break;
 	end
+	if ( abs(s-s_secret) > eps025*(max(xVals)-min(xVals)) ...
+	  || abs(bigF0-bigF0_secret) > eps025 )
+		msg( thisFile, __LINE__, sprintf( "Fit for test %d is not great (%g,%g;%g,%g).", ...
+		   n, s_secret, s, bigF0_secret, bigF0 ) );
+	end
 	funchFModel = @(x)( bigF0 + bigF1*abs(x-s).^p );
 	fModelVals = funchFModel(xVals);
 	rhoVals = fModelVals - fVals;
 	myOmega = 0.5*sum(rhoVals.^2);
-	myTol = 0.5*eps100*sum(fVals.^2);
+	myTol = 0.5*eps075*sum(fVals.^2);
 	if ( myOmega > myTol )
 		msg( thisFile, __LINE__, "" );
 		msg( thisFile, __LINE__, "***" );
@@ -46,8 +52,10 @@ for n=1:numTests
 		hadBad = true;
 		break;
 	end
-	if ( ~fleq(s,s_secret,eps025) || ~fleq(bigF0,bigF0_secret,eps025)...
-	  || ~fleq(p,p_secret,eps025) || ~fleq(bigF1,bigF1_secret,eps025) );
+	if ( abs(s-s_secret) > 0.1*(max(xVals)-min(xVals)) ...
+	  || abs(p-p_secret) > 0.1 ...
+	  || abs(bigF0-bigF0_secret) > 0.1 ...
+	  || abs(bigF1-bigF1_secret) > 0.1 )
 		msg( thisFile, __LINE__, "" );
 		msg( thisFile, __LINE__, "***" );
 		msg( thisFile, __LINE__, sprintf( "Incorrect fit on test %d.", n ) );
@@ -59,8 +67,10 @@ for n=1:numTests
 end
 if (~hadBad)
 	msg( thisFile, __LINE__, sprintf( "Found a good result for all %d tests.", numTests ) );
+	toc();
 	return;
 end
+toc();
 %
 msg( thisFile, __LINE__, sprintf( "Redoing test %d....", n ) );
 msg( thisFile, __LINE__, sprintf( "numPts = %d.", numPts ) );

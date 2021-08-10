@@ -118,6 +118,7 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 	%
 	%
 	% DO WORK.
+	dVals = sqrt(wVals);
 	haveTriedLoLo = false;
 	haveTriedLoHi = false;
 	haveTriedHiLo = false;

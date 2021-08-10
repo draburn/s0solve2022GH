@@ -4,7 +4,7 @@ function [ rhoVals, bigF0, bigF1, omega, retCode ] = extFit__calcAtPt(
 	commondefs;
 	thisFile = "extFit__calcAtPt";
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__NOTIFY );
-	doChecks = mygetfield( prm, "doChecks", true );
+	doChecks = mygetfield( prm, "doChecks", false );
 	%
 	numPts = size(xVals,2);
 	if ( doChecks )
