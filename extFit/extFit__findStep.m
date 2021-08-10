@@ -118,6 +118,10 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 	%
 	%
 	% DO WORK.
+	haveTriedLoLo = false;
+	haveTriedLoHi = false;
+	haveTriedHiLo = false;
+	haveTriedHiHi = false;
 	iterCount = 0;
 	while (1)
 		iterCount++;
@@ -136,28 +140,95 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 			break;
 		end
 		%
-		vecDelta_trial = -(matH + (mu_trial*matD))\vecG;
+		vecDelta_trial = -(matH + (mu_trial*matD))\vecG; % Unless modified below.
+		%
+		%
+		sRegion = 0;
+		pRegion = 0;
+		if ( ~isempty(sMin) )
+		if ( s + vecDelta_trial(1) < sMin )
+			sRegion = -1;
+		end
+		end
+		if ( ~isempty(sMax) )
+		if ( s + vecDelta_trial(1) > sMax )
+			sRegion = +1;
+		end
+		end
+		if ( ~isempty(pMin) )
+		if ( p + vecDelta_trial(2) < pMin )
+			pRegion = -1;
+		end
+		end
+		if ( ~isempty(pMax) )
+		if ( p - vecDelta_trial(2) > pMax )
+			pRegion = +1;
+		end
+		end
+		%
+		if ( sRegion > 0 )
+			vecDelta_trial(1) = (sMax - s)*(1.0-eps075);
+			if ( pRegion > 0 )
+				vecDelta_trial(2) = (pMax - p)*(1.0-eps075);
+				if ( haveTriedHiHi )
+					continue;
+				end
+				haveTriedHiHi = true;
+			elseif ( pRegion < 0 )
+				vecDelta_trial(2) = (pMin - p)*(1.0-eps075);
+				if ( haveTriedHiLo )
+					continue;
+				end
+				haveTriedHiLo = true;
+			else
+				vecDelta_trial(2) = -( vecG(2) + vecDelta_trial(1)*(matH(1,2)+mu_trial*matD(1,2)) ) ...
+				  / ( matH(2,2) + mu_trial*matD(2,2) );
+			end
+		elseif ( sRegion < 0 )
+			vecDelta_trial(1) = (sMin - s)*(1.0-eps075);
+			if ( pRegion > 0 )
+				vecDelta_trial(2) = (pMax - p)*(1.0-eps075);
+				if ( haveTriedLoHi )
+					continue;
+				end
+				haveTriedLoHi = true;
+			elseif ( pRegion < 0 )
+				vecDelta_trial(2) = (pMin - p)*(1.0-eps075);
+				if ( haveTriedLoLo )
+					continue;
+				end
+				haveTriedLoLo = true;
+			else
+				vecDelta_trial(2) = -( vecG(2) + vecDelta_trial(1)*(matH(1,2)+mu_trial*matD(1,2)) ) ...
+				  / ( matH(2,2) + mu_trial*matD(2,2) );
+			end
+		else
+			if ( pRegion > 0 )
+				vecDelta_trial(2) = (pMax - p)*(1.0-eps075);
+				vecDelta_trial(1) = -( vecG(1) + vecDelta_trial(2)*(matH(1,2)+mu_trial*matD(1,2)) ) ...
+				  / ( matH(1,1) + mu_trial*matD(1,1) );
+			elseif ( pRegion < 0 )
+				vecDelta_trial(2) = (pMin - p)*(1.0-eps075);
+				vecDelta_trial(1) = -( vecG(1) + vecDelta_trial(2)*(matH(1,2)+mu_trial*matD(1,2)) ) ...
+				  / ( matH(1,1) + mu_trial*matD(1,1) );
+			else
+				% Nothing to do!
+			end
+		end
 		s_trial = s0 + vecDelta_trial(1);
 		p_trial = p0 + vecDelta_trial(2);
-		if ( !isempty(sMin) )
-		if ( s_trial < sMin )
-			continue;
+		%
+		if ( ~isempty(sMin) )
+			assert( s_trial >= sMin );
 		end
+		if ( ~isempty(sMax) )
+			assert( s_trial <= sMax );
 		end
-		if ( !isempty(sMax) )
-		if ( s_trial > sMax )
-			continue;
+		if ( ~isempty(pMin) )
+			assert( p_trial >= pMin);
 		end
-		end
-		if ( !isempty(pMin) )
-		if ( p_trial < pMin )
-			continue;
-		end
-		end
-		if ( !isempty(pMax) )
-		if ( p_trial > pMax )
-			continue;
-		end
+		if ( ~isempty(pMax) )
+			assert( p_trial <= pMax );
 		end
 		%
 		deltaOmegaModel_trial = funch_deltaOmegaModel( vecDelta_trial );

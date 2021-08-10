@@ -45,7 +45,7 @@ function [ s, p, bigF0, bigF1, retCode, datOut ] = extFit__internal( xVals, fVal
 	%
 	%
 	%
-	if (1)
+	if (0)
 		msg( thisFile, __LINE__, "HACK! Overiding sMin and Max..." );
 		sMin = [];
 		sMax = [];
