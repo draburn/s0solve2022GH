@@ -87,16 +87,17 @@ function [ s, p, bigF0, bigF1, retCode, datOut ] = extFit( xVals, fVals, wVals=[
 		p = p_normalized;
 		bigF0 = fMin + bigF0_normalized*(fMax-fMin);
 		bigF1 = bigF1_normalized*(fMax-fMin)/((xMax-xMin)^p);
+		msg_copious( verbLev, thisFile, __LINE__, sprintf( "s = %g.", s ) );
+		msg_copious( verbLev, thisFile, __LINE__, sprintf( "p = %g.", p ) );
+		msg_copious( verbLev, thisFile, __LINE__, sprintf( "bigF0 = %g.", bigF0 ) );
+		msg_copious( verbLev, thisFile, __LINE__, sprintf( "bigF1 = %g.", bigF1 ) );
+		retCode = RETCODE__SUCCESS;
 	else
-		s = (xMax+xMin)/2.0;
-		p = 0.0;
-		bigF0 = 0.0;
-		bigF1 = 0.0;
+		s = [];
+		p = [];
+		bigF0 = [];
+		bigF1 = [];
+		retCode = RETCODE__ALGORITHM_BREAKDOWN;
 	end
-	msg_copious( verbLev, thisFile, __LINE__, sprintf( "s = %g.", s ) );
-	msg_copious( verbLev, thisFile, __LINE__, sprintf( "p = %g.", p ) );
-	msg_copious( verbLev, thisFile, __LINE__, sprintf( "bigF0 = %g.", bigF0 ) );
-	msg_copious( verbLev, thisFile, __LINE__, sprintf( "bigF1 = %g.", bigF1 ) );
-	retCode = RETCODE__SUCCESS;
 return;
 end

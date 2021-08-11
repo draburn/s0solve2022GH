@@ -33,6 +33,12 @@ function [ rhoVals, bigF0, bigF1, omega, vecG, matH, retCode ] = extFit__calcAbo
 		[ rhoVals_0p, flag_0p ] = extFit__calcRhoVals( s, p+epsP, xVals, fVals, dVals );
 		[ rhoVals_0m, flag_0m ] = extFit__calcRhoVals( s, p-epsP, xVals, fVals, dVals );
 		if ( flag_00 || flag_p0 || flag_m0 || flag_0m || flag_0p )
+			rhoVals = [];
+			bigF0 = [];
+			bigF1 = [];
+			omega = [];
+			vecG = [];
+			matH = [];
 			retCode = RETCODE__BAD_INPUT;
 			return;
 		end

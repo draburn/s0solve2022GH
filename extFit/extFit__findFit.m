@@ -27,6 +27,7 @@ function [ s, p, bigF0, bigF1, retCode, datOut ] = extFit__findFit( ...
 	% Defaults...
 	omegaTolCnvg = eps100*0.5*sum(wVals.*(fVals.^2));
 	%omegaTolCnvg = eps150*0.5*sum(wVals.*(fVals.^2)); % If you want to be very accurate.
+	%omegaTolCnvg = eps175*0.5*sum(wVals.*(fVals.^2)); % If you want to be very, very accurate.
 	omegaTolSucc = eps025*0.5*sum(wVals.*(fVals.^2));
 	deltaSThresh = eps075*(max(xVals)-min(xVals));
 	if ( ~isempty(sMin)  &&  ~isempty(sMax)  )
@@ -37,6 +38,8 @@ function [ s, p, bigF0, bigF1, retCode, datOut ] = extFit__findFit( ...
 		deltaPThresh = max([ deltaPThres, eps050*(pMax-pMin) ]);
 	end
 	omegaRelThresh = eps050;
+	%omegaRelThresh = eps075; % If you want to be very accurate.
+	%omegaRelThresh = eps; % If you want to be very, very accurate.
 	numIterLimit = 100;
 	%
 	% More params...
@@ -78,6 +81,11 @@ function [ s, p, bigF0, bigF1, retCode, datOut ] = extFit__findFit( ...
 	if ( RETCODE__SUCCESS ~= retCode )
 		msg_error( verbLev, thisFile, __LINE__, sprintf( ...
 		  "__calcAtPt() failed for initial guess (%d).", retCode ) );
+		s = s0;
+		p = p0;
+		bigF0 = 0.0;
+		bigF1 = 0.0;
+		% Return retCode as-is.
 		return;
 	end
 	retCode = RETCODE__NOT_SET;

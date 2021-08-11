@@ -100,7 +100,9 @@ function [ wVals, s0, p0, sMin, sMax, pMin, pMax, retCode, datOut ] = extFit__ge
 	end
 	fScale1 = max([ abs(bigF0-fVals(nC)), ...
 	  min([ abs(fVals(nC-1)-fVals(nC)), abs(fVals(nC+1)-fVals(nC)) ]) ]);
+	%wVals = 1.0./sqrt( abs(gVals) + fScale1 + eps*max(abs(fVals)) );
 	wVals = 1.0./( abs(gVals) + fScale1 + eps*max(abs(fVals)) );
+	%wVals = 1.0./( gVals.^2 + fScale1^2 + eps*max(fVals.^2) );
 	wVals /= sum(wVals);
 	%
 return;

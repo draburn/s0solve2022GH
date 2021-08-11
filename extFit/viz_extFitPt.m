@@ -1,8 +1,17 @@
-function viz_extFitPt( xVals, fVals, s0=[], p0=[], wVals=[], prm=[] )
+%function viz_extFitPt( xVals, fVals, s0=[], p0=[], wVals=[], prm=[] )
+	s0 = s;
+	p0 = p;
+	sLo = -0.43%min(xVals);
+	sHi = -0.40%max(xVals);
+	pLo = 1.0;
+	pHi = 4.0%x([ 3.0, p0, p_secret ]);
+	wVals = [ 0.0328481602163109   0.0345576310951484   0.4320648296339819   0.4733937904552901   0.0271355885992689 ];
+	%
+	dVals = sqrt(wVals);
 	commondefs;
 	thisFile = "viz_extFitPt";
 	doChecks = mygetfield( prm, "doChecks", true );
-	numFigs = mygetfield( prm, "numFigs0", 0 );
+	numFigs = 10;%mygetfield( prm, "numFigs0", 0 );
 	%
 	if ( isempty(wVals) )
 		wVals = ones(size(xVals));
@@ -181,21 +190,21 @@ function viz_extFitPt( xVals, fVals, s0=[], p0=[], wVals=[], prm=[] )
 	%
 	%
 	%
-	[ foo, nCrit ] = min(fVals);
-	if ( 1 == nCrit )
-		sLo = xVals(1) - 1.0*(xVals(numPts)-xVals(1));
-		sHi = xVals(2);
-	elseif ( numPts == nCrit )
-		sLo = xVals(numPts-1);
-		sHi = xVals(numPts) + 1.0*(xVals(numPts)-xVals(1));
-	else
-		sLo = xVals(nCrit-1);
-		sHi = xVals(nCrit+1);
-	end
-	sLo = min([ sLo, s0 ]);
-	sHi = max([ sHi, s0 ]);
-	pLo = min([ 1.0, p0 ]);
-	pHi = max([ 10.0, p0 ]);
+	%[ foo, nCrit ] = min(fVals);
+	%if ( 1 == nCrit )
+	%	sLo = xVals(1) - 1.0*(xVals(numPts)-xVals(1));
+	%	sHi = xVals(2);
+	%elseif ( numPts == nCrit )
+	%	sLo = xVals(numPts-1);
+	%	sHi = xVals(numPts) + 1.0*(xVals(numPts)-xVals(1));
+	%else
+	%	sLo = xVals(nCrit-1);
+	%	sHi = xVals(nCrit+1);
+	%end
+	%sLo = min([ -1.7, s0 ])
+	%sHi = max([ -0.5, s0 ])
+	%pLo = min([ 1.0, p0 ]);
+	%pHi = max([ 10.0, p0 ]);
 	sLo = mygetfield( prm, "sLo", sLo );
 	sHi = mygetfield( prm, "sHi", sHi );
 	pLo = mygetfield( prm, "pLo", pLo );
@@ -282,7 +291,7 @@ function viz_extFitPt( xVals, fVals, s0=[], p0=[], wVals=[], prm=[] )
 	  "Lev (model)", ...
 	  "LevMarq (model)", ...
 	  "LevMarqMod (model)", ...
-	  "location", "SouthEast" );
+	  "location", "NorthWest" );
 	grid on;
 	%
 	if ( mygetfield(prm,"showMuLimits",false) )
@@ -322,7 +331,7 @@ function viz_extFitPt( xVals, fVals, s0=[], p0=[], wVals=[], prm=[] )
 	  "Lev", ...
 	  "LevMarq", ...
 	  "LevMarqMod", ...
-	  "location", "SouthEast" );
+	  "location", "NorthEast" );
 	grid on;
 	%
 	%
@@ -407,4 +416,4 @@ function viz_extFitPt( xVals, fVals, s0=[], p0=[], wVals=[], prm=[] )
 	  "location", "NorthWest" );
 	grid on;
 return;
-end
+%end

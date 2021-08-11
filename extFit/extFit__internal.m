@@ -70,6 +70,7 @@ function [ s, p, bigF0, bigF1, retCode, datOut ] = extFit__internal( xVals, fVal
 	  && retCode ~= RETCODE__IMPOSED_STOP )
 		msg_warn( verbLev, thisFile, __LINE__, sprintf( ...
 		  "WARNING: __findFit returned %s.", retcode2str(retCode) ) );
+		return;
 	end
 	if (doChecks)
 		assert( isrealscalar(s) );

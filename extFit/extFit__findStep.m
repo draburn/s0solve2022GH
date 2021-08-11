@@ -142,8 +142,11 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 			retCode = RETCODE__IMPOSED_STOP; % Unless changed below.
 			break;
 		end
+		msg_progress( verbLev, thisFile, __LINE__, sprintf( "mu_trial = %g.", mu_trial ) );
 		%
 		vecDelta_trial = -(matH + (mu_trial*matD))\vecG; % Unless modified below.
+		msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
+		  "Original vecDelta_trial = ( %g, %g ).", vecDelta_trial(1), vecDelta_trial(2) ) );
 		%
 		%
 		sRegion = 0;
@@ -218,8 +221,12 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 				% Nothing to do!
 			end
 		end
+		msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
+		  "Bounded vecDelta_trial = ( %g, %g ).", vecDelta_trial(1), vecDelta_trial(2) ) );
 		s_trial = s0 + vecDelta_trial(1);
 		p_trial = p0 + vecDelta_trial(2);
+		msg_progress( verbLev, thisFile, __LINE__, sprintf( "s_trial = %g.", s_trial ) );
+		msg_progress( verbLev, thisFile, __LINE__, sprintf( "p_trial = %g.", p_trial ) );
 		%
 		if ( ~isempty(sMin) )
 			assert( s_trial >= sMin );
@@ -236,16 +243,21 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 		%
 		deltaOmegaModel_trial = funch_deltaOmegaModel( vecDelta_trial );
 		assert( 0.0 > deltaOmegaModel_trial );
-		if ( abs(deltaOmegaModel_trial) < omega0*eps075 )
-			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
-			  "Hit local minimum (%g from %g).", -deltaOmegaModel_trial, omega0 ) );
-			retCode = RETCODE__ALGORITHM_BREAKDOWN; % Unless changed below.
-			break;
-		end
+		%
+		%if ( abs(deltaOmegaModel_trial) < omega0*eps075 )
+		%	msg_main( verbLev, thisFile, __LINE__, sprintf( ...
+		%	  "Hit local minimum (%g from %g).", -deltaOmegaModel_trial, omega0 ) );
+		%	retCode = RETCODE__ALGORITHM_BREAKDOWN; % Unless changed below.
+		%	break;
+		%end
+		% In some situations, omega may decrease more than expected.
+		% But, assuming an omega eval is harmless, we may as well try the suggested steps.
+		% Hence, I've commented this out.
 		%
 		if ( mygetfield(prm,"useTurbo",true) )
 			[ rhoVals_trial, errFlag ] = extFit__calcRhoVals( s_trial, p_trial, xVals, fVals, dVals );
 			if ( errFlag )
+				msg_progress( verbLev, thisFile, __LINE__, "Calculation failed." );
 				continue;
 			end
 			omega_trial = 0.5 * sum(( dVals .* rhoVals_trial ).^2);
@@ -268,20 +280,33 @@ function [ s, p, retCode, datOut ] = extFit__findStep( ...
 		assert( 0.0 <= omega_trial );
 		end %%% NON-TURBO
 		if ( omega_trial >= omega0 )
+			msg_progress( verbLev, thisFile, __LINE__, sprintf( "omega increased: %g vs %g (+%g).", ...
+			  omega_trial, omega0, omega_trial-omega0 ) );
 			continue;
 		end
 		if ( omega_trial > omega0 - sufficientDecreaseCoeff*abs(deltaOmegaModel_trial) )
+			msg_progress( verbLev, thisFile, __LINE__, ...
+			 sprintf( "omega did not decrease sufficiently: %g vs %g (%g vs %g).", ...
+			  omega_trial, omega0, abs(omega_trial-omega0), abs(deltaOmegaModel_trial) ) );
 			continue;
 		end
 		%
 		msg_main( verbLev, thisFile, __LINE__, sprintf( ...
-		  "Decreased omega from %g to %g.", omega0, omega_trial ) );
+		  "Decreased omega from %g to %g (%g vs %g).", omega0, omega_trial, omega0-omega_trial, abs(deltaOmegaModel_trial) ) );
 		s = s_trial;
 		p = p_trial;
 		retCode = RETCODE__SUCCESS;
 		return;
 	end
 	%
+	if ( verbLev >= VERBLEV__COPIOUS )
+		msg( thisFile, __LINE__, sprintf( "vvv") );
+		echo__sMin = sMin
+		echo__sMax = sMax
+		echo__pMin = pMin
+		echo__pMax = pMax
+		msg( thisFile, __LINE__, sprintf( "^^^") );
+	end
 	msg_main( verbLev, thisFile, __LINE__, sprintf( ...
 	  "Failed to decrease omega from %g.", omega0 )  );
 return;

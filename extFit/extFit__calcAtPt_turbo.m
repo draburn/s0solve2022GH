@@ -1,10 +1,10 @@
 function [ rhoVals, bigF0, bigF1, omega, errFlag ] = extFit__calcAtPt_turbo( s, p, xVals, fVals, dVals )
 	yVals = abs(xVals-s).^p;
 	if (~isrealarray(yVals,size(xVals)))
-		rhoVals = -1.0;
-		bigF0 = 0.0;
-		bigF1 = 0.0;
-		omega = -1.0;
+		rhoVals = [];
+		bigF0 = [];
+		bigF1 = [];
+		omega = [];
 		errFlag = true;
 		return;
 		% For example, 47^209 = "Inf".
@@ -13,11 +13,12 @@ function [ rhoVals, bigF0, bigF1, omega, errFlag ] = extFit__calcAtPt_turbo( s, 
 	matD = diag(dVals);
 	matA = matD*matY;
 	matB = matA'*matA;
-	if ( eps >= rcond(matB) )
-		rhoVals = -1.0;
-		bigF0 = 0.0;
-		bigF1 = 0.0;
-		omega = -1.0;
+	r = rcond(matB);
+	if ( ~isrealscalar(r) || eps >= r )
+		rhoVals = [];
+		bigF0 = [];
+		bigF1 = [];
+		omega = [];
 		errFlag = true;
 		return;
 	end
