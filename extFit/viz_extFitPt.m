@@ -1,11 +1,13 @@
 %function viz_extFitPt( xVals, fVals, s0=[], p0=[], wVals=[], prm=[] )
 	s0 = s;
 	p0 = p;
-	sLo = -0.43%min(xVals);
-	sHi = -0.40%max(xVals);
-	pLo = 1.0;
-	pHi = 4.0%x([ 3.0, p0, p_secret ]);
-	wVals = [ 0.0328481602163109   0.0345576310951484   0.4320648296339819   0.4733937904552901   0.0271355885992689 ];
+	s0 = (mygetfield( prm, "s0", min(xVals) + s0*(max(xVals)-min(xVals)) )-min(xVals))/(max(xVals)-min(xVals));
+	s0 = min(xVals) + mygetfield( prm, "s0", (s0-min(xVals))/(max(xVals)-min(xVals)) )*(max(xVals)-min(xVals));
+	p0 = mygetfield( prm, "p0", p0 );
+	sLo = 0.00%min(xVals);
+	sHi = 0.30%max(xVals);
+	pLo = 0.1;
+	pHi = 2.0;
 	%
 	dVals = sqrt(wVals);
 	commondefs;

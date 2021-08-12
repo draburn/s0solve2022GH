@@ -17,6 +17,11 @@ function [ s, p, bigF0, bigF1, retCode, datOut ] = extFit__internal( xVals, fVal
 		  "__genSimpleFit() returned %s.", retcode2str(retCode_genSimpleFit) ) );
 		return;
 	end
+	if (1)
+		msg_notify( verbLev, thisFile, __LINE__, "Overriding wVals." );
+		wVals = ones(size(xVals));
+		wVals /= sum(wVals);
+	end
 	%
 	s0 = mygetfield( prm, "s0", s0 );
 	p0 = mygetfield( prm, "p0", p0 );
@@ -24,6 +29,7 @@ function [ s, p, bigF0, bigF1, retCode, datOut ] = extFit__internal( xVals, fVal
 	sMax = mygetfield( prm, "sMax", sMax );
 	pMin = mygetfield( prm, "pMin", pMin );
 	pMax = mygetfield( prm, "pMax", pMax );
+	msg_notify( verbLev, thisFile, __LINE__, "OH FRICK. prm.s0 etc SHOULD BE IN TERMS OF NORMALIZED xVals." );
 	%
 	numPts = size(xVals,2);
 	if (doChecks)
