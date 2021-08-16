@@ -86,7 +86,32 @@ eps150 = eps^1.50;
 eps175 = eps^1.75;
 eps200 = eps^2;
 eps250 = eps^2.50;
-eps300 = eps^3.00;
+eps300 = eps^3;
+
+% QualLev: Quality level, qualitative threshold for what constitutes "success".
+%  _ZERO: No minimal quality level, likely useful only for testing.
+%  _MEDIUM: Intended typical quality level.
+%  _EXTREME: May break code, likely useful only for testing.
+QUALLEV__ZERO = 0;
+QUALLEV__VERY_LOW = 100;
+QUALLEV__LOW = 200;
+QUALLEV__MEDIUM = 300;
+QUALLEV__HIGH = 400;
+QUALLEV__VERY_HIGH = 500;
+QUALLEV__EXTREME = 600;
+
+% InvestLev: Investment level, qualitative amount of time (and other resources)
+%  to spend tyring to achieve "success".
+%  _ZERO: No minimal level of work, likely useful only for testing.
+%  _MEDIUM: Intended typical effort level.
+%  _EXTREME: May break code, likely useful only for testing.
+INVESTLEV__ZERO = 0;
+INVESTLEV__VERY_LOW = 100;
+INVESTLEV__LOW = 200;
+INVESTLEV__MEDIUM = 300;
+INVESTLEV__HIGH = 400;
+INVESTLEV__VERY_HIGH = 500;
+INVESTLEV__EXTREME = 600;
 
 %!test
 %!	commondefs
