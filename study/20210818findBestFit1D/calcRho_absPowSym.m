@@ -17,7 +17,7 @@ function [ errFlag, vecRho ] = calcRho_absPowSym( rhoArgs, vecZ )
 		return;
 	end
 	vecC = matB\(matA'*matD*(rhoArgs.fVals'));
-	vecRho = vecC(1) + (vecC(2)*yVals) - rhoArgs.fVals;
+	vecRho = (rhoArgs.dVals.^2) .*( vecC(1) + (vecC(2)*yVals) - rhoArgs.fVals );
 	errFlag = false;
 return;
 end

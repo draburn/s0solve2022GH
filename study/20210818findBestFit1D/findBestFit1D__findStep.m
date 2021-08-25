@@ -80,9 +80,9 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep( funchRho, rhoA
 		funchOmegaP  = @(rho)( rho );
 		funchOmegaPP = @(rho)( eye(sizeRho,sizeRho) );
 	end
-	omega0   = funchOmega(vecRho0);
-	vecOmegaP0  = funchOmegaP(vecRho0);
-	matOmegaPP0 = funchOmegaPP(vecRho0);
+	omega0      = funchOmega(vecRho0)
+	vecOmegaP0  = funchOmegaP(vecRho0)
+	matOmegaPP0 = funchOmegaPP(vecRho0)
 	if ( valLev >= VALLEV__MEDIUM )
 		assert( isrealscalar(omega0) );
 		assert( omega0 >= 0.0 );
