@@ -12,6 +12,14 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep( funchRho, rhoA
 	datOut = [];
 	%
 	%
+	
+	% DRaburn 2021.08.29.
+	% Dev hack!
+	[ foo1, foo2, foo3, retCode, foo4 ] = findBestFit1D__calcLocalModel( funchRho, rhoArgs, vecZ, prm );
+	msg_main( verbLev, thisFile, __LINE__, sprintf( "__calcLocalModel returned %s.", retcode2str(retCode) ) );
+	assert( RETCODE__SUCCESS == retCode );
+	
+	%
 	%
 	sizeZ = max(size(vecZ));
 	if ( valLev >= VALLEV__MEDIUM )
@@ -79,16 +87,16 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep( funchRho, rhoA
 	%
 	if ( mygetfield(prm,"useCustomOmega",false) )
 		funchOmega   = mygetfield(prm,"funchOmega");
-		funchOmegaP  = mygetfield(prm,"funchOmegaP");
-		funchOmegaPP = mygetfield(prm,"funchOmegaPP");
+		funchOmegaDRho  = mygetfield(prm,"funchOmegaDRho");
+		funchOmegaDRho2 = mygetfield(prm,"funchOmegaDRho2");
 	else
 		funchOmega   = @(rho)( 0.5 * sum(rho.^2) );
-		funchOmegaP  = @(rho)( rho );
-		funchOmegaPP = @(rho)( eye(sizeRho,sizeRho) );
+		funchOmegaDRho  = @(rho)( rho );
+		funchOmegaDRho2 = @(rho)( eye(sizeRho,sizeRho) );
 	end
 	omega0      = funchOmega(vecRho0);
-	vecOmegaP0  = funchOmegaP(vecRho0);
-	matOmegaPP0 = funchOmegaPP(vecRho0);
+	vecOmegaP0  = funchOmegaDRho(vecRho0);
+	matOmegaPP0 = funchOmegaDRho2(vecRho0);
 	if ( valLev >= VALLEV__MEDIUM )
 		assert( isrealscalar(omega0) );
 		assert( omega0 >= 0.0 );

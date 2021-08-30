@@ -14,9 +14,9 @@ function [ vecZ, retCode, datOut ] = findBestFit1D( funchRho, rhoArgs, vecZ0, pr
 	%
 	%
 	% Unpack & validate primary data.
-	sizeZ = max(size(vecZ0));
+	sizeZ = size(vecZ0,1);
 	if ( valLev >= VALLEV__LOW )
-		assert( isrealvector(vecZ0,sizeZ) );
+		assert( isrealarray(vecZ0,[sizeZ,1]) );
 	end
 	%
 	[ errFlag, vecRho0 ] = funchRho( rhoArgs, vecZ0 );
@@ -25,9 +25,9 @@ function [ vecZ, retCode, datOut ] = findBestFit1D( funchRho, rhoArgs, vecZ0, pr
 		retCode = RETCODE__BAD_INPUT;
 		return;
 	end
-	sizeRho = max(size(vecRho0));
+	sizeRho = size(vecRho0,1);
 	if ( valLev >= VALLEV__LOW )
-		assert( isrealvector(vecRho0,sizeRho) );
+		assert( isrealarray(vecRho0,[sizeRho,1]) );
 	end
 	%
 	if ( mygetfield(prm,"useCustomOmega",false) )
@@ -91,7 +91,6 @@ function [ vecZ, retCode, datOut ] = findBestFit1D( funchRho, rhoArgs, vecZ0, pr
 		end
 		retCode = RETCODE__NOT_SET;
 		if ( valLev >= VALLEV__MEDIUM )
-			%assert( isrealvector(vecDelta,sizeZ) ); % Not good enough.
 			assert( isrealarray(vecDelta,size(vecZ)) );
 		end
 		%
@@ -103,7 +102,7 @@ function [ vecZ, retCode, datOut ] = findBestFit1D( funchRho, rhoArgs, vecZ0, pr
 			return;
 		end
 		if ( valLev >= VALLEV__MEDIUM )
-			assert( isrealvector(vecRho_trial,sizeRho) );
+			assert( isrealarray(vecRho_trial,[sizeRho,1]) );
 		end
 		%
 		omega_trial = funchOmega( vecRho_trial );

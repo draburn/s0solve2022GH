@@ -6,7 +6,7 @@ function [ errFlag, vecRho ] = calcRho_absPowSym( rhoArgs, vecZ )
 		return;
 		% For example, 47^209 = "Inf".
 	end
-	matY = [ ones(size(yVals))', yVals' ];
+	matY = [ ones(size(yVals)), yVals ];
 	matD = diag(rhoArgs.dVals);
 	matA = matD*matY;
 	matB = matA'*matA;
@@ -16,7 +16,7 @@ function [ errFlag, vecRho ] = calcRho_absPowSym( rhoArgs, vecZ )
 		vecRho = [];
 		return;
 	end
-	vecC = matB\(matA'*matD*(rhoArgs.fVals'));
+	vecC = matB\(matA'*matD*(rhoArgs.fVals));
 	vecRho = (rhoArgs.dVals.^2) .*( vecC(1) + (vecC(2)*yVals) - rhoArgs.fVals );
 	errFlag = false;
 return;
