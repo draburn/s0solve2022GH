@@ -15,9 +15,25 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep( funchRho, rhoA
 	
 	% DRaburn 2021.08.29.
 	% Dev hack!
-	[ foo1, foo2, foo3, retCode, foo4 ] = findBestFit1D__calcLocalModel( funchRho, rhoArgs, vecZ, prm );
-	msg_main( verbLev, thisFile, __LINE__, sprintf( "__calcLocalModel returned %s.", retcode2str(retCode) ) );
-	assert( RETCODE__SUCCESS == retCode );
+	[ foo1, foo2, foo3, retCode, datOut_calcLocalModel ] = findBestFit1D__calcLocalModel( ...
+	  funchRho, rhoArgs, vecZ, prm );
+	if ( RETCODE__SUCCESS ~= retCode )
+		msg_error( verbLev, thisFile, __LINE__, sprintf( ...
+		  "__calcLocalModel() returned %s.", retcode2str(retCode) ) );
+		retCode = RETCODE__BAD_INPUT;
+		return;
+	end
+	clear foo1;
+	clear foo2;
+	clear foo3;
+	[ omega, vecG, matH, retCode, datOut_tweakLocalModel ] = findBestFit1D__tweakLocalModel( ...
+	  datOut_calcLocalModel, prm );
+	if ( RETCODE__SUCCESS ~= retCode )
+		msg_error( verbLev, thisFile, __LINE__, sprintf( ...
+		  "__tweakLocalModel() returned %s.", retcode2str(retCode) ) );
+		retCode = RETCODE__BAD_INPUT;
+		return;
+	end
 	
 	%
 	%
@@ -28,6 +44,7 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep( funchRho, rhoA
 	%
 	%
 	%
+if (0)
 	% Calculate Hessian.
 	[ errFlag, vecRho0 ] = funchRho( rhoArgs, vecZ );
 	if (errFlag)
@@ -191,14 +208,22 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep( funchRho, rhoA
 		[ foo, errFlag ] = chol(matH_trial);
 	end
 	matH = matH_trial;
+end
+
 	%
 	%
 	% For BT proper, use Lev or LevMarq.
-	msg( thisFile, __LINE__, "TODO: Properly handle backtracking and bounds." );
+	%%%msg( thisFile, __LINE__, "TODO: Properly handle backtracking and bounds." );
 	vecDelta = -matH\vecG;
 	if ( issize(vecZ,[1,sizeZ]) )
 		vecDelta = vecDelta';
 	end
+	
+	
+	echo__vecG = vecG
+	echo__matH = matH
+	echo__vecDelta = vecDelta
+	
 	%
 	retCode = RETCODE__SUCCESS;
 	return;

@@ -68,8 +68,8 @@ function [ omega, vecG, matH, retCode, datOut ] = findBestFit1D__calcLocalModel(
 	%
 	matRho_plus  = zeros(sizeZ,sizeRho);
 	matRho_minus = zeros(sizeZ,sizeRho);
-	vecOmega_plus = zeros(sizeZ);
-	vecOmega_minus = zeros(sizeZ);
+	vecOmega_plus = zeros(sizeZ,1);
+	vecOmega_minus = zeros(sizeZ,1);
 	for n=1:sizeZ
 		epsZ_temp = vecEpsZ(n);
 		%
@@ -148,6 +148,8 @@ function [ omega, vecG, matH, retCode, datOut ] = findBestFit1D__calcLocalModel(
 	%
 	%
 	% Calc combination stuff.
+	% Note that even though H1+H2 would be more accurate locally,
+	% H1 is likely(?) to be more accurate near the actual minimum.
 	vecG_a = vecOmegaDZ;
 	vecG_b = matRhoDZ * vecOmegaDRho;
 	matH1 = matRhoDZ * matOmegaDRho2 * (matRhoDZ');
@@ -171,8 +173,10 @@ function [ omega, vecG, matH, retCode, datOut ] = findBestFit1D__calcLocalModel(
 		assert( sum(sum((matHDiag_b'-matHDiag_b).^2))     <= eps150*sum(sum(matHDiag_b.^2)) );
 	end
 	%
+	% Set output.
+	vecG = vecG_a;
+	matH = matH1;
 	%
-	% Pack output.
 	datOut.vecZ = vecZ;
 	%
 	datOut.vecRho = vecRho;
@@ -180,6 +184,7 @@ function [ omega, vecG, matH, retCode, datOut ] = findBestFit1D__calcLocalModel(
 	datOut.vecOmegaDRho = vecOmegaDRho;
 	datOut.matOmegaDRho2 = matOmegaDRho2;
 	%
+	datOut.vecEpsZ = vecEpsZ;
 	datOut.matRho_plus  = matRho_plus;
 	datOut.matRho_minus = matRho_minus;
 	datOut.vecOmega_plus  = vecOmega_plus;
