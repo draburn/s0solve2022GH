@@ -56,6 +56,8 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep( funchRho, rhoA
 	mu0 = mygetfield( prm, "mu0", eps050 );
 	mu1 = mygetfield( prm, "mu1", 1.0./eps050 );
 	muStep = mygetfield( prm, "muStep", 10.0 );
+	requireOmegaModelToBePositive = mygetfield( prm, "requireOmegaModelToBePositive", false );
+	sufficientDecreaseCoeff = mygetfield( prm, "sufficientDecreaseCoeff", 0.01 );
 	if ( valLev >= VALLEV__MEDIUM )
 		assert( isrealscalar(mu0) );
 		assert( isrealscalar(mu1) );
@@ -63,6 +65,10 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep( funchRho, rhoA
 		assert( 0.0 < mu0 );
 		assert( mu0 < mu1 );
 		assert( 1.0 < muStep );
+		assert( issize(requireOmegaModelToBePositive,[1,1]) );
+		assert( isrealscalar(sufficientDecreaseCoeff) );
+		assert( 0.0 < sufficientDecreaseCoeff );
+		assert( sufficientDecreaseCoeff < 1.0 );
 	end
 	%
 	iterCount = 0;
@@ -96,6 +102,20 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep( funchRho, rhoA
 			assert( isrealarray(vecDelta_trial,[sizeZ,1]) );
 		end
 		%
+		omegaModel_trial = omega + vecDelta_trial' * vecG + 0.5 * vecDelta_trial' * matH * vecDelta_trial;
+		if ( omegaModel_trial > omega )
+			msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
+			  "Generated delta appears to increase omega (%g).", mu_trial ) );
+			retCode = RETCODE__INTERNAL_INCONSISTENCY;
+			return;
+		end
+		if ( requireOmegaModelToBePositive )
+		if ( omegaModel_trial < 0.0 )
+			continue;
+		end
+		end
+		%
+		
 		
 		msg( thisFile, __LINE__, "TODO: Remove this p > 0 hack." );
 		if ( vecZ(2)+vecDelta_trial(2) <= 0.0 )
@@ -103,17 +123,6 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep( funchRho, rhoA
 		end
 		
 		
-		%
-		%%%[ isGood, retCode, datOut_checkDelta_trial ] = findBestFit1D__findStep__checkDelta( ...
-		%%%  vecDelta_trial, funchRho, rhoArgs, vecZ, prm );
-		%%%if ( RETCODE__SUCCESS ~= retCode )
-		%%%	msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
-		%%%	  "__checkDelta() returned %s.", retcode2str(retCode) ) );
-		%%%	continue;
-		%%%end
-		%%%if (~isGood)
-		%%%	continue;
-		%%%end
 		%
 		[ errFlag, vecRho_trial ] = funchRho( rhoArgs, vecZ + vecDelta_trial );
 		if (errFlag)
@@ -135,8 +144,10 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep( funchRho, rhoA
 			continue;
 		end
 		%
-		msg( thisFile, __LINE__, "TODO: Change acceptance criteria." );
-		if ( omega_trial >= omega )
+		if ( omega_trial > omega )
+			continue;
+		end
+		if ( abs(omega_trial - omega) < sufficientDecreaseCoeff*abs(omegaModel_trial - omega) );
 			continue;
 		end
 		%
