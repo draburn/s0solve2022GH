@@ -42,6 +42,7 @@ function [ vecZ, retCode, datOut ] = findBestFit1D( funchRho, rhoArgs, vecZ0, pr
 	end
 	%
 	%
+	msg( thisFile, __LINE__, "TODO: Make funchOmega, etc, be pass-down." );
 	% Main loop.
 	iterLimit = mygetfield( prm, "iterLimit", 100 );
 	omegaTol = mygetfield( prm, "omeagTol", eps050 );
@@ -83,7 +84,7 @@ function [ vecZ, retCode, datOut ] = findBestFit1D( funchRho, rhoArgs, vecZ0, pr
 		%
 		% Find next trial.
 		[ vecDelta, retCode, datOut_findStep ] = findBestFit1D__findStep( funchRho, rhoArgs, vecZ, prm );
-		if ( RETCODE__SUCCESS != retCode )
+		if ( RETCODE__SUCCESS ~= retCode )
 			msg_main( verbLev, thisFile, __LINE__, sprintf( ...
 			  "__findStep() returned %s.", retcode2str(retCode) ) );
 			% Leave retCode unmodified (for now).

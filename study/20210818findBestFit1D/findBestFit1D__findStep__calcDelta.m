@@ -43,7 +43,7 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep__calcDelta( ome
 	%
 	vecDelta = -(matR \ ( matR' \ vecG ));
 	%
-	% TODO: Handle boundaries.
+	msg( thisFile, __LINE__, "TODO: Add loop to handle boundaries." );
 	%
 	retCode = RETCODE__SUCCESS;
 	return;

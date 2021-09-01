@@ -44,6 +44,16 @@ function [ omega, vecG, matH, retCode, datOut ] = findBestFit1D__calcLocalModel(
 	omega         = funchOmega(      vecRho );
 	vecOmegaDRho  = funchOmegaDRho(  vecRho );
 	matOmegaDRho2 = funchOmegaDRho2( vecRho );
+	if (~isrealscalar(omega))
+		msg_error( verbLev, thisFile, __LINE__, "funchOmega() failed for current guess (not a real scalar)." );
+		retCode = RETCODE__BAD_INPUT;
+		return;
+	end
+	if ( omega < 0.0 )
+		msg_error( verbLev, thisFile, __LINE__, "funchOmega() failed for current guess (negative)." );
+		retCode = RETCODE__BAD_INPUT;
+		return;
+	end
 	if ( valLev >= VALLEV__MEDIUM )
 		assert( isrealscalar(omega) );
 		assert( omega >= 0.0 );
