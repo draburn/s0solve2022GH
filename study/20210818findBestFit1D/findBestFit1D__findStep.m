@@ -15,22 +15,11 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep( funchRho, rhoA
 	
 	% DRaburn 2021.08.29.
 	% Dev hack!
-	[ foo1, foo2, foo3, retCode, datOut_calcLocalModel ] = findBestFit1D__calcLocalModel( ...
+	[ omega, vecG, matH, retCode, datOut_calcLocalModel ] = findBestFit1D__calcLocalModel( ...
 	  funchRho, rhoArgs, vecZ, prm );
 	if ( RETCODE__SUCCESS ~= retCode )
 		msg_error( verbLev, thisFile, __LINE__, sprintf( ...
 		  "__calcLocalModel() returned %s.", retcode2str(retCode) ) );
-		retCode = RETCODE__BAD_INPUT;
-		return;
-	end
-	clear foo1;
-	clear foo2;
-	clear foo3;
-	[ omega, vecG, matH, retCode, datOut_tweakLocalModel ] = findBestFit1D__tweakLocalModel( ...
-	  datOut_calcLocalModel, prm );
-	if ( RETCODE__SUCCESS ~= retCode )
-		msg_error( verbLev, thisFile, __LINE__, sprintf( ...
-		  "__tweakLocalModel() returned %s.", retcode2str(retCode) ) );
 		retCode = RETCODE__BAD_INPUT;
 		return;
 	end
@@ -218,12 +207,6 @@ end
 	if ( issize(vecZ,[1,sizeZ]) )
 		vecDelta = vecDelta';
 	end
-	
-	
-	echo__vecG = vecG
-	echo__matH = matH
-	echo__vecDelta = vecDelta
-	
 	%
 	retCode = RETCODE__SUCCESS;
 	return;

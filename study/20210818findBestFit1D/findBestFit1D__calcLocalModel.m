@@ -174,8 +174,8 @@ function [ omega, vecG, matH, retCode, datOut ] = findBestFit1D__calcLocalModel(
 	end
 	%
 	% Set output.
-	vecG = vecG_a;
-	matH = matH1;
+	vecG = vecG_a; % May be overwritten by "__tweak".
+	matH = matH1;  % May be overwritten by "__tweak".
 	%
 	datOut.vecZ = vecZ;
 	%
@@ -202,6 +202,18 @@ function [ omega, vecG, matH, retCode, datOut ] = findBestFit1D__calcLocalModel(
 	datOut.matH_inexact = matH_inexact;
 	datOut.matHDiag_a = matHDiag_a;
 	datOut.matHDiag_b = matHDiag_b;
+	%
+	%
+	%
+	prm_tweak = mygetfield( prm, "prm_tweak", prm );
+	[ vecG, matH, retCode, datOut_tweak ] = findBestFit1D__calcLocalModel__tweak( datOut, prm_tweak );
+	datOut.datOut_tweak = datOut_tweak;
+	if ( RETCODE__SUCCESS ~= retCode )
+		msg_error( verbLev, thisFile, __LINE__, sprintf(
+		  "__calcLocalModel__tweak() returned %s.", retcode2str(retCode) ) );
+		retCode = RETCODE__BAD_INPUT;
+		return;
+	end
 	%
 	%
 	%

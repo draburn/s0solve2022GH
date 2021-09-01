@@ -1,8 +1,8 @@
-function [ omega, vecG, matH, retCode, datOut ] = findBestFit1D__tweakLocalModel( dat_calcLocalModel, prm )
+function [ vecG, matH, retCode, datOut ] = findBestFit1D__calcLocalModel__tweak( dat_calcLocalModel, prm )
 	%
 	% Init
 	commondefs;
-	thisFile = "findBestFit1D__tweakLocalModel";
+	thisFile = "findBestFit1D__calcLocalModel__tweak";
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__NOTIFY );
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	valLev = mygetfield( prm, "valLev", VALLEV__HIGH );
@@ -214,6 +214,7 @@ function [ omega, vecG, matH, retCode, datOut ] = findBestFit1D__tweakLocalModel
 	matH = matH_trial;
 	%echo__matH = matH
 	%
+	if (false)
 	% Make sure that the minimum omega according to the model is >= zero?
 	hScale = sqrt(sum( sum(matH.^2)/sizeZ )); % Updated!
 	iterCount = 0;
@@ -245,6 +246,7 @@ function [ omega, vecG, matH, retCode, datOut ] = findBestFit1D__tweakLocalModel
 		end
 	end
 	matH = matH_trial;
+	end
 	%
 	retCode = RETCODE__SUCCESS;
 	return;

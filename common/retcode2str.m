@@ -6,13 +6,13 @@
 function str = retcode2str( retCode )
 	commondefs;
 	if (isempty(retCode))
-		str = "<< The return code was null ([]). >>";
+		str = "<< THE RETURN CODE WAS NULL ([]). CHECK ORDER OF ARGUMENTS. >>";
 		return;
 	elseif (~isrealscalar(retCode))
-		str = "<< The return code is not a real scalar. >>";
+		str = "<< THE RETURN CODE IS NOT A REAL SCALAR. CHECK ORDER OF ARGUMENTS. >>";
 		return;
 	elseif ( abs(retCode-round(retCode)) > eps050*abs(retCode) )
-		str = sprintf( "<< The return code is not an integer (%g). >>", retCode );
+		str = sprintf( "<< THE RETURN CODE IS NOT AN INTEGER (%g). CHECK ORDER OF ARGUMENTS. >>", retCode );
 		return;
 	elseif ( RETCODE__SUCCESS == retCode )
 		str0 = "Success";
