@@ -44,6 +44,29 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep__calcDelta( ome
 	vecDelta = -(matR \ ( matR' \ vecG ));
 	%
 	msg( thisFile, __LINE__, "TODO: Add loop to handle boundaries." );
+	if (0)
+	vecBounded = zeros(sizeZ,1);
+	checkOOB = true;
+	while (checkOOB)
+		checkOOB = false;
+		for n=1:sizeZ
+		if (~vecBounded(n))
+			if ( vecZ(n) + vecDelta(n) < vecZMin(n) )
+				checkOOB = true;
+				vecDelta(n) = vecZMin(n) - vecZ(n);
+				vecBounded(n) = 1;
+			elseif ( vecZ(n) + vecDelta(n) > vecZMax(n) )
+				checkOOB = true;
+				vecDelta(n) = vecZMax(n) - vecZ(n);
+				vecBounded(n) = 1;
+			end
+		end
+		end
+		%
+		msg( thisFile, __LINE__, "TODO: Properly update vecDelta when bounded." );
+		%
+	end
+	end
 	%
 	retCode = RETCODE__SUCCESS;
 	return;

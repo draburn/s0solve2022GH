@@ -73,11 +73,13 @@ function [ vecG, matH, retCode, datOut ] = findBestFit1D__calcLocalModel__tweak(
 		if ( 0 == whichToUse )
 			vecG(n) = vecG_cent(n);
 		elseif ( -1 == whichToUse )
-			vecG(n) = vecG_minus(n);
+			% Apply gTweakCoeff* to prevent jump in value.
+			vecG(n) = gTweakCoeff*vecG_minus(n);
 		elseif ( +1 == whichToUse )
-			vecG(n) = vecG_plus(n);
+			% Apply gTweakCoeff* to prevent jump in value.
+			vecG(n) = gTweakCoeff*vecG_plus(n);
 		else
-		msg_error( verbLev, thisFile, __LINE__, sprintf( ...
+			msg_error( verbLev, thisFile, __LINE__, sprintf( ...
 			  "Invalid value of whichToUse (%g).", whichToUse ) );
 			retCode = RETCODE__INTERNAL_INCONSISTENCY;
 		end
