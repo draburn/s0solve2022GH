@@ -104,10 +104,12 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep( funchRho, rhoA
 		%
 		omegaModel_trial = omega + vecDelta_trial' * vecG + 0.5 * vecDelta_trial' * matH * vecDelta_trial;
 		if ( omegaModel_trial > omega )
-			msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
-			  "Generated delta appears to increase omega (%g).", mu_trial ) );
-			retCode = RETCODE__INTERNAL_INCONSISTENCY;
-			return;
+			%msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
+			%  "Generated delta appears to increase omega (%g).", mu_trial ) );
+			%retCode = RETCODE__INTERNAL_INCONSISTENCY;
+			%return;
+			% Allow this, because __calcDelta's corner-handling technology may be limited.
+			continue;
 		end
 		if ( requireOmegaModelToBePositive )
 		if ( omegaModel_trial < 0.0 )

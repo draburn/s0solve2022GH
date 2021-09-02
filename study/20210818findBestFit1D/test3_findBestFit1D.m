@@ -14,7 +14,7 @@
 	echo__prm = prm
 	vecZ0 = [ 0.0, 2.0 ]'
 	prm = [];
-	prm.matZBounds = [ -Inf, +Inf; 1.0, +Inf ];
+	prm.matZBounds = [ -Inf, 0.0; 1.0, +Inf ];
 	[ vecZ, retCode, datOut ] = findBestFit1D( funchRho, rhoArgs, vecZ0, prm );
 	echo__vecZ = vecZ
 	echo__retCode = retCode;

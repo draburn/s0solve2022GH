@@ -45,6 +45,9 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep__calcDelta( vec
 	%
 	%
 	%
+	% Note that this may lead to the same "corner" vecDelta being used
+	% for multiple values of mu.
+	% A straightforward optimization would be to avoid that.
 	matZBounds = mygetfield( prm, "matZBounds", [] );
 	if (~isempty(matZBounds))
 		assert( issize(matZBounds,[sizeZ,2]) );
@@ -83,6 +86,12 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep__calcDelta( vec
 				vecTemp(n) = 1;
 				matV = [ matV, vecTemp ];
 			end
+			end
+			if (isempty(matV))
+				% We've hit a corner.
+				% Hypothetically, we'd want to check each boundary that's part of the corner,
+				%  but, that seems like too much work.
+				break;
 			end
 			%
 			matAMod = matV' * matA * matV;
