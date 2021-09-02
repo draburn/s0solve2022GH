@@ -1,4 +1,4 @@
-function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep__calcDelta( omega, vecG, matH, mu, prm )
+function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep__calcDelta( vecZ, omega, vecG, matH, mu, prm )
 	%
 	% Init
 	commondefs;
@@ -43,29 +43,55 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep__calcDelta( ome
 	%
 	vecDelta = -(matR \ ( matR' \ vecG ));
 	%
-	msg( thisFile, __LINE__, "TODO: Add loop to handle boundaries." );
-	if (0)
-	vecBounded = zeros(sizeZ,1);
-	checkOOB = true;
-	while (checkOOB)
-		checkOOB = false;
+	%
+	%
+	matZBounds = mygetfield( prm, "matZBounds", [] );
+	if (~isempty(matZBounds))
+		assert( issize(matZBounds,[sizeZ,2]) );
 		for n=1:sizeZ
-		if (~vecBounded(n))
-			if ( vecZ(n) + vecDelta(n) < vecZMin(n) )
-				checkOOB = true;
-				vecDelta(n) = vecZMin(n) - vecZ(n);
-				vecBounded(n) = 1;
-			elseif ( vecZ(n) + vecDelta(n) > vecZMax(n) )
-				checkOOB = true;
-				vecDelta(n) = vecZMax(n) - vecZ(n);
-				vecBounded(n) = 1;
+			assert( isrealorinfscalar(matZBounds(n,1)) );
+			assert( isrealorinfscalar(matZBounds(n,2)) );
+			assert( matZBounds(n,1) <= vecZ(n) );
+			assert( vecZ(n) <= matZBounds(n,2) );
+		end
+		%
+		vecElemIsBounded = zeros(sizeZ,1);
+		checkOOB = true;
+		while (checkOOB)
+			checkOOB = false;
+			for n=1:sizeZ
+			if (~vecElemIsBounded(n))
+				if ( vecZ(n) + vecDelta(n) < matZBounds(n,1) )
+					checkOOB = true;
+					vecDelta(n) = matZBounds(n,1) - vecZ(n);
+					vecElemIsBounded(n) = 1;
+				elseif ( vecZ(n) + vecDelta(n) > matZBounds(n,2) )
+					checkOOB = true;
+					vecDelta(n) = matZBounds(n,2) - vecZ(n);
+					vecElemIsBounded(n) = 1;
+				end
 			end
+			end
+			if (~checkOOB)
+				break;
+			end
+			%
+			matV = [];
+			for n=1:sizeZ
+			if (~vecElemIsBounded(n))
+				vecTemp = zeros(sizeZ,1);
+				vecTemp(n) = 1;
+				matV = [ matV, vecTemp ];
+			end
+			end
+			%
+			matAMod = matV' * matA * matV;
+			vecGMod = matV' * ( vecG + matH * vecDelta );
+			[ matRMod, errFlag ] = chol( matAMod );
+			assert(~errFlag);
+			vecDeltaMod = -(matRMod \ ( matRMod' \ vecGMod ));
+			vecDelta = vecDelta + matV*vecDeltaMod;
 		end
-		end
-		%
-		msg( thisFile, __LINE__, "TODO: Properly update vecDelta when bounded." );
-		%
-	end
 	end
 	%
 	retCode = RETCODE__SUCCESS;

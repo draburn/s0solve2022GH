@@ -91,7 +91,7 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep( funchRho, rhoA
 		end
 		%
 		[ vecDelta_trial, retCode, datOut_calcDelta_trial ] = findBestFit1D__findStep__calcDelta( ...
-		  omega, vecG, matH, mu_trial, prm );
+		  vecZ, omega, vecG, matH, mu_trial, prm );
 		if ( RETCODE__SUCCESS ~= retCode )
 			msg_progress( verbLev, thisFile, __LINE__, sprintf( ...
 			  "__calcDelta() returned %s.", retcode2str(retCode) ) );
@@ -115,14 +115,7 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep( funchRho, rhoA
 		end
 		end
 		%
-		
-		
-		msg( thisFile, __LINE__, "TODO: Remove this p > 0 hack." );
-		if ( vecZ(2)+vecDelta_trial(2) <= 0.0 )
-			continue
-		end
-		
-		
+		%
 		%
 		[ errFlag, vecRho_trial ] = funchRho( rhoArgs, vecZ + vecDelta_trial );
 		if (errFlag)
