@@ -59,26 +59,58 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep__calcDelta( vec
 		end
 		%
 		vecElemIsBounded = zeros(sizeZ,1);
-		checkOOB = true;
-		while (checkOOB)
-			checkOOB = false;
+		while (true)
+			% Check boundaries; identify closes one per straight-line.
+			nOfClosestBound = 0; % 0 indicates no bound.
+			cOfClosestBound = 2.0; % Largest meaningful value is 1.0.
 			for n=1:sizeZ
 			if (~vecElemIsBounded(n))
-				if ( vecZ(n) + vecDelta(n) < matZBounds(n,1) )
-					checkOOB = true;
-					vecDelta(n) = matZBounds(n,1) - vecZ(n);
-					vecElemIsBounded(n) = 1;
+				c = 3.0; % Largest meaningful value is 1.0 (or 2.0 until set).
+				if ( 0.0 == vecDelta(n) )
+					if (  (vecZ(n) < matZBounds(n,1))  ||  (vecZ(n) > matZBounds(n,2)) )
+						c = 0.0;
+						% Not sure if this ever comes up,
+						% but, we're going to divide by vecDelta(n) below.
+					end
+				elseif ( vecZ(n) + vecDelta(n) < matZBounds(n,1) )
+					c = (matZBounds(n,1) - vecZ(n)) / vecDelta(n);
 				elseif ( vecZ(n) + vecDelta(n) > matZBounds(n,2) )
-					checkOOB = true;
-					vecDelta(n) = matZBounds(n,2) - vecZ(n);
-					vecElemIsBounded(n) = 1;
+					c = (matZBounds(n,2) - vecZ(n)) / vecDelta(n);
+				end
+				if ( c < cOfClosestBound )
+					cOfClosestBound = c;
+					nOfClosestBound = n;
 				end
 			end
 			end
-			if (~checkOOB)
-				break;
+			if ( valLev >= VALLEV__MEDIUM )
+				assert( 0.0 <= cOfClosestBound );
+				assert( 0 <= nOfClosestBound );
+				assert( nOfClosestBound <= sizeZ );
 			end
 			%
+			if ( 0 == nOfClosestBound )
+				% Haven't crossed any boundaries.
+				break;
+			end
+			if ( valLev >= VALLEV__MEDIUM )
+				assert( cOfClosestBound <= 1.0 );
+			end
+			%
+			% Apply bound.
+			n = nOfClosestBound;
+			if ( vecZ(n) + vecDelta(n) < matZBounds(n,1) )
+				vecDelta(n) = matZBounds(n,1) - vecZ(n);
+			elseif ( vecZ(n) + vecDelta(n) > matZBounds(n,2) )
+				vecDelta(n) = matZBounds(n,2) - vecZ(n);
+			else
+				msg_error( verbLev, thisFile, __LINE__, "INTERAL ERROR." );
+				retCode = RETCODE__INTERNAL_INCONSISTENCY;
+				return;
+			end
+			vecElemIsBounded(n) = 1;
+			%
+			% Optimize all other elements.
 			matV = [];
 			for n=1:sizeZ
 			if (~vecElemIsBounded(n))
@@ -88,9 +120,7 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep__calcDelta( vec
 			end
 			end
 			if (isempty(matV))
-				% We've hit a corner.
-				% Hypothetically, we'd want to check each boundary that's part of the corner,
-				%  but, that seems like too much work.
+				% We've hit a corner, nothing left to optimize.
 				break;
 			end
 			%
@@ -102,6 +132,8 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep__calcDelta( vec
 			vecDelta = vecDelta + matV*vecDeltaMod;
 		end
 	end
+	%
+	%
 	%
 	retCode = RETCODE__SUCCESS;
 	return;
