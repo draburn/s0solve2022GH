@@ -4,21 +4,20 @@ tic();
 numFigs = 0;
 %
 if (0)
-	funch_map_theta = @(x,y)( 0.2*pi*( (x-1.0).^2  + y.^2 ) );
-	%ax = [ -0.183, -0.181, 0.233, 0.236 ];
-elseif (1)
 	funch_map_theta = @(x,y)( 0.4*pi*( (x-1.0).^2  + y.^2 ) );
-	%
-	% The local min are at [1.0,0.0] and about [ 0.663846; -0.747869 ];
-	%ax = [ 0.223, 0.226, -0.248, -0.245 ];
-elseif (1)
-	funch_map_theta = @(x,y)( 0.5*pi*( (x-1.0).^2  + y.^2 ) );
-	%ax = [ 0.129, 0.131, -0.320, -0.317 ];
-	%ax += [ -0.5, 0.5, -0.5, 0.5 ];
-elseif (0)
-	funch_map_theta = @(x,y)( pi*( (x-1.0).^2  + y.^2 ) );
+	vecRAltExt = [0.663846; -0.747869];
+	vecRRoot = [-0.0345211640940307; 0.2951445062707295];
+	%ax = [ -0.3, 1.3, -0.8, 0.5 ];
+	%ax = [ 0.663, 0.665, -0.749, -0.747 ];
 else
-	funch_map_theta = @(x,y)( 0*x );
+	funch_map_theta = @(x,y)( 0.5*pi*( (x-1.0).^2  + y.^2 ) );
+	%vecRAltExt = [0.784404521330891; -0.620300195394128];
+	vecRAltExt = [ 0.7898325, -0.6133225 ];
+	vecRRoot = [0.0213073050733866; 0.2963916144271111];
+	ax = [ -0.3, 1.3, -0.8, 0.5 ];
+	%ax = [ 0.789, 0.791, -0.614, -0.613 ];
+	%ax = [ 0.78982, 0.78984, -0.61333, -0.61331 ];
+	%ax = [ 0.789832, 0.789833, -0.613323, -0.613322 ];
 end
 funch_map_x = @(x,y)( ...
    (cos(funch_map_theta(x,y)).*x) ...
@@ -43,8 +42,6 @@ funch_omega = @(x,y)( sqrt(sum(funch_f(x,y).^2, 1)) );
 epsX = sqrt(eps);
 epsY = sqrt(eps);
 vecR0 = [ 1.0; 0.0 ];
-%vecR0 = [ 0.663846; -0.747869 ];
-%vecR0 = [ -0.1; 0.3 ]
 vecR = vecR0;
 for n=1:10
 	vecF = funch_f(vecR(1),vecR(2));
@@ -53,14 +50,17 @@ for n=1:10
 	matJ = [ ...
 	  ( funch_f(vecR(1)+epsX,vecR(2)) - funch_f(vecR(1)-epsX,vecR(2)) ) / (2.0*epsX), ...
 	  ( funch_f(vecR(1),vecR(2)+epsY) - funch_f(vecR(1),vecR(2)-epsY) ) / (2.0*epsY) ];
-	vecDelta = - matJ \ vecF;
+	%%%vecDelta = - matJ \ vecF;
+	vecDelta = - (matJ'*matJ) \ (matJ'*vecF);
 	for lambda_trial = [ 1.0, 0.99, 0.9, 0.8, 0.5, 0.2, 0.1, ...
-	  1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10  ]
+	  1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10, ...
+	  1e-11, 1e-12, 1e-13, 1e-14, 1e-15, 1e-16 ]
 		vecR_trial = vecR + lambda_trial*vecDelta;
 		vecF_trial = funch_f(vecR_trial(1),vecR_trial(2));
 		omega_trial = norm(vecF_trial);
 		msg( thisFile, __LINE__, sprintf( "   %g,  %g", lambda_trial, omega_trial ) );
 		if ( omega_trial < omega )
+			echo__lambda_trial = lambda_trial
 			break;
 		end
 	end
@@ -90,8 +90,6 @@ use12Label = true;
 multiArgLevel_fx = 2;
 multiArgLevel_fy = 2;
 multiArgLevel_omega = 1;
-ax = [ -0.3, 1.3, -0.8, 0.5 ];
-%%%ax = [ 0.663, 0.665, -0.749, -0.747 ];
 %%%
 %ax = [ vecR(1)-0.01, vecR(1)+0.01, vecR(2)-0.01, vecR(2)+0.01 ];
 %ax = [ -0.5, 1.5, -1.0, 1.0 ];
@@ -150,8 +148,8 @@ else
 end
 hold on;
 plot( vecR(1), vecR(2), "x", "color", [0.8,0.0,0.0], "linewidth", 3, "markersize", 20 );
-plot( 0.663846, -0.747869, "+", "color", [0.0,0.7,0.0], "linewidth", 3, "markersize", 20 );
-plot( -0.0345211640940307, 0.2951445062707295, "*", "color", [0.0,0.0,1.0], "linewidth", 3, "markersize", 20 );
+plot( vecRAltExt(1), vecRAltExt(2), "+", "color", [0.0,1.0,0.0], "linewidth", 3, "markersize", 20 );
+plot( vecRRoot(1), vecRRoot(2), "*", "color", [0.0,0.0,1.0], "linewidth", 3, "markersize", 20 );
 hold off;
 grid on;
 %
@@ -183,8 +181,8 @@ else
 end
 hold on;
 plot( vecR(1), vecR(2), "x", "color", [0.8,0.0,0.0], "linewidth", 3, "markersize", 20 );
-plot( 0.663846, -0.747869, "+", "color", [0.0,0.7,0.0], "linewidth", 3, "markersize", 20 );
-plot( -0.0345211640940307, 0.2951445062707295, "*", "color", [0.0,0.0,1.0], "linewidth", 3, "markersize", 20 );
+plot( vecRAltExt(1), vecRAltExt(2), "+", "color", [0.0,1.0,0.0], "linewidth", 3, "markersize", 20 );
+plot( vecRRoot(1), vecRRoot(2), "*", "color", [0.0,0.0,1.0], "linewidth", 3, "markersize", 20 );
 hold off;
 grid on;
 %
@@ -214,8 +212,8 @@ else
 end
 hold on;
 plot( vecR(1), vecR(2), "x", "color", [0.8,0.0,0.0], "linewidth", 3, "markersize", 20 );
-plot( 0.663846, -0.747869, "+", "color", [0.0,0.7,0.0], "linewidth", 3, "markersize", 20 );
-plot( -0.0345211640940307, 0.2951445062707295, "*", "color", [0.0,0.0,1.0], "linewidth", 3, "markersize", 20 );
+plot( vecRAltExt(1), vecRAltExt(2), "+", "color", [0.0,1.0,0.0], "linewidth", 3, "markersize", 20 );
+plot( vecRRoot(1), vecRRoot(2), "*", "color", [0.0,0.0,1.0], "linewidth", 3, "markersize", 20 );
 hold off;
 grid on;
 %
