@@ -52,9 +52,10 @@ clear vecR;
 %
 %
 %
-vecR0 = [ 2.6; 3.8 ];
+%vecR0 = [ 2.6; 3.8 ];
+vecR0 = [ 2.5399, 3.833 ];
 vecR = vecR0;
-for n=1:10
+for n=1:20
 	vecF = funch_f(vecR(1),vecR(2));
 	omega = norm(vecF);
 	msg( thisFile, __LINE__, sprintf( "%3d,  %g", n, omega ) );
@@ -63,7 +64,7 @@ for n=1:10
 	  ( funch_f(vecR(1),vecR(2)+epsY) - funch_f(vecR(1),vecR(2)-epsY) ) / (2.0*epsY) ];
 	vecDelta = - matJ \ vecF;
 	for lambda_trial = [ 1.0, 0.99, 0.9, 0.8, 0.5, 0.2, 0.1, ...
-	  1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10  ]
+	  1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10, 1e-11, 1e-12, 1e-13, 1e-14, 1e-15  ]
 		vecR_trial = vecR + lambda_trial*vecDelta;
 		vecF_trial = funch_f(vecR_trial(1),vecR_trial(2));
 		omega_trial = norm(vecF_trial);
@@ -79,6 +80,7 @@ for n=1:10
 end
 msg( thisFile, __LINE__, sprintf( "%3d,  %g", n, omega ) );
 vecRExt = vecR
+%return
 vecFExt = funch_f(vecRExt(1),vecRExt(2))
 fExtNorm = sqrt( vecFExt(1)^2 + vecFExt(2)^2 );
 if ( fExtNorm > 0.0 )
@@ -130,8 +132,12 @@ use12Label = true;
 multiArgLevel_fx = 2;
 multiArgLevel_fy = 2;
 multiArgLevel_omega = 1;
-ax = [ -4.0, 6.0, -4.0, 6.0 ];
-ax = [ 2.0, 4.5, 2.0, 4.5 ];
+%ax = [ -4.0, 6.0, -4.0, 6.0 ];
+%ax = [ 2.0, 4.5, 2.0, 4.5 ];
+ax = [ 2.4, 2.8, 3.6, 4.0 ];
+%ax = [ 2.53, 2.55, 3.82, 3.85 ];
+%ax = [ 2.539, 2.542, 3.832, 3.834 ];
+%ax = [ 2.5398, 2.5400, 3.8329, 3.8331 ];
 sizeX = 201;
 sizeY = 203;
 [ gridX, gridY, gridFX ] = gridfunch( funch_fx, multiArgLevel_fx, ax, sizeX, sizeY );
@@ -199,7 +205,8 @@ cMap = 0.6 + (0.4*jet(numColors));
 z0 = ( 0.0 - min(min(gridViz)) ) / ( max(max(gridViz)) - min(min(gridViz)) );
 i0 = 1 + round( (numColors-1)*z0 );
 if ( 0==i0 || -1==i0 ) % HA~ACK
-	i0 = 1;
+	msg( thisFile, __LINE__, "IF DARK GRAY IS MISSING, FORCE i0 = 1 HERE." );
+	%i0 = 1;
 end
 if ( 1 <= i0 && i0 <= numColors )
 	%cMap(i0,:) *= 0.25;
