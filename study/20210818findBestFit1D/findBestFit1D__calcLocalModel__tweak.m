@@ -44,6 +44,14 @@ function [ vecG, matH, retCode, datOut ] = findBestFit1D__calcLocalModel__tweak(
 	%
 	vecG = zeros(sizeZ,1);
 	for n=1:sizeZ
+		%
+		% DRaburn 2021.09.25:
+		% I think this is right.
+		% Hadn't properly tested before.
+		% Hit for first time from test7_asym with setprngstates(6723760).
+		%omega_plus  = vecOmega_plus(n);
+		%omega_minus = vecOmega_minus(n);
+		%
 		plusIsGooderThan0  = false; % Unless...
 		if ( ( abs(vecG_cent(n)) < gTweakCoeff*abs(vecG_plus(n)) ) ...
 		  && ( omega_plus < omega ) )
