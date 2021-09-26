@@ -45,27 +45,20 @@ function [ vecG, matH, retCode, datOut ] = findBestFit1D__calcLocalModel__tweak(
 	vecG = zeros(sizeZ,1);
 	for n=1:sizeZ
 		%
-		% DRaburn 2021.09.25:
-		% I think this is right.
-		% Hadn't properly tested before.
-		% Hit for first time from test7_asym with setprngstates(6723760).
-		%omega_plus  = vecOmega_plus(n);
-		%omega_minus = vecOmega_minus(n);
-		%
 		plusIsGooderThan0  = false; % Unless...
 		if ( ( abs(vecG_cent(n)) < gTweakCoeff*abs(vecG_plus(n)) ) ...
-		  && ( omega_plus < omega ) )
+		  && ( vecOmega_plus(n) < omega ) )
 			plusIsGooderThan0 = true;
 		end
 		%
 		minusIsGooderThan0  = false; % Unless...
 		if ( ( abs(vecG_cent(n)) < gTweakCoeff*abs(vecG_minus(n)) ) ...
-		  && ( omega_minus < omega  ) )
+		  && ( vecOmega_minus(n) < omega  ) )
 			minusIsGooderThan0 = true;
 		end
 		%
 		if ( plusIsGooderThan0 && minusIsGooderThan0 )
-			if ( omega_plus <= omega_minus )
+			if ( vecOmega_plus(n) <= vecOmega_minus(n) )
 				whichToUse = +1;
 			else
 				whichToUse = -1;
@@ -111,22 +104,26 @@ function [ vecG, matH, retCode, datOut ] = findBestFit1D__calcLocalModel__tweak(
 		assert( sum(sum((matOmegaDRho2'-matOmegaDRho2).^2)) <= eps150*sum(sum(matOmegaDRho2.^2)) );
 	end
 	%
+	% DRaburn 2021.09.25:
+	% If refactoring, the stuff in this loop should probably
+	%  be moved to the above loop, for vecG.
+	% I just don't want to bother right now.
 	matRhoDZ = zeros(sizeZ,sizeRho);
 	for n=1:sizeZ
 		plusIsGooderThan0  = false; % Unless...
 		if ( ( abs(vecG_cent(n)) < gTweakCoeff*abs(vecG_plus(n)) ) ...
-		  && ( omega_plus < omega ) )
+		  && ( vecOmega_plus(n) < omega ) )
 			plusIsGooderThan0 = true;
 		end
 		%
 		minusIsGooderThan0  = false; % Unless...
 		if ( ( abs(vecG_cent(n)) < gTweakCoeff*abs(vecG_minus(n)) ) ...
-		  && ( omega_minus < omega  ) )
+		  && ( vecOmega_minus(n) < omega  ) )
 			minusIsGooderThan0 = true;
 		end
 		%
 		if ( plusIsGooderThan0 && minusIsGooderThan0 )
-			if ( omega_plus <= omega_minus )
+			if ( vecOmega_plus(n) <= vecOmega_minus(n) )
 				whichToUse = +1;
 			else
 				whichToUse = -1;

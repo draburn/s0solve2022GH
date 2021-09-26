@@ -22,6 +22,9 @@
 	  + (x<x0).*(fL*abs(x-x0).^pL) ...
 	  + (x>x0).*(fR*abs(x-x0).^pR) );
 	vecZSecret = [ x0; pL; pR ];
+	if ( fL*fR < 0.0 )
+		msg( thisFile, __LINE__, "fL and fR have same sign; there is no actual extremum!" );
+	end
 	%
 	%
 	%

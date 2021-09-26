@@ -68,7 +68,12 @@ function [ omega, vecG, matH, retCode, datOut ] = findBestFit1D__calcLocalModel(
 	%
 	%
 	% Calc stuff *near* vecZ.
-	vecEpsZ = mygetfield( prm, "vecEpsZ", eps050*ones(size(vecZ)) );
+	% DRaburn 2021.09.25:
+	% Using epsZ = eps050 is okay for 1st order but not 2nd order deriv.
+	% While we shouldn't ever be using the directly calculated 2nd order derivs,
+	%  using a less accurate vecG should, at worst, slow convergence,
+	%  and I'm not totally sure the 2nd order derivs are never used.
+	vecEpsZ = mygetfield( prm, "vecEpsZ", eps025*ones(size(vecZ)) );
 	if ( valLev >= VALLEV__MEDIUM )
 		assert( isrealarray(vecEpsZ,[sizeZ,1]) );
 		for n=1:sizeZ
