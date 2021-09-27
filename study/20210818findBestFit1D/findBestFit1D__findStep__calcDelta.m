@@ -54,8 +54,10 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep__calcDelta( vec
 		for n=1:sizeZ
 			assert( isrealorinfscalar(matZBounds(n,1)) );
 			assert( isrealorinfscalar(matZBounds(n,2)) );
-			assert( matZBounds(n,1) <= vecZ(n) );
-			assert( vecZ(n) <= matZBounds(n,2) );
+			%assert( matZBounds(n,1) <= vecZ(n) );
+			%assert( vecZ(n) <= matZBounds(n,2) );
+			assert( matZBounds(n,1)-eps075*abs(matZBounds(n,1)) <= vecZ(n)+eps075*abs(vecZ(n)) );
+			assert( vecZ(n)-eps075*abs(vecZ(n)) <= matZBounds(n,2)+eps075*abs(matZBounds(n,2)) );
 		end
 		%
 		vecElemIsBounded = zeros(sizeZ,1);
