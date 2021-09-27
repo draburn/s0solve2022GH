@@ -45,7 +45,7 @@ function [ vecZ, retCode, datOut ] = findBestFit1D( funchRho, rhoArgs, vecZ0, pr
 	msg( thisFile, __LINE__, "TODO: Make funchOmega, etc, be pass-down." );
 	% Main loop.
 	iterLimit = mygetfield( prm, "iterLimit", 100 );
-	omegaTol = mygetfield( prm, "omeagTol", eps050 );
+	omegaTol = mygetfield( prm, "omegaTol", eps050 );
 	deltaOmegaRelTol = mygetfield( prm, "deltaOmegaRelTol", eps025 );
 	vecDeltaTol = mygetfield( prm, "vecDeltaTol", eps025*ones(size(vecZ0)) );
 	%

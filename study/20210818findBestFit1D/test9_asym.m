@@ -10,7 +10,7 @@
 	%setprngstates(15638000); % Bad as-is, but easy to fix.
 	use15638000Hacks = false;
 	%setprngstates(4406128); % Screwy pts, fit is meh but wrong.
-	%setprngstates(45081616); % Fails because X0 moves to far.
+	%setprngstates(45081616); % Fails because X0 moves too far.
 	use45081616Hacks = false;
 	f0 = randn();
 	fL = abs(randn());
