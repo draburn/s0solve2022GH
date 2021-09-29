@@ -32,7 +32,7 @@ function [ vecDelta, retCode, datOut ] = findBestFit1D__findStep( funchRho, rhoA
 		assert( isrealarray(vecG,[sizeZ,1]) );
 		assert( isrealarray(matH,[sizeZ,sizeZ]) );
 	end
-	datOut.datOut_calcLocalModel = datOut_calcLocalModel;
+	datOut.calcLocalModel = datOut_calcLocalModel;
 	vecRho = datOut_calcLocalModel.vecRho;
 	sizeRho = size(vecRho,1);
 	if ( valLev >= VALLEV__MEDIUM )

@@ -222,13 +222,15 @@ function [ omega, vecG, matH, retCode, datOut ] = findBestFit1D__calcLocalModel(
 	%
 	prm_tweak = mygetfield( prm, "prm_tweak", prm );
 	[ vecG, matH, retCode, datOut_tweak ] = findBestFit1D__calcLocalModel__tweak( datOut, prm_tweak );
-	datOut.datOut_tweak = datOut_tweak;
+	datOut.tweak = datOut_tweak;
 	if ( RETCODE__SUCCESS ~= retCode )
 		msg_error( verbLev, thisFile, __LINE__, sprintf(
 		  "__calcLocalModel__tweak() returned %s.", retcode2str(retCode) ) );
 		retCode = RETCODE__BAD_INPUT;
 		return;
 	end
+	datOut.vecG = vecG;
+	datOut.matH = matH;
 	%
 	%
 	%

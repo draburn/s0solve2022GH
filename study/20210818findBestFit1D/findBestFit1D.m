@@ -94,6 +94,7 @@ function [ vecZ, retCode, datOut ] = findBestFit1D( funchRho, rhoArgs, vecZ0, pr
 		if ( valLev >= VALLEV__MEDIUM )
 			assert( isrealarray(vecDelta,size(vecZ)) );
 		end
+		datOut.iter(iterCount+1).findStep = datOut_findStep;
 		%
 		vecZ_trial = vecZ + vecDelta;
 		[ errFlag_trial, vecRho_trial ] = funchRho( rhoArgs, vecZ_trial );
