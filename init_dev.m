@@ -53,3 +53,5 @@ commondefs;
 %addpath( "study/20210812findExt" );
 msg( "init", __LINE__, "Adding path \"study/20210818findBestFit1D\"." );
 addpath( "study/20210818findBestFit1D" );
+msg( "init", __LINE__, "Adding path \"study/20210929resFuncUtil\"." );
+addpath( "study/20210929resFuncUtil" );
