@@ -116,3 +116,16 @@
 	  vecZ(1), bigF0_capped, 'rx', 'markersize', 25, 'linewidth', 2, ...
 	  xVals_viz, fModelVals_viz, 'r-', 'linewidth', 4 );
 	grid on;
+	%
+	%
+	%
+	prm = [];
+	prm.numFigs0 = 2;
+	funchFRes = @(x)( calcRho_absPowAsymWOEF( rhoArgs, x ) );
+	%vecF = funchFRes( vecZ0 )
+	%rfuCalcNablaF( funchFRes, vecZ0 )
+	rfuPlotResAlongNewt( funchFRes, vecZ0, prm );
+	%
+	prm = [];
+	prm.numFigs0 = 3;
+	rfuPlotResAlongLev( funchFRes, vecZ0, prm );

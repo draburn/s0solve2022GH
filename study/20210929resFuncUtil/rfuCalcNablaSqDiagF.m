@@ -50,7 +50,7 @@ function matNablaSqDiagF = rfuCalcNablaSqDiagF( funchF, vecX0, prm=[] )
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO WORK
 	%
-	matNablaSqDiagF = NaN + zeros(sizeX,sizeF);
+	matNablaSqDiagF = NaN + zeros(sizeF,sizeX);
 	%
 	for n=1:sizeX
 		epsFD = vecEpsFD(n);
@@ -63,7 +63,7 @@ function matNablaSqDiagF = rfuCalcNablaSqDiagF( funchF, vecX0, prm=[] )
 		vecFM = funchF( vecXM );
 		assert( isrealarray(vecFP,[sizeF,1]) );
 		assert( isrealarray(vecFM,[sizeF,1]) );
-		matNablaSqDiagF(n,:) = ( vecFP + vecFM - (2.0*vecF0) ) / ( epsFD^2 );
+		matNablaSqDiagF(:,n) = ( vecFP + vecFM - (2.0*vecF0) ) / ( epsFD^2 );
 		clear vecFM;
 		clear vecFP;
 		clear vecXM;
@@ -85,5 +85,5 @@ end
 %!	prm = [];
 %!	tic();
 %!	matNablaSqDiagF = rfuCalcNablaSqDiagF( funchF, vecX0, prm )
-%!	assert( isrealarray(matNablaSqDiagF,[sizeX,sizeF]) );
+%!	assert( isrealarray(matNablaSqDiagF,[sizeF,sizeX]) );
 %!	toc();

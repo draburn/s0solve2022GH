@@ -59,7 +59,7 @@ function ary3NablaSqF = rfuCalcNablaSqF( funchF, vecX0, prm=[] )
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO WORK
 	%
-	ary3NablaSqF = NaN + zeros(sizeX,sizeX,sizeF);
+	ary3NablaSqF = NaN + zeros(sizeF,sizeX,sizeX);
 	%
 	%
 	for n=1:sizeX
@@ -74,7 +74,7 @@ function ary3NablaSqF = rfuCalcNablaSqF( funchF, vecX0, prm=[] )
 		vecFM = funchF( vecXM );
 		assert( isrealarray(vecFP,[sizeF,1]) );
 		assert( isrealarray(vecFM,[sizeF,1]) );
-		ary3NablaSqF(n,n,:) = ( vecFP + vecFM - (2.0*vecF0) ) / ( epsFD^2 );
+		ary3NablaSqF(:,n,n) = ( vecFP + vecFM - (2.0*vecF0) ) / ( epsFD^2 );
 		clear vecFM;
 		clear vecFP;
 		clear vecXM;
@@ -112,7 +112,7 @@ function ary3NablaSqF = rfuCalcNablaSqF( funchF, vecX0, prm=[] )
 			assert( isrealarray(vecF0P,[sizeF,1]) );
 			assert( isrealarray(vecF00,[sizeF,1]) );
 			%
-			ary3NablaSqF(n1,n2,:) = ( vecFPP + vecF00 - vecFP0 - vecF0P ) / (epsFD1*epsFD2);
+			ary3NablaSqF(:,n1,n2) = ( vecFPP + vecF00 - vecFP0 - vecF0P ) / (epsFD1*epsFD2);
 			%
 			clear vecF00;
 			clear vecF0P;
@@ -145,7 +145,7 @@ function ary3NablaSqF = rfuCalcNablaSqF( funchF, vecX0, prm=[] )
 			assert( isrealarray(vecFMP,[sizeF,1]) );
 			assert( isrealarray(vecFMM,[sizeF,1]) );
 			%
-			ary3NablaSqF(n1,n2,:) = ( vecFPP + vecFMM - vecFPM - vecFMP ) / (4.0*epsFD1*epsFD2);
+			ary3NablaSqF(:,n1,n2) = ( vecFPP + vecFMM - vecFPM - vecFMP ) / (4.0*epsFD1*epsFD2);
 			%
 			clear vecFMM;
 			clear vecFMP;
@@ -161,7 +161,7 @@ function ary3NablaSqF = rfuCalcNablaSqF( funchF, vecX0, prm=[] )
 		%
 		clear epsFD1;
 		clear epsFD2;
-		ary3NablaSqF(n2,n1,:) = ary3NablaSqF(n1,n2,:);
+		ary3NablaSqF(:,n2,n1) = ary3NablaSqF(:,n1,n2);
 	end
 	end
 	clear n1;
@@ -185,9 +185,9 @@ end
 %!	matNablaSqDiagF = rfuCalcNablaSqDiagF( funchF, vecX0, prm )
 %!	ary3NablaSqF = rfuCalcNablaSqF( funchF, vecX0, prm )
 %!	toc();
-%!	assert( isrealarray(matNablaF,[sizeX,sizeF]) );
-%!	assert( isrealarray(matNablaSqDiagF,[sizeX,sizeF]) );
-%!	assert( isrealarray(ary3NablaSqF,[sizeX,sizeX,sizeF]) );
+%!	assert( isrealarray(matNablaF,[sizeF,sizeX]) );
+%!	assert( isrealarray(matNablaSqDiagF,[sizeF,sizeX]) );
+%!	assert( isrealarray(ary3NablaSqF,[sizeF,sizeX,sizeX]) );
 
 
 %!test
@@ -209,12 +209,12 @@ end
 %!	matNablaSqDiagF = rfuCalcNablaSqDiagF( funchF, vecX0, prm )
 %!	ary3NablaSqF = rfuCalcNablaSqF( funchF, vecX0, prm )
 %!	toc();
-%!	assert( isrealarray(matNablaF,[sizeX,sizeF]) );
-%!	assert( isrealarray(matNablaSqDiagF,[sizeX,sizeF]) );
+%!	assert( isrealarray(matNablaF,[sizeF,sizeX]) );
+%!	assert( isrealarray(matNablaSqDiagF,[sizeF,sizeX]) );
 %!	if ( 1 == sizeF )
 %!		assert( ...
-%!		    isrealarray(ary3NablaSqF,[sizeX,sizeX,1]) ...
+%!		    isrealarray(ary3NablaSqF,[1,sizeX,sizeX]) ...
 %!		 || isrealarray(ary3NablaSqF,[sizeX,sizeX])  );
 %!	else
-%!		assert( isrealarray(ary3NablaSqF,[sizeX,sizeX,sizeF]) );
+%!		assert( isrealarray(ary3NablaSqF,[sizeF,sizeX,sizeX]) );
 %!	end

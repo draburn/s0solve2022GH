@@ -59,7 +59,7 @@ function matNablaF = rfuCalcNablaF( funchF, vecX0, prm=[] )
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO WORK
 	%
-	matNablaF = NaN + zeros(sizeX,sizeF);
+	matNablaF = NaN + zeros(sizeF,sizeX);
 	%
 	for n=1:sizeX
 		epsFD = vecEpsFD(n);
@@ -71,7 +71,7 @@ function matNablaF = rfuCalcNablaF( funchF, vecX0, prm=[] )
 			vecXP(n) += epsFD;
 			vecFP = funchF( vecXP );
 			assert( isrealarray(vecFP,[sizeF,1]) );
-			matNablaF(n,:) = ( vecFP - vecF0 ) / ( epsFD );
+			matNablaF(:,n) = ( vecFP - vecF0 ) / ( epsFD );
 			clear vecFP;
 			clear vecXP;
 		case {2}
@@ -83,7 +83,7 @@ function matNablaF = rfuCalcNablaF( funchF, vecX0, prm=[] )
 			vecFM = funchF( vecXM );
 			assert( isrealarray(vecFP,[sizeF,1]) );
 			assert( isrealarray(vecFM,[sizeF,1]) );
-			matNablaF(n,:) = ( vecFP - vecFM ) / ( 2.0*epsFD );
+			matNablaF(:,n) = ( vecFP - vecFM ) / ( 2.0*epsFD );
 			clear vecFM;
 			clear vecFP;
 			clear vecXM;
@@ -109,5 +109,5 @@ end
 %!	prm = [];
 %!	tic();
 %!	matNablaF = rfuCalcNablaF( funchF, vecX0, prm )
-%!	assert( isrealarray(matNablaF,[sizeX,sizeF]) );
+%!	assert( isrealarray(matNablaF,[sizeF,sizeX]) );
 %!	toc();
