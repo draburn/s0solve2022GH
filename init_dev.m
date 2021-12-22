@@ -1,4 +1,5 @@
 page_screen_output(0)
+pkg load optim;
 addpath( "myutil" );
 addpath( "common" );
 commondefs;
