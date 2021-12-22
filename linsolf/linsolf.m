@@ -16,6 +16,7 @@
 %    retCode: A standard return code, 0 indicates success.
 %    datOut: Output data.
 %  See source code for more information on prm, datIn, and datOut.
+%  Note that Octave has a build-in "gmres", but it does not return all desired information.
 function [ vecX, retCode, datOut ] = linsolf( funchMatAProd, vecB, prm=[], datIn=[] )
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

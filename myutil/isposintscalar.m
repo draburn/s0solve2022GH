@@ -1,5 +1,5 @@
 %  Function...
-%    boo = isposintscalar( x, sizeVec=[] )
+%    boo = isposintscalar( x )
 %  Overview...
 %    Part of myutil module.
 %    Checks whether or not x is a positive integer scalar.

@@ -14,7 +14,9 @@ function aryOut = cap( aryIn, cLo, cHi )
 	assert( isrealscalar(cLo) );
 	assert( isrealscalar(cHi) );
 	assert( cLo <= cHi );
-	aryOut = aryIn + ((cLo-aryIn).*(cLo>aryIn)) + ((cHi-aryIn).*(cHi<aryIn));
+	aryOut = aryIn;
+	aryOut(aryIn>cHi) = cHi;
+	aryOut(aryIn<cLo) = cLo;
 return;
 end
 
