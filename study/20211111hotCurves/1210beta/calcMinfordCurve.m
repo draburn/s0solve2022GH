@@ -79,7 +79,14 @@ function [ matX, datOut ] = calcMinfordCurve( funchOmega, funchG, vecX0, matS=[]
 			%vecX = 2*matX(:,iterCount) - matX(:,iterCount-1);
 			%onSurf = [];
 		end
+		%
+		switch (1)
+		case 1
 		vecX_next = calcMinfordCurve__findNextPt( funchOmega, funchG, onSurf, vecX, vecXC, bigR, matS );
+		case 2
+		vecX_next = calcMinfordCurve__findNextPt_bfgs( funchOmega, funchG, onSurf, vecX, vecXC, bigR, matS );
+		end
+		%
 		assert( isrealarray(vecX_next,[sizeX,1]) );
 		if ( norm(matS_nonEmpty*(vecX_next-vecXC)) < bigR*(1.0-sqrt(eps)) )
 			msg( thisFile, __LINE__, "Reached local min." );
