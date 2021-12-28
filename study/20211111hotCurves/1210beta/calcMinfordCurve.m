@@ -80,11 +80,13 @@ function [ matX, datOut ] = calcMinfordCurve( funchOmega, funchG, vecX0, matS=[]
 			%onSurf = [];
 		end
 		%
-		switch (1)
+		switch (3)
 		case 1
 		vecX_next = calcMinfordCurve__findNextPt( funchOmega, funchG, onSurf, vecX, vecXC, bigR, matS );
 		case 2
 		vecX_next = calcMinfordCurve__findNextPt_bfgs( funchOmega, funchG, onSurf, vecX, vecXC, bigR, matS );
+		case 3
+		vecX_next = calcMinfordCurve__findNextPt_mybfgs( funchOmega, funchG, onSurf, vecX, vecXC, bigR, matS );
 		end
 		%
 		assert( isrealarray(vecX_next,[sizeX,1]) );
