@@ -85,7 +85,7 @@ function [ vecX, datOut ] = findMin_bfgs( vecX0, funchOmega, funchG, prm=[] )
 			assert( isrealarray(vecG_next,[sizeX,1]) );
 		end
 		if ( omega_next >= omega )
-			msg( thisFile, __LINE__, "Failed to decrease omega." );
+			%msg( thisFile, __LINE__, "Failed to decrease omega." );
 			return;
 		end
 		deltaOmega = omega_next - omega;

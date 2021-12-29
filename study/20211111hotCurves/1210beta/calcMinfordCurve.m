@@ -39,9 +39,15 @@ function [ matX, datOut ] = calcMinfordCurve( funchOmega, funchG, vecX0, matS=[]
 		end
 		%
 		bigR = bigR + deltaR;
+		vecX = matX(:,iterCount);
+		s = norm(matS_nonEmpty*(vecX-vecXC));
+		if ( s >= bigR )
+			msg( thisFile, __LINE__, "WARNING: Starting point lies outside surface; pulling to surface." );
+			vecX = vecXC + bigR*(vecX-vecXC)/s;
+		end
 		switch (iterCount)
 		case 1
-			vecX = matX(:,iterCount);
+			% vecX is fine as-is.
 			onSurf = false;
 		otherwise
 			% Allow variable deltaR ~ find actual intersection with new surface.
@@ -68,8 +74,8 @@ function [ matX, datOut ] = calcMinfordCurve( funchOmega, funchG, vecX0, matS=[]
 				step_sqrtD = 0.0;
 			end
 			step_u = ( -step_c1 + step_sqrtD ) / ( 2.0*step_c2 );
-			assert( 0.0 < step_u );
-			vecX = matX(:,iterCount) + step_u* ( matX(:,iterCount) - matX(:,iterCount-1) );
+			assert( 0.0 < step_u || 0.0 < step_c0 ); % step_u should be positive, unless we start outside the surface.
+			vecX = matX(:,iterCount) + step_u * ( matX(:,iterCount) - matX(:,iterCount-1) );
 			vecX = calcMinfordCurve__evalXSurf( vecXC, bigR, vecX, matS );
 			onSurf = true;
 			%
@@ -90,9 +96,16 @@ function [ matX, datOut ] = calcMinfordCurve( funchOmega, funchG, vecX0, matS=[]
 		end
 		%
 		assert( isrealarray(vecX_next,[sizeX,1]) );
-		if ( norm(matS_nonEmpty*(vecX_next-vecXC)) < bigR*(1.0-sqrt(eps)) )
+		s_next = norm(matS_nonEmpty*(vecX_next-vecXC));
+		if ( s_next < bigR*(1.0-sqrt(eps)) )
 			msg( thisFile, __LINE__, "Reached local min." );
 			return;
+		end
+		if ( s_next > bigR*(1.0-sqrt(eps)) )
+			if ( s_next > bigR + (0.5*deltaR) )
+				msg( thisFile, __LINE__, "WARNING: Generated point lies well outside surface." );
+			end
+			vecX_next = vecXC + bigR*(vecX_next-vecXC)/s_next;
 		end
 		matX(:,iterCount+1) = vecX_next;
 	end
