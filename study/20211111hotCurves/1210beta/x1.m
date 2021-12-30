@@ -28,6 +28,10 @@ if (0)
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
 	curveDat(numCurves).strName = thisCurveName;
 	curveDat(numCurves).prm = thisCurvePrm;
+xpost; thisFile = "x1";
+xviz; thisFile = "x1";
+msg( thisFile, __LINE__, sprintf("Elapsed time is %0.3fs.", time()-startTime) );
+thisFile = "RETURN FROM x1";
 return
 end
 %

@@ -24,6 +24,7 @@ function [ vecX, datOut ] = findMin_bfgs( vecX0, funchOmega, funchG, prm=[] )
 	deltaXNormTol = mygetfield( prm, "deltaXNormTol", eps^0.50 * x0Norm + eps^0.75 * sizeX );
 	deltaOmegaTol = mygetfield( prm, "deltaOmegaTol", eps^0.75 * omega0 + eps );
 	deltaOmegaRelTol = mygetfield( prm, "deltaOmegaRelTol", eps^0.50 );
+	btLimit = mygetfield( prm, "btLimit", 20 );
 	if (doChecks)
 		assert( isrealscalar(iterLimit) )
 		assert( 0 <= iterLimit )
@@ -38,6 +39,9 @@ function [ vecX, datOut ] = findMin_bfgs( vecX0, funchOmega, funchG, prm=[] )
 		assert( 0.0 <= deltaOmegaTol );
 		assert( 0.0 <= deltaXNormTol );
 		assert( 0.0 <= deltaOmegaRelTol );
+		%
+		assert( isrealscalar(btLimit) )
+		assert( 0 <= btLimit )
 	end
 	%
 	%
@@ -59,37 +63,59 @@ function [ vecX, datOut ] = findMin_bfgs( vecX0, funchOmega, funchG, prm=[] )
 		iterCount++;
 		if ( iterCount > iterLimit )
 			msg( thisFile, __LINE__, "Reached iterLimit." );
-			msg( thisFile, __LINE__, "(Consider implementing a more sophisticated solver to be used conditionally.)" );
 			return;
 		end
 		%
 		%
 		%
-		% DO WORK HERE!!!
+		% SELECT STEP DIRECTION vvvvv
 		if ( norm(vecG) > 0.01 )
 			vecDeltaX = -0.01*vecG/norm(vecG);
 		else
 			vecDeltaX = -vecG;
 		end
-		% DO WORK HERE!!!
-		%
-		%
-		%
+		% SELECT STEP DIRECTION ^^^^^
 		assert( isrealarray(vecDeltaX,[sizeX,1]) );
+		%
+		%
+		%
+		%  DO BACKTRACKING and stuff vvvvv
 		vecX_next = vecX + vecDeltaX;
 		omega_next = funchOmega( vecX_next );
+		if (doChecks)
+			assert( isrealscalar(omega_next) );
+			assert( 0.0 <= omega_next );
+		end
+		btCount = 0;
+		while ( omega_next >= omega )
+			btCount++;
+			if ( btCount > btLimit )
+				msg( thisFile, __LINE__, "Reached btLimit." );
+				return;
+			end
+			%
+			vecDeltaX /= 10.0;
+			vecX_next = vecX + vecDeltaX;
+			omega_next = funchOmega( vecX_next );
+			if (doChecks)
+				assert( isrealscalar(omega_next) );
+				assert( 0.0 <= omega_next );
+			end
+		end
+		%  DO BACKTRACKING and stuff ^^^^^
+		assert( omega_next < omega );
+		%
 		vecG_next = funchG( vecX_next );
 		if (doChecks)
 			assert( isrealscalar(omega_next) );
 			assert( 0.0 <= omega_next );
 			assert( isrealarray(vecG_next,[sizeX,1]) );
 		end
-		if ( omega_next >= omega )
-			%msg( thisFile, __LINE__, "Failed to decrease omega." );
-			return;
-		end
 		deltaOmega = omega_next - omega;
 		%
+		%
+		% UPDATE MODEL HESSIAN vvvvv
+		% UPDATE MODEL HESSIAN ^^^^^
 		%
 		% Complete iteration.
 		vecX = vecX_next;
