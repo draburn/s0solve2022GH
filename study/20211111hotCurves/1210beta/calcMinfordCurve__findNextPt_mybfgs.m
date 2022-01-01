@@ -3,7 +3,8 @@ function [ vecX, datOut ] = calcMinfordCurve__findNextPt_mybfgs( funchOmega, fun
 	%
 	%vecXfoo = [ pi; e ]
 	%
-	pullCoeff = 0.01;
+	%%%pullCoeff = 0.01;
+	pullCoeff = 100.0;
 	%msg( thisFile, __LINE__, "Hey?" );
 	function [ omega ] = funcOmegaBall( vecX )
 		%thisSubfile = "calcMinfordCurve__findNextPt_mybfgs::funcOmegaBall";
@@ -59,7 +60,52 @@ function [ vecX, datOut ] = calcMinfordCurve__findNextPt_mybfgs( funchOmega, fun
 		else
 			vecT = matS'*(matS*vecD)/(s^2);
 		end
+		%
+		switch (2)
+		case 1
 		vecG = ( vecG0 - vecT*(vecD'*vecG0) )*(bigR/s) + pullCoeff*( vecX - vecXSurf );
+		case 2
+		vecG_omega = ( vecG0 - vecT*(vecD'*vecG0) )*(bigR/s);
+		dSq = vecD'*vecD;
+		vecG_pull = pullCoeff*(1.0-bigR/s)*( (1.0-bigR/s)*vecD + (bigR*dSq/s)*vecT );
+		vecG = vecG_omega + vecG_pull;
+		otherwise
+		error("Invalid case.");
+		end
+		%
+		doFullTest = true;
+		if (doFullTest)
+			sizeX = size(vecX,1);
+			if ( isempty(matS) )
+				matS_nonEmpty = eye(sizeX,sizeX);
+			else
+				matS_nonEmpty = matS;
+			end
+			%
+			vecG_test = zeros(sizeX,1);
+			for n=1:sizeX
+				epsFD = 1e-3;
+				vecXP = vecX;
+				vecXM = vecX;
+				vecXP(n) += epsFD;
+				vecXM(n) -= epsFD;
+				vecXP_surf = vecXC + bigR*(vecXP-vecXC)/norm(matS_nonEmpty*(vecXP-vecXC));
+				vecXM_surf = vecXC + bigR*(vecXM-vecXC)/norm(matS_nonEmpty*(vecXM-vecXC)); 
+				omegaP_surf = funchOmega(vecXP_surf);
+				omegaM_surf = funchOmega(vecXM_surf);
+				vecG_test(n) = ( omegaP_surf - omegaM_surf ) / (2.0*epsFD);
+				clear vecXP;
+				clear vecXM;
+				clear epsFD;
+			end
+			clear n;
+			if ( norm(vecG-vecG_test) > (eps^0.50)*( norm(vecG) + norm(vecG_test) ) )
+				echo__vecX = vecX
+				echo__vecG = vecG
+				echo__vecG_test = vecG_test
+			end
+			assert( norm(vecG-vecG_test) <= (eps^0.50)*( norm(vecG) + norm(vecG_test) ) );
+		end
 		%msg( thisSubfile, __LINE__, "Goodbye!" );
 		return;
 	endfunction
