@@ -84,28 +84,39 @@ function [ vecX, datOut ] = calcMinfordCurve__findNextPt_mybfgs( funchOmega, fun
 			%
 			vecG_test = zeros(sizeX,1);
 			for n=1:sizeX
-				epsFD = 1e-3;
+				epsFD = 1e-4;
 				vecXP = vecX;
 				vecXM = vecX;
 				vecXP(n) += epsFD;
 				vecXM(n) -= epsFD;
 				vecXP_surf = vecXC + bigR*(vecXP-vecXC)/norm(matS_nonEmpty*(vecXP-vecXC));
-				vecXM_surf = vecXC + bigR*(vecXM-vecXC)/norm(matS_nonEmpty*(vecXM-vecXC)); 
+				vecXM_surf = vecXC + bigR*(vecXM-vecXC)/norm(matS_nonEmpty*(vecXM-vecXC));
 				omegaP_surf = funchOmega(vecXP_surf);
 				omegaM_surf = funchOmega(vecXM_surf);
 				vecG_test(n) = ( omegaP_surf - omegaM_surf ) / (2.0*epsFD);
+				clear epsFD;
 				clear vecXP;
 				clear vecXM;
-				clear epsFD;
+				clear vecXP_surf;
+				clear vecXM_surf;
+				clear omegaM_surf;
+				clear omegaP_surf;
 			end
 			clear n;
-			if ( norm(vecG-vecG_test) > (eps^0.50)*( norm(vecG) + norm(vecG_test) ) )
+			if ( norm(vecG-vecG_test) > (eps^0.25)*( norm(vecG) + norm(vecG_test) ) )
+				echo__bigR = bigR
 				echo__vecX = vecX
+				echo__vecG_old =  ( vecG0 - vecT*(vecD'*vecG0) )*(bigR/s) + pullCoeff*( vecX - vecXSurf )
 				echo__vecG = vecG
 				echo__vecG_test = vecG_test
+				echo__norm_vecG = norm(vecG)
+				echo__norm_vecG_test = norm(vecG_test)
+				echo__norm_diff = norm(vecG-vecG_test)
+				echo__norm_vsOld = norm(vecG-echo__vecG_old)
 			end
-			assert( norm(vecG-vecG_test) <= (eps^0.50)*( norm(vecG) + norm(vecG_test) ) );
+			assert( norm(vecG-vecG_test) <= (eps^0.25)*( norm(vecG) + norm(vecG_test) ) );
 		end
+		%error( "HALT." );
 		%msg( thisSubfile, __LINE__, "Goodbye!" );
 		return;
 	endfunction
