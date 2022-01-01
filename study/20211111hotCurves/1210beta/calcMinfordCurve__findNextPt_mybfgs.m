@@ -4,7 +4,7 @@ function [ vecX, datOut ] = calcMinfordCurve__findNextPt_mybfgs( funchOmega, fun
 	%vecXfoo = [ pi; e ]
 	%
 	%%%pullCoeff = 0.01;
-	pullCoeff = 100.0;
+	pullCoeff = 10.0;
 	%msg( thisFile, __LINE__, "Hey?" );
 	function [ omega ] = funcOmegaBall( vecX )
 		%thisSubfile = "calcMinfordCurve__findNextPt_mybfgs::funcOmegaBall";
@@ -30,6 +30,26 @@ function [ vecX, datOut ] = calcMinfordCurve__findNextPt_mybfgs( funchOmega, fun
 		return;
 	endfunction
 	%msg( thisFile, __LINE__, "You listen?" );
+	%
+	%
+	%%
+	function [ omega ] = funcOmega_forceSurf( vecX )
+		vecD = vecX - vecXC;
+		if ( isempty(matS) )
+			s = norm(vecD);
+		else
+			s = norm(matS*vecD);
+		end
+		if ( s <= eps*bigR )
+			omega = funchOmega( vecX );
+			%msg( thisSubfile, __LINE__, "Goodbye!" );
+			return;
+		end
+		vecXSurf = vecXC + (vecD*bigR/s);
+		omega = funchOmega( vecXSurf ) + 0.5*pullCoeff*(norm(vecX - vecXSurf)^2);
+		return;
+	endfunction
+	%%
 	%
 	%
 	function [ vecG ] = funcGBall( vecX )
@@ -84,16 +104,23 @@ function [ vecX, datOut ] = calcMinfordCurve__findNextPt_mybfgs( funchOmega, fun
 			%
 			vecG_test = zeros(sizeX,1);
 			for n=1:sizeX
-				epsFD = 1e-4;
+				epsFD = 1e-5;
 				vecXP = vecX;
 				vecXM = vecX;
 				vecXP(n) += epsFD;
 				vecXM(n) -= epsFD;
+				switch (2)
+				case 1
 				vecXP_surf = vecXC + bigR*(vecXP-vecXC)/norm(matS_nonEmpty*(vecXP-vecXC));
 				vecXM_surf = vecXC + bigR*(vecXM-vecXC)/norm(matS_nonEmpty*(vecXM-vecXC));
 				omegaP_surf = funchOmega(vecXP_surf);
 				omegaM_surf = funchOmega(vecXM_surf);
 				vecG_test(n) = ( omegaP_surf - omegaM_surf ) / (2.0*epsFD);
+				case 2
+				omegaP = funcOmega_forceSurf(vecXP);
+				omegaM = funcOmega_forceSurf(vecXM);
+				vecG_test(n) = ( omegaP - omegaM ) / (2.0*epsFD);
+				end
 				clear epsFD;
 				clear vecXP;
 				clear vecXM;
@@ -103,7 +130,8 @@ function [ vecX, datOut ] = calcMinfordCurve__findNextPt_mybfgs( funchOmega, fun
 				clear omegaP_surf;
 			end
 			clear n;
-			if ( norm(vecG-vecG_test) > (eps^0.25)*( norm(vecG) + norm(vecG_test) ) )
+			if ( norm(vecG-vecG_test) > (1e-3)*( norm(vecG) + norm(vecG_test) ) )
+			%if (1)
 				echo__bigR = bigR
 				echo__vecX = vecX
 				echo__vecG_old =  ( vecG0 - vecT*(vecD'*vecG0) )*(bigR/s) + pullCoeff*( vecX - vecXSurf )
@@ -113,10 +141,10 @@ function [ vecX, datOut ] = calcMinfordCurve__findNextPt_mybfgs( funchOmega, fun
 				echo__norm_vecG_test = norm(vecG_test)
 				echo__norm_diff = norm(vecG-vecG_test)
 				echo__norm_vsOld = norm(vecG-echo__vecG_old)
+				%error( "HALT." );
 			end
-			assert( norm(vecG-vecG_test) <= (eps^0.25)*( norm(vecG) + norm(vecG_test) ) );
+			assert( norm(vecG-vecG_test) <= (1e-3)*( norm(vecG) + norm(vecG_test) ) );
 		end
-		%error( "HALT." );
 		%msg( thisSubfile, __LINE__, "Goodbye!" );
 		return;
 	endfunction
