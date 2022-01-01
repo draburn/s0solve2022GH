@@ -1,5 +1,6 @@
 function [ vecX, datOut ] = calcMinfordCurve__findNextPt_mybfgs( funchOmega, funchG, onSurf0, vecX0, vecXC, bigR, matS=[], prm=[] )
 	thisFile = "calcMinfordCurve__findNextPt_mybfgs";
+	msg( thisFile, __LINE__, "WARNING: THIS APPROACH DOESN'T WORK BECAUSE THE GRADEINT IS DISCONTINUOUS!" );
 	%
 	%vecXfoo = [ pi; e ]
 	%
@@ -93,7 +94,7 @@ function [ vecX, datOut ] = calcMinfordCurve__findNextPt_mybfgs( funchOmega, fun
 		error("Invalid case.");
 		end
 		%
-		doFullTest = true;
+		doFullTest = false;
 		if (doFullTest)
 			sizeX = size(vecX,1);
 			if ( isempty(matS) )

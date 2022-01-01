@@ -1,5 +1,6 @@
 function [ vecX, datOut ] = calcMinfordCurve__findNextPt_bfgs( funchOmega, funchG, onSurf0, vecX0, vecXC, bigR, matS=[], prm=[] )
 	thisFile = "calcMinfordCurve__findNextPt_bfgs";
+	msg( thisFile, __LINE__, "WARNING: THIS APPROACH DOESN'T WORK BECAUSE THE GRADEINT IS DISCONTINUOUS!" );
 	%msg( thisFile, __LINE__, "HACK-SACK!" );
 	%
 	iterLimit = 100;
