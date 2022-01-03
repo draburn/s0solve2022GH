@@ -1,11 +1,12 @@
-function [ vecX, retCode, datOut ] = findLocMinLossG_simple( funchBigL, funchVecG, vecX0, prm=[] )
+function [ vecX, retCode, datOut ] = findLocMinLossG_bfgs( funchBigL, funchVecG, vecX0, prm=[] )
 	commondefs;
-	thisFile = "findLocMinLossG_simple";
+	thisFile = "findLocMinLossG_bfgs";
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__MEDIUM );
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__WARN );
 	assert( isrealscalar(valdLev) );
 	assert( isrealscalar(verbLev) );
 	msg_copious( verbLev, thisFile, __LINE__, "Welcome." );
+	msg( thisFile, __LINE__, "TODO: Implement (slightly) more sophisticated backtracking." );
 	%
 	sizeX = size(vecX0,1);
 	if ( valdLev >= VALDLEV__LOW )
@@ -20,7 +21,7 @@ function [ vecX, retCode, datOut ] = findLocMinLossG_simple( funchBigL, funchVec
 		assert( isrealarray(vecG0,[sizeX,1]) );
 	end
 	%
-	iterLimit = mygetfield( prm, "iterLimit", 10000 );
+	iterLimit = mygetfield( prm, "iterLimit", 1000 );
 	bigLTol = mygetfield( prm, "bigLTol", 1e-6 * bigL0 + 1e-9  );
 	magGTol = mygetfield( prm, "magGTol", 1e-9 * norm(vecG0) + 1e-12 * sizeX );
 	if ( valdLev >= VALDLEV__LOW )
@@ -62,6 +63,19 @@ function [ vecX, retCode, datOut ] = findLocMinLossG_simple( funchBigL, funchVec
 		datOut = [];
 	end
 	%
+	if ( bigL0 <= bigLTol )
+		msg_warn( verbLev, thisFile, __LINE__, "Input satisfied bigLTol." );
+		retCode = RETCODE__SUCCESS;
+		return;
+	end
+	if ( norm(vecG0) <= magGTol )
+		msg_warn( verbLev, thisFile, __LINE__, "Input satisfied gNormTol." );
+		retCode = RETCODE__SUCCESS;
+		return;
+	end
+	%
+	matA = eye(sizeX,sizeX)*((vecG0'*vecG0)/bigL0);
+	%
 	%
 	%
 	vecX = vecX0;
@@ -95,8 +109,14 @@ function [ vecX, retCode, datOut ] = findLocMinLossG_simple( funchBigL, funchVec
 		end
 		%
 		%
-		% Pick initial step;
-		vecD = -bigL*vecG/(vecG'*vecG);
+		% Pick initial step.
+		[ matR, cholFlag ] = chol( matA );
+		if ( 0 ~= cholFlag )
+			msg_error( verbLev, thisFile, __LINE__, "Algorithm breakdown: Cholesky factorization." );
+			retCode = RETCODE__ALGORITHM_BREAKDOWN;
+			return;
+		end
+		vecD = -( matR \ (matR'\vecG) );
 		%
 		%
 		% Do simple backtracking.
@@ -158,13 +178,33 @@ function [ vecX, retCode, datOut ] = findLocMinLossG_simple( funchBigL, funchVec
 			retCode = RETCODE__IMPOSED_STOP;
 			return;
 		end
+		%
+		%
+		% Update approximate Hessian.
+		vecDeltaG = vecG - vecG_prev;
+		vecDeltaX = vecX - vecX_prev;
+		vecU = vecDeltaG;
+		vecV = matA * vecDeltaX;
+		cuInv = vecU'*vecDeltaX;
+		cvInv = vecV'*vecDeltaX;
+		if ( abs(cuInv) <= eps050*norm(vecU)*norm(vecDeltaX) ...
+		  || abs(cvInv) <= eps050*norm(vecV)*norm(vecDeltaX) );
+			msg_error( verbLev, thisFile, __LINE__, "Algorithm breakdown: Updating approximate Hessian." );
+			retCode = RETCODE__ALGORITHM_BREAKDOWN;
+			return;
+		end
+		cu = 1.0./cvInv;
+		cv = 1.0./cvInv;
+		foo = matA + (cu*vecU)*(vecU') - (cv*vecV)*(vecV');
+		matA = ( foo' + foo ) / 2.0;
+		clear foo;
 	end
 end
 
 %!test
 %!	clear;
 %!	commondefs;
-%!	thisFile = "findLocMinLossG_simple test 1";
+%!	thisFile = "findLocMinLossG_bfgs test 1";
 %!	setprngstates(0);
 %!	numFigs = 0;
 %!	%
@@ -176,16 +216,16 @@ end
 %!	funchVecG = @(x)( matA'*matA*(x-vecXRoot) );
 %!	vecX0 = randn(sizeX,1);
 %!	%
-%!	msg( thisFile, __LINE__, "Calling findLocMinLossG_simple()..." );
+%!	msg( thisFile, __LINE__, "Calling findLocMinLossG_bfgs()..." );
 %!	time0 = time();
-%!	[ vecXF, retCode, datOut ] = findLocMinLossG_simple( funchBigL, funchVecG, vecX0 );
+%!	[ vecXF, retCode, datOut ] = findLocMinLossG_bfgs( funchBigL, funchVecG, vecX0 );
 %!	timeF = time();
 %!	%
 %!	bigL0 = funchBigL(vecX0);
 %!	bigLF = funchBigL(vecXF);
 %!	magD0 = norm(vecX0-vecXRoot);
 %!	magDF = norm(vecXF-vecXRoot);
-%!	msg( thisFile, __LINE__, sprintf( "findLocMinLossG_simple() returned retCode %s.", retcode2str(retCode) ) );
+%!	msg( thisFile, __LINE__, sprintf( "findLocMinLossG_bfgs() returned retCode %s.", retcode2str(retCode) ) );
 %!	msg( thisFile, __LINE__, sprintf( "  Performed %d iterations", datOut.iterCount ) );
 %!	msg( thisFile, __LINE__, sprintf( "  Loss went from %0.3e to %0.3e.", bigL0, bigLF ) );
 %!	msg( thisFile, __LINE__, sprintf( "  ||x-xRoot|| went from %0.3e to %0.3e.",magD0, magDF ) );
