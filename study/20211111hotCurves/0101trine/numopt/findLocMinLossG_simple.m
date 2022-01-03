@@ -3,6 +3,8 @@ function [ vecX, retCode, datOut ] = findLocMinLossG_simple( funchBigL, funchVec
 	thisFile = "findLocMinLossG_simple";
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__MEDIUM );
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__WARN );
+	%valdLev = mygetfield( prm, "valdLev", VALDLEV__HIGH );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	assert( isrealscalar(valdLev) );
 	assert( isrealscalar(verbLev) );
 	msg_copious( verbLev, thisFile, __LINE__, "Welcome." );
@@ -32,10 +34,13 @@ function [ vecX, retCode, datOut ] = findLocMinLossG_simple( funchBigL, funchVec
 		assert( 0.0 <= magGTol );
 	end
 	%
+	armijoCoeff = mygetfield( prm, "armijoCoeff", 1e-4 );
 	magDTol = mygetfield( prm, "magDTol", 1e-12 * norm(vecX0) + 1e-15 );
 	btLimit = mygetfield( prm, "btLimit", 20 );
 	btCoeff = mygetfield( prm, "btCoeff", 0.1 );
 	if ( valdLev >= VALDLEV__LOW )
+		assert( 0.0 < armijoCoeff );
+		assert( armijoCoeff < 1.0 );
 		assert( 0.0 <= magDTol );
 		assert( isrealscalar(btLimit) )
 		assert( isrealscalar(btCoeff) );
@@ -104,11 +109,13 @@ function [ vecX, retCode, datOut ] = findLocMinLossG_simple( funchBigL, funchVec
 		while (1)
 			vecX_next = vecX + vecD;
 			bigL_next = funchBigL( vecX_next );
+			armijoDeltaL = armijoCoeff * (vecD' * vecG);
 			if ( valdLev >= VALDLEV__HIGH )
 				assert( isrealscalar(bigL) );
 				assert( 0.0 <= bigL );
+				assert( armijoDeltaL < 0.0 );
 			end
-			if ( bigL_next < bigL )
+			if ( bigL_next < bigL + armijoDeltaL )
 				break;
 			end
 			if ( norm(vecX_next-vecX) <= magDTol )
