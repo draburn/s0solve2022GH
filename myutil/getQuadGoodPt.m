@@ -1,5 +1,5 @@
 function x = getQuadGoodPt( a, b, c, tol=sqrt(eps) )
-	warning( "This function is deprecated; use getLinishRootOfQuad() instead." );
+	warning( "This function is deprecated; use calcLinishRootOfQuad() instead." );
 	thisFile = "getQuadGoodPt";
 	% y = (a*(x^2)) + (b*x) + c;
 	assert( isrealscalar(a) );
