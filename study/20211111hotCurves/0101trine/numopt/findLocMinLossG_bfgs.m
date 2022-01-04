@@ -8,7 +8,6 @@ function [ vecX, retCode, datOut ] = findLocMinLossG_bfgs( funchBigL, funchVecG,
 	assert( isrealscalar(valdLev) );
 	assert( isrealscalar(verbLev) );
 	msg_copious( verbLev, thisFile, __LINE__, "Welcome." );
-	msg( thisFile, __LINE__, "TODO: Implement (slightly) more sophisticated backtracking." );
 	%
 	sizeX = size(vecX0,1);
 	if ( valdLev >= VALDLEV__LOW )
@@ -51,7 +50,7 @@ function [ vecX, retCode, datOut ] = findLocMinLossG_bfgs( funchBigL, funchVecG,
 	end
 	%
 	bigLAbsFallTol = mygetfield( prm, "bigLAbsFallTol", 1e-12 * bigL0 + 1e-15 );
-	bigLRelFallTol = mygetfield( prm, "bigLRelFallTol", 1e-6 );
+	bigLRelFallTol = mygetfield( prm, "bigLRelFallTol", 1e-12 );
 	if ( valdLev >= VALDLEV__LOW )
 		assert( isrealscalar(bigLAbsFallTol) );
 		assert( isrealscalar(bigLRelFallTol) );
