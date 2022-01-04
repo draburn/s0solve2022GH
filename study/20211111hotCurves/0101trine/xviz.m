@@ -239,7 +239,7 @@ end
 %
 %
 if (1)
-%title( "Distance from last pt vs Step index" );
+%title( "Distance from final pt vs Step index" );
 numFigs++; figure(numFigs);
 n = 1;
 semilogx( ...
@@ -274,8 +274,8 @@ for n=2:numCurves
 end
 hold off;
 xlabel( "Step index" )
-ylabel( "Distance from last pt" );
-title( "Distance from last pt vs Step index" );
+ylabel( "Distance from final pt" );
+title( "Distance from final pt vs Step index" );
 grid on;
 end
 %

@@ -10,7 +10,7 @@ EDITOR( [my_editor ' %s'] ); % Moot if not USING_GUI; see options within GUI.
 %
 %msg("init",__LINE__,"Adding path \"study/20211111hotCurves/1210beta\".");
 %addpath( "study/20211111hotCurves/1210beta" );
-switch (2)
+switch 1
 case 1
 msg("init",__LINE__,"Adding path \"study/20211111hotCurves/0101trine/\".");
 addpath( "study/20211111hotCurves/0101trine/" );

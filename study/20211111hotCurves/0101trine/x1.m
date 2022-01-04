@@ -14,7 +14,7 @@ funchGOmega = @(x)( testFunc_evalGOmega(x,testFuncPrm) );%
 numCurves = 0;
 %
 %
-if (1)
+if (0)
 	% FOR FOCUSED DEV, not curve viz.
 	numCurves++;
 	thisCurveTime0 = time();
@@ -22,7 +22,7 @@ if (1)
 	matS = [];
 	thisCurvePrm = [];
 	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
-	curveDat(numCurves).matX = calcMinfordCurve_sqp( funchOmega, funchG, vecX0, matS, thisCurvePrm );
+	curveDat(numCurves).matX = calcMinfordCurve_fminsurf( funchOmega, funchG, vecX0, matS, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
 	msg( thisFile, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
@@ -54,7 +54,7 @@ end
 if (1)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcLevCurve (default/placeholder)';
+	thisCurveName = 'calcLevCurve (fminunc?)';
 	thisCurvePrm = [];
 	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
 	curveDat(numCurves).matX = calcLevCurve( funchOmega, funchG, vecX0, thisCurvePrm );
@@ -66,10 +66,10 @@ if (1)
 end
 %
 %
-if (1)
+if (0)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcMinfordCurve (wipish-good)';
+	thisCurveName = 'calcMinfordCurve (myfbgs?, DISCONTINUOUS GRADIENT)';
 	matS = [];
 	thisCurvePrm = [];
 	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
@@ -85,11 +85,11 @@ end
 if (1)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcMinfordCurve_sqp';
+	thisCurveName = 'calcMinfordCurve_fminsurf';
 	matS = [];
 	thisCurvePrm = [];
 	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
-	curveDat(numCurves).matX = calcMinfordCurve_sqp( funchOmega, funchG, vecX0, matS, thisCurvePrm );
+	curveDat(numCurves).matX = calcMinfordCurve_fminsurf( funchOmega, funchG, vecX0, matS, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
 	msg( thisFile, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
