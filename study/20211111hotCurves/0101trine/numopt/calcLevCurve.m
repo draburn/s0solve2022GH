@@ -70,6 +70,11 @@ function [ matX, datOut ] = calcLevCurve( funchOmega, funchG, vecX0, prm=[] )
 			opts = optimset( 'GradObj', 'on' );
 			%opts = optimset( 'GradObj', 'on', 'TolX', 1e-4 );
 			vecX = fminunc( fcn, vecX, opts );
+		case 6
+			fcn = @(x)( calcLevCurve__fnc_fminunc( x, funchOmega, funchG, s, vecX0 ) );
+			%opts = optimset( 'GradObj', 'on' );
+			opts = optimset( 'GradObj', 'on', 'TolX', 1e-3, 'TolFun', 1e-7 );
+			vecX = nonlin_min( fcn, vecX, opts );
 		otherwise
 		error( "Invalid case." );
 		end
