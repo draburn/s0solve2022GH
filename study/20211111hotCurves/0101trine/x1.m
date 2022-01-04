@@ -22,14 +22,14 @@ if (1)
 	matS = [];
 	thisCurvePrm = [];
 	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
-	curveDat(numCurves).matX = calcMinfordCurve_trine( funchOmega, funchG, vecX0, matS, thisCurvePrm );
+	curveDat(numCurves).matX = calcMinfordCurve_sqp( funchOmega, funchG, vecX0, matS, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
 	msg( thisFile, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
 	curveDat(numCurves).strName = thisCurveName;
 	curveDat(numCurves).prm = thisCurvePrm;
-xpost; thisFile = "x1";
-xviz; thisFile = "x1";
+%xpost; thisFile = "x1";
+%xviz; thisFile = "x1";
 msg( thisFile, __LINE__, sprintf("Elapsed time is %0.3fs.", time()-startTime) );
 thisFile = "RETURN FROM x1";
 return
@@ -85,11 +85,11 @@ end
 if (1)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcMinfordCurve_trine';
+	thisCurveName = 'calcMinfordCurve_sqp';
 	matS = [];
 	thisCurvePrm = [];
 	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
-	curveDat(numCurves).matX = calcMinfordCurve_trine( funchOmega, funchG, vecX0, matS, thisCurvePrm );
+	curveDat(numCurves).matX = calcMinfordCurve_sqp( funchOmega, funchG, vecX0, matS, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
 	msg( thisFile, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
