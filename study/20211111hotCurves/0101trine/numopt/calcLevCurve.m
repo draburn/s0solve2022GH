@@ -2,6 +2,15 @@ function [ matX, datOut ] = calcLevCurve( funchOmega, funchG, vecX0, prm=[] )
 	thisFile = "calcLevCurve";
 	msg( thisFile, __LINE__, "THIS IS A WORK-IN-PROGRESS!" );
 	%
+	function [ bigL, vecG ] = fnc_fminunc( vecX, funchBigL, funchVecG, s, vecX0, matS=[] )
+		if ( isempty(matS) )
+			bigL = s*funchBigL(vecX) + 0.5*(1.0-s)*(vecX-vecX0)'*(vecX-vecX0);
+			vecG = s*funchVecG(vecX) + (1.0-s)*(vecX-vecX0);
+		else
+			error( "Support for matS is not implemented." );
+		end
+	end
+	%
 	deltaNormTol = 1e-6;
 	vNormTol = 1e-6;
 	n = 1;
@@ -13,7 +22,7 @@ function [ matX, datOut ] = calcLevCurve( funchOmega, funchG, vecX0, prm=[] )
 		s = vecS(n);
 		%
 		vecX_prev = vecX;
-		switch (5)
+		switch (7)
 		case (1)
 		funchXDotLSODE = @(x,t)( -s*funchG(x) -(1.0-s)*(x-vecX0) );
 		xLSODE = lsode( funchXDotLSODE, vecX', [ 0.0, 10.0 ] );
@@ -75,6 +84,11 @@ function [ matX, datOut ] = calcLevCurve( funchOmega, funchG, vecX0, prm=[] )
 			%opts = optimset( 'GradObj', 'on' );
 			opts = optimset( 'GradObj', 'on', 'TolX', 1e-3, 'TolFun', 1e-7 );
 			vecX = nonlin_min( fcn, vecX, opts );
+		case 7
+			% Slightly slower than case 5, where fcn is in a separate .m file.
+			fcn = @(x)( fnc_fminunc( x, funchOmega, funchG, s, vecX0 ) );
+			opts = optimset( 'GradObj', 'on' );
+			vecX = fminunc( fcn, vecX, opts );
 		otherwise
 		error( "Invalid case." );
 		end
