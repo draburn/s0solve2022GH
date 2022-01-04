@@ -14,7 +14,7 @@ funchGOmega = @(x)( testFunc_evalGOmega(x,testFuncPrm) );%
 numCurves = 0;
 %
 %
-if (0)
+if (1)
 	% FOR FOCUSED DEV, not curve viz.
 	numCurves++;
 	thisCurveTime0 = time();
@@ -22,7 +22,7 @@ if (0)
 	matS = [];
 	thisCurvePrm = [];
 	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
-	curveDat(numCurves).matX = calcMinfordCurve( funchOmega, funchG, vecX0, matS, thisCurvePrm );
+	curveDat(numCurves).matX = calcMinfordCurve_trine( funchOmega, funchG, vecX0, matS, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
 	msg( thisFile, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
@@ -66,7 +66,7 @@ if (1)
 end
 %
 %
-if (0)
+if (1)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcMinfordCurve (wipish-good)';
@@ -74,6 +74,22 @@ if (0)
 	thisCurvePrm = [];
 	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
 	curveDat(numCurves).matX = calcMinfordCurve( funchOmega, funchG, vecX0, matS, thisCurvePrm );
+	thisCurveElapsedTime = time()-thisCurveTime0;
+	msg( thisFile, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
+	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
+	curveDat(numCurves).strName = thisCurveName;
+	curveDat(numCurves).prm = thisCurvePrm;
+end
+%
+%
+if (1)
+	numCurves++;
+	thisCurveTime0 = time();
+	thisCurveName = 'calcMinfordCurve_trine';
+	matS = [];
+	thisCurvePrm = [];
+	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
+	curveDat(numCurves).matX = calcMinfordCurve_trine( funchOmega, funchG, vecX0, matS, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
 	msg( thisFile, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;

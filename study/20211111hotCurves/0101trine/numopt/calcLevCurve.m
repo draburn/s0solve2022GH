@@ -18,6 +18,10 @@ function [ matX, datOut ] = calcLevCurve( funchOmega, funchG, vecX0, prm=[] )
 	matX(:,n) = vecX0;
 	numSVals = 201;
 	vecS = linspace( 0.0, 1.0, numSVals );
+	s = vecS(n);
+	%printf( "%5d, %0.3f, %9.3f, %9.3f, %10.3e, %10.3e, %10.3e\n", ...
+	%  n, s, vecX(1), vecX(2), funchOmega(vecX), 0.5*(vecX-vecX0)'*(vecX-vecX0), ...
+	%  s*funchOmega(vecX) + 0.5*(1.0-s)*(vecX-vecX0)'*(vecX-vecX0) );
 	for n=2:numSVals
 		s = vecS(n);
 		%
@@ -93,6 +97,9 @@ function [ matX, datOut ] = calcLevCurve( funchOmega, funchG, vecX0, prm=[] )
 		error( "Invalid case." );
 		end
 		matX(:,n) = vecX;
+		%printf( "%5d, %0.3f, %9.3f, %9.3f, %10.3e, %10.3e, %10.3e\n", ...
+		%  n, s, vecX(1), vecX(2), funchOmega(vecX), 0.5*(vecX-vecX0)'*(vecX-vecX0), ...
+		%  s*funchOmega(vecX) + 0.5*(1.0-s)*(vecX-vecX0)'*(vecX-vecX0) );
 		%
 		%vecX = (2.0*vecX) - (vecX_prev);
 	end
