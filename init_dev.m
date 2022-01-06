@@ -14,8 +14,10 @@ switch 1
 case 1
 msg("init",__LINE__,"Adding path \"study/20211111hotCurves/0101trine/\".");
 addpath( "study/20211111hotCurves/0101trine/" );
-msg("init",__LINE__,"Adding path \"study/20211111hotCurves/0101trine/numopt/\".");
-addpath( "study/20211111hotCurves/0101trine/numopt/" );
+%msg("init",__LINE__,"Adding path \"study/20211111hotCurves/0101trine/numopt/\".");
+%addpath( "study/20211111hotCurves/0101trine/numopt/" );
+msg("init",__LINE__,"Adding path \"study/20211111hotCurves/0101trine/numopt0104/\".");
+addpath( "study/20211111hotCurves/0101trine/numopt0104/" );
 msg("init",__LINE__,"Adding path \"study/20211111hotCurves/0101trine/testfunc2021/\".");
 addpath( "study/20211111hotCurves/0101trine/testfunc2021/" );
 case 2
