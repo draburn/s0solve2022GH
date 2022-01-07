@@ -56,6 +56,7 @@ end
 %!	matA = randn(sizeF,sizeX);
 %!	%
 %!	funchZ = @(x,y)( sqrt(funcOmega_ellip( [x;y], h0, vecXCent, matA )) );
+%!	numFigs++; figure(numFigs);
 %!	contourfunch( funchZ );
 %!	%
 %!	msg( thisFile, __LINE__, "*** Please manually confirm the figure(s) look correct. ***" );

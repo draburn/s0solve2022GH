@@ -62,6 +62,7 @@ end
 %!		vecSVals(:,n) = funcSurf_ellip( vecXVals(:,n), bigR_surf, vecXCent_surf, matA_surf );
 %!	end
 %!	%
+%!	numFigs++; figure(numFigs);
 %!	%contourfunch( funchZ );
 %!	contourfunch( funchZ, ax );
 %!	axis equal;

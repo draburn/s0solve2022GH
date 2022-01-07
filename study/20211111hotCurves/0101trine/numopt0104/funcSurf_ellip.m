@@ -83,7 +83,7 @@ end
 %!	%
 %!	%
 %!	numPts = 100;
-%!	vecXVals = randn(sizeX,numPts);
+%!	vecXVals = vecXCent + randn(sizeX,numPts);
 %!	for n=1:numPts
 %!		vecSVals(:,n) = funcSurf_ellip( vecXVals(:,n), bigR, vecXCent );
 %!	end
@@ -98,7 +98,6 @@ end
 %!	grid on;
 %!	%
 %!	%
-%!	vecXVals = randn(sizeX,numPts);
 %!	for n=1:numPts
 %!		vecSVals(:,n) = funcSurf_ellip( vecXVals(:,n), bigR, vecXCent, matA );
 %!	end
@@ -148,7 +147,7 @@ end
 
 
 %!test
-%!	thisFile = "funcOmega_ellip test: local vector viz (WIP)";
+%!	thisFile = "funcOmega_ellip test: local vector viz";
 %!	commondefs;
 %!	setprngstates();
 %!	numFigs = 2;
