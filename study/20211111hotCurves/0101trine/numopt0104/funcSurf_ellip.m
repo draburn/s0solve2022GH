@@ -1,4 +1,20 @@
+% Usage examples...
+%    vecS = funchSurf_ellip( vecX, bigR, vecXCent );
+%    [ vecS, vecNHat, vecUHat, matNablaST ] = funcSurf_ellip( vecX, bigR, vecXCent, matA )
+% Calculate the "surface function" for the ellipse specified by vecXCent and matA / bigR,
+% with vecS = vecXCent + ( vecX - vecXCent ) * bigR / norm( matA * ( vecX - vecXCent ) ).
+% vecNHat is the outward surface normal.
+% vecUHat is the outward direction along which vecS is locally constant.
+
 function [ vecS, vecNHat, vecUHat, matNablaST ] = funcSurf_ellip( vecX, bigR, vecXCent, matA )
+	if ( nargin <= 2 )
+		print_usage( "funcSurf_ellip" );
+		return;
+	elseif ( nargin > 4 )
+		print_usage( "funcSurf_ellip" );
+		return;
+	end
+	%
 	thisFile = "funcSurf_ellip";
 	%
 	if ( 3 >= nargin )
@@ -49,7 +65,7 @@ end
 
 
 %!test
-%!	thisFile = "funcOmega_ellip test: runs";
+%!	thisFile = "funcOmega_ellip: execution test";
 %!	%
 %!	sizeX = 2;
 %!	vecX = [ 1.0; 1.0 ];
@@ -70,7 +86,7 @@ end
 
 
 %!test
-%!	thisFile = "funcOmega_ellip test: plot points";
+%!	thisFile = "funcOmega_ellip: manual visual test";
 %!	commondefs;
 %!	setprngstates();
 %!	numFigs = 0;
@@ -84,7 +100,7 @@ end
 %!	%
 %!	numPts = 100;
 %!	vecXVals = vecXCent + randn(sizeX,numPts);
-%!	for n=1:numPts
+%!	parfor n=1:numPts
 %!		vecSVals(:,n) = funcSurf_ellip( vecXVals(:,n), bigR, vecXCent );
 %!	end
 %!	%
@@ -98,7 +114,7 @@ end
 %!	grid on;
 %!	%
 %!	%
-%!	for n=1:numPts
+%!	parfor n=1:numPts
 %!		vecSVals(:,n) = funcSurf_ellip( vecXVals(:,n), bigR, vecXCent, matA );
 %!	end
 %!	%
@@ -110,53 +126,6 @@ end
 %!	plot( vecSVals(1,:), vecSVals(2,:), 'ko', 'linewidth', 2 );
 %!	hold off;
 %!	grid on;
-%!	%
-%!	msg( thisFile, __LINE__, "*** Please manually confirm the figures look correct. ***" );
-
-
-%!test
-%!	thisFile = "funcOmega_ellip test: nHat and uHat";
-%!	commondefs;
-%!	setprngstates();
-%!	numFigs = 0;
-%!	%
-%!	sizeX = 2;
-%!	sizeF = 2;
-%!	numPts = 100;
-%!	bigR = abs(randn);
-%!	vecXCent = randn(sizeX,1);
-%!	matA = randn(sizeF,sizeX);
-%!	%
-%!	vecX = randn(sizeX,1);
-%!	%
-%!	[ vecS, vecNHat, vecUHat, matNablaST ] = funcSurf_ellip( vecX, bigR, vecXCent );
-%!	[ vecSAtPlusU ] = funcSurf_ellip( vecX + vecUHat, bigR, vecXCent );
-%!	assert( norm(vecS-vecSAtPlusU) < (eps^0.75)*(norm(vecS)+norm(vecSAtPlusU)) );
-%!	vecZ = 1e-4*(2.0*rand(sizeX,1)-1.0);
-%!	[ vecSAtPlusZ ] = funcSurf_ellip( vecX + vecZ, bigR, vecXCent );
-%!	[ vecSAtMinusZ ] = funcSurf_ellip( vecX - vecZ, bigR, vecXCent );
-%!	assert( abs(vecNHat'*(vecSAtPlusZ-vecSAtMinusZ)) < (1e-8)*( norm(vecNHat) + norm(vecSAtPlusZ) + norm(vecSAtMinusZ) ) );
-%!	%
-%!	[ vecS, vecNHat, vecUHat, matNablaST ] = funcSurf_ellip( vecX, bigR, vecXCent, matA );
-%!	[ vecSAtPlusU ] = funcSurf_ellip( vecX + vecUHat, bigR, vecXCent, matA );
-%!	assert( norm(vecS-vecSAtPlusU) < (eps^0.75)*(norm(vecS)+norm(vecSAtPlusU)) );
-%!	vecZ = 1e-4*(2.0*rand(sizeX,1)-1.0);
-%!	[ vecSAtPlusZ ] = funcSurf_ellip( vecX + vecZ, bigR, vecXCent, matA );
-%!	[ vecSAtMinusZ ] = funcSurf_ellip( vecX - vecZ, bigR, vecXCent, matA );
-%!	assert( abs(vecNHat'*(vecSAtPlusZ-vecSAtMinusZ)) < (1e-8)*( norm(vecNHat) + norm(vecSAtPlusZ) + norm(vecSAtMinusZ) ) );
-
-
-%!test
-%!	thisFile = "funcOmega_ellip test: local vector viz";
-%!	commondefs;
-%!	setprngstates();
-%!	numFigs = 2;
-%!	%
-%!	sizeX = 2;
-%!	sizeF = 2;
-%!	bigR = abs(randn);
-%!	vecXCent = randn(sizeX,1);
-%!	matA = randn(sizeF,sizeX);
 %!	%
 %!	%
 %!	numPts = 101;
@@ -203,3 +172,54 @@ end
 %!	grid on;
 %!	%
 %!	msg( thisFile, __LINE__, "*** Please manually confirm the figures look correct. ***" );
+
+
+%!test
+%!	thisFile = "funcOmega_ellip test: numerical test";
+%!	commondefs;
+%!	setprngstates();
+%!	numFigs = 0;
+%!	%
+%!	sizeX = 2;
+%!	sizeF = 2;
+%!	numPts = 100;
+%!	bigR = abs(randn);
+%!	vecXCent = randn(sizeX,1);
+%!	matA = randn(sizeF,sizeX);
+%!	%
+%!	vecX = randn(sizeX,1);
+%!	%
+%!	%
+%!	[ vecS, vecNHat, vecUHat, matNablaST ] = funcSurf_ellip( vecX, bigR, vecXCent, matA );
+%!	%
+%!	[ vecS_atS, vecNHat_atS, vecUHat_atS ] = funcSurf_ellip( vecS, bigR, vecXCent, matA );
+%!	assert( norm(vecS-vecS_atS) < 1e-8*(norm(vecS)+norm(vecS_atS)) );
+%!	assert( norm(vecNHat-vecNHat_atS) < 1e-8*(norm(vecNHat)+norm(vecNHat_atS)) );
+%!	assert( norm(vecUHat-vecUHat_atS) < 1e-8*(norm(vecUHat)+norm(vecUHat_atS)) );
+%!	%
+%!	[ vecSAtPlusU ] = funcSurf_ellip( vecX + vecUHat, bigR, vecXCent, matA );
+%!	assert( norm(vecS-vecSAtPlusU) < (eps^0.75)*(norm(vecS)+norm(vecSAtPlusU)) );
+%!	vecZ = 1e-4*(2.0*rand(sizeX,1)-1.0);
+%!	[ vecSAtPlusZ ] = funcSurf_ellip( vecX + vecZ, bigR, vecXCent, matA );
+%!	[ vecSAtMinusZ ] = funcSurf_ellip( vecX - vecZ, bigR, vecXCent, matA );
+%!	assert( abs(vecNHat'*(vecSAtPlusZ-vecSAtMinusZ)) < (1e-8)*( norm(vecNHat) + norm(vecSAtPlusZ) + norm(vecSAtMinusZ) ) );
+%!	%
+%!	[ vecS, vecNHat, vecUHat, matNablaST ] = funcSurf_ellip( vecX, bigR, vecXCent, matA );
+%!	[ vecSAtPlusU ] = funcSurf_ellip( vecX + vecUHat, bigR, vecXCent, matA );
+%!	assert( norm(vecS-vecSAtPlusU) < (eps^0.75)*(norm(vecS)+norm(vecSAtPlusU)) );
+%!	vecZ = 1e-6*(2.0*rand(sizeX,1)-1.0);
+%!	[ vecSAtPlusZ ] = funcSurf_ellip( vecX + vecZ, bigR, vecXCent, matA );
+%!	[ vecSAtMinusZ ] = funcSurf_ellip( vecX - vecZ, bigR, vecXCent, matA );
+%!	%
+%!	if ( abs(vecNHat'*(vecSAtPlusZ-vecSAtMinusZ)) > (1e-8)*( norm(vecNHat) + norm(vecSAtPlusZ-vecSAtMinusZ) ) )
+%!		msg( thisFile, __LINE__, "" );
+%!		msg( thisFile, __LINE__, "Failing surface normal check..." );
+%!		msg( thisFile, __LINE__, "  This could happen by chance, becuase the points used are determined sloppily." );
+%!		msg( thisFile, __LINE__, "  But, if this happens frequently, there is likely a bug." );
+%!		echo__vecNHat = vecNHat
+%!		echo__vecSAtPlusZ = vecSAtPlusZ
+%!		echo__vecSAtMinusZ = vecSAtMinusZ
+%!		echo__absDotProd = abs(vecNHat'*(vecSAtPlusZ-vecSAtMinusZ))
+%!		echo__normRHS = (1e-8)*( norm(vecNHat) + norm(vecSAtPlusZ-vecSAtMinusZ) )
+%!	end
+%!	assert( abs(vecNHat'*(vecSAtPlusZ-vecSAtMinusZ)) < (1e-8)*( norm(vecNHat) + norm(vecSAtPlusZ-vecSAtMinusZ) ) );
