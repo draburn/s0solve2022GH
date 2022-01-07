@@ -10,7 +10,7 @@
 function [ gridX1, gridX2, gridF, gridCX1, gridCX2, gridD1F, gridD2F, gridMagDF, gridThetaDF ] = genVizGrids( ...
   funchF, ...
   isVectorized = false, ...
-  ax = [ -3.0, 3.0, -5.0, 5.0 ], ...
+  ax = [ -5.0, 5.0, -5.0, 5.0 ], ...
   numXVals = [ 22, 26 ], ...
   prm = [] )
 	%
@@ -22,7 +22,7 @@ function [ gridX1, gridX2, gridF, gridCX1, gridCX2, gridD1F, gridD2F, gridMagDF,
 	if ( ~isVectorized )
 		parfor i1 = 1:numXVals(1)
 		parfor i2 = 1:numXVals(2)
-			gridF(i1,i2) = funchF( [x1Vals(i1);x2Vals(i2)] );
+			gridF(i1,i2) = funchF( [x1UniqVals(i1);x2UniqVals(i2)] );
 		end
 		end
 	else
@@ -64,6 +64,17 @@ end
 %!		matA = eye(sizeF,sizeX);%randn( sizeF, sizeX );
 %!	end
 %!	funchF = @(x)( 0.5*sumsq(matA*(x-vecXCent)) );
+%!	%
+%!	isVectorized = false;
+%!	[ gridX1, gridX2, gridF, gridCX1, gridCX2, gridD1F, gridD2F, gridMagDF, gridThetaDF ] = genVizGrids( funchF, isVectorized ); 
+%!	%[ gridX1, gridX2, gridF ] = genVizGrids( funchF, isVectorized );
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	contourf( gridX1, gridX2, sqrt(gridF) );
+%!	grid on;
+%!	title( "sqrt(F) vs (x1,x2)" );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
 %!	%
 %!	isVectorized = true;
 %!	[ gridX1, gridX2, gridF, gridCX1, gridCX2, gridD1F, gridD2F, gridMagDF, gridThetaDF ] = genVizGrids( funchF, isVectorized ); 

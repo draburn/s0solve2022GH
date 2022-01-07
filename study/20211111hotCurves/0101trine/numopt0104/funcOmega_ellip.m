@@ -29,7 +29,7 @@ end
 
 
 %!test
-%!	thisFile = "funcOmega_ellip test: runs";
+%!	thisFile = "funcOmega_ellip: test execution";
 %!	h0 = 1.0;
 %!	vecXCent = [ 0.0; 0.0 ];
 %!	%
@@ -50,13 +50,39 @@ end
 %!	numFigs = 0;
 %!	%
 %!	sizeX = 2;
-%!	sizeF = 2;
+%!	sizeF = 3;
 %!	h0 = abs(randn());
 %!	vecXCent = randn(sizeX,1);
 %!	matA = randn(sizeF,sizeX);
 %!	%
-%!	funchZ = @(x,y)( sqrt(funcOmega_ellip( [x;y], h0, vecXCent, matA )) );
+%!	isVectorized = false;
+%!	ax = [ -5.0, 5.0, -5.0, 5.0 ];
+%!	numXVals = [ 31, 33 ];
+%!	[ gridX1, gridX2, gridF, gridCX1, gridCX2, gridD1F, gridD2F ] = genVizGrids( ...
+%!	  @(x)( funcOmega_ellip( x, h0, vecXCent, matA ) ), ...
+%!	  isVectorized, ax, numXVals );
+%!	%
 %!	numFigs++; figure(numFigs);
-%!	contourfunch( funchZ );
+%!	contourf( gridX1, gridX2, sqrt(gridF) );
+%!	grid on;
+%!	title( "sqrt(F) vs (x1,x2)" );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	contourf( gridCX1, gridCX2, sqrt( gridD1F.^2 + gridD2F.^2 ) );
+%!	grid on;
+%!	title("||nablaF|| vs (x1,x2)" );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	imagesc( gridCX1', gridCX2', atan2( gridD2F, gridD1F )' );
+%!	set(gca,'ydir','normal');
+%!	colormap(hsv);
+%!	grid on;
+%!	title( "theta(nablaF) vs (x1,x2)" );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
 %!	%
 %!	msg( thisFile, __LINE__, "*** Please manually confirm the figure(s) look correct. ***" );

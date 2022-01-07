@@ -1,4 +1,4 @@
-function [ f, vecNablaF ] = funcOmega_surfGradOmega( vecX, funchSurf, funchOmega, deltaR, h0, prm=[] )
+function [ f, vecNablaF ] = funcOmega_surfCombo_niceGrad( vecX, funchSurf, funchOmega, deltaR, h0, prm=[] )
 	[ vecS, vecU, vecV, matNablaST ] = funchSurf( vecX );
 	if ( vecV'*(vecX-vecS) < 0.0 )
 		% We're inside or the surface.
@@ -21,7 +21,7 @@ end
 
 
 %!test
-%!	thisFile = "funcOmega_surfGradOmega test: runs";
+%!	thisFile = "funcOmega_surfCombo_niceGrad test: runs";
 %!	commondefs;
 %!	setprngstates(); ax=[ -5, 5, -5, 5 ];
 %!	%setprngstates(11208128); ax = [ -1, 0.5, 1.5, 3.0 ] % Forked min. 
@@ -51,10 +51,6 @@ end
 %!	[ omega0, vecNablaOmega0 ] = funchOmega( vecXCent_surf );
 %!	h0 = norm(vecNablaOmega0) / deltaR;
 %!	%
-%!	funchF = @(x)( funcOmega_surfGradOmega( x, funchSurf, funchOmega, deltaR, h0 ) );
-%!	funchZ = @(x,y)( log(eps*omega0+funchF( [x;y] )) );
-%!	echo_Z = funchZ(0.0,0.0);
-%!	%
 %!	numPts = 101;
 %!	thetaVals = linspace(0.0,2.0*pi,numPts);
 %!	vecXVals = vecXCent_surf + 3.0*bigR_surf*[ cos(thetaVals); sin(thetaVals) ];
@@ -62,12 +58,54 @@ end
 %!		vecSVals(:,n) = funcSurf_ellip( vecXVals(:,n), bigR_surf, vecXCent_surf, matA_surf );
 %!	end
 %!	%
+%!	funchF = @(x)( funcOmega_surfCombo_niceGrad( x, funchSurf, funchOmega, deltaR, h0 ) );
+%!	isVectorized = false;
+%!	numXVals = [ 51, 53 ];
+%!	[ gridX1, gridX2, gridF, gridCX1, gridCX2, gridD1F, gridD2F ] = genVizGrids( funchF, isVectorized, ax, numXVals );
+%!	%
+%!	numCLevs = 31;
+%!	%
 %!	numFigs++; figure(numFigs);
-%!	%contourfunch( funchZ );
-%!	contourfunch( funchZ, ax );
-%!	axis equal;
+%!	contourf( gridX1, gridX2, asinh(gridF), numCLevs );
+%!	colormap(mycmap);
 %!	hold on;
-%!	plot( vecSVals(1,:), vecSVals(2,:), 'ko-' );
+%!	plot( ...
+%!	  vecSVals(1,:), vecSVals(2,:), 'ko-', ...
+%!	  vecXCent_surf(1), vecXCent_surf(2), 's', 'linewidth', 3, 'markersize', 15, ...
+%!	  vecXCent_omega(1), vecXCent_omega(2), 'x', 'linewidth', 3, 'markersize', 15 );
 %!	hold off;
+%!	grid on;
+%!	title( "asinh(F) vs (x1,x2)" );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	contourf( gridCX1, gridCX2, asinh(sqrt( gridD1F.^2 + gridD2F.^2 )), numCLevs );
+%!	colormap(mycmap);
+%!	hold on;
+%!	plot( ...
+%!	  vecSVals(1,:), vecSVals(2,:), 'ko-', ...
+%!	  vecXCent_surf(1), vecXCent_surf(2), 's', 'linewidth', 3, 'markersize', 15, ...
+%!	  vecXCent_omega(1), vecXCent_omega(2), 'x', 'linewidth', 3, 'markersize', 15 );
+%!	hold off;
+%!	grid on;
+%!	title("asinh(||nablaF||) vs (x1,x2)" );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	imagesc( gridCX1', gridCX2', atan2( gridD2F, gridD1F )' );
+%!	hold on;
+%!	plot( ...
+%!	  vecSVals(1,:), vecSVals(2,:), 'ko-', ...
+%!	  vecXCent_surf(1), vecXCent_surf(2), 's', 'linewidth', 3, 'markersize', 15, ...
+%!	  vecXCent_omega(1), vecXCent_omega(2), 'x', 'linewidth', 3, 'markersize', 15 );
+%!	hold off;
+%!	set(gca,'ydir','normal');
+%!	colormap(hsv);
+%!	grid on;
+%!	title( "theta(nablaF) vs (x1,x2)" );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
 %!	%
 %!	msg( thisFile, __LINE__, "*** Please manually confirm the figure(s) look correct. ***" );
