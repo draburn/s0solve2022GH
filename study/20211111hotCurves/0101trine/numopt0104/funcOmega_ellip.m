@@ -45,7 +45,6 @@ end
 
 %!test
 %!	thisFile = "funcOmega_ellip test: viz";
-%!	commondefs;
 %!	setprngstates();
 %!	numFigs = 0;
 %!	%
@@ -86,3 +85,11 @@ end
 %!	ylabel( "x2" );
 %!	%
 %!	msg( thisFile, __LINE__, "*** Please manually confirm the figure(s) look correct. ***" );
+
+
+%!test
+%!	thisFile = "funcOmega_ellip test: numerical";
+%!	setprngstates();
+%!	numFigs = 3;
+%!	%
+%!	msg( thisFile, __LINE__, "~~~ To-do! ~~~" );

@@ -37,7 +37,7 @@ function [ vecX, retCode, datOut ] = findObjSurfMin( vecX0, funchSurf, funchOmeg
 		assert( isrealscalar(h0) );
 		assert( isrealscalar(epsX) );
 	end
-	funchBigF = @(vecX)( funcOmega_surfGradOmega( vecX, funchSurf, funchOmega, deltaR, h0, epsX ) );
+	funchBigF = @(vecX)( funcOmega_inSurf_niceGrad( vecX, funchSurf, funchOmega, deltaR, h0, epsX ) );
 	%
 	%
 	% Do work.
@@ -97,7 +97,7 @@ end
 %!	[ omega0, vecNablaOmega0 ] = funchOmega( vecX0 );
 %!	deltaR = 1e-2
 %!	h0 = norm(vecNablaOmega0)/deltaR
-%!	funchF = @(x)( funcOmega_surfGradOmega( x, funchSurf, funchOmega, deltaR, h0 ) );
+%!	funchF = @(x)( funcOmega_inSurf_niceGrad( x, funchSurf, funchOmega, deltaR, h0 ) );
 %!	%
 %!	vecXF = findObjSurfMin( vecX0, funchSurf, funchOmega );
 %!	%
@@ -146,7 +146,7 @@ end
 %!	[ omega0, vecNablaOmega0 ] = funchOmega( vecX0 );
 %!	deltaR_combo = 1e-2
 %!	h0_combo = norm(vecNablaOmega0)/deltaR_combo
-%!	funchF = @(x)( funcOmega_surfGradOmega( x, funchSurf, funchOmega, deltaR_combo, h0_combo ) );
+%!	funchF = @(x)( funcOmega_inSurf_niceGrad( x, funchSurf, funchOmega, deltaR_combo, h0_combo ) );
 %!	%
 %!	vecXF = findObjSurfMin( vecX0, funchSurf, funchOmega );
 %!	%

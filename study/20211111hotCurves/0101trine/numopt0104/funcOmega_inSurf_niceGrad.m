@@ -1,4 +1,4 @@
-function [ f, vecNablaF ] = funcOmega_surfCombo_niceGrad( vecX, funchSurf, funchOmega, deltaR, h0, prm=[] )
+function [ f, vecNablaF ] = funcOmega_inSurf_niceGrad( vecX, funchSurf, funchOmega, deltaR, h0, prm=[] )
 	[ vecS, vecU, vecV, matNablaST ] = funchSurf( vecX );
 	if ( vecV'*(vecX-vecS) < 0.0 )
 		% We're inside or the surface.
@@ -21,8 +21,7 @@ end
 
 
 %!test
-%!	thisFile = "funcOmega_surfCombo_niceGrad test: runs";
-%!	commondefs;
+%!	thisFile = "funcOmega_inSurf_niceGrad test: runs";
 %!	setprngstates(); ax=[ -5, 5, -5, 5 ];
 %!	%setprngstates(11208128); ax = [ -1, 0.5, 1.5, 3.0 ] % Forked min. 
 %!	%setprngstates(56196480); ax = [ -5, 5, -5, 5 ] % Pretty.
@@ -58,7 +57,7 @@ end
 %!		vecSVals(:,n) = funcSurf_ellip( vecXVals(:,n), bigR_surf, vecXCent_surf, matA_surf );
 %!	end
 %!	%
-%!	funchF = @(x)( funcOmega_surfCombo_niceGrad( x, funchSurf, funchOmega, deltaR, h0 ) );
+%!	funchF = @(x)( funcOmega_inSurf_niceGrad( x, funchSurf, funchOmega, deltaR, h0 ) );
 %!	isVectorized = false;
 %!	numXVals = [ 51, 53 ];
 %!	[ gridX1, gridX2, gridF, gridCX1, gridCX2, gridD1F, gridD2F ] = genVizGrids( funchF, isVectorized, ax, numXVals );
@@ -66,7 +65,7 @@ end
 %!	numCLevs = 31;
 %!	%
 %!	numFigs++; figure(numFigs);
-%!	contourf( gridX1, gridX2, asinh(gridF), numCLevs );
+%!	contourf( gridX1, gridX2, sqrt(gridF), numCLevs );
 %!	colormap(mycmap);
 %!	hold on;
 %!	plot( ...
@@ -75,12 +74,28 @@ end
 %!	  vecXCent_omega(1), vecXCent_omega(2), 'x', 'linewidth', 3, 'markersize', 15 );
 %!	hold off;
 %!	grid on;
-%!	title( "asinh(F) vs (x1,x2)" );
+%!	title( "sqrt(F) vs (x1,x2)" );
 %!	xlabel( "x1" );
 %!	ylabel( "x2" );
 %!	%
 %!	numFigs++; figure(numFigs);
-%!	contourf( gridCX1, gridCX2, asinh(sqrt( gridD1F.^2 + gridD2F.^2 )), numCLevs );
+%!	contourf( gridCX1, gridCX2, gridD1F, numCLevs );
+%!	colormap(mycmap);
+%!	grid on;
+%!	title("dF/dx1 vs (x1,x2)" );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	contourf( gridCX1, gridCX2, gridD2F, numCLevs );
+%!	colormap(mycmap);
+%!	grid on;
+%!	title("dF/dx2 vs (x1,x2)" );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	contourf( gridCX1, gridCX2, sqrt(sqrt( gridD1F.^2 + gridD2F.^2 )), numCLevs );
 %!	colormap(mycmap);
 %!	hold on;
 %!	plot( ...
@@ -89,7 +104,7 @@ end
 %!	  vecXCent_omega(1), vecXCent_omega(2), 'x', 'linewidth', 3, 'markersize', 15 );
 %!	hold off;
 %!	grid on;
-%!	title("asinh(||nablaF||) vs (x1,x2)" );
+%!	title("sqrt(||nablaF||) vs (x1,x2)" );
 %!	xlabel( "x1" );
 %!	ylabel( "x2" );
 %!	%
@@ -109,3 +124,11 @@ end
 %!	ylabel( "x2" );
 %!	%
 %!	msg( thisFile, __LINE__, "*** Please manually confirm the figure(s) look correct. ***" );
+
+
+%!test
+%!	thisFile = "funcOmega_ellip test: numerical";
+%!	setprngstates();
+%!	numFigs = 3;
+%!	%
+%!	msg( thisFile, __LINE__, "~~~ Compare analytic and numerical gradients! ~~~" );
