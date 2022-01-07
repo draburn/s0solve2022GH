@@ -8,6 +8,7 @@
 %  useContourF = true )
 %
 % 2020.05.21: This has been largely deprecated by gridfunch().
+% 2022.01.07: See genVizGrids.m.
 
 function [ zMin, zMax, zAvg, zVar ] = contourfunch( ...
   funchZ = @(x,y)( x.^2 + y.^2), ...
