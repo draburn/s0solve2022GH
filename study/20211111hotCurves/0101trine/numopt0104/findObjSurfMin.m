@@ -39,7 +39,13 @@ function [ vecX, retCode, datOut ] = findObjSurfMin( vecX0, funchSurf, funchOmeg
 		assert( isrealscalar(epsX) );
 	end
 	funchBigF = @(vecX)( funcOmega_withinSurf( vecX, funchSurf, funchOmega, tauX, h0, epsX ) );
-	%
+	% DRaburn 2022-01-08...
+	%  A significant alternative approach would be to
+	%  consider, distinctly, an "on/off" surface approach,
+	%  with "on" being determined by being close to the surface with an outward gradient;
+	%  -- such an approach was previously implemented, with an on-reflection needless "onSurf flag;
+	%  Such an approach is not currently needed.
+	% POITROME.
 	%
 	% Do work.
 	useProvidedGradients = true;
