@@ -26,6 +26,7 @@ function [ vecX, retCode, datOut ] = findObjSurfMin( vecX0, funchSurf, funchOmeg
 		assert( isrealscalar(omega0) );
 		assert( isrealarray(vecNablaOmega0,[sizeX,1]) );
 	end
+	datOut = [];
 	%
 	%
 	% Set up the objective function that combines the input funchSurf and funchOmega.
@@ -51,6 +52,7 @@ function [ vecX, retCode, datOut ] = findObjSurfMin( vecX0, funchSurf, funchOmeg
 	if ( valdLev >= VALDLEV__LOW )
 		assert( isrealarray(vecX,[sizeX,1]) );
 	end
+	retCode = RETCODE__SUCCESS;
 return;
 end
 
