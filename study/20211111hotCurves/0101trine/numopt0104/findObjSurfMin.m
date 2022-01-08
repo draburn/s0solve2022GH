@@ -1,10 +1,10 @@
 function [ vecX, retCode, datOut ] = findObjSurfMin( vecX0, funchSurf, funchOmega, prm=[] )
 	commondefs;
 	thisFile = "findObjSurfMin";
-	%valdLev = mygetfield( prm, "valdLev", VALDLEV__MEDIUM );
-	%verbLev = mygetfield( prm, "verbLev", VERBLEV__WARN );
-	valdLev = mygetfield( prm, "valdLev", VALDLEV__HIGH );
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	valdLev = mygetfield( prm, "valdLev", VALDLEV__MEDIUM );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__WARN );
+	%valdLev = mygetfield( prm, "valdLev", VALDLEV__HIGH );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	assert( isrealscalar(valdLev) );
 	assert( isrealscalar(verbLev) );
 	msg_copious( verbLev, thisFile, __LINE__, "Welcome." );
@@ -29,19 +29,19 @@ function [ vecX, retCode, datOut ] = findObjSurfMin( vecX0, funchSurf, funchOmeg
 	%
 	%
 	% Set up the objective function that combines the input funchSurf and funchOmega.
-	deltaR = mygetfield( prm, "deltaR", 1e-2 );
-	h0 = mygetfield( prm, "h0", norm(vecNablaOmega0)/deltaR );
+	tauX = mygetfield( prm, "tauX", 1e-2 );
+	h0 = mygetfield( prm, "h0", norm(vecNablaOmega0)/tauX );
 	epsX = mygetfield( prm, "epsX", 1e-5 );
 	if ( valdLev >= VALDLEV__LOW )
-		assert( isrealscalar(deltaR) );
+		assert( isrealscalar(tauX) );
 		assert( isrealscalar(h0) );
 		assert( isrealscalar(epsX) );
 	end
-	funchBigF = @(vecX)( funcOmega_withinSurf( vecX, funchSurf, funchOmega, deltaR, h0, epsX ) );
+	funchBigF = @(vecX)( funcOmega_withinSurf( vecX, funchSurf, funchOmega, tauX, h0, epsX ) );
 	%
 	%
 	% Do work.
-	useProvidedGradients = false;
+	useProvidedGradients = true;
 	if (useProvidedGradients)
 		fminunc_opts = optimset( 'GradObj', 'off' );
 		vecX = fminunc( funchBigF, vecX0, fminunc_opts );
@@ -95,9 +95,9 @@ end
 %!	theta = 2*pi*rand();
 %!	vecX0 = vecC;
 %!	[ omega0, vecNablaOmega0 ] = funchOmega( vecX0 );
-%!	deltaR = 1e-2
-%!	h0 = norm(vecNablaOmega0)/deltaR
-%!	funchF = @(x)( funcOmega_withinSurf( x, funchSurf, funchOmega, deltaR, h0 ) );
+%!	tauX = 1e-2;
+%!	h0 = norm(vecNablaOmega0)/tauX;
+%!	funchF = @(x)( funcOmega_withinSurf( x, funchSurf, funchOmega, tauX, h0 ) );
 %!	%
 %!	vecXF = findObjSurfMin( vecX0, funchSurf, funchOmega );
 %!	%
@@ -144,9 +144,9 @@ end
 %!	theta = 2*pi*rand();
 %!	vecX0 = vecXCent_surf;
 %!	[ omega0, vecNablaOmega0 ] = funchOmega( vecX0 );
-%!	deltaR_combo = 1e-2
-%!	h0_combo = norm(vecNablaOmega0)/deltaR_combo
-%!	funchF = @(x)( funcOmega_withinSurf( x, funchSurf, funchOmega, deltaR_combo, h0_combo ) );
+%!	tauX_combo = 1e-2;
+%!	h0_combo = norm(vecNablaOmega0)/tauX_combo;
+%!	funchF = @(x)( funcOmega_withinSurf( x, funchSurf, funchOmega, tauX_combo, h0_combo ) );
 %!	%
 %!	vecXF = findObjSurfMin( vecX0, funchSurf, funchOmega );
 %!	%

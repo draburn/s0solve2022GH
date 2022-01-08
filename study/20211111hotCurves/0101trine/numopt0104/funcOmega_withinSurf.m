@@ -1,4 +1,4 @@
-function [ f, vecNablaF ] = funcOmega_withinSurf( vecX, funchSurf, funchOmega, deltaR, h0, prm=[] )
+function [ f, vecNablaF ] = funcOmega_withinSurf( vecX, funchSurf, funchOmega, tauX, h0, prm=[] )
 	thisFile = "funcOmega_withinSurf";
 	[ vecS, vecNHat, vecUHat, matNablaST ] = funchSurf( vecX );
 	if ( vecNHat'*(vecX-vecS) < 0.0 )
@@ -14,9 +14,9 @@ function [ f, vecNablaF ] = funcOmega_withinSurf( vecX, funchSurf, funchOmega, d
 	% We're on or outside the surface.
 	[ omega, vecNablaOmega ] = funchOmega( vecS );
 	vecD = vecX - vecS;
-	f = omega + ( vecD' * vecNablaOmega) + ( 0.5 * ( vecD' * vecD ) ) * ( (norm(vecNablaOmega)/deltaR) + h0 );
+	f = omega + ( vecD' * vecNablaOmega) + ( 0.5 * ( vecD' * vecD ) ) * ( (norm(vecNablaOmega)/tauX) + h0 );
 	if ( 2 <= nargout )
-		vecXi = vecD + ( vecNablaOmega * (sumsq(vecD)/(2.0*deltaR*norm(vecNablaOmega))) );
+		vecXi = vecD + ( vecNablaOmega * (sumsq(vecD)/(2.0*tauX*norm(vecNablaOmega))) );
 		epsFD = 1E-4;
 		if ( vecNHat'*vecXi > 0.0 )
 			epsFD = -epsFD;
@@ -24,7 +24,7 @@ function [ f, vecNablaF ] = funcOmega_withinSurf( vecX, funchSurf, funchOmega, d
 		[ omegaP, vecNablaOmegaP ] = funchOmega( vecS + epsFD * vecXi );
 		vecNabala2OmegaXi = ( vecNablaOmegaP - vecNablaOmega ) / epsFD;
 		vecNablaF = vecNablaOmega + ( matNablaST * vecNabala2OmegaXi ) ...
-		  + ( vecD - (matNablaST*vecD) ) * ( (norm(vecNablaOmega)/deltaR) + h0 );
+		  + ( vecD - (matNablaST*vecD) ) * ( (norm(vecNablaOmega)/tauX) + h0 );
 	end
 return;
 end
@@ -60,9 +60,9 @@ end
 %!	funchOmega = @(x)( funcOmega_ellip( x, h0_omega, vecXCent_omega, matA_omega ) );
 %!	omega = funchOmega( [0.0;0.0] );
 %!	%
-%!	deltaR = bigR_surf / 10.0;
+%!	tauX = bigR_surf / 10.0;
 %!	[ omega0, vecNablaOmega0 ] = funchOmega( vecXCent_surf );
-%!	h0 = norm(vecNablaOmega0) / deltaR;
+%!	h0 = norm(vecNablaOmega0) / tauX;
 %!	%
 %!	numPts = 101;
 %!	thetaVals = linspace(0.0,2.0*pi,numPts);
@@ -71,7 +71,7 @@ end
 %!		vecSVals(:,n) = funcSurf_ellip( vecXVals(:,n), bigR_surf, vecXCent_surf, matA_surf );
 %!	end
 %!	%
-%!	funchF = @(x)( funcOmega_withinSurf( x, funchSurf, funchOmega, deltaR, h0 ) );
+%!	funchF = @(x)( funcOmega_withinSurf( x, funchSurf, funchOmega, tauX, h0 ) );
 %!	isVectorized = false;
 %!	numXVals = [ 51, 53 ];
 %!	[ gridX1, gridX2, gridF, gridCX1, gridCX2, gridD1F, gridD2F ] = genVizGrids( funchF, isVectorized, ax, numXVals );
