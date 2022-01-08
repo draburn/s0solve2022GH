@@ -1,6 +1,7 @@
 function [ f, vecNablaF ] = funcOmega_withinSurf( vecX, funchSurf, funchOmega, deltaR, h0, prm=[] )
-	[ vecS, vecU, vecV, matNablaST ] = funchSurf( vecX );
-	if ( vecV'*(vecX-vecS) < 0.0 )
+	thisFile = "funcOmega_withinSurf";
+	[ vecS, vecNHat, vecUHat, matNablaST ] = funchSurf( vecX );
+	if ( vecNHat'*(vecX-vecS) < 0.0 )
 		% We're inside or the surface.
 		if ( 1 == nargout )
 			f = funchOmega( vecX );
@@ -13,10 +14,17 @@ function [ f, vecNablaF ] = funcOmega_withinSurf( vecX, funchSurf, funchOmega, d
 	% We're on or outside the surface.
 	[ omega, vecNablaOmega ] = funchOmega( vecS );
 	vecD = vecX - vecS;
-	%f = omega + ( vecD' * vecNablaOmega) + ( 0.5 * ( vecD' * vecD ) ) * ( norm(vecNablaOmega)/deltaR + h0 );
-	f = omega + ( vecD' * vecNablaOmega) + ( 0.5 * ( vecD' * vecD ) ) * ( norm(vecNablaOmega)/deltaR + h0 );
+	f = omega + ( vecD' * vecNablaOmega) + ( 0.5 * ( vecD' * vecD ) ) * ( (norm(vecNablaOmega)/deltaR) + h0 );
 	if ( 2 <= nargout )
-		error( "Not implemented!" );
+		vecXi = vecD + ( vecNablaOmega * (sumsq(vecD)/(2.0*deltaR*norm(vecNablaOmega))) );
+		epsFD = 1E-4;
+		if ( vecNHat'*vecXi > 0.0 )
+			epsFD = -epsFD;
+		end
+		[ omegaP, vecNablaOmegaP ] = funchOmega( vecS + epsFD * vecXi );
+		vecNabala2OmegaXi = ( vecNablaOmegaP - vecNablaOmega ) / epsFD;
+		vecNablaF = vecNablaOmega + ( matNablaST * vecNabala2OmegaXi ) ...
+		  + ( vecD - (matNablaST*vecD) ) * ( (norm(vecNablaOmega)/deltaR) + h0 );
 	end
 return;
 end
@@ -146,6 +154,8 @@ end
 %!	numFigs++; figure(numFigs);
 %!	imagesc( gridCX1(:,1), gridCX2(1,:), xygrids2img( gridD1F, gridD2F ) );
 %!	hold on;
+%!	contour( gridCX1, gridCX2, sqrt(sqrt( gridD1F.^2 + gridD2F.^2 )), 10 );
+%!	colormap(zeros(64,3));
 %!	plot( ...
 %!	  vecSVals(1,:), vecSVals(2,:), 'ko-', ...
 %!	  vecXCent_surf(1), vecXCent_surf(2), 's', 'linewidth', 3, 'markersize', 15, ...
@@ -159,7 +169,7 @@ end
 %!	%
 %!	msg( thisFile, __LINE__, "*** Please manually confirm the figure(s) look correct. ***" );
 %!	%
-%!	numTestVals = 10;
+%!	numTestVals = 100;
 %!	vecXTestVals = vecXCent_surf + randn(sizeX,numTestVals);
 %!	epsX = 1e-4;
 %!	for n=1:numTestVals
@@ -172,13 +182,13 @@ end
 %!		vecXM0(1) -= epsX;
 %!		vecX0P(2) += epsX;
 %!		vecX0M(2) -= epsX;
-%!		[ omega00, vecNablaOmega ] = funchF( vecX00 )
+%!		[ omega00, vecNablaOmega ] = funchF( vecX00 );
 %!		omegaP0 = funchF( vecXP0 );
 %!		omegaM0 = funchF( vecXM0 );
 %!		omega0P = funchF( vecX0P );
 %!		omega0M = funchF( vecX0M );
-%!		vecNablaOmegaFD = [ (omegaP0-omegaM0)/(2.0*epsX); (omega0P-omega0M)/(2.0*epsX) ]
-%!		assert( norm(vecNablaOmegaFD-vecNablaOmega) < 1e-8*(norm(vecNablaOmegaFD)+norm(vecNablaOmega)) );
+%!		vecNablaOmegaFD = [ (omegaP0-omegaM0)/(2.0*epsX); (omega0P-omega0M)/(2.0*epsX) ];
+%!		assert( norm(vecNablaOmegaFD-vecNablaOmega) < 1e-6*(norm(vecNablaOmegaFD)+norm(vecNablaOmega)) );
 %!	end
 %!	%
 %!	msg( thisFile, __LINE__, "" );
