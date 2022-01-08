@@ -15,18 +15,24 @@ function [ f, vecNablaF ] = funcOmega_withinSurf( vecX, funchSurf, funchOmega, d
 	vecD = vecX - vecS;
 	%f = omega + ( vecD' * vecNablaOmega) + ( 0.5 * ( vecD' * vecD ) ) * ( norm(vecNablaOmega)/deltaR + h0 );
 	f = omega + ( vecD' * vecNablaOmega) + ( 0.5 * ( vecD' * vecD ) ) * ( norm(vecNablaOmega)/deltaR + h0 );
-	assert( nargout == 1 );
+	if ( 2 <= nargout )
+		error( "Not implemented!" );
+	end
 return;
 end
 
 
 %!test
 %!	thisFile = "funcOmega_withinSurf test: runs";
-%!	setprngstates(); ax=[ -5, 5, -5, 5 ];
+%!	%setprngstates(); ax=[ -5, 5, -5, 5 ];
+%!	%setprngstates(93978080); ax=[ -5, 5, -5, 5 ];
 %!	%setprngstates(11208128); ax = [ -1, 0.5, 1.5, 3.0 ] % Forked min. 
 %!	%setprngstates(56196480); ax = [ -5, 5, -5, 5 ] % Pretty.
 %!	%setprngstates(1283408); ax = [ -5, 5, -5, 5 ] % Local max? contourfunch issue?
 %!	%setprngstates(85681808);  ax = [ -0.5, 2.5, -2.5, 0.5 ] % Nice. Clean. Simple.
+%!	setprngstates(72144288); ax=[ -5, 5, -5, 5 ]; % Nice and complex.
+%!	%setprngstates(3859184); ax=[ -5, 5, -5, 5 ]; % Cute boxy thing
+%!	% 
 %!	numFigs = 0;
 %!	sizeX = 2;
 %!	%
@@ -109,7 +115,21 @@ end
 %!	ylabel( "x2" );
 %!	%
 %!	numFigs++; figure(numFigs);
-%!	imagesc( gridCX1', gridCX2', atan2( gridD2F, gridD1F )' );
+%!	contourf( gridCX1, gridCX2, atan2( gridD2F, gridD1F ), numCLevs );
+%!	colormap(hsv);
+%!	hold on;
+%!	plot( ...
+%!	  vecSVals(1,:), vecSVals(2,:), 'ko-', ...
+%!	  vecXCent_surf(1), vecXCent_surf(2), 's', 'linewidth', 3, 'markersize', 15, ...
+%!	  vecXCent_omega(1), vecXCent_omega(2), 'x', 'linewidth', 3, 'markersize', 15 );
+%!	hold off;
+%!	grid on;
+%!	title("theta(nablaF) vs (x1,x2)" );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	imagesc( gridCX1(:,1), gridCX2(1,:), atan2( gridD2F, gridD1F )' );
 %!	hold on;
 %!	plot( ...
 %!	  vecSVals(1,:), vecSVals(2,:), 'ko-', ...
@@ -123,12 +143,44 @@ end
 %!	xlabel( "x1" );
 %!	ylabel( "x2" );
 %!	%
-%!	msg( thisFile, __LINE__, "*** Please manually confirm the figure(s) look correct. ***" );
-
-
-%!test
-%!	thisFile = "funcOmega_ellip test: numerical";
-%!	setprngstates();
-%!	numFigs = 3;
+%!	numFigs++; figure(numFigs);
+%!	imagesc( gridCX1(:,1), gridCX2(1,:), xygrids2img( gridD1F, gridD2F ) );
+%!	hold on;
+%!	plot( ...
+%!	  vecSVals(1,:), vecSVals(2,:), 'ko-', ...
+%!	  vecXCent_surf(1), vecXCent_surf(2), 's', 'linewidth', 3, 'markersize', 15, ...
+%!	  vecXCent_omega(1), vecXCent_omega(2), 'x', 'linewidth', 3, 'markersize', 15 );
+%!	hold off;
+%!	set(gca,'ydir','normal');
+%!	grid on;
+%!	title( "nablaF vs (x1,x2)" );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
 %!	%
-%!	msg( thisFile, __LINE__, "~~~ Compare analytic and numerical gradients! ~~~" );
+%!	msg( thisFile, __LINE__, "*** Please manually confirm the figure(s) look correct. ***" );
+%!	%
+%!	numTestVals = 10;
+%!	vecXTestVals = vecXCent_surf + randn(sizeX,numTestVals);
+%!	epsX = 1e-4;
+%!	for n=1:numTestVals
+%!		vecX00 = vecXTestVals(:,n);
+%!		vecXP0 = vecXTestVals(:,n);
+%!		vecXM0 = vecXTestVals(:,n);
+%!		vecX0P = vecXTestVals(:,n);
+%!		vecX0M = vecXTestVals(:,n);
+%!		vecXP0(1) += epsX;
+%!		vecXM0(1) -= epsX;
+%!		vecX0P(2) += epsX;
+%!		vecX0M(2) -= epsX;
+%!		[ omega00, vecNablaOmega ] = funchF( vecX00 )
+%!		omegaP0 = funchF( vecXP0 );
+%!		omegaM0 = funchF( vecXM0 );
+%!		omega0P = funchF( vecX0P );
+%!		omega0M = funchF( vecX0M );
+%!		vecNablaOmegaFD = [ (omegaP0-omegaM0)/(2.0*epsX); (omega0P-omega0M)/(2.0*epsX) ]
+%!		assert( norm(vecNablaOmegaFD-vecNablaOmega) < 1e-8*(norm(vecNablaOmegaFD)+norm(vecNablaOmega)) );
+%!	end
+%!	%
+%!	msg( thisFile, __LINE__, "" );
+%!	msg( thisFile, __LINE__, "*** Consider adding Hessian check. ***" );
+%!	msg( thisFile, __LINE__, "" );

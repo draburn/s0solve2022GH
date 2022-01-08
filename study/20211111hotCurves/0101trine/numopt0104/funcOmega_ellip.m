@@ -67,6 +67,7 @@ end
 %!		vecXCent = randn(sizeX,1);
 %!		matA = randn(sizeF,sizeX);
 %!	end
+%!	setAxisEqual = true;
 %!	%
 %!	numTestVals = 10;
 %!	vecXTestVals = vecXCent + randn(sizeX,numTestVals);
@@ -91,6 +92,10 @@ end
 %!		assert( norm(vecNablaOmegaFD-vecNablaOmega) < 1e-8*(norm(vecNablaOmegaFD)+norm(vecNablaOmega)) );
 %!	end
 %!	%
+%!	msg( thisFile, __LINE__, "" );
+%!	msg( thisFile, __LINE__, "*** Consider adding Hessian check. ***" );
+%!	msg( thisFile, __LINE__, "" );
+%!	%
 %!	isVectorized = false;
 %!	ax = [ -5.0, 5.0, -5.0, 5.0 ];
 %!	numXVals = [ 31, 33 ];
@@ -100,13 +105,23 @@ end
 %!	%
 %!	numFigs++; figure(numFigs);
 %!	contourf( gridX1, gridX2, sqrt(gridF) );
+%!	if (setAxisEqual)
+%!		axis equal;
+%!	end
 %!	grid on;
 %!	title( "sqrt(F) vs (x1,x2)" );
 %!	xlabel( "x1" );
 %!	ylabel( "x2" );
+%!	%%% Why do I need to call setAxisEqual twice???
+%!	if (setAxisEqual)
+%!		axis equal;
+%!	end
 %!	%
 %!	numFigs++; figure(numFigs);
 %!	contourf( gridCX1, gridCX2, sqrt( gridD1F.^2 + gridD2F.^2 ) );
+%!	if (setAxisEqual)
+%!		axis equal;
+%!	end
 %!	grid on;
 %!	title("||nablaF|| vs (x1,x2)" );
 %!	xlabel( "x1" );
@@ -114,18 +129,34 @@ end
 %!	%
 %!	numFigs++; figure(numFigs);
 %!	contourf( gridCX1, gridCX2, atan2( gridD2F, gridD1F ) );
+%!	if (setAxisEqual)
+%!		axis equal;
+%!	end
 %!	grid on;
 %!	title("theta(nablaF) vs (x1,x2)" );
 %!	xlabel( "x1" );
 %!	ylabel( "x2" );
 %!	%
 %!	numFigs++; figure(numFigs);
-%!	%imagesc( gridCX1', gridCX2', atan2( gridD2F, gridD1F )' );
 %!	imagesc( gridCX1(:,1), gridCX2(1,:), atan2( gridD2F, gridD1F )' );
+%!	if (setAxisEqual)
+%!		axis equal;
+%!	end
 %!	set(gca,'ydir','normal');
 %!	colormap(hsv);
 %!	grid on;
 %!	title( "theta(nablaF) vs (x1,x2)" );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	imagesc( gridCX1(:,1), gridCX2(1,:), xygrids2img( gridD1F, gridD2F ) );
+%!	if (setAxisEqual)
+%!		axis equal;
+%!	end
+%!	set(gca,'ydir','normal');
+%!	grid on;
+%!	title( "nablaF vs (x1,x2)" );
 %!	xlabel( "x1" );
 %!	ylabel( "x2" );
 %!	%
