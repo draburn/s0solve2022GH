@@ -15,7 +15,7 @@ function [ omega, vecNablaOmega, matNabla2Omega, aryNabla3Omega ] = funcOmega_el
 		vecB = matA * ( vecX - vecXCent );
 		omega = ( vecB' * vecB ) * h0 / 2.0;
 		if ( 2 <= nargout )
-			vecNablaOmega = matA' * vecB;
+			vecNablaOmega = h0 * ( matA' * vecB );
 			if ( 3 <= nargout )
 				matNabla2Omega = h0 * ( matA' * matA );
 				if ( 4 <= nargout )
@@ -49,10 +49,47 @@ end
 %!	numFigs = 0;
 %!	%
 %!	sizeX = 2;
-%!	sizeF = 3;
-%!	h0 = abs(randn());
-%!	vecXCent = randn(sizeX,1);
-%!	matA = randn(sizeF,sizeX);
+%!	%
+%!	switch 3
+%!	case 1
+%!		sizeF = sizeX;
+%!		h0 = 1.0
+%!		vecXCent = zeros(sizeX,1)
+%!		matA = eye(sizeX,sizeX)
+%!	case 2
+%!		sizeF = sizeX;
+%!		h0 = 2.0
+%!		vecXCent = [ 1.0; 1.0 ]
+%!		matA = [ 2.0, 1.0; 0.0, 1.0 ]
+%!	case 3
+%!		sizeF = 2;
+%!		h0 = abs(randn());
+%!		vecXCent = randn(sizeX,1);
+%!		matA = randn(sizeF,sizeX);
+%!	end
+%!	%
+%!	numTestVals = 10;
+%!	vecXTestVals = vecXCent + randn(sizeX,numTestVals);
+%!	epsX = 1e-4;
+%!	%for n=1:numTestVals
+%!	for n=1:1
+%!		vecX00 = vecXTestVals(:,n);
+%!		vecXP0 = vecXTestVals(:,n);
+%!		vecXM0 = vecXTestVals(:,n);
+%!		vecX0P = vecXTestVals(:,n);
+%!		vecX0M = vecXTestVals(:,n);
+%!		vecXP0(1) += epsX;
+%!		vecXM0(1) -= epsX;
+%!		vecX0P(2) += epsX;
+%!		vecX0M(2) -= epsX;
+%!		[ omega00, vecNablaOmega ] = funcOmega_ellip( vecX00, h0, vecXCent, matA );
+%!		omegaP0 = funcOmega_ellip( vecXP0, h0, vecXCent, matA );
+%!		omegaM0 = funcOmega_ellip( vecXM0, h0, vecXCent, matA );
+%!		omega0P = funcOmega_ellip( vecX0P, h0, vecXCent, matA );
+%!		omega0M = funcOmega_ellip( vecX0M, h0, vecXCent, matA );
+%!		vecNablaOmegaFD = [ (omegaP0-omegaM0)/(2.0*epsX); (omega0P-omega0M)/(2.0*epsX) ];
+%!		assert( norm(vecNablaOmegaFD-vecNablaOmega) < 1e-8*(norm(vecNablaOmegaFD)+norm(vecNablaOmega)) );
+%!	end
 %!	%
 %!	isVectorized = false;
 %!	ax = [ -5.0, 5.0, -5.0, 5.0 ];
@@ -76,7 +113,15 @@ end
 %!	ylabel( "x2" );
 %!	%
 %!	numFigs++; figure(numFigs);
-%!	imagesc( gridCX1', gridCX2', atan2( gridD2F, gridD1F )' );
+%!	contourf( gridCX1, gridCX2, atan2( gridD2F, gridD1F ) );
+%!	grid on;
+%!	title("theta(nablaF) vs (x1,x2)" );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	%imagesc( gridCX1', gridCX2', atan2( gridD2F, gridD1F )' );
+%!	imagesc( gridCX1(:,1), gridCX2(1,:), atan2( gridD2F, gridD1F )' );
 %!	set(gca,'ydir','normal');
 %!	colormap(hsv);
 %!	grid on;
@@ -85,11 +130,3 @@ end
 %!	ylabel( "x2" );
 %!	%
 %!	msg( thisFile, __LINE__, "*** Please manually confirm the figure(s) look correct. ***" );
-
-
-%!test
-%!	thisFile = "funcOmega_ellip test: numerical";
-%!	setprngstates();
-%!	numFigs = 3;
-%!	%
-%!	msg( thisFile, __LINE__, "~~~ To-do! ~~~" );

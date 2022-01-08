@@ -1,4 +1,4 @@
-function [ f, vecNablaF ] = funcOmega_inSurf_niceGrad( vecX, funchSurf, funchOmega, deltaR, h0, prm=[] )
+function [ f, vecNablaF ] = funcOmega_withinSurf( vecX, funchSurf, funchOmega, deltaR, h0, prm=[] )
 	[ vecS, vecU, vecV, matNablaST ] = funchSurf( vecX );
 	if ( vecV'*(vecX-vecS) < 0.0 )
 		% We're inside or the surface.
@@ -21,7 +21,7 @@ end
 
 
 %!test
-%!	thisFile = "funcOmega_inSurf_niceGrad test: runs";
+%!	thisFile = "funcOmega_withinSurf test: runs";
 %!	setprngstates(); ax=[ -5, 5, -5, 5 ];
 %!	%setprngstates(11208128); ax = [ -1, 0.5, 1.5, 3.0 ] % Forked min. 
 %!	%setprngstates(56196480); ax = [ -5, 5, -5, 5 ] % Pretty.
@@ -57,7 +57,7 @@ end
 %!		vecSVals(:,n) = funcSurf_ellip( vecXVals(:,n), bigR_surf, vecXCent_surf, matA_surf );
 %!	end
 %!	%
-%!	funchF = @(x)( funcOmega_inSurf_niceGrad( x, funchSurf, funchOmega, deltaR, h0 ) );
+%!	funchF = @(x)( funcOmega_withinSurf( x, funchSurf, funchOmega, deltaR, h0 ) );
 %!	isVectorized = false;
 %!	numXVals = [ 51, 53 ];
 %!	[ gridX1, gridX2, gridF, gridCX1, gridCX2, gridD1F, gridD2F ] = genVizGrids( funchF, isVectorized, ax, numXVals );
