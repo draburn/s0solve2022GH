@@ -1,28 +1,25 @@
-function [ f, vecNablaF ] = funcOmega_onSurf_lg( vecX, funchSurf, funchOmega, tauX, h0, prm=[] )
+function [ f, vecNablaF ] = funcOmega_onSurf( vecX, funchSurf, funchOmega, h0 = 1.0, prm=[] )
 	% "lg" stands for "Local gradient".
-	thisFile = "funcOmega_onSurf_lg";
+	thisFile = "funcOmega_onSurf";
+	if ( 1 == nargout )
+		vecS = funchSurf( vecX );
+		omega = funchOmega( vecS );
+		f = omega + ( 0.5 * h0 * sumsq(vecX-vecS) );
+		return;
+	end
+	%
 	[ vecS, vecNHat, vecUHat, matNablaST ] = funchSurf( vecX );
 	[ omega, vecNablaOmega ] = funchOmega( vecS );
 	%
 	vecD = vecX-vecS;
-	h1 = h0 + (norm(vecNablaOmega)/tauX);
-	f = omega + ( 0.5 * h1 * sumsq(vecD) );
-	if ( 2 <= nargout )
-		vecXi = vecNablaOmega * ( sumsq(vecD) / (2.0*tauX*norm(vecNablaOmega)) );
-		epsFD = 1E-4;
-		if ( vecNHat'*vecXi > 0.0 )
-			epsFD = -epsFD;
-		end
-		[ omegaP, vecNablaOmegaP ] = funchOmega( vecS + epsFD * vecXi );
-		vecNabla2OmegaXi = ( vecNablaOmegaP - vecNablaOmega ) / epsFD;
-		vecNablaF = (h1 * vecD) + (matNablaST * ( vecNablaOmega + vecNabla2OmegaXi - (h1*vecD) ));
-	end
+	f = omega + ( 0.5 * h0 * sumsq(vecD) );
+	vecNablaF = (h0 * vecD) + (matNablaST * ( vecNablaOmega - (h0*vecD) ));
 return;
 end
 
 
 %!test
-%!	thisFile = "funcOmega_onSurf_lg test: runs";
+%!	thisFile = "funcOmega_onSurf test: runs";
 %!	setprngstates(0); ax=[ -3, 3, -3, 3 ];
 %!	%setprngstates(); ax=[ -5, 5, -5, 5 ];
 %!	%setprngstates(93978080); ax=[ -5, 5, -5, 5 ];
@@ -76,7 +73,7 @@ end
 %!		vecSVals(:,n) = funcSurf_ellip( vecXVals(:,n), bigR_surf, vecXCent_surf, matA_surf );
 %!	end
 %!	%
-%!	funchF = @(x)( funcOmega_onSurf_lg( x, funchSurf, funchOmega, tauX, h0 ) );
+%!	funchF = @(x)( funcOmega_onSurf( x, funchSurf, funchOmega, h0 ) );
 %!	%
 %!	%[ omega00, vecNablaOmega ] = funchF( [1.0;0.0] )
 %!	%
@@ -188,7 +185,7 @@ end
 %!	%
 %!	numTestVals = 100;
 %!	vecXTestVals = vecXCent_surf + randn(sizeX,numTestVals);
-%!	epsX = 1e-4;
+%!	epsX = 1e-5;
 %!	for n=1:numTestVals
 %!		vecX00 = vecXTestVals(:,n);
 %!		vecXP0 = vecX00; vecXP0(1) += epsX;
@@ -201,7 +198,7 @@ end
 %!		omega0P = funchF( vecX0P );
 %!		omega0M = funchF( vecX0M );
 %!		vecNablaOmegaFD = [ (omegaP0-omegaM0)/(2.0*epsX); (omega0P-omega0M)/(2.0*epsX) ];
-%!		assert( norm(vecNablaOmegaFD-vecNablaOmega) < 1e-6*(norm(vecNablaOmegaFD)+norm(vecNablaOmega)) );
+%!		assert( norm(vecNablaOmegaFD-vecNablaOmega) < 1e-5*(norm(vecNablaOmegaFD)+norm(vecNablaOmega)) );
 %!	end
 %!	%
 %!	msg( thisFile, __LINE__, "" );
