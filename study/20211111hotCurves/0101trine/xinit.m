@@ -3,7 +3,7 @@ thisFile = "xinit";
 ax = [];
 sizeX = 2;
 sizeF = 2;
-caseNum = 101;
+caseNum = 103;
 msg( thisFile, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case 0

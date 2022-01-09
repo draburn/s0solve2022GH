@@ -41,7 +41,12 @@ function [ matX, datOut ] = calcMinfordCurve( funchOmega, funchG, vecX0, matS=[]
 		bigR = bigR + deltaR;
 		vecX = matX(:,iterCount);
 		%
-		funchSurf = @(x)( funcSurf_ellip( x, bigR, vecXC, matS_nonEmpty ) );%
+		%
+		if ( isempty(matS) )
+			funchSurf = @(x)( funcSurf_ellip( x, bigR, vecXC ) );
+		else
+			funchSurf = @(x)( funcSurf_ellip( x, bigR, vecXC, matS ) );
+		end
 		funchOmega_reCombo = @(x)( funchOmega_reCombo( x, funchOmega, funchG ) );
 		%
 		vecX_next = findObjSurfMin( vecX, funchSurf, funchOmega_reCombo );

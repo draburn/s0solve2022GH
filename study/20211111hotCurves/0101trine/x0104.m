@@ -83,26 +83,10 @@ if (1)
 end
 %
 %
-if (0)
+if (1)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcMinfordCurve_fminsurf';
-	matS = [];
-	thisCurvePrm = [];
-	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
-	curveDat(numCurves).matX = calcMinfordCurve_fminsurf( funchOmega, funchG, vecX0, matS, thisCurvePrm );
-	thisCurveElapsedTime = time()-thisCurveTime0;
-	msg( thisFile, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
-	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
-	curveDat(numCurves).strName = thisCurveName;
-	curveDat(numCurves).prm = thisCurvePrm;
-end
-%
-%
-if (0)
-	numCurves++;
-	thisCurveTime0 = time();
-	thisCurveName = 'calcMinfordCurve (wipish-good, scaled)';
+	thisCurveName = 'calcMinfordCurve (scaled, fminunc + funcOmega_withinSurf?)';
 	matS = [ 5.0, 0.0; 0.0, 1.0 ];
 	thisCurvePrm = [];
 	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );

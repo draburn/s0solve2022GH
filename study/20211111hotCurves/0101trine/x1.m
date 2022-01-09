@@ -66,10 +66,10 @@ if (1)
 end
 %
 %
-if (0)
+if (1)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcMinfordCurve (myfbgs?, DISCONTINUOUS GRADIENT)';
+	thisCurveName = 'calcMinfordCurve (mybfgs? DISCNTS.GRAD)';
 	matS = [];
 	thisCurvePrm = [];
 	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
@@ -85,7 +85,7 @@ end
 if (1)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcMinfordCurve_fminsurf';
+	thisCurveName = 'calcMinfordCurve_fminsurf (ONLY ON SURF)';
 	matS = [];
 	thisCurvePrm = [];
 	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
@@ -98,10 +98,10 @@ if (1)
 end
 %
 %
-if (0)
+if (1)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcMinfordCurve (wipish-good, scaled)';
+	thisCurveName = 'calcMinfordCurve (scaled, DISCNTS.GRAD)';
 	matS = [ 5.0, 0.0; 0.0, 1.0 ];
 	thisCurvePrm = [];
 	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
