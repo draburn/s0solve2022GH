@@ -1,5 +1,6 @@
-function [ matX, datOut ] = calcMinfordCurve( funchOmega, funchG, vecX0, matS=[], prm=[] )
+function [ matX, datOut ] = calcMinfordCurve( funchOmega_standalone, funchG_standalone, vecX0, matS=[], prm=[] )
 	thisFile = "calcMinfordCurve";
+	commondefs;
 	%msg( thisFile, __LINE__, "TO-DO..." );
 	%msg( thisFile, __LINE__, "LATER..." );
 	%msg( thisFile, __LINE__, " ~ BFGS? LSODE step? ~ for narrow valleys, esp finish." );
@@ -18,12 +19,15 @@ function [ matX, datOut ] = calcMinfordCurve( funchOmega, funchG, vecX0, matS=[]
 		% let sub-modules know that matS is actually empty.
 	end
 	datOut = [];
+	funchOmega = @(x)( funchOmega_reCombo( x, funchOmega_standalone, funchG_standalone ) );
 	%
 	%
 	%
 	iterLimit = 10000;
 	deltaR = 0.1;
 	vecXC = vecX0;
+	%[ omega0, vecNablaOmega0 ] = funchOmega( vecX0 );
+	%tolMagNablaOmega = mygetfield( prm, "tolMagNablaOmega", eps025*norm(vecNablaOmega0) + eps050*sizeX );
 	%
 	bigR = 0.0;
 	iterCount = 0;
@@ -47,10 +51,9 @@ function [ matX, datOut ] = calcMinfordCurve( funchOmega, funchG, vecX0, matS=[]
 		else
 			funchSurf = @(x)( funcSurf_ellip( x, bigR, vecXC, matS ) );
 		end
-		funchOmega_reCombo = @(x)( funchOmega_reCombo( x, funchOmega, funchG ) );
 		%
-		%vecX_next = findObjSurfMin_simple( vecX, funchSurf, funchOmega_reCombo );
-		vecX_next = findObjSurfMin_onOff( vecX, funchSurf, funchOmega_reCombo );
+		%vecX_next = findObjSurfMin_simple( vecX, funchSurf, funchOmega );
+		vecX_next = findObjSurfMin_onOff( vecX, funchSurf, funchOmega );
 		%
 		assert( isrealarray(vecX_next,[sizeX,1]) );
 		s_next = norm(matS_nonEmpty*(vecX_next-vecXC));

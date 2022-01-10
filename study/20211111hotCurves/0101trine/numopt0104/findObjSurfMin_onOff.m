@@ -140,13 +140,13 @@ function [ vecX, retCode, datOut ] = findObjSurfMin_onOff( vecX0, funchSurf, fun
 				[ f, vecNablaBigF ] = funchBigF_onSurf( vecX )
 			end
 			%%%assert( 2 >= iterCount );
-			msg_flagged( verbLev, thisFile, __LINE__, sprintf( "Iter %d: performing onSurf solve.", iterCount ) );
+			%msg_flagged( verbLev, thisFile, __LINE__, sprintf( "Iter %d: performing onSurf solve.", iterCount ) );
 			funchBigF = funchBigF_onSurf;
 			wasOnSurf = true;
 		else
 			msg_progress( verbLev, thisFile, __LINE__, "Point is inside surface." );
 			%%%assert( 1 == iterCount );
-			msg_flagged( verbLev, thisFile, __LINE__, sprintf( "Iter %d: performing within solve.", iterCount ) );
+			%msg_flagged( verbLev, thisFile, __LINE__, sprintf( "Iter %d: performing within solve.", iterCount ) );
 			funchBigF = funchBigF_within;
 			wasOnSurf = false;
 		end
