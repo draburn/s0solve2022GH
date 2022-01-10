@@ -19,10 +19,10 @@ if (0)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = '<<DEV>>';
-	matS = [];
+	%matS = [];
+	matS = [ 5.0, 0.0; 0.0, 1.0 ];
 	thisCurvePrm = [];
 	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
-	matX = calcMinfordCurve( funchOmega, funchG, vecX0, matS, thisCurvePrm );
 	curveDat(numCurves).matX = calcMinfordCurve( funchOmega, funchG, vecX0, matS, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
 	msg( thisFile, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );

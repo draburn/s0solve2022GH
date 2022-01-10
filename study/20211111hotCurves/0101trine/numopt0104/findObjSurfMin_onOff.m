@@ -43,8 +43,8 @@ function [ vecX, retCode, datOut ] = findObjSurfMin_onOff( vecX0, funchSurf, fun
 		assert( 0.0 < h0_onSurf );
 	end
 	funchBigF_within = @(vecX)( funcOmega_withinSurf( vecX, funchSurf, funchOmega, tauX, h0_within ) );
-	%%%funchBigF_onSurf = @(vecX)( funcOmega_onSurf( vecX, funchSurf, funchOmega, h0_onSurf ) );
-	funchBigF_onSurf = @(vecX)( funcOmega_onSurf_lg( vecX, funchSurf, funchOmega, tauX, h0_within ) );
+	funchBigF_onSurf = @(vecX)( funcOmega_onSurf( vecX, funchSurf, funchOmega, h0_onSurf ) );
+	%%%funchBigF_onSurf = @(vecX)( funcOmega_onSurf_lg( vecX, funchSurf, funchOmega, tauX, h0_within ) );
 	%
 	iterLimit = mygetfield( prm, "iterLimit", 10 );
 	%%%tolMagNablaOmega = mygetfield( prm, "tolMagNablaOmega", eps025*norm(vecNablaOmega0) + eps050*sizeX );
@@ -111,14 +111,17 @@ function [ vecX, retCode, datOut ] = findObjSurfMin_onOff( vecX0, funchSurf, fun
 		elseif ( u > -epsX && vecNHat'*vecNablaOmega <= 0.0 )
 			msg_progress( verbLev, thisFile, __LINE__, "Point is on surface." );
 			% Near surface and gradient is inward (descent is outward).
-			if (dumpData)
-				echo_foo1 = matNablaST'*vecNablaOmega
-				echo_foo2 = norm(matNablaST'*vecNablaOmega)
+			if (0)
+				echo_foo1000 = matNablaST'*vecNablaOmega
+				echo_foo1 = matNablaST*vecNablaOmega
+				echo_foo2000 = norm(matNablaST'*vecNablaOmega)
+				echo_foo2 = norm(matNablaST*vecNablaOmega)
 				echo_foo3 = vecNablaOmega - vecNHat*(vecNHat'*vecNablaOmega)
 				echo_foo4 = norm(echo_foo3)
 				[ f, vecNablaBigF ] = funchBigF_onSurf( vecX )
 			end
-			if ( norm(matNablaST'*vecNablaOmega) <= tolMagNablaOmega )
+			%%%if ( norm(matNablaST'*vecNablaOmega) <= tolMagNablaOmega )
+			if ( norm(matNablaST*vecNablaOmega) <= tolMagNablaOmega )
 				msg_main( verbLev, thisFile, __LINE__, "Success: surface tolMagNablaOmega." );
 				retCode = RETCODE__SUCCESS;
 				return;
@@ -127,21 +130,23 @@ function [ vecX, retCode, datOut ] = findObjSurfMin_onOff( vecX0, funchSurf, fun
 			if (0)
 				normNablaOmega = norm(vecNablaOmega)
 				ntNablaOmega = vecNHat'*vecNablaOmega
-				echo_foo1 = matNablaST'*vecNablaOmega
-				echo_foo2 = norm(matNablaST'*vecNablaOmega)
+				echo_foo1000 = matNablaST'*vecNablaOmega
+				echo_foo1 = matNablaST*vecNablaOmega
+				echo_foo2000 = norm(matNablaST'*vecNablaOmega)
+				echo_foo2 = norm(matNablaST*vecNablaOmega)
 				echo_foo3 = vecNablaOmega - vecNHat*(vecNHat'*vecNablaOmega)
 				echo_foo4 = norm(echo_foo3)
 				echo__tolNablaOmega = tolMagNablaOmega
 				[ f, vecNablaBigF ] = funchBigF_onSurf( vecX )
 			end
 			%%%assert( 2 >= iterCount );
-			msg_flagged( verbLev, thisFile, __LINE__, sprintf( "Iter %d: performing onSurf sovle.", iterCount ) );
+			msg_flagged( verbLev, thisFile, __LINE__, sprintf( "Iter %d: performing onSurf solve.", iterCount ) );
 			funchBigF = funchBigF_onSurf;
 			wasOnSurf = true;
 		else
 			msg_progress( verbLev, thisFile, __LINE__, "Point is inside surface." );
 			%%%assert( 1 == iterCount );
-			msg_flagged( verbLev, thisFile, __LINE__, sprintf( "Iter %d: performing within sovle.", iterCount ) );
+			msg_flagged( verbLev, thisFile, __LINE__, sprintf( "Iter %d: performing within solve.", iterCount ) );
 			funchBigF = funchBigF_within;
 			wasOnSurf = false;
 		end
@@ -186,9 +191,10 @@ function [ vecX, retCode, datOut ] = findObjSurfMin_onOff( vecX0, funchSurf, fun
 			[ vecS_trial, vecNHat_trial, vecUHat_trial, matNablaST_trial ] = funchSurf( vecX_trial )
 			echo__vecD_trial = vecX_trial - vecS_trial
 			[ omega_trial, vecNablaOmega_trial ] = funchOmega( vecX_trial )
-			[ f, vecNablaBigF ] = funchBigF_within( vecX_trial )
-			[ f, vecNablaBigF ] = funchBigF_onSurf( vecX_trial )
+			[ f_within_trial, vecNablaBigF_within_trial ] = funchBigF_within( vecX_trial )
+			[ f_onSurf_trial, vecNablaBigF_onSurf_trial ] = funchBigF_onSurf( vecX_trial )
 			echo__proposed_tol = sqrt( h0_within * tolAbsDeltaOmega )
+			echo_foo1 = matNablaST_trial'*vecNablaOmega_trial
 		end
 		%if ( u_trial > epsX && abs(u_trial) > tauX )
 		if ( u_trial > 0.0 )
@@ -234,6 +240,30 @@ function [ vecX, retCode, datOut ] = findObjSurfMin_onOff( vecX0, funchSurf, fun
 			return
 		end
 		%
+		if (0)
+			msg( thisFile, __LINE__, "FEVAL the after!" );
+			%echo__vecX = vecX
+			%echo__omega = omega
+			%echo__vecX_trial = vecX_trial
+			%echo__tauX = tauX
+			%echo__h0_within = h0_within
+			%echo__h0_onSurf = h0_onSurf
+			%[ vecS_trial, vecNHat_trial, vecUHat_trial, matNablaST_trial ] = funchSurf( vecX_trial )
+			%echo__vecD_trial = vecX_trial - vecS_trial
+			%[ omega_trial, vecNablaOmega_trial ] = funchOmega( vecX_trial )
+			%[ f_within_trial, vecNablaBigF_within_trial ] = funchBigF_within( vecX_trial )
+			[ f_onSurf_trial, vecNablaBigF_onSurf_trial ] = funchBigF_onSurf( vecX_trial )
+			%echo__proposed_tol = sqrt( h0_within * tolAbsDeltaOmega )
+			%echo__bar1 = matNablaST_trial'*vecNablaOmega_trial
+			%echo__bar2 = matNablaST_trial'*( vecNablaOmega_trial - h0_onSurf*vecD_trial ) + h0_onSurf*vecD_trial
+			msg( thisFile, __LINE__, "vvvvvvvvvvvvvvvvvvv" );
+			[ vecS_trial, vecNHat_trial, vecUHat_trial, matNablaST_trial ] = funchSurf( vecX_trial )
+			[ omegaS_trial, vecNablaOmegaS_trial ] = funchOmega( vecS_trial )
+			echo__h0 = h0_onSurf
+			echo__foo1 = (matNablaST_trial * ( vecNablaOmega_trial - (h0_onSurf*vecD) ))
+			echo__bar3 = matNablaST_trial'*( vecNablaOmegaS_trial - h0_onSurf*vecD_trial ) + h0_onSurf*vecD_trial
+			msg( thisFile, __LINE__, "^^^^^^^^^^^^^^^^^^" );
+		end
 		%
 		%
 		% Accept step.
