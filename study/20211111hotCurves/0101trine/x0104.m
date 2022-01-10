@@ -70,7 +70,23 @@ end
 if (1)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcMinfordCurve (fminunc + funcOmega_withinSurf?)';
+	thisCurveName = 'calcMinfordCurve_adaptiveDeltaR';
+	matS = [];
+	thisCurvePrm = [];
+	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
+	curveDat(numCurves).matX = calcMinfordCurve_adaptiveDeltaR( funchOmega, funchG, vecX0, matS, thisCurvePrm );
+	thisCurveElapsedTime = time()-thisCurveTime0;
+	msg( thisFile, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
+	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
+	curveDat(numCurves).strName = thisCurveName;
+	curveDat(numCurves).prm = thisCurvePrm;
+end
+%
+%
+if (1)
+	numCurves++;
+	thisCurveTime0 = time();
+	thisCurveName = 'calcMinfordCurve';
 	matS = [];
 	thisCurvePrm = [];
 	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
@@ -86,8 +102,25 @@ end
 if (1)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcMinfordCurve (scaled, fminunc + funcOmega_withinSurf?)';
+	thisCurveName = 'calcMinfordCurve (scaled [5,0;0,1])';
 	matS = [ 5.0, 0.0; 0.0, 1.0 ];
+	thisCurvePrm = [];
+	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
+	curveDat(numCurves).matX = calcMinfordCurve( funchOmega, funchG, vecX0, matS, thisCurvePrm );
+	thisCurveElapsedTime = time()-thisCurveTime0;
+	msg( thisFile, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
+	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
+	curveDat(numCurves).strName = thisCurveName;
+	curveDat(numCurves).prm = thisCurvePrm;
+	% This is not a comment, it is to force a desired git diff.
+end
+%
+%
+if (1)
+	numCurves++;
+	thisCurveTime0 = time();
+	thisCurveName = 'calcMinfordCurve (scaled [1,0;0,5])';
+	matS = [ 1.0, 0.0; 0.0, 5.0 ];
 	thisCurvePrm = [];
 	msg( thisFile, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
 	curveDat(numCurves).matX = calcMinfordCurve( funchOmega, funchG, vecX0, matS, thisCurvePrm );

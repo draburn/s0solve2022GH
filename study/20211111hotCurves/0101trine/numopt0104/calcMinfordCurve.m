@@ -52,8 +52,8 @@ function [ matX, datOut ] = calcMinfordCurve( funchOmega_standalone, funchG_stan
 			funchSurf = @(x)( funcSurf_ellip( x, bigR, vecXC, matS ) );
 		end
 		%
-		%vecX_next = findObjSurfMin_simple( vecX, funchSurf, funchOmega );
-		vecX_next = findObjSurfMin_onOff( vecX, funchSurf, funchOmega );
+		vecX_next = findObjSurfMin_simple( vecX, funchSurf, funchOmega );
+		%vecX_next = findObjSurfMin_onOff( vecX, funchSurf, funchOmega );
 		%
 		assert( isrealarray(vecX_next,[sizeX,1]) );
 		s_next = norm(matS_nonEmpty*(vecX_next-vecXC));

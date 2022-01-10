@@ -8,6 +8,7 @@ function [ vecX, retCode, datOut ] = findObjSurfMin_onOff( vecX0, funchSurf, fun
 	assert( isrealscalar(valdLev) );
 	assert( isrealscalar(verbLev) );
 	msg_copious( verbLev, thisFile, __LINE__, "Welcome." );
+	msg_notify( verbLev, thisFile, __LINE__, "This function may not be well-behaved. Please consider using findObjSurfMin_simple() instead." );
 	dumpData = false;
 	%
 	% Validate main input.
