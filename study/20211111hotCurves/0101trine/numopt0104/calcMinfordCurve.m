@@ -49,7 +49,7 @@ function [ matX, datOut ] = calcMinfordCurve( funchOmega, funchG, vecX0, matS=[]
 		end
 		funchOmega_reCombo = @(x)( funchOmega_reCombo( x, funchOmega, funchG ) );
 		%
-		vecX_next = findObjSurfMin( vecX, funchSurf, funchOmega_reCombo );
+		vecX_next = findObjSurfMin_simple( vecX, funchSurf, funchOmega_reCombo );
 		%
 		assert( isrealarray(vecX_next,[sizeX,1]) );
 		s_next = norm(matS_nonEmpty*(vecX_next-vecXC));

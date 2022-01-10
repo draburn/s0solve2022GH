@@ -1,6 +1,6 @@
-function [ vecX, retCode, datOut ] = findObjSurfMin( vecX0, funchSurf, funchOmega, prm=[] )
+function [ vecX, retCode, datOut ] = findObjSurfMin_simple( vecX0, funchSurf, funchOmega, prm=[] )
 	commondefs;
-	thisFile = "findObjSurfMin";
+	thisFile = "findObjSurfMin_simple";
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__MEDIUM );
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__WARN );
 	%valdLev = mygetfield( prm, "valdLev", VALDLEV__HIGH );
@@ -59,7 +59,7 @@ end
 
 %!test
 %!	commondefs;
-%!	thisFile = "findObjSurfMin test 1";
+%!	thisFile = "findObjSurfMin_simple test 1";
 %!	setprngstates(0);
 %!	numFigs = 0;
 %!	%
@@ -74,13 +74,13 @@ end
 %!	funchOmega = @(x)( funcOmega_ellip( x, h0, vecXRoot ) );
 %!	%	
 %!	vecX0 = zeros(sizeX,1);
-%!	vecX = findObjSurfMin( vecX0, funchSurf, funchOmega );
+%!	vecX = findObjSurfMin_simple( vecX0, funchSurf, funchOmega );
 %!	assert( norm(vecX-vecXRoot) <= (eps^0.50)*(norm(vecX)+norm(vecXRoot)) );
 
 
 %!test
 %!	commondefs;
-%!	thisFile = "findObjSurfMin test 2";
+%!	thisFile = "findObjSurfMin_simple test 2";
 %!	setprngstates(10801488); % Nice.
 %!	numFigs = 0;
 %!	%
@@ -101,7 +101,7 @@ end
 %!	h0 = norm(vecNablaOmega0)/tauX;
 %!	funchF = @(x)( funcOmega_withinSurf( x, funchSurf, funchOmega, tauX, h0 ) );
 %!	%
-%!	vecXF = findObjSurfMin( vecX0, funchSurf, funchOmega );
+%!	vecXF = findObjSurfMin_simple( vecX0, funchSurf, funchOmega );
 %!	%
 %!	numPts = 101;
 %!	thetaVals = linspace(0.0,2.0*pi,numPts);
@@ -128,7 +128,7 @@ end
 
 %!test
 %!	commondefs;
-%!	thisFile = "findObjSurfMin test 2";
+%!	thisFile = "findObjSurfMin_simple test 2";
 %!	setprngstates();
 %!	numFigs = 1;
 %!	sizeX = 2;
@@ -150,7 +150,7 @@ end
 %!	h0_combo = norm(vecNablaOmega0)/tauX_combo;
 %!	funchF = @(x)( funcOmega_withinSurf( x, funchSurf, funchOmega, tauX_combo, h0_combo ) );
 %!	%
-%!	vecXF = findObjSurfMin( vecX0, funchSurf, funchOmega );
+%!	vecXF = findObjSurfMin_simple( vecX0, funchSurf, funchOmega );
 %!	%
 %!	numPts = 101;
 %!	thetaVals = linspace(0.0,2.0*pi,numPts);
