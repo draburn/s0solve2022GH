@@ -44,7 +44,7 @@ function [ vecX, retCode, datOut ] = findObjSurfMin_simple( vecX0, funchSurf, fu
 	% Do work.
 	useProvidedGradients = true;
 	if (useProvidedGradients)
-		fminunc_opts = optimset( 'GradObj', 'off' );
+		fminunc_opts = optimset( 'GradObj', 'on' );
 		vecX = fminunc( funchBigF, vecX0, fminunc_opts );
 	else
 		vecX = fminunc( funchBigF, vecX0 );
