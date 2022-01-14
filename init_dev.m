@@ -24,3 +24,5 @@ case 2
 msg("init",__LINE__,"Adding path \"study/20211111hotCurves/0103onward/\".");
 addpath( "study/20211111hotCurves/0103onward/" );
 end
+msg("init",__LINE__,"Adding path \"study/20211111hotCurves/0110review/\".");
+addpath( "study/20211111hotCurves/0110review/" );
