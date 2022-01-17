@@ -22,10 +22,12 @@ function [ omegaVals, vecNablaOmegaVals, matNabla2OmegaVals ] = ...
 	if ( nargin < 2 || nargin > 6)
 		msg( __FILE__, __LINE__, "Bad number of input arguments." );
 		print_usage();
+		return; % Superfluous?
 	end
 	if ( nargout > 3 )
 		msg( __FILE__, __LINE__, "Bad number of output arguments." );
 		print_usage();
+		return; % Superfluous?
 	end
 	%
 	sizeX = size(vecXVals,1);
@@ -119,7 +121,7 @@ end
 
 
 %!test
-%!	msg( __FILE__, __LINE__, "Performing scaled finite-differencing test." );
+%!	msg( __FILE__, __LINE__, "Performing unscaled finite-differencing test." );
 %!	setprngstates();
 %!	%
 %!	for trialIndex=1:10
@@ -127,16 +129,15 @@ end
 %!	%
 %!	sizeX = round(2.0 + abs(2.0*randn));
 %!	numVals = round(10.0 + abs(10.0*randn));
+%!	vecXCent = randn(sizeX,1);
+%!	matA = [];
 %!	omega0 = abs(randn);
 %!	omega1 = 0.01 + abs(randn);
-%!	vecXCent = randn(sizeX,1);
-%!	sizeF = round(1.0 + abs(randn()));
-%!	matA = [];
 %!	funchOmega = @(dummyX) demoFunc_omegaEllip( dummyX, vecXCent, matA, omega0, omega1 );
 %!	%
 %!	vecXVals = randn(sizeX,numVals);
 %!	[ omegaVals, vecNablaOmegaVals, matNabla2OmegaVals ] = funchOmega( vecXVals );
-%!	epsOmega = sqrt(eps*sumsq(omegaVals))/numVals;
+%!	epsOmega = sqrt(eps*sumsq(reshape(omegaVals,[],1)))/numVals;
 %!	epsNablaOmega = sqrt(eps*sumsq(reshape(vecNablaOmegaVals,[],1)))/numVals;
 %!	epsNabla2Omega = sqrt(eps*sumsq(reshape(matNabla2OmegaVals,[],1)))/numVals;
 %!	%
@@ -195,11 +196,11 @@ end
 %!	%
 %!	sizeX = round(2.0 + abs(2.0*randn));
 %!	numVals = round(10.0 + abs(10.0*randn));
-%!	omega0 = abs(randn);
-%!	omega1 = 0.01 + abs(randn);
 %!	vecXCent = randn(sizeX,1);
 %!	sizeF = round(1.0 + abs(randn()));
 %!	matA = randn(sizeF,sizeX);
+%!	omega0 = abs(randn);
+%!	omega1 = 0.01 + abs(randn);
 %!	funchOmega = @(dummyX) demoFunc_omegaEllip( dummyX, vecXCent, matA, omega0, omega1 );
 %!	%
 %!	vecXVals = randn(sizeX,numVals);
