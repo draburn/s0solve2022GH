@@ -14,20 +14,64 @@ function [ omegaVals, vecNablaOmegaVals ] = funcOmegaWithinSurf( vecXVals, funch
 	%
 	h0 = mygetfield( prm, "h0", 0.01 );
 	tau = mygetfield( prm, "tau", 0.01 );
+	numVals = size(vecXVals,2);
 	%
-	[ vecSVals, vecNHatVals, vecUHatVals, matNablaSTVals ] = funchSurf( vecXVals );
-	vecDVals = vecXVals - vecSVals;
-	[ omegaVals_i, vecNablaOmegaVals_i, matNabla2OmegaVals_i ] = funchOmegaBase( vecXVals );
-	[ omegaVals_s, vecNablaOmegaVals_s, matNabla2OmegaVals_s ] = funchOmegaBase( vecSVals );
-	omegaVals_o = omegaVals_s + sum( vecDVals .* vecNablaOmegaVals_s, 1 ) ...
-	  + 0.5 * sumsq( vecDVals, 1 ) .* ( h0 + sqrt(sumsq( vecNablaOmegaVals_s, 1 )) / tau );
-	outFlagVals = ( sum(vecDVals.*vecNHatVals,1) > 0.0 );
-	omegaVals = omegaVals_i;
-	omegaVals(outFlagVals) = omegaVals_o(outFlagVals);
+	if ( 1 < numVals )
+		[ vecSVals, vecNHatVals, vecUHatVals, matNablaSTVals ] = funchSurf( vecXVals );
+		vecDVals = vecXVals - vecSVals;
+		switch (nargout)
+		case 1
+			omegaVals_i = funchOmegaBase( vecXVals );
+			[ omegaVals_s, vecNablaOmegaVals_s ] = funchOmegaBase( vecSVals );
+			omegaVals_o = omegaVals_s + sum( vecDVals .* vecNablaOmegaVals_s, 1 ) ...
+			  + 0.5 * sumsq( vecDVals, 1 ) .* ( h0 + sqrt(sumsq( vecNablaOmegaVals_s, 1 )) / tau );
+			outFlagVals = ( sum(vecDVals.*vecNHatVals,1) > 0.0 );
+			omegaVals = omegaVals_i;
+			omegaVals(outFlagVals) = omegaVals_o(outFlagVals);
+		case 2
+			[ omegaVals_i, vecNablaOmegaVals_i, matNabla2OmegaVals_i ] = funchOmegaBase( vecXVals );
+			[ omegaVals_s, vecNablaOmegaVals_s, matNabla2OmegaVals_s ] = funchOmegaBase( vecSVals );
+			omegaVals_o = omegaVals_s + sum( vecDVals .* vecNablaOmegaVals_s, 1 ) ...
+			  + 0.5 * sumsq( vecDVals, 1 ) .* ( h0 + sqrt(sumsq( vecNablaOmegaVals_s, 1 )) / tau );
+			outFlagVals = ( sum(vecDVals.*vecNHatVals,1) > 0.0 );
+			omegaVals = omegaVals_i;
+			omegaVals(outFlagVals) = omegaVals_o(outFlagVals);
+			msg( __FILE__, __LINE__, "The rest of this case is not implemented." );
+			error ( "To-do." );
+		otherwise
+		error( "Impossible case." );
+		end
+	return;
+	end
 	%
-	if ( 2 <= nargout )
-		msg( __FILE__, __LINE__, "Analytic calculation of vecNablaOmegaVals is not yet supported." );
-		error( "TODO." );
+	% numVals is 1.
+	[ vecS, vecNHat, vecUHat, matNablaST ] = funchSurf( vecXVals );
+	vecD = vecXVals - vecS;
+	if ( vecD'*vecNHat <= 0.0 )
+		% We're inside.
+		switch (nargout)
+		case 1
+			omegaVals = funchOmegaBase( vecXVals );
+		case 2
+			[ omegaVals, vecNablaOmegaVals ] = funchOmegaBase( vecXVals );
+		otherwise
+			error( "Impossible case." );
+		end
+	return;
+	end
+	%
+	% numVals is 1 and we're outside.
+	switch (nargout)
+	case 1
+		[ omega_s, vecNablaOmega_s ] = funchOmegaBase( vecS );
+		omegaVals = omega_s + vecD'*vecNablaOmega_s + 0.5 * sumsq(vecD) * ( h0 + norm(vecNablaOmega_s)/tau );
+	case 2
+		[ omega_s, vecNablaOmega_s, matNabla2Omega_s ] = funchOmegaBase( vecS );
+		omegaVals = omega_s + svecD'*vecNablaOmega_s + 0.5 * sumsq(vecD) * ( h0 + norm(vecNablaOmega_s)/tau );
+		msg( __FILE__, __LINE__, "The rest of this case is not implemented." );
+		error ( "To-do." );
+	otherwise
+		error( "Impossible case." );
 	end
 return;
 end
