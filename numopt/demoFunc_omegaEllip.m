@@ -33,8 +33,9 @@ function [ omegaVals, vecNablaOmegaVals, matNabla2OmegaVals ] = ...
 	sizeX = size(vecXVals,1);
 	numVals = size(vecXVals,2);
 	%
-	assert( isscalar(debugMode) );
 	if (debugMode)
+		assert( isscalar(debugMode) );
+		assert( isbool(debugMode) );
 		assert( isrealarray(vecXVals,[sizeX,numVals]) );
 		assert( isrealarray(vecXCent,[sizeX,1]) );
 		if (~isempty(matA))
