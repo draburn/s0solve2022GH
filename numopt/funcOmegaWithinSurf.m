@@ -12,6 +12,7 @@ function [ omegaVals, vecNablaOmegaVals ] = funcOmegaWithinSurf( vecXVals, funch
 		return; % Superfluous?
 	end
 	%
+	sizeX = size(vecXVals,1);
 	numVals = size(vecXVals,2);
 	%
 	h0 = mygetfield( prm, "h0", 0.01 );
@@ -20,7 +21,6 @@ function [ omegaVals, vecNablaOmegaVals ] = funcOmegaWithinSurf( vecXVals, funch
 	%
 	debugMode = mygetfield( prm, "debugMode", false );
 	if (debugMode)
-		sizeX = size(vecXVals,1);
 		assert( isrealarray(vecXVals,[sizeX,numVals]) );
 		assert( isrealscalar(h0) );
 		assert( isrealscalar(tau) );
@@ -33,6 +33,9 @@ function [ omegaVals, vecNablaOmegaVals ] = funcOmegaWithinSurf( vecXVals, funch
 		vecDVals = vecXVals - vecSVals;
 		switch (nargout)
 		case 1
+			% This could probably be improved by limiting the "outside the surface" calculations
+			% to those that are actually outside the surface -- rather than just the result --
+			% but, meh.
 			omegaVals_i = funchOmegaBase( vecXVals );
 			[ omegaVals_s, vecNablaOmegaVals_s ] = funchOmegaBase( vecSVals );
 			omegaVals_o = omegaVals_s + sum( vecDVals .* vecNablaOmegaVals_s, 1 ) ...
@@ -41,15 +44,52 @@ function [ omegaVals, vecNablaOmegaVals ] = funcOmegaWithinSurf( vecXVals, funch
 			omegaVals = omegaVals_i;
 			omegaVals(outFlagVals) = omegaVals_o(outFlagVals);
 		case 2
-			[ omegaVals_i, vecNablaOmegaVals_i, matNabla2OmegaVals_i ] = funchOmegaBase( vecXVals );
-			[ omegaVals_s, vecNablaOmegaVals_s, matNabla2OmegaVals_s ] = funchOmegaBase( vecSVals );
+			[ omegaVals_i, vecNablaOmegaVals_i ] = funchOmegaBase( vecXVals );
+			[ omegaVals_s, vecNablaOmegaVals_s ] = funchOmegaBase( vecSVals );
 			omegaVals_o = omegaVals_s + sum( vecDVals .* vecNablaOmegaVals_s, 1 ) ...
 			  + 0.5 * sumsq( vecDVals, 1 ) .* ( h0 + sqrt(sumsq( vecNablaOmegaVals_s, 1 )) / tau );
 			outFlagVals = ( sum(vecDVals.*vecNHatVals,1) > 0.0 );
 			omegaVals = omegaVals_i;
 			omegaVals(outFlagVals) = omegaVals_o(outFlagVals);
-			msg( __FILE__, __LINE__, "The rest of this case is not implemented." );
-			error ( "To-do." );
+			%
+			vecNablaOmegaVals = vecNablaOmegaVals_i;
+			for n=1:numVals
+				if ( ~outFlagVals(n) )
+					continue;
+				end
+				vecD = vecDVals(:,n);
+				vecNablaOmega_s = vecNablaOmegaVals_s(:,n);
+				vecNHat = vecNHatVals(:,n);
+				vecS = vecSVals(:,n);
+				matNablaST = matNablaSTVals(:,:,n);
+				%
+				vecXi = vecD + ( vecNablaOmega_s * sumsq(vecD) / (2.0*tau*norm(vecNablaOmega_s)) );
+				% Use finite-differencing to approximate vecNabla2OmegaBase * vecXi.
+				if ( vecNHat'*vecXi > 0.0 ) % Try to make point be inside.
+					[ omega_sp, vecNablaOmega_sp ] = funchOmegaBase( vecS - epsFD * vecXi );
+					vecNabala2OmegaBaseXi = ( vecNablaOmega_sp - vecNablaOmega_s ) / (-epsFD);
+				else
+					[ omega_sp, vecNablaOmega_sp ] = funchOmegaBase( vecS + epsFD * vecXi );
+					vecNabala2OmegaBaseXi = ( vecNablaOmega_sp - vecNablaOmega_s ) / epsFD;
+				end
+				%
+				vecNablaOmegaVals(:,n) = vecNablaOmega_s + ( matNablaST * vecNabala2OmegaBaseXi ) ...
+				  + ( vecD - (matNablaST*vecD) ) * ( (norm(vecNablaOmega_s)/tau) + h0 );
+			end
+			%
+			return;
+			%
+			vecXiVals = vecDVals + ( vecNablaOmegaVals_s .* sumsq(vecDVals,1) ./ (2.0*tau*sqrt(sumsq(vecNablaOmegaVals_s,1))) );
+			epsFDVals = epsFD * ( ones(1,numVals) - 2.0*(sum(vecNHatVals.*vecXiVals,1)>0.0) );
+			[ omegaVals_sp, vecNablaOmegaVals_sp ] = funchOmegaBase( vecSVals + epsFDVals.*vecXiVals );
+			vecNabala2OmegaBaseXiVals = ( vecNablaOmegaVals_sp - vecNablaOmegaVals_s ) ./ epsFDVals;
+			%
+			vec0Vals = vecDVals .* ( h0 + sqrt(sumsq(vecNablaOmegaVals_s,1))/tau );
+			vecNablaOmegaVals = vecNablaOmegaVals_s + vec0Vals;
+			vec1Vals = vecNabala2OmegaBaseXiVals - vec0Vals;
+			parfor n=1:numVals
+				vecNablaOmegaVals(:,n) += matNablaSTVals(:,:,n) * vec1Vals(:,n);
+			end
 		otherwise
 		error( "Impossible case." );
 		end
@@ -78,10 +118,10 @@ function [ omegaVals, vecNablaOmegaVals ] = funcOmegaWithinSurf( vecXVals, funch
 		[ omega_s, vecNablaOmega_s ] = funchOmegaBase( vecS );
 		omegaVals = omega_s + vecD'*vecNablaOmega_s + 0.5 * sumsq(vecD) * ( h0 + norm(vecNablaOmega_s)/tau );
 	case 2
-		[ omega_s, vecNablaOmega_s, matNabla2Omega_s ] = funchOmegaBase( vecS );
+		[ omega_s, vecNablaOmega_s ] = funchOmegaBase( vecS );
 		omegaVals = omega_s + vecD'*vecNablaOmega_s + 0.5 * sumsq(vecD) * ( h0 + norm(vecNablaOmega_s)/tau );
 		%
-		vecXi = vecD + ( vecNablaOmega_s * (sumsq(vecD)/(2.0*tau*norm(vecNablaOmega_s))) );
+		vecXi = vecD + ( vecNablaOmega_s * sumsq(vecD) / (2.0*tau*norm(vecNablaOmega_s)) );
 		% Use finite-differencing to approximate vecNabla2OmegaBase * vecXi.
 		if ( vecNHat'*vecXi > 0.0 ) % Try to make point be inside.
 			[ omega_sp, vecNablaOmega_sp ] = funchOmegaBase( vecS - epsFD * vecXi );
@@ -102,13 +142,13 @@ end
 
 %!test
 %!	msg( __FILE__, __LINE__, "Performing basic execution test." );
-%!	setprngstates();
+%!	setprngstates(0);
 %!	%
-%!	for trialIndex=1:10
+%!	for trialIndex=1:5
 %!	%
 %!	%
 %!	sizeX = 2 + round(2.0*abs(randn()));
-%!	numVals = 50 + round(10.0*abs(randn()));
+%!	numVals = 10 + round(5.0*abs(randn()));
 %!	%
 %!	vecXCent_surf = randn(sizeX,1);
 %!	funchSurf = @(dummyX) funcSurfEllip( dummyX, vecXCent_surf );
@@ -122,9 +162,9 @@ end
 %!	for n=1:numVals
 %!		omega = funcOmegaWithinSurf( vecXVals(:,n), funchOmegaBase, funchSurf );
 %!		assert( isrealscalar(omega) );
-%!		%[ omega, vecNablaOmega ] = funcOmegaWithinSurf( vecXVals(:,n), funchOmegaBase, funchSurf );
-%!		%assert( isrealscalar(omega) );
-%!		%assert( isrealarray(vecNablaOmega,[sizeX,1]) );
+%!		[ omega, vecNablaOmega ] = funcOmegaWithinSurf( vecXVals(:,n), funchOmegaBase, funchSurf );
+%!		assert( isrealscalar(omega) );
+%!		assert( isrealarray(vecNablaOmega,[sizeX,1]) );
 %!	end
 %!	%
 %!	%
@@ -147,20 +187,20 @@ end
 %!	prm = [];
 %!	omegaVals = funcOmegaWithinSurf( vecXVals, funchOmegaBase, funchSurf, prm );
 %!	assert( isrealarray(omegaVals,[1,numVals]) );
-%!	%[ omegaVals, vecNablaOmegaVals ] = funcOmegaWithinSurf( vecXVals, funchOmegaBase, funchSurf, prm );
-%!	%assert( isrealarray(omegaVals,[1,numVals]) );
-%!	%assert( isrealarray(vecNablaOmegaVals,[sizeX,numVals]) );
+%!	[ omegaVals, vecNablaOmegaVals ] = funcOmegaWithinSurf( vecXVals, funchOmegaBase, funchSurf, prm );
+%!	assert( isrealarray(omegaVals,[1,numVals]) );
+%!	assert( isrealarray(vecNablaOmegaVals,[sizeX,numVals]) );
 %!	%
 %!	%
 %!	% Test vectorization.
 %!	epsOmega = sqrt(eps*sumsq(reshape(omegaVals,[],1)))/numVals;
-%!	%epsNablaOmega = sqrt(eps*sumsq(reshape(vecNablaOmegaVals,[],1)))/numVals;
+%!	epsNablaOmega = sqrt(eps*sumsq(reshape(vecNablaOmegaVals,[],1)))/numVals;
 %!	for n=1:numVals
 %!		omega = funcOmegaWithinSurf( vecXVals(:,n), funchOmegaBase, funchSurf, prm );
 %!		assert( reldiff(omega,omegaVals(n),epsOmega) < sqrt(eps) );
-%!		%[ omega, vecNablaOmega ] = funcOmegaWithinSurf( vecXVals(:,n), funchOmegaBase, funchSurf );
-%!		%assert( reldiff(omega,omegaVals(n),epsOmega) < sqrt(eps) );
-%!		%assert( reldiff(vecNablaOmega,vecNablaOmegaVals(:,n),epsNablaOmega) < sqrt(eps) );
+%!		[ omega, vecNablaOmega ] = funcOmegaWithinSurf( vecXVals(:,n), funchOmegaBase, funchSurf );
+%!		assert( reldiff(omega,omegaVals(n),epsOmega) < sqrt(eps) );
+%!		assert( reldiff(vecNablaOmega,vecNablaOmegaVals(:,n),epsNablaOmega) < sqrt(eps) );
 %!	end
 %!	%
 %!	%
@@ -171,9 +211,10 @@ end
 
 %!test
 %!	msg( __FILE__, __LINE__, "Performing finite-differencing test." );
+%!	%msg( __FILE__, __LINE__, "SKIPPING TEST." ); return;
 %!	setprngstates(0);
 %!	%
-%!	for trialIndex=1:10
+%!	for trialIndex=1:5
 %!	%
 %!	%
 %!	sizeX = 2 + round(2.0*abs(randn()));
@@ -199,11 +240,13 @@ end
 %!	prm.tau = 0.01;
 %!	funchOmega = @(dummyX) funcOmegaWithinSurf( dummyX, funchOmegaBase, funchSurf, prm );
 %!	%
-%!	numVals = 50 + round(10.0*abs(randn()));
+%!	numVals = 10 + round(5.0*abs(randn()));
 %!	vecXVals = randn(sizeX,numVals);
 %!	%
 %!	%
-%!	epsNablaOmega = sqrt(eps);
+%!	[ omegaVals, vecNablaOmegaVals ] = funchOmega( vecXVals );
+%!	epsOmega = sqrt(eps*sumsq(reshape(omegaVals,[],1)))/numVals;
+%!	epsNablaOmega = sqrt(eps*sumsq(reshape(vecNablaOmegaVals,[],1)))/numVals;
 %!	for n=1:numVals
 %!		[ omega, vecNablaOmega ] = funchOmega( vecXVals(:,n) );
 %!		epsX = 1e-6;
@@ -215,7 +258,7 @@ end
 %!			omegaM = funchOmega( vecXM );
 %!			vecNablaOmega_fd(m) = ( omegaP - omegaM ) / (2.0*epsX);
 %!		end
-%!		assert( reldiff(vecNablaOmega_fd,vecNablaOmega,epsNablaOmega) < 100.0*epsX );
+%!		assert( reldiff(vecNablaOmega_fd,vecNablaOmegaVals(:,n),epsNablaOmega) < 100.0*epsX );
 %!	end
 %!	%
 %!	%
@@ -225,6 +268,7 @@ end
 
 %!test
 %!	msg( __FILE__, __LINE__, "Generating visualization." );
+%!	%msg( __FILE__, __LINE__, "SKIPPING TEST." ); return;
 %!	setprngstates();
 %!	numFigs0 = 0;
 %!	numFigs = numFigs0;

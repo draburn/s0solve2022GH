@@ -66,6 +66,7 @@ function [ vecSVals, vecNHatVals, vecUHatVals, matNablaSTVals ] = ...
 			else
 				% There may be a non-loop way to evaluate this.
 				% But, optimization here is not important.
+				matNablaSTVals = zeros(sizeX,sizeX,numVals);
 				parfor n=1:numVals
 					matNablaSTVals(:,:,n) = (bigR/dVals(n))*( ...
 					  eye(sizeX,sizeX) - (vecNHatVals(:,n)*(vecNHatVals(:,n)')) );
@@ -95,6 +96,7 @@ function [ vecSVals, vecNHatVals, vecUHatVals, matNablaSTVals ] = ...
 			else
 				% There may be a non-loop way to evaluate this.
 				% But, optimization here is not important.
+				matNablaSTVals = zeros(sizeX,sizeX,numVals);
 				parfor n=1:numVals
 					matNablaSTVals(:,:,n) = (bigR/bVals(n))*eye(sizeX,sizeX) ...
 					  -  ((bigR/(bVals(n)^3))*vecPVals(:,n)) * (vecDVals(:,n)');
