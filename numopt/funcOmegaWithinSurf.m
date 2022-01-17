@@ -12,9 +12,21 @@ function [ omegaVals, vecNablaOmegaVals ] = funcOmegaWithinSurf( vecXVals, funch
 		return; % Superfluous?
 	end
 	%
+	numVals = size(vecXVals,2);
+	%
 	h0 = mygetfield( prm, "h0", 0.01 );
 	tau = mygetfield( prm, "tau", 0.01 );
-	numVals = size(vecXVals,2);
+	epsFD = mygetfield( prm, "epsFD", tau/100.0 );
+	%
+	debugMode = mygetfield( prm, "debugMode", false );
+	if (debugMode)
+		sizeX = size(vecXVals,1);
+		assert( isrealarray(vecXVals,[sizeX,numVals]) );
+		assert( isrealscalar(h0) );
+		assert( isrealscalar(tau) );
+		assert( isrealscalar(epsFD) );
+		assert( 0.0 < epsFD );
+	end
 	%
 	if ( 1 < numVals )
 		[ vecSVals, vecNHatVals, vecUHatVals, matNablaSTVals ] = funchSurf( vecXVals );
@@ -67,9 +79,20 @@ function [ omegaVals, vecNablaOmegaVals ] = funcOmegaWithinSurf( vecXVals, funch
 		omegaVals = omega_s + vecD'*vecNablaOmega_s + 0.5 * sumsq(vecD) * ( h0 + norm(vecNablaOmega_s)/tau );
 	case 2
 		[ omega_s, vecNablaOmega_s, matNabla2Omega_s ] = funchOmegaBase( vecS );
-		omegaVals = omega_s + svecD'*vecNablaOmega_s + 0.5 * sumsq(vecD) * ( h0 + norm(vecNablaOmega_s)/tau );
-		msg( __FILE__, __LINE__, "The rest of this case is not implemented." );
-		error ( "To-do." );
+		omegaVals = omega_s + vecD'*vecNablaOmega_s + 0.5 * sumsq(vecD) * ( h0 + norm(vecNablaOmega_s)/tau );
+		%
+		vecXi = vecD + ( vecNablaOmega_s * (sumsq(vecD)/(2.0*tau*norm(vecNablaOmega_s))) );
+		% Use finite-differencing to approximate vecNabla2OmegaBase * vecXi.
+		if ( vecNHat'*vecXi > 0.0 ) % Try to make point be inside.
+			[ omega_sp, vecNablaOmega_sp ] = funchOmegaBase( vecS - epsFD * vecXi );
+			vecNabala2OmegaBaseXi = ( vecNablaOmega_sp - vecNablaOmega_s ) / (-epsFD);
+		else
+			[ omega_sp, vecNablaOmega_sp ] = funchOmegaBase( vecS + epsFD * vecXi );
+			vecNabala2OmegaBaseXi = ( vecNablaOmega_sp - vecNablaOmega_s ) / epsFD;
+		end
+		%
+		vecNablaOmegaVals = vecNablaOmega_s + ( matNablaST * vecNabala2OmegaBaseXi ) ...
+		  + ( vecD - (matNablaST*vecD) ) * ( (norm(vecNablaOmega_s)/tau) + h0 );
 	otherwise
 		error( "Impossible case." );
 	end
@@ -145,6 +168,60 @@ end
 %!	%
 %!	msg( __FILE__, __LINE__, "Success." );
 
+
+%!test
+%!	msg( __FILE__, __LINE__, "Performing finite-differencing test." );
+%!	setprngstates(0);
+%!	%
+%!	for trialIndex=1:10
+%!	%
+%!	%
+%!	sizeX = 2 + round(2.0*abs(randn()));
+%!	%
+%!	vecXCent_surf = randn(sizeX,1);
+%!	bigR = 0.1 + 3.0*abs(randn);
+%!	sizeF = 1 + round(abs(randn()));
+%!	matA0 = randn(sizeF,sizeX);
+%!	matA_surf = (eye(sizeX,sizeX)) + (matA0'*matA0);
+%!	funchSurf = @(dummyX) funcSurfEllip( dummyX, vecXCent_surf, bigR, matA_surf );
+%!	%
+%!	vecXCent_base = randn(sizeX,1);
+%!	sizeF = 1 + round(abs(randn()));
+%!	matA0 = randn(sizeF,sizeX);
+%!	matA_base = (eye(sizeX,sizeX)) + (matA0'*matA0);
+%!	omega0 = abs(randn);
+%!	omega1 = 0.1 + abs(randn);
+%!	debugMode_base = true;
+%!	funchOmegaBase = @(dummyX) funcOmegaEllip( dummyX, vecXCent_base, matA_base, omega0, omega1 );
+%!	%
+%!	prm = [];
+%!	prm.h0 = 0.01;
+%!	prm.tau = 0.01;
+%!	funchOmega = @(dummyX) funcOmegaWithinSurf( dummyX, funchOmegaBase, funchSurf, prm );
+%!	%
+%!	numVals = 50 + round(10.0*abs(randn()));
+%!	vecXVals = randn(sizeX,numVals);
+%!	%
+%!	%
+%!	epsNablaOmega = sqrt(eps);
+%!	for n=1:numVals
+%!		[ omega, vecNablaOmega ] = funchOmega( vecXVals(:,n) );
+%!		epsX = 1e-6;
+%!		vecNablaOmega_fd = zeros(sizeX,1);
+%!		for m=1:sizeX
+%!			vecXP = vecXVals(:,n); vecXP(m) += epsX;
+%!			vecXM = vecXVals(:,n); vecXM(m) -= epsX;
+%!			omegaP = funchOmega( vecXP );
+%!			omegaM = funchOmega( vecXM );
+%!			vecNablaOmega_fd(m) = ( omegaP - omegaM ) / (2.0*epsX);
+%!		end
+%!		assert( reldiff(vecNablaOmega_fd,vecNablaOmega,epsNablaOmega) < 100.0*epsX );
+%!	end
+%!	%
+%!	%
+%!	end % Trial loop.
+%!	%
+%!	msg( __FILE__, __LINE__, "Success." );
 
 %!test
 %!	msg( __FILE__, __LINE__, "Generating visualization." );
@@ -246,180 +323,3 @@ end
 %!	%
 %!	msg( __FILE__, __LINE__, sprintf("Please check figures %d ~ %d for reasonableness.", numFigs0+1, numFigs) );
 %!	return
-
-
-%!	error("NOT A TEST.");
-%!	gridZ11 = (gridD1F(3:end,2:end-1) - gridD1F(1:end-2,2:end-1)) ./ ...
-%!	  ( (gridCX1(3:end,2:end-1) - gridCX1(1:end-2,2:end-1)) .* sqrt(1.0+(gridD1F(2:end-1,2:end-1).^2)) );
-%!	gridCCX1 = (gridCX1(3:end,2:end-1) + gridCX1(1:end-2,2:end-1))/2.0;
-%!	gridCCX2 = (gridCX2(3:end,2:end-1) + gridCX2(1:end-2,2:end-1))/2.0;
-%!	%
-%!	numFigs++; figure(numFigs);
-%!	gridZ = gridZ11; strZ = "Z11";
-%!	contourf( gridCCX1, gridCCX2, gridZ );
-%!	colormap( 0.3 + 0.7*colormap("default") );
-%!	hold on
-%!	plot( vecSPts(1,:), vecSPts(2,:), 'ro-', 'markersize', 2 );
-%!	hold off;
-%!	if (setAxisEqual)
-%!		axis equal;
-%!	end
-%!	grid on;
-%!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
-%!	xlabel( "x1" );
-%!	ylabel( "x2" );
-%!	%
-%!	%
-%!	%
-%!	msg( __FILE__, __LINE__, sprintf("Please check figures %d ~ %d for reasonableness.", numFigs0+1, numFigs) );
-%!	return
-
-
-%!	error("NOT A TEST.");
-%!	%
-%!	%
-%!	gridG1 = gridD1F;
-%!	gridG2 = gridD2F;
-%!	gridD1G1 = (gridG1(3:end,2:end-1) - gridG1(1:end-2,2:end-1))./(gridCX1(3:end,2:end-1) - gridCX1(1:end-2,2:end-1));
-%!	gridD1G2 = (gridG2(3:end,2:end-1) - gridG2(1:end-2,2:end-1))./(gridCX1(3:end,2:end-1) - gridCX1(1:end-2,2:end-1));
-%!	gridD2G1 = (gridG1(2:end-1,3:end) - gridG1(2:end-1,1:end-2))./(gridCX2(2:end-1,3:end) - gridCX2(2:end-1,1:end-2));
-%!	gridD2G2 = (gridG2(2:end-1,3:end) - gridG2(2:end-1,1:end-2))./(gridCX2(2:end-1,3:end) - gridCX2(2:end-1,1:end-2));
-%!	gridCCX1 = (gridCX1(3:end,2:end-1) + gridCX1(1:end-2,2:end-1))/2.0;
-%!	gridCCX2 = (gridCX2(3:end,2:end-1) + gridCX2(1:end-2,2:end-1))/2.0;
-%!	%
-%!	numFigs++; figure(numFigs);
-%!	%gridZ = gridD1G1.^2 + gridD1G2.^2 + gridD2G1.^2 + gridD2G2.^2; strZ = "||nabla^2 omega||";
-%!	gridZ = gridD1G1; strZ = "d2 omega";
-%!	contourf( gridCCX1, gridCCX2, gridZ );
-%!	colormap( 0.3 + 0.7*colormap("default") );
-%!	%hold on
-%!	%plot( vecSPts(1,:), vecSPts(2,:), 'ro-', 'markersize', 2 );
-%!	%hold off;
-%!	if (setAxisEqual)
-%!		axis equal;
-%!	end
-%!	grid on;
-%!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
-%!	xlabel( "x1" );
-%!	ylabel( "x2" );
-%!	%
-%!	%
-%!	%
-%!	return
-%!	%
-%!	%
-%!	numFigs++; figure(numFigs);
-%!	n2 = round( (1+numXVals(2))/2.0 );
-%!	plot( gridX1(:,n2), gridF(:,n2), 'o-' );
-%!	grid on;
-%!	%
-%!	numFigs++; figure(numFigs);
-%!	n2 = round( (1+numXVals(2))/2.0 );
-%!	plot( ...
-%!	  cent(gridX1(:,n2)), diff(gridF(:,n2))./diff(gridX1(:,n2)), 'o-', ...
-%!	  cent(gridX1(:,n2)), diff(log(1.0+gridF(:,n2).^2))./diff(gridX1(:,n2)), 'x-' );
-%!	grid on;
-%!	%
-%!	%
-%!	x = gridX1(:,n2);
-%!	f = gridF(:,n2);
-%!	df = diff(f)./diff(x);
-%!	cx = cent(x);
-%!	ddf = diff(df)./diff(cx);
-%!	ccx = cent(cx);
-%!	numFigs++; figure(numFigs);
-%!	plot( ccx, ddf, 'o-', ccx, diff(log(1.0+df.^2))./diff(cx) );
-%!	grid on;
-%!	%
-%!	%
-%!	grid_foo_F = log( 0.01 + gridD1F.^2 +gridD2F.^2 );
-%!	grid_foo_X = gridCX1;
-%!	grid_foo_Y = gridCX2;
-%!	%
-%!	numFigs++; figure(numFigs);
-%!	gridZ = grid_foo_F; strZ = "loggy thing 0 of omega";
-%!	contourf( grid_foo_X, grid_foo_Y, grid_foo_F );
-%!	colormap( 0.3 + 0.7*colormap("default") );
-%!	hold on
-%!	plot( vecSPts(1,:), vecSPts(2,:), 'ro-', 'markersize', 2 );
-%!	hold off;
-%!	if (setAxisEqual)
-%!		axis equal;
-%!		axis equal; % Needed twice b/c of bug in Octave?
-%!	end
-%!	grid on;
-%!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
-%!	xlabel( "x1" );
-%!	ylabel( "x2" );
-%!	%
-%!	%
-%!	for foon=1:1
-%!		grid_foo_DFDX = ...
-%!		   ( grid_foo_F(3:end,2:end-1) - grid_foo_F(1:end-2,2:end-1) ) ...
-%!		 ./( grid_foo_X(3:end,2:end-1) - grid_foo_X(1:end-2,2:end-1) );
-%!		grid_foo_DFDY = ...
-%!		   ( grid_foo_F(2:end-1,3:end) - grid_foo_F(2:end-1,1:end-2) ) ...
-%!		 ./( grid_foo_Y(2:end-1,3:end) - grid_foo_Y(2:end-1,1:end-2) );
-%!		grid_foo_F = log( 0.01 + grid_foo_DFDX.^2 + grid_foo_DFDY.^2 );
-%!		grid_foo_X = ( grid_foo_X(3:end,2:end-1) + grid_foo_X(1:end-2,2:end-1) )/2.0;
-%!		grid_foo_Y = ( grid_foo_Y(2:end-1,3:end) + grid_foo_Y(2:end-1,1:end-2) )/2.0;
-%!	end
-%!	%
-%!	numFigs++; figure(numFigs);
-%!	gridZ = grid_foo_F; strZ = "loggy thing 1 of omega";
-%!	contourf( grid_foo_X, grid_foo_Y, grid_foo_F );
-%!	colormap( 0.3 + 0.7*colormap("default") );
-%!	hold on
-%!	plot( vecSPts(1,:), vecSPts(2,:), 'ro-', 'markersize', 2 );
-%!	hold off;
-%!	if (setAxisEqual)
-%!		axis equal;
-%!		axis equal; % Needed twice b/c of bug in Octave?
-%!	end
-%!	grid on;
-%!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
-%!	xlabel( "x1" );
-%!	ylabel( "x2" );
-%!	%
-%!	return
-%!	%
-%!	numFigs++; figure(numFigs);
-%!	gridZ = log(gridD1F.^2+gridD2F.^2); strZ = "log(||nablaOmega||)";
-%!	contourf( gridCX1, gridCX2, gridZ );
-%!	colormap( 0.3 + 0.7*colormap("default") );
-%!	hold on
-%!	plot( vecSPts(1,:), vecSPts(2,:), 'ro-', 'markersize', 2 );
-%!	hold off;
-%!	if (setAxisEqual)
-%!		axis equal;
-%!	end
-%!	grid on;
-%!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
-%!	xlabel( "x1" );
-%!	ylabel( "x2" );
-%!	%
-%!	%
-%!	%
-%!	gridD1D1F = (gridD1F(3:end,2:end-1) - gridD1F(1:end-2,2:end-1))./(gridCX1(3:end,2:end-1) - gridCX1(1:end-2,2:end-1));
-%!	gridD1D2F = (gridD2F(3:end,2:end-1) - gridD2F(1:end-2,2:end-1))./(gridCX1(3:end,2:end-1) - gridCX1(1:end-2,2:end-1));
-%!	gridD2D1F = (gridD1F(2:end-1,3:end) - gridD1F(2:end-1,1:end-2))./(gridCX2(2:end-1,3:end) - gridCX2(2:end-1,1:end-2));
-%!	gridD2D2F = (gridD2F(2:end-1,3:end) - gridD2F(2:end-1,1:end-2))./(gridCX2(2:end-1,3:end) - gridCX2(2:end-1,1:end-2));
-%!	gridCCX1 = (gridCX1(3:end,2:end-1) + gridCX1(1:end-2,2:end-1))/2.0;
-%!	gridCCX2 = (gridCX2(3:end,2:end-1) + gridCX2(1:end-2,2:end-1))/2.0;
-%!	%
-%!	numFigs++; figure(numFigs);
-%!	gridZ = log(gridD1D1F.^2 + gridD1D2F.^2 + gridD2D1F.^2 + gridD2D2F.^2 ); strZ = "2*log(||nabla2 Omega||)";
-%!	contourf( gridCCX1, gridCCX2, gridZ );
-%!	colormap( 0.3 + 0.7*colormap("default") );
-%!	hold on
-%!	plot( vecSPts(1,:), vecSPts(2,:), 'ro-', 'markersize', 2 );
-%!	hold off;
-%!	if (setAxisEqual)
-%!		axis equal;
-%!	end
-%!	grid on;
-%!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
-%!	xlabel( "x1" );
-%!	ylabel( "x2" );
-%!	%
-%!	msg( __FILE__, __LINE__, sprintf("Please check figures %d ~ %d for reasonableness.", numFigs0+1, numFigs) );
