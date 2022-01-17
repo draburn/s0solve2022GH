@@ -120,7 +120,7 @@ end
 %!	omega0 = abs(randn);
 %!	omega1 = 0.01 + abs(randn);
 %!	debugMode_base = true;
-%!	funchOmega = @(dummyX) funcOmegaEllip( dummyX, vecXCent_base, matA_base, omega0, omega1, debugMode_base );
+%!	funchOmegaBase = @(dummyX) funcOmegaEllip( dummyX, vecXCent_base, matA_base, omega0, omega1, debugMode_base );
 %!	%
 %!	prm = [];
 %!	omegaVals = funcOmegaWithinSurf( vecXVals, funchOmegaBase, funchSurf, prm );
@@ -145,3 +145,107 @@ end
 %!	end % Trial loop.
 %!	%
 %!	msg( __FILE__, __LINE__, "Success." );
+
+
+%!test
+%!	msg( __FILE__, __LINE__, "Generating visualization." );
+%!	setprngstates();
+%!	numFigs0 = 0;
+%!	numFigs = numFigs0;
+%!	setAxisEqual = true;
+%!	%
+%!	sizeX = 2;
+%!	%
+%!	vecXCent_surf = randn(sizeX,1);
+%!	bigR = 0.1 + 3.0*abs(randn);
+%!	sizeF = 1 + round(abs(randn()));
+%!	matA0 = randn(sizeF,sizeX);
+%!	matA_surf = (eye(sizeX,sizeX)) + (matA0'*matA0);
+%!	funchSurf = @(dummyX) funcSurfEllip( dummyX, vecXCent_surf, bigR, matA_surf );
+%!	%
+%!	% Trace surface with "pts".
+%!	numPts = 1001;
+%!	thetaPts = linspace(0.0,2.0*pi,numPts);
+%!	vecXPts = vecXCent_surf + bigR*[ cos(thetaPts); sin(thetaPts) ];
+%!	vecSPts = funchSurf( vecXPts );
+%!	%
+%!	vecXCent_base = randn(sizeX,1);
+%!	sizeF = 1 + round(abs(randn()));
+%!	matA0 = randn(sizeF,sizeX);
+%!	matA_base = (eye(sizeX,sizeX)) + (matA0'*matA0);
+%!	omega0 = abs(randn);
+%!	omega1 = 0.1 + abs(randn);
+%!	debugMode_base = true;
+%!	funchOmegaBase = @(dummyX) funcOmegaEllip( dummyX, vecXCent_base, matA_base, omega0, omega1 );
+%!	%
+%!	prm = [];
+%!	funchOmega = @(dummyX) funcOmegaWithinSurf( dummyX, funchOmegaBase, funchSurf, prm );
+%!	%
+%!	isVectorized = true;
+%!	ax = [ -5.0, 5.0, -5.0, 5.0 ];
+%!	numXVals = [ 51, 55 ];
+%!	[ gridX1, gridX2, gridF, gridCX1, gridCX2, gridD1F, gridD2F ] = ...
+%!	  genVizGrids( funchOmega, isVectorized, ax, numXVals );
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	gridZ = log(gridF); strZ = "log(omega)";
+%!	contourf( gridX1, gridX2, gridZ );
+%!	colormap( 0.3 + 0.7*colormap("default") );
+%!	hold on
+%!	plot( vecSPts(1,:), vecSPts(2,:), 'ro-', 'markersize', 2 );
+%!	hold off;
+%!	if (setAxisEqual)
+%!		axis equal;
+%!		axis equal; % Needed twice b/c of bug in Octave?
+%!	end
+%!	grid on;
+%!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	gridZ = log(gridD1F.^2+gridD2F.^2); strZ = "log(||nablaOmega||)";
+%!	contourf( gridCX1, gridCX2, gridZ );
+%!	colormap( 0.3 + 0.7*colormap("default") );
+%!	hold on
+%!	plot( vecSPts(1,:), vecSPts(2,:), 'ro-', 'markersize', 2 );
+%!	hold off;
+%!	if (setAxisEqual)
+%!		axis equal;
+%!	end
+%!	grid on;
+%!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	gridZ = gridD1F; strZ = "d/dx1 omega";
+%!	contourf( gridCX1, gridCX2, gridZ );
+%!	colormap( 0.3 + 0.7*colormap("default") );
+%!	hold on
+%!	plot( vecSPts(1,:), vecSPts(2,:), 'ro-', 'markersize', 2 );
+%!	hold off;
+%!	if (setAxisEqual)
+%!		axis equal;
+%!	end
+%!	grid on;
+%!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	gridZ = gridD2F; strZ = "d/dx2 omega";
+%!	contourf( gridCX1, gridCX2, gridZ );
+%!	colormap( 0.3 + 0.7*colormap("default") );
+%!	hold on
+%!	plot( vecSPts(1,:), vecSPts(2,:), 'ro-', 'markersize', 2 );
+%!	hold off;
+%!	if (setAxisEqual)
+%!		axis equal;
+%!	end
+%!	grid on;
+%!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	msg( __FILE__, __LINE__, sprintf("Please check figures %d ~ %d for reasonableness.", numFigs0+1, numFigs) );
