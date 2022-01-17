@@ -53,42 +53,17 @@ function [ omegaVals, vecNablaOmegaVals ] = funcOmegaWithinSurf( vecXVals, funch
 			omegaVals(outFlagVals) = omegaVals_o(outFlagVals);
 			%
 			vecNablaOmegaVals = vecNablaOmegaVals_i;
-			for n=1:numVals
-				if ( ~outFlagVals(n) )
-					continue;
-				end
-				vecD = vecDVals(:,n);
-				vecNablaOmega_s = vecNablaOmegaVals_s(:,n);
-				vecNHat = vecNHatVals(:,n);
-				vecS = vecSVals(:,n);
-				matNablaST = matNablaSTVals(:,:,n);
-				%
-				vecXi = vecD + ( vecNablaOmega_s * sumsq(vecD) / (2.0*tau*norm(vecNablaOmega_s)) );
-				% Use finite-differencing to approximate vecNabla2OmegaBase * vecXi.
-				if ( vecNHat'*vecXi > 0.0 ) % Try to make point be inside.
-					[ omega_sp, vecNablaOmega_sp ] = funchOmegaBase( vecS - epsFD * vecXi );
-					vecNabala2OmegaBaseXi = ( vecNablaOmega_sp - vecNablaOmega_s ) / (-epsFD);
-				else
-					[ omega_sp, vecNablaOmega_sp ] = funchOmegaBase( vecS + epsFD * vecXi );
-					vecNabala2OmegaBaseXi = ( vecNablaOmega_sp - vecNablaOmega_s ) / epsFD;
-				end
-				%
-				vecNablaOmegaVals(:,n) = vecNablaOmega_s + ( matNablaST * vecNabala2OmegaBaseXi ) ...
-				  + ( vecD - (matNablaST*vecD) ) * ( (norm(vecNablaOmega_s)/tau) + h0 );
-			end
-			%
-			return;
 			%
 			vecXiVals = vecDVals + ( vecNablaOmegaVals_s .* sumsq(vecDVals,1) ./ (2.0*tau*sqrt(sumsq(vecNablaOmegaVals_s,1))) );
-			epsFDVals = epsFD * ( ones(1,numVals) - 2.0*(sum(vecNHatVals.*vecXiVals,1)>0.0) );
-			[ omegaVals_sp, vecNablaOmegaVals_sp ] = funchOmegaBase( vecSVals + epsFDVals.*vecXiVals );
+			epsFDVals = epsFD * ( ones(1,numVals) - 2.0*( sum(vecNHatVals.*vecXiVals) > 0.0 ) );
+			[ omegaVals_sp, vecNablaOmegaVals_sp ] = funchOmegaBase( vecSVals + epsFDVals .* vecXiVals );
 			vecNabala2OmegaBaseXiVals = ( vecNablaOmegaVals_sp - vecNablaOmegaVals_s ) ./ epsFDVals;
-			%
-			vec0Vals = vecDVals .* ( h0 + sqrt(sumsq(vecNablaOmegaVals_s,1))/tau );
-			vecNablaOmegaVals = vecNablaOmegaVals_s + vec0Vals;
-			vec1Vals = vecNabala2OmegaBaseXiVals - vec0Vals;
-			parfor n=1:numVals
-				vecNablaOmegaVals(:,n) += matNablaSTVals(:,:,n) * vec1Vals(:,n);
+			vec1Vals = vecDVals .* ( h0 + sqrt(sumsq(vecNablaOmegaVals_s,1))/tau );
+			vec2Vals = vecNablaOmegaVals_s + vec1Vals;
+			vec3Vals = vecNabala2OmegaBaseXiVals - vec1Vals;
+			outVals = (1:numVals)(outFlagVals);
+			parfor n=outVals
+				vecNablaOmegaVals(:,n) = vec2Vals(:,n) + matNablaSTVals(:,:,n)*vec3Vals(:,n);
 			end
 		otherwise
 		error( "Impossible case." );
