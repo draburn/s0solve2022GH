@@ -1,10 +1,25 @@
 % Function...
-%   vecNHat is the surface normal.
-%   vecUHat is the direction along which vecS(vecX) does not change for vecX near the surface;
-%   (For a circle, vecNHat and vecUHat are the same.)
+%  [ vecSVals, vecNHatVals, vecUHatVals, matNablaSTVals ] = 
+%    funcSurfEllip( vecXVals, vecXCent, bigR=1.0, matA=[], debugMode=false )
+% Calculates "surface quantities" for an elliptical surface: ||A*(x-xCent)|| = R.
+% Input...
+%  vecXVals: collection of position vectors; size() is definitionally [ sizeX, numVals ].
+%  vecXCent: position vector of center of min (or max) of omega; size() must be [ sizeX, 1 ].
+%  bigR: scalar value of ellipse size; corresponds to radius if A=I; default is 1.0.
+%  matA: scaling matrix; size() must be [ sizeX, sizeX ]; default is I.
+%  debugMode: boolean flag to force debug checks; default is FALSE.
+% Output...
+%  vecSVals: vecXVals pulled to the surface; size() is [ sizeX, numVals ]. 
+%  vecNHatVals: if requested, outward surface normal at each vecS; size() is [ sizeX, numVals ].
+%  vecUHatVals: if requested, for each vecS, the local direction along which vecS does not change,
+%   pointing outwards: this would be the outward surface normal if vecS were always the closest
+%   point on the surface, but that problem appears to be non-trivial; size is [ sizeX, numVals ].
+%  matNablaSTVals: if requested, the quantity nabla s';
+%    size() is [ sizeX, sizeX ] if numVals is 1 and [ sizeX, sizeX, numVals ] if numVals >= 2.
+
 
 function [ vecSVals, vecNHatVals, vecUHatVals, matNablaSTVals ] = ...
-  demoFunc_surfEllip( vecXVals, vecXCent, bigR=1.0, matA=[], debugMode=false )
+  funcSurfEllip( vecXVals, vecXCent, bigR=1.0, matA=[], debugMode=false )
 	if ( 2 > nargin || 5 < nargin )
 		msg( __FILE__, __LINE__, "Bad nargin." );
 		print_usage();
@@ -108,7 +123,7 @@ end
 %!	%
 %!	% Test with minimal input.
 %!	for n=1:numVals
-%!		[ vecS, vecNHat, vecUHat, matNablaST ] = demoFunc_surfEllip( vecXVals(:,n), vecXCent );
+%!		[ vecS, vecNHat, vecUHat, matNablaST ] = funcSurfEllip( vecXVals(:,n), vecXCent );
 %!		assert( isrealarray(vecS,[sizeX,1]) );
 %!		assert( isrealarray(vecNHat,[sizeX,1]) );
 %!		assert( isrealarray(vecUHat,[sizeX,1]) );
@@ -121,7 +136,7 @@ end
 %!	matA0 = randn(sizeF,sizeX);
 %!	matA = (0.01*eye(sizeX,sizeX)) + (matA0'*matA0);
 %!	debugMode = true;
-%!	[ vecSVals, vecNHatVals, vecUHatVals, matNablaSTVals ] = demoFunc_surfEllip( vecXVals, vecXCent, bigR, matA, debugMode );
+%!	[ vecSVals, vecNHatVals, vecUHatVals, matNablaSTVals ] = funcSurfEllip( vecXVals, vecXCent, bigR, matA, debugMode );
 %!	assert( isrealarray(vecSVals,[sizeX,numVals]) );
 %!	assert( isrealarray(vecNHatVals,[sizeX,numVals]) );
 %!	assert( isrealarray(vecUHatVals,[sizeX,numVals]) );
@@ -145,7 +160,7 @@ end
 %!	numVals = 10 + round(10.0*abs(randn()));
 %!	vecXCent = randn(sizeX,1);
 %!	bigR = 0.01 + abs(randn());
-%!	funchSurf = @(dummyX) demoFunc_surfEllip( dummyX, vecXCent, bigR );
+%!	funchSurf = @(dummyX) funcSurfEllip( dummyX, vecXCent, bigR );
 %!	%
 %!	vecXVals = randn(sizeX,numVals);
 %!	[ vecSVals, vecNHatVals, vecUHatVals, matNablaSTVals ] = funchSurf( vecXVals );
@@ -229,7 +244,7 @@ end
 %!	sizeF = 1 + round(sizeX*abs(randn()));
 %!	matA0 = randn(sizeF,sizeX);
 %!	matA = (0.01*eye(sizeX,sizeX)) + matA0'*matA0;
-%!	funchSurf = @(dummyX) demoFunc_surfEllip( dummyX, vecXCent, bigR, matA );
+%!	funchSurf = @(dummyX) funcSurfEllip( dummyX, vecXCent, bigR, matA );
 %!	%
 %!	vecXVals = randn(sizeX,numVals);
 %!	[ vecSVals, vecNHatVals, vecUHatVals, matNablaSTVals ] = funchSurf( vecXVals );
@@ -302,7 +317,7 @@ end
 %!	sizeF = 1 + round(sizeX*abs(randn()));
 %!	matA0 = randn(sizeF,sizeX);
 %!	matA = (0.01*eye(sizeX,sizeX)) + matA0'*matA0;
-%!	funchSurf = @(dummyX) demoFunc_surfEllip( dummyX, vecXCent, bigR, matA );
+%!	funchSurf = @(dummyX) funcSurfEllip( dummyX, vecXCent, bigR, matA );
 %!	%
 %!	vecXVals = randn(sizeX,numVals);
 %!	[ vecSVals, vecNHatVals, vecUHatVals, matNablaSTVals ] = funchSurf( vecXVals );
@@ -328,7 +343,7 @@ end
 %!	%
 %!	% Check uHat...
 %!	epsX = 1e-4;
-%!	vecXVals_p = vecXVals + epsX*vecUHatVals;
+%!	vecXVals_p = vecSVals + epsX*vecUHatVals;
 %!	[ vecSVals_p, vecNHatVals_p, vecUHatVals_p ] = funchSurf( vecXVals_p );
 %!	for n=1:numVals
 %!		assert( reldiff(vecSVals_p(:,n),vecSVals(:,n),epsS) < sqrt(eps) );
@@ -358,7 +373,7 @@ end
 %!	sizeF = 1 + round(sizeX*abs(randn));;
 %!	matA0 = randn(sizeF,sizeX);
 %!	matA = 0.5*eye(sizeX,sizeX) + matA0'*matA0;
-%!	funchSurf = @(dummyX) demoFunc_surfEllip( dummyX, vecXCent, bigR, matA );
+%!	funchSurf = @(dummyX) funcSurfEllip( dummyX, vecXCent, bigR, matA );
 %!	%
 %!	% Trace surface with "pts".
 %!	numPts = 1001;

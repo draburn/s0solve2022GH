@@ -1,6 +1,6 @@
 % Function...
 %  [ omegaVals, vecNablaOmegaVals, matNabla2OmegaVals ] = ...
-%    demoFunc_omegaEllip( vecXVals, vecXCent, matA=[], omega0=0.0, omega1=1.0, debugMode=false )
+%    funcOmegaEllip( vecXVals, vecXCent, matA=[], omega0=0.0, omega1=1.0, debugMode=false )
 % Calculates omega = omega0 + omega1 * || matA * ( vecX - vecXCent ) ||^2.
 % Input...
 %  vecXVals: collection of position vectors; size() is definitionally [ sizeX, numVals ].
@@ -17,7 +17,7 @@
 
 
 function [ omegaVals, vecNablaOmegaVals, matNabla2OmegaVals ] = ...
-  demoFunc_omegaEllip( vecXVals, vecXCent, matA=[], omega0=0.0, omega1=1.0, debugMode=false )
+  funcOmegaEllip( vecXVals, vecXCent, matA=[], omega0=0.0, omega1=1.0, debugMode=false )
 	%
 	if ( nargin < 2 || nargin > 6)
 		msg( __FILE__, __LINE__, "Bad number of input arguments." );
@@ -92,7 +92,7 @@ end
 %!	%
 %!	% Test with minimal input and unvectorized.
 %!	for n=1:numVals
-%!		[ omega, vecNablaOmega, matNabla2Omega ] = demoFunc_omegaEllip( vecXVals(:,n), vecXCent );
+%!		[ omega, vecNablaOmega, matNabla2Omega ] = funcOmegaEllip( vecXVals(:,n), vecXCent );
 %!		assert( isrealscalar(omega) );
 %!		assert( isrealarray(vecNablaOmega,[sizeX,1]) );
 %!		assert( isrealarray(matNabla2Omega,[sizeX,sizeX]) );
@@ -107,7 +107,7 @@ end
 %!	omega1 = 0.01 + abs(randn);
 %!	debugMode = true;
 %!	[ omegaVals, vecNablaOmegaVals, matNabla2OmegaVals ] = ...
-%!	  demoFunc_omegaEllip( vecXVals, vecXCent, matA, omega0, omega1, debugMode );
+%!	  funcOmegaEllip( vecXVals, vecXCent, matA, omega0, omega1, debugMode );
 %!	assert( isrealarray(omegaVals,[1,numVals]) );
 %!	assert( isrealarray(vecNablaOmegaVals,[sizeX,numVals]) );
 %!	assert( isrealarray(matNabla2OmegaVals,[sizeX,sizeX,numVals]) );
@@ -134,7 +134,7 @@ end
 %!	matA = [];
 %!	omega0 = abs(randn);
 %!	omega1 = 0.01 + abs(randn);
-%!	funchOmega = @(dummyX) demoFunc_omegaEllip( dummyX, vecXCent, matA, omega0, omega1 );
+%!	funchOmega = @(dummyX) funcOmegaEllip( dummyX, vecXCent, matA, omega0, omega1 );
 %!	%
 %!	vecXVals = randn(sizeX,numVals);
 %!	[ omegaVals, vecNablaOmegaVals, matNabla2OmegaVals ] = funchOmega( vecXVals );
@@ -174,7 +174,7 @@ end
 %!	%
 %!	% Check A = I does nothing...
 %!	[ omegaVals_eye, vecNablaOmegaVals_eye, matNabla2OmegaVals_eye ] = ...
-%!	  demoFunc_omegaEllip( vecXVals, vecXCent, eye(sizeX,sizeX), omega0, omega1 );
+%!	  funcOmegaEllip( vecXVals, vecXCent, eye(sizeX,sizeX), omega0, omega1 );
 %!	for n=1:numVals
 %!		assert( reldiff(omegaVals_eye(n),omegaVals(n),epsOmega) < sqrt(eps) );
 %!		assert( reldiff(vecNablaOmegaVals_eye(:,n),vecNablaOmegaVals(:,n),epsNablaOmega) < sqrt(eps) );
@@ -202,7 +202,7 @@ end
 %!	matA = randn(sizeF,sizeX);
 %!	omega0 = abs(randn);
 %!	omega1 = 0.01 + abs(randn);
-%!	funchOmega = @(dummyX) demoFunc_omegaEllip( dummyX, vecXCent, matA, omega0, omega1 );
+%!	funchOmega = @(dummyX) funcOmegaEllip( dummyX, vecXCent, matA, omega0, omega1 );
 %!	%
 %!	vecXVals = randn(sizeX,numVals);
 %!	[ omegaVals, vecNablaOmegaVals, matNabla2OmegaVals ] = funchOmega( vecXVals );
@@ -259,7 +259,7 @@ end
 %!	sizeF = round(1.0 + abs(randn()));
 %!	matA0 = randn(sizeF,sizeX);
 %!	matA = (eye(sizeX,sizeX)) + (matA0'*matA0);
-%!	funchOmega = @(dummyX) demoFunc_omegaEllip( dummyX, vecXCent, matA, omega0, omega1 );
+%!	funchOmega = @(dummyX) funcOmegaEllip( dummyX, vecXCent, matA, omega0, omega1 );
 %!	%
 %!	isVectorized = true;
 %!	ax = [ -5.0, 5.0, -5.0, 5.0 ];
