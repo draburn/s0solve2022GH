@@ -8,9 +8,10 @@ commondefs;
 my_editor = "/usr/bin/mousepad";
 EDITOR( [my_editor ' %s'] ); % Moot if not USING_GUI; see options within GUI.
 %
-%msg("init",__LINE__,"Adding path \"study/20211111hotCurves/1210beta\".");
-%addpath( "study/20211111hotCurves/1210beta" );
-switch 1
+switch 4
+case 0
+msg("init",__LINE__,"Adding path \"study/20211111hotCurves/1210beta\".");
+addpath( "study/20211111hotCurves/1210beta" );
 case 1
 msg("init",__LINE__,"Adding path \"study/20211111hotCurves/0101trine/\".");
 addpath( "study/20211111hotCurves/0101trine/" );
@@ -23,6 +24,10 @@ addpath( "study/20211111hotCurves/0101trine/testfunc2021/" );
 case 2
 msg("init",__LINE__,"Adding path \"study/20211111hotCurves/0103onward/\".");
 addpath( "study/20211111hotCurves/0103onward/" );
-end
+case 3
 msg("init",__LINE__,"Adding path \"study/20211111hotCurves/0110review/\".");
 addpath( "study/20211111hotCurves/0110review/" );
+case 4
+msg("init",__LINE__,"Adding path \"numopt/\".");
+addpath( "numopt/" );
+end
