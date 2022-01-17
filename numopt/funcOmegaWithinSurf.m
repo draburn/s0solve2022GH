@@ -79,8 +79,7 @@ end
 
 %!test
 %!	msg( __FILE__, __LINE__, "Performing basic execution test." );
-%!	%msg( __FILE__, __LINE__, "SKIPPING TEST." ); return;
-%!	setprngstates(0);
+%!	setprngstates();
 %!	%
 %!	for trialIndex=1:10
 %!	%
@@ -149,7 +148,7 @@ end
 
 %!test
 %!	msg( __FILE__, __LINE__, "Generating visualization." );
-%!	setprngstates(82619200);
+%!	setprngstates();
 %!	numFigs0 = 0;
 %!	numFigs = numFigs0;
 %!	setAxisEqual = true;
@@ -186,6 +185,8 @@ end
 %!	funchOmegaBase = @(dummyX) funcOmegaEllip( dummyX, vecXCent_base, matA_base, omega0, omega1 );
 %!	%
 %!	prm = [];
+%!	prm.h0 = 0.01;
+%!	prm.tau = 0.01;
 %!	funchOmega = @(dummyX) funcOmegaWithinSurf( dummyX, funchOmegaBase, funchSurf, prm );
 %!	%
 %!	isVectorized = true;
@@ -194,8 +195,10 @@ end
 %!	[ gridX1, gridX2, gridF, gridCX1, gridCX2, gridD1F, gridD2F ] = ...
 %!	  genVizGrids( funchOmega, isVectorized, ax, numXVals );
 %!	%
+%!	%
 %!	numFigs++; figure(numFigs);
-%!	gridZ = log(gridF); strZ = "log(omega)";
+%!	%gridZ = sqrt(sqrt(gridF)); strZ = "sqrt(sqrt(omega))";
+%!	gridZ = log( 1.0 + gridF.^2 ); strZ = "log( 1 + omega^2 )";
 %!	contourf( gridX1, gridX2, gridZ );
 %!	colormap( 0.3 + 0.7*colormap("default") );
 %!	hold on
@@ -239,6 +242,146 @@ end
 %!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
 %!	xlabel( "x1" );
 %!	ylabel( "x2" );
+%!	%
+%!	%
+%!	msg( __FILE__, __LINE__, sprintf("Please check figures %d ~ %d for reasonableness.", numFigs0+1, numFigs) );
+%!	return
+
+
+%!	error("NOT A TEST.");
+%!	gridZ11 = (gridD1F(3:end,2:end-1) - gridD1F(1:end-2,2:end-1)) ./ ...
+%!	  ( (gridCX1(3:end,2:end-1) - gridCX1(1:end-2,2:end-1)) .* sqrt(1.0+(gridD1F(2:end-1,2:end-1).^2)) );
+%!	gridCCX1 = (gridCX1(3:end,2:end-1) + gridCX1(1:end-2,2:end-1))/2.0;
+%!	gridCCX2 = (gridCX2(3:end,2:end-1) + gridCX2(1:end-2,2:end-1))/2.0;
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	gridZ = gridZ11; strZ = "Z11";
+%!	contourf( gridCCX1, gridCCX2, gridZ );
+%!	colormap( 0.3 + 0.7*colormap("default") );
+%!	hold on
+%!	plot( vecSPts(1,:), vecSPts(2,:), 'ro-', 'markersize', 2 );
+%!	hold off;
+%!	if (setAxisEqual)
+%!		axis equal;
+%!	end
+%!	grid on;
+%!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	%
+%!	%
+%!	msg( __FILE__, __LINE__, sprintf("Please check figures %d ~ %d for reasonableness.", numFigs0+1, numFigs) );
+%!	return
+
+
+%!	error("NOT A TEST.");
+%!	%
+%!	%
+%!	gridG1 = gridD1F;
+%!	gridG2 = gridD2F;
+%!	gridD1G1 = (gridG1(3:end,2:end-1) - gridG1(1:end-2,2:end-1))./(gridCX1(3:end,2:end-1) - gridCX1(1:end-2,2:end-1));
+%!	gridD1G2 = (gridG2(3:end,2:end-1) - gridG2(1:end-2,2:end-1))./(gridCX1(3:end,2:end-1) - gridCX1(1:end-2,2:end-1));
+%!	gridD2G1 = (gridG1(2:end-1,3:end) - gridG1(2:end-1,1:end-2))./(gridCX2(2:end-1,3:end) - gridCX2(2:end-1,1:end-2));
+%!	gridD2G2 = (gridG2(2:end-1,3:end) - gridG2(2:end-1,1:end-2))./(gridCX2(2:end-1,3:end) - gridCX2(2:end-1,1:end-2));
+%!	gridCCX1 = (gridCX1(3:end,2:end-1) + gridCX1(1:end-2,2:end-1))/2.0;
+%!	gridCCX2 = (gridCX2(3:end,2:end-1) + gridCX2(1:end-2,2:end-1))/2.0;
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	%gridZ = gridD1G1.^2 + gridD1G2.^2 + gridD2G1.^2 + gridD2G2.^2; strZ = "||nabla^2 omega||";
+%!	gridZ = gridD1G1; strZ = "d2 omega";
+%!	contourf( gridCCX1, gridCCX2, gridZ );
+%!	colormap( 0.3 + 0.7*colormap("default") );
+%!	%hold on
+%!	%plot( vecSPts(1,:), vecSPts(2,:), 'ro-', 'markersize', 2 );
+%!	%hold off;
+%!	if (setAxisEqual)
+%!		axis equal;
+%!	end
+%!	grid on;
+%!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	%
+%!	%
+%!	return
+%!	%
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	n2 = round( (1+numXVals(2))/2.0 );
+%!	plot( gridX1(:,n2), gridF(:,n2), 'o-' );
+%!	grid on;
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	n2 = round( (1+numXVals(2))/2.0 );
+%!	plot( ...
+%!	  cent(gridX1(:,n2)), diff(gridF(:,n2))./diff(gridX1(:,n2)), 'o-', ...
+%!	  cent(gridX1(:,n2)), diff(log(1.0+gridF(:,n2).^2))./diff(gridX1(:,n2)), 'x-' );
+%!	grid on;
+%!	%
+%!	%
+%!	x = gridX1(:,n2);
+%!	f = gridF(:,n2);
+%!	df = diff(f)./diff(x);
+%!	cx = cent(x);
+%!	ddf = diff(df)./diff(cx);
+%!	ccx = cent(cx);
+%!	numFigs++; figure(numFigs);
+%!	plot( ccx, ddf, 'o-', ccx, diff(log(1.0+df.^2))./diff(cx) );
+%!	grid on;
+%!	%
+%!	%
+%!	grid_foo_F = log( 0.01 + gridD1F.^2 +gridD2F.^2 );
+%!	grid_foo_X = gridCX1;
+%!	grid_foo_Y = gridCX2;
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	gridZ = grid_foo_F; strZ = "loggy thing 0 of omega";
+%!	contourf( grid_foo_X, grid_foo_Y, grid_foo_F );
+%!	colormap( 0.3 + 0.7*colormap("default") );
+%!	hold on
+%!	plot( vecSPts(1,:), vecSPts(2,:), 'ro-', 'markersize', 2 );
+%!	hold off;
+%!	if (setAxisEqual)
+%!		axis equal;
+%!		axis equal; % Needed twice b/c of bug in Octave?
+%!	end
+%!	grid on;
+%!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	%
+%!	for foon=1:1
+%!		grid_foo_DFDX = ...
+%!		   ( grid_foo_F(3:end,2:end-1) - grid_foo_F(1:end-2,2:end-1) ) ...
+%!		 ./( grid_foo_X(3:end,2:end-1) - grid_foo_X(1:end-2,2:end-1) );
+%!		grid_foo_DFDY = ...
+%!		   ( grid_foo_F(2:end-1,3:end) - grid_foo_F(2:end-1,1:end-2) ) ...
+%!		 ./( grid_foo_Y(2:end-1,3:end) - grid_foo_Y(2:end-1,1:end-2) );
+%!		grid_foo_F = log( 0.01 + grid_foo_DFDX.^2 + grid_foo_DFDY.^2 );
+%!		grid_foo_X = ( grid_foo_X(3:end,2:end-1) + grid_foo_X(1:end-2,2:end-1) )/2.0;
+%!		grid_foo_Y = ( grid_foo_Y(2:end-1,3:end) + grid_foo_Y(2:end-1,1:end-2) )/2.0;
+%!	end
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	gridZ = grid_foo_F; strZ = "loggy thing 1 of omega";
+%!	contourf( grid_foo_X, grid_foo_Y, grid_foo_F );
+%!	colormap( 0.3 + 0.7*colormap("default") );
+%!	hold on
+%!	plot( vecSPts(1,:), vecSPts(2,:), 'ro-', 'markersize', 2 );
+%!	hold off;
+%!	if (setAxisEqual)
+%!		axis equal;
+%!		axis equal; % Needed twice b/c of bug in Octave?
+%!	end
+%!	grid on;
+%!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	return
 %!	%
 %!	numFigs++; figure(numFigs);
 %!	gridZ = log(gridD1F.^2+gridD2F.^2); strZ = "log(||nablaOmega||)";
