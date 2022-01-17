@@ -149,7 +149,7 @@ end
 
 %!test
 %!	msg( __FILE__, __LINE__, "Generating visualization." );
-%!	setprngstates();
+%!	setprngstates(82619200);
 %!	numFigs0 = 0;
 %!	numFigs = numFigs0;
 %!	setAxisEqual = true;
@@ -169,6 +169,13 @@ end
 %!	vecXPts = vecXCent_surf + bigR*[ cos(thetaPts); sin(thetaPts) ];
 %!	vecSPts = funchSurf( vecXPts );
 %!	%
+%!	x1gc = sum(vecSPts(1,:))/numPts;
+%!	x2gc = sum(vecSPts(2,:))/numPts;
+%!	x1gv = max(abs(vecSPts(1,:)-x1gc));
+%!	x2gv = max(abs(vecSPts(2,:)-x2gc));
+%!	xgv = max([ x1gv, x2gv ]);
+%!	ax = [ x1gc, x1gc, x2gc, x2gc ] + 1.5*xgv*[-1,1,-1,1];
+%!	%
 %!	vecXCent_base = randn(sizeX,1);
 %!	sizeF = 1 + round(abs(randn()));
 %!	matA0 = randn(sizeF,sizeX);
@@ -182,7 +189,7 @@ end
 %!	funchOmega = @(dummyX) funcOmegaWithinSurf( dummyX, funchOmegaBase, funchSurf, prm );
 %!	%
 %!	isVectorized = true;
-%!	ax = [ -5.0, 5.0, -5.0, 5.0 ];
+%!	%ax = [ -5.0, 5.0, -5.0, 5.0 ];
 %!	numXVals = [ 51, 55 ];
 %!	[ gridX1, gridX2, gridF, gridCX1, gridCX2, gridD1F, gridD2F ] = ...
 %!	  genVizGrids( funchOmega, isVectorized, ax, numXVals );
@@ -197,21 +204,6 @@ end
 %!	if (setAxisEqual)
 %!		axis equal;
 %!		axis equal; % Needed twice b/c of bug in Octave?
-%!	end
-%!	grid on;
-%!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
-%!	xlabel( "x1" );
-%!	ylabel( "x2" );
-%!	%
-%!	numFigs++; figure(numFigs);
-%!	gridZ = log(gridD1F.^2+gridD2F.^2); strZ = "log(||nablaOmega||)";
-%!	contourf( gridCX1, gridCX2, gridZ );
-%!	colormap( 0.3 + 0.7*colormap("default") );
-%!	hold on
-%!	plot( vecSPts(1,:), vecSPts(2,:), 'ro-', 'markersize', 2 );
-%!	hold off;
-%!	if (setAxisEqual)
-%!		axis equal;
 %!	end
 %!	grid on;
 %!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
@@ -236,6 +228,45 @@ end
 %!	numFigs++; figure(numFigs);
 %!	gridZ = gridD2F; strZ = "d/dx2 omega";
 %!	contourf( gridCX1, gridCX2, gridZ );
+%!	colormap( 0.3 + 0.7*colormap("default") );
+%!	hold on
+%!	plot( vecSPts(1,:), vecSPts(2,:), 'ro-', 'markersize', 2 );
+%!	hold off;
+%!	if (setAxisEqual)
+%!		axis equal;
+%!	end
+%!	grid on;
+%!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	gridZ = log(gridD1F.^2+gridD2F.^2); strZ = "log(||nablaOmega||)";
+%!	contourf( gridCX1, gridCX2, gridZ );
+%!	colormap( 0.3 + 0.7*colormap("default") );
+%!	hold on
+%!	plot( vecSPts(1,:), vecSPts(2,:), 'ro-', 'markersize', 2 );
+%!	hold off;
+%!	if (setAxisEqual)
+%!		axis equal;
+%!	end
+%!	grid on;
+%!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
+%!	xlabel( "x1" );
+%!	ylabel( "x2" );
+%!	%
+%!	%
+%!	%
+%!	gridD1D1F = (gridD1F(3:end,2:end-1) - gridD1F(1:end-2,2:end-1))./(gridCX1(3:end,2:end-1) - gridCX1(1:end-2,2:end-1));
+%!	gridD1D2F = (gridD2F(3:end,2:end-1) - gridD2F(1:end-2,2:end-1))./(gridCX1(3:end,2:end-1) - gridCX1(1:end-2,2:end-1));
+%!	gridD2D1F = (gridD1F(2:end-1,3:end) - gridD1F(2:end-1,1:end-2))./(gridCX2(2:end-1,3:end) - gridCX2(2:end-1,1:end-2));
+%!	gridD2D2F = (gridD2F(2:end-1,3:end) - gridD2F(2:end-1,1:end-2))./(gridCX2(2:end-1,3:end) - gridCX2(2:end-1,1:end-2));
+%!	gridCCX1 = (gridCX1(3:end,2:end-1) + gridCX1(1:end-2,2:end-1))/2.0;
+%!	gridCCX2 = (gridCX2(3:end,2:end-1) + gridCX2(1:end-2,2:end-1))/2.0;
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	gridZ = log(gridD1D1F.^2 + gridD1D2F.^2 + gridD2D1F.^2 + gridD2D2F.^2 ); strZ = "2*log(||nabla2 Omega||)";
+%!	contourf( gridCCX1, gridCCX2, gridZ );
 %!	colormap( 0.3 + 0.7*colormap("default") );
 %!	hold on
 %!	plot( vecSPts(1,:), vecSPts(2,:), 'ro-', 'markersize', 2 );
