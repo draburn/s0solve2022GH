@@ -168,7 +168,7 @@ end
 %!	end
 %!	for n=1:numVals
 %!		assert( reldiff(vecNablaOmegaVals_fd(:,n),vecNablaOmegaVals(:,n),epsNablaOmega) < 100.0*epsX );
-%!		assert( reldiff(matNabla2OmegaVals_fd(:,:,n),matNabla2OmegaVals_fd(:,:,n),epsNabla2Omega) < 100.0*epsX );
+%!		assert( reldiff(matNabla2OmegaVals_fd(:,:,n),matNabla2OmegaVals(:,:,n),epsNabla2Omega) < 100.0*epsX );
 %!	end
 %!	%
 %!	%
@@ -236,7 +236,7 @@ end
 %!	end
 %!	for n=1:numVals
 %!		assert( reldiff(vecNablaOmegaVals_fd(:,n),vecNablaOmegaVals(:,n),epsNablaOmega) < 100.0*epsX );
-%!		assert( reldiff(matNabla2OmegaVals_fd(:,:,n),matNabla2OmegaVals_fd(:,:,n),epsNabla2Omega) < 100.0*epsX );
+%!		assert( reldiff(matNabla2OmegaVals_fd(:,:,n),matNabla2OmegaVals(:,:,n),epsNabla2Omega) < 100.0*epsX );
 %!	end
 %!	%
 %!	%

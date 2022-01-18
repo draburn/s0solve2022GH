@@ -3,13 +3,15 @@
 % Calculates omega(x) = omega_base @ x if x is inside the surface,
 %  omega(x) = omega_base + (x-s)' * nabla omega_base + 0.5 * ||x-s||^2 * ( h0 + ||nabla omega_base||/tau ) @s(x)
 %  is x is outside the surface, where s(x) is the point x pulled to the surface.
+% ( Note that alternative approaches are possible, but, I'm going with this one. )
 % Input...
 %  vecXVals: collection of position vectors; size() is definitionally [ sizeX, numVals ].
-%  funchOmegaBase: function handle for omega_base;  must be able to correctly calculate
-%   [ omegaVals, vecNablaOmegaVals ] = funchOmegaBase( vecXVals ) as per funcOmegaEllip.m.
-%  funchSurfBase: function handle for the surface; must be able to correctly calculate
+%  funchOmegaBase: function handle for omega_base; should be able to calculate
+%   [ omegaVals, vecNablaOmegaVals ] = funchOmegaBase( vecXVals ) as per funcOmegaEllip.m,
+%   for the value of numVals per vecXVals.
+%  funchSurfBase: function handle for the surface; should be able to calculate
 %   [ vecSVals, vecNHatVals, vecUHatVals, matNablaSTVals ] = funchSurf( vecXVals ) as per funcSurfEllip.m.
-%   ( vecUHatVals may be unused. )
+%   for the value of numVals per vecXVals. ( Also, vecUHatVals may be unused. )
 %  prm: Structure of parameters, including:
 %   prm.h0: The constant h0, should be ~ ||Hessian||/100.0;
 %   prm.tau: The "thickness" scale-length for pulling outside points in towards the surface.
