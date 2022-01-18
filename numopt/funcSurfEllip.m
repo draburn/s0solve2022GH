@@ -208,10 +208,12 @@ end
 %!	end
 %!	%
 %!	%
-%!	% Check nHat and uHat wrt nablaST...
+%!	% Check nHat and uHat ...
 %!	for n=1:numVals
 %!		assert( norm(matNablaSTVals(:,:,n)*vecNHatVals(:,n)) < sqrt(epsUHat*epsNablaST) );
 %!		assert( norm(vecUHatVals(:,n)'*matNablaSTVals(:,:,n)) < sqrt(epsUHat*epsNablaST) );
+%!		assert( abs( norm(vecNHatVals(:,n)) - 1.0 ) < sqrt(eps) );
+%!		assert( abs( norm(vecUHatVals(:,n)) - 1.0 ) < sqrt(eps) );
 %!	end
 %!	%
 %!	%
@@ -292,10 +294,12 @@ end
 %!	end
 %!	%
 %!	%
-%!	% Check nHat and uHat wrt nablaST...
+%!	% Check nHat and uHat...
 %!	for n=1:numVals
 %!		assert( norm(matNablaSTVals(:,:,n)*vecNHatVals(:,n)) < sqrt(epsUHat*epsNablaST) );
 %!		assert( norm(vecUHatVals(:,n)'*matNablaSTVals(:,:,n)) < sqrt(epsUHat*epsNablaST) );
+%!		assert( abs( norm(vecNHatVals(:,n)) - 1.0 ) < sqrt(eps) );
+%!		assert( abs( norm(vecUHatVals(:,n)) - 1.0 ) < sqrt(eps) );
 %!	end
 %!	%
 %!	%

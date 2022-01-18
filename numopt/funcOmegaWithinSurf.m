@@ -1,5 +1,19 @@
 % Function...
-
+%  [ omegaVals, vecNablaOmegaVals ] = funcOmegaWithinSurf( vecXVals, funchOmegaBase, funchSurf, prm=[] )
+% Calculates omega(x) = omega_base @ x if x is inside the surface,
+%  omega(x) = omega_base + (x-s)' * nabla omega_base + 0.5 * ||x-s||^2 * ( h0 + ||nabla omega_base||/tau ) @s(x)
+%  is x is outside the surface, where s(x) is the point x pulled to the surface.
+% Input...
+%  vecXVals: collection of position vectors; size() is definitionally [ sizeX, numVals ].
+%  funchOmegaBase: function handle for omega_base;  must be able to correctly calculate
+%   [ omegaVals, vecNablaOmegaVals ] = funchOmegaBase( vecXVals ) as per funcOmegaEllip.m.
+%  funchSurfBase: function handle for the surface; must be able to correctly calculate
+%   [ vecSVals, vecNHatVals, vecUHatVals, matNablaSTVals ] = funchSurf( vecXVals ) as per funcSurfEllip.m.
+%   ( vecUHatVals may be unused. )
+%  prm: Structure of parameters, including:
+%   prm.h0: The constant h0, should be ~ ||Hessian||/100.0;
+%   prm.tau: The "thickness" scale-length for pulling outside points in towards the surface.
+%   See code for more details.
 
 function [ omegaVals, vecNablaOmegaVals ] = funcOmegaWithinSurf( vecXVals, funchOmegaBase, funchSurf, prm=[] )
 	if ( 3 > nargin || 4 < nargin )
@@ -66,7 +80,7 @@ function [ omegaVals, vecNablaOmegaVals ] = funcOmegaWithinSurf( vecXVals, funch
 				vecNablaOmegaVals(:,n) = vec2Vals(:,n) + matNablaSTVals(:,:,n)*vec3Vals(:,n);
 			end
 		otherwise
-		error( "Impossible case." );
+			error( "Impossible case." );
 		end
 	return;
 	end
@@ -117,7 +131,7 @@ end
 
 %!test
 %!	msg( __FILE__, __LINE__, "Performing basic execution test." );
-%!	setprngstates(0);
+%!	setprngstates();
 %!	%
 %!	for trialIndex=1:5
 %!	%
@@ -160,6 +174,9 @@ end
 %!	funchOmegaBase = @(dummyX) funcOmegaEllip( dummyX, vecXCent_base, matA_base, omega0, omega1, debugMode_base );
 %!	%
 %!	prm = [];
+%!	prm.h0 = 0.01;
+%!	prm.tau = 0.01;
+%!	prm.debugMode = true;
 %!	omegaVals = funcOmegaWithinSurf( vecXVals, funchOmegaBase, funchSurf, prm );
 %!	assert( isrealarray(omegaVals,[1,numVals]) );
 %!	[ omegaVals, vecNablaOmegaVals ] = funcOmegaWithinSurf( vecXVals, funchOmegaBase, funchSurf, prm );
@@ -187,7 +204,7 @@ end
 %!test
 %!	msg( __FILE__, __LINE__, "Performing finite-differencing test." );
 %!	%msg( __FILE__, __LINE__, "SKIPPING TEST." ); return;
-%!	setprngstates(0);
+%!	setprngstates();
 %!	%
 %!	for trialIndex=1:5
 %!	%
@@ -338,6 +355,9 @@ end
 %!	title(sprintf("%s vs (x1,x2); %10.3e ~ %10.3e", strZ, min(min(gridZ)), max(max(gridZ)) ) );
 %!	xlabel( "x1" );
 %!	ylabel( "x2" );
+%!	%
+%!	%
+%!	msg( __FILE__, __LINE__, "Memo: A viz to check that the gradient is everywhere continuous would be nice." );
 %!	%
 %!	%
 %!	msg( __FILE__, __LINE__, sprintf("Please check figures %d ~ %d for reasonableness.", numFigs0+1, numFigs) );
