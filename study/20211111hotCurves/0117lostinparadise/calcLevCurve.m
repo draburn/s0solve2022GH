@@ -1,4 +1,4 @@
-function [ vecXVals, datOut ] = calcCurveLev_dispena( vecX0, funchOmega, prm=[] )
+function [ vecXVals, datOut ] = calcLevCurve( vecX0, funchOmega, prm=[] )
 	%
 	n = 1;
 	vecX = vecX0;

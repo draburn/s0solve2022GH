@@ -1,4 +1,4 @@
-function vecXVals = calcCurveGradescent( vecX0, funchOmega, prm=[] )
+function vecXVals = calcGradCurve( vecX0, funchOmega, prm=[] )
 	%
 	sizeX = size(vecX0,1);
 	assert( isrealarray(vecX0,[sizeX,1]) );
