@@ -6,6 +6,7 @@ startTime = time();
 xinit;
 funchOmega = @(dummyX)( testfunc2021_funcOmega(dummyX,testFuncPrm) );
 funchF = @(x)( testfunc2021_funcF(x,testFuncPrm) );
+[ omega0, vecG0, matH0 ] = testfunc2021_funcOmega( vecX0, testFuncPrm );
 %
 %
 %
@@ -75,6 +76,21 @@ if (1)
 	thisCurvePrm = [];
 	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
 	curveDat(numCurves).matX = calcMinfordCurve( vecX0, funchOmega, thisCurvePrm );
+	thisCurveElapsedTime = time()-thisCurveTime0;
+	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
+	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
+	curveDat(numCurves).strName = thisCurveName;
+	curveDat(numCurves).prm = thisCurvePrm;
+end
+%
+if (1)
+	numCurves++;
+	thisCurveTime0 = time();
+	thisCurveName = 'calcBasicLevCurve';
+	matS = [];
+	thisCurvePrm = [];
+	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
+	curveDat(numCurves).matX = calcBasicLevCurve( vecX0, omega0, vecG0, matH0, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
 	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
