@@ -15,8 +15,9 @@ function [ vecXVals, datOut ] = calcBasicGradCurve( vecX0, omega0, vecG0, matH, 
 	vecY0 = matPsi'*vecX0;
 	vecGamma = (matPsi'*vecG0) - (matLambda*vecY0);
 	%
-	numVals = 1001;
-	sVals = linspace( 0.0, 1.0, numVals );
+	lambdaAbsMin = min(abs(vecLambda))+sqrt(eps)*max(abs(vecLambda));
+	numVals = 21;
+	sVals = (linspace( 0.0, 1.0, numVals )).^(1.0/lambdaAbsMin);
 	%
 	sizeY = sizeX;
 	vecGOL = vecGamma./vecLambda;
@@ -28,6 +29,7 @@ function [ vecXVals, datOut ] = calcBasicGradCurve( vecX0, omega0, vecG0, matH, 
 		vecYVals(n,:) = ( vecY0(n) + vecGOL(n) ) * (sVals.^vecLambda(n)) - vecGOL(n);
 	end
 	end
+	%echo__vecYVals = vecYVals
 	%
 	ySumSqVals = sumsq( vecYVals, 1 );
 	nanVals = ( (isnan(ySumSqVals)) | isinf(ySumSqVals) );
