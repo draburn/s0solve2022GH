@@ -9,6 +9,7 @@ function [ vecXVals, datOut ] = calcBasicLevCurve( vecX0, omega0, vecG0, matH, p
 	%
 	datOut = [];
 	eps075 = eps^0.75;
+	omegaMin = 0.0;
 	%
 	matI = eye(sizeX,sizeX);
 	numVals = 1001;
@@ -23,12 +24,42 @@ function [ vecXVals, datOut ] = calcBasicLevCurve( vecX0, omega0, vecG0, matH, p
 		vecDelta = matR \ ( matR' \ ( -s*vecG0) );
 		%
 		omega = omega0 + vecG0'*vecDelta + 0.5*vecDelta'*matH*vecDelta;
-		if ( omega < -abs(eps075*omega0) )
+		if ( omega < omegaMin )
 			msg( __FILE__, __LINE__, sprintf( "omega = %f.", omega ) );
 			break;
 		end
 		%
 		vecXVals(:,n) = vecX0 + vecDelta;
 	end
+	%
+	if ( 1+numVals == n )
+		% All points were accepted.
+		return;
+	elseif ( 2 == n )
+		msg( __FILE__, __LINE__, "Only one point was accepted." );
+		return;
+	end
+	vecXVals = vecXVals(:,1:n-1);
+	%
+	msg( __FILE__, __LINE__, "Extrapolating to omegaMin." );
+	msg( __FILE__, __LINE__, "(I suspect this is not the correct thing to do near a non-root local min, but, here we are.)" );
+	vecXA = vecXVals(:,end-1);
+	vecXB = vecXVals(:,end);
+	vecZ = vecXB-vecXA; % We'll take a step in this direction...
+	%
+	vecDB = vecXB - vecX0;
+	omegaB = omega0 + (vecG0'*vecDB) + 0.5*(vecDB'*matH*vecDB);
+	vecGB = vecG0 + matH*vecDB;
+	%
+	s = calcLinishRootOfQuad( 0.5*(vecZ'*matH*vecZ), vecGB'*vecZ, omegaB-omegaMin );
+	assert( isrealscalar(s) );
+	if ( s < 0.0 )
+		msg( __FILE__, __LINE__, "Extrapolation goes in wrong direction!" );
+	elseif ( s < sqrt(eps) )
+		msg( __FILE__, __LINE__, "Extrapolation would be too small!" );
+	elseif ( s > 1.0/sqrt(eps) )
+		msg( __FILE__, __LINE__, "Extrapolation would be too large!" );
+	end
+	vecXVals(:,end+1) = vecXB + s*vecZ;
 return;
 end
