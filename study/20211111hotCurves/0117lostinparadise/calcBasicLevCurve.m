@@ -18,14 +18,14 @@ function [ vecXVals, datOut ] = calcBasicLevCurve( vecX0, omega0, vecG0, matH, p
 		[ matR, cholFlag ] = chol( matM );
 		if (0~=cholFlag)
 			msg( __FILE__, __LINE__, sprintf( "chol() failed for s = %f.", s ) );
-			return;
+			break;
 		end
 		vecDelta = matR \ ( matR' \ ( -s*vecG0) );
 		%
 		omega = omega0 + vecG0'*vecDelta + 0.5*vecDelta'*matH*vecDelta;
 		if ( omega < -abs(eps075*omega0) )
 			msg( __FILE__, __LINE__, sprintf( "omega = %f.", omega ) );
-			return;
+			break;
 		end
 		%
 		vecXVals(:,n) = vecX0 + vecDelta;

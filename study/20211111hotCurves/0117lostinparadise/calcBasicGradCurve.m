@@ -17,7 +17,8 @@ function [ vecXVals, datOut ] = calcBasicGradCurve( vecX0, omega0, vecG0, matH, 
 	%
 	lambdaAbsMin = min(abs(vecLambda))+sqrt(eps)*max(abs(vecLambda));
 	numVals = 101;
-	sVals = (linspace( 0.0, 1.0, numVals )).^(1.0/lambdaAbsMin);
+	sVals = (linspace( 1.0, 0.0, numVals )).^(1.0/lambdaAbsMin);
+	omegaMin = 0.0;
 	%
 	sizeY = sizeX;
 	vecGOL = vecGamma./vecLambda;
@@ -36,10 +37,41 @@ function [ vecXVals, datOut ] = calcBasicGradCurve( vecX0, omega0, vecG0, matH, 
 	%
 	ySumSqVals = sumsq( vecYVals, 1 );
 	nanVals = ( (isnan(ySumSqVals)) | isinf(ySumSqVals) );
-	skipVals = nanVals | (omegaVals<0);
-	if ( sum(double(skipVals))>0 )
-		msg( __FILE__, __LINE__, "Discarding invalid points." );
+	skipVals = nanVals | (omegaVals<omegaMin);
+	if ( 0 == sum(double(skipVals)) )
+		return;
 	end
+	clear vecDVals;
+	clear omegaVals;
+	%
+	msg( __FILE__, __LINE__, "Discarding invalid points." );
 	vecXVals = vecXVals(:,~skipVals);
+	%
+	numVals = size(vecXVals,2);
+	if ( 1 == numVals )
+		msg( __FILE__, __LINE__, "Only one point was accepted." );
+		return;
+	end
+	%
+	msg( __FILE__, __LINE__, "Extrapolating to omegaMin." );
+	msg( __FILE__, __LINE__, "(I suspect this is not the correct thing to do near a non-root local min, but, here we are.)" );
+	vecXA = vecXVals(:,end-1);
+	vecXB = vecXVals(:,end);
+	vecZ = vecXB-vecXA; % We'll take a step in this direction...
+	%
+	vecDB = vecXB - vecX0;
+	omegaB = omega0 + (vecG0'*vecDB) + 0.5*(vecDB'*matH*vecDB);
+	vecGB = vecG0 + matH*vecDB;
+	%
+	s = calcLinishRootOfQuad( 0.5*(vecZ'*matH*vecZ), vecGB'*vecZ, omegaB-omegaMin );
+	assert( isrealscalar(s) );
+	if ( s < 0.0 )
+		msg( __FILE__, __LINE__, "Extrapolation goes in wrong direction!" );
+	elseif ( s < sqrt(eps) )
+		msg( __FILE__, __LINE__, "Extrapolation would be too small!" );
+	elseif ( s > 1.0/sqrt(eps) )
+		msg( __FILE__, __LINE__, "Extrapolation would be too large!" );
+	end
+	vecXVals(:,end+1) = vecXB + s*vecZ;
 return;
 end
