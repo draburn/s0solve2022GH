@@ -42,7 +42,6 @@ function [ vecXVals, datOut ] = calcBasicLevCurve( vecX0, omega0, vecG0, matH, p
 	vecXVals = vecXVals(:,1:n-1);
 	%
 	msg( __FILE__, __LINE__, "Extrapolating to omegaMin." );
-	msg( __FILE__, __LINE__, "(I suspect this is not the correct thing to do near a non-root local min, but, here we are.)" );
 	vecXA = vecXVals(:,end-1);
 	vecXB = vecXVals(:,end);
 	vecZ = vecXB-vecXA; % We'll take a step in this direction...
@@ -51,6 +50,10 @@ function [ vecXVals, datOut ] = calcBasicLevCurve( vecX0, omega0, vecG0, matH, p
 	omegaB = omega0 + (vecG0'*vecDB) + 0.5*(vecDB'*matH*vecDB);
 	vecGB = vecG0 + matH*vecDB;
 	%
+	%
+	% DRaburn 2022.01.25:
+	%  I'm not 100%, given the above, that the s here will always hit omegaMin;
+	%  but, when it doesn't, this should still be a meaningful point... Right?
 	s = calcLinishRootOfQuad( 0.5*(vecZ'*matH*vecZ), vecGB'*vecZ, omegaB-omegaMin );
 	assert( isrealscalar(s) );
 	if ( s < 0.0 )

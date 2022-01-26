@@ -1,8 +1,8 @@
 ax = [];
 sizeX = 2;
 sizeF = 2;
-caseNum = 102;
-%caseNum = 20;
+caseNum = 101;
+%caseNum = 22;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case 0
@@ -94,6 +94,16 @@ case 21
 	testFuncPrm.matJ = [ 1.0, 0.0; 0.0, 0.0 ];
 	testFuncPrm.ary3K(:,:,1) = [ 0.0, 0.0; 0.0, 0.0 ];
 	testFuncPrm.ary3K(:,:,2) = [ 0.0, 0.0; 0.0, 1.0 ];
+	vecX0 = [ 1.0; 1.0];
+case 22
+	% Simple linear case.
+	testFuncPrm.sizeX = 2;
+	testFuncPrm.sizeF = 2;
+	testFuncPrm.vecXE = [ 0.0; 0.0 ];
+	testFuncPrm.vecFE = [ 1.0; 1.0 ];
+	testFuncPrm.matJ = [ 1.0, 0.0; 0.0, 0.0 ];
+	testFuncPrm.ary3K(:,:,1) = [ 0.0, 0.0; 0.0, 0.0 ];
+	testFuncPrm.ary3K(:,:,2) = [ 0.0, 0.0; 0.0, 0.0 ];
 	vecX0 = [ 1.0; 1.0];
 case 101
 	% Dbl sepx.

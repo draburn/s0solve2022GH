@@ -16,7 +16,7 @@ function [ vecXVals, datOut ] = calcBasicGradCurve( vecX0, omega0, vecG0, matH, 
 	vecGamma = (matPsi'*vecG0) - (matLambda*vecY0);
 	%
 	lambdaAbsMin = min(abs(vecLambda))+sqrt(eps)*max(abs(vecLambda));
-	numVals = 101;
+	numVals = 1001;
 	sVals = (linspace( 1.0, 0.0, numVals )).^(1.0/lambdaAbsMin);
 	omegaMin = 0.0;
 	%
@@ -54,7 +54,6 @@ function [ vecXVals, datOut ] = calcBasicGradCurve( vecX0, omega0, vecG0, matH, 
 	end
 	%
 	msg( __FILE__, __LINE__, "Extrapolating to omegaMin." );
-	msg( __FILE__, __LINE__, "(I suspect this is not the correct thing to do near a non-root local min, but, here we are.)" );
 	vecXA = vecXVals(:,end-1);
 	vecXB = vecXVals(:,end);
 	vecZ = vecXB-vecXA; % We'll take a step in this direction...
@@ -63,6 +62,9 @@ function [ vecXVals, datOut ] = calcBasicGradCurve( vecX0, omega0, vecG0, matH, 
 	omegaB = omega0 + (vecG0'*vecDB) + 0.5*(vecDB'*matH*vecDB);
 	vecGB = vecG0 + matH*vecDB;
 	%
+	% DRaburn 2022.01.25:
+	%  I'm not 100%, given the above, that the s here will always hit omegaMin;
+	%  but, when it doesn't, this should still be a meaningful point... Right?
 	s = calcLinishRootOfQuad( 0.5*(vecZ'*matH*vecZ), vecGB'*vecZ, omegaB-omegaMin );
 	assert( isrealscalar(s) );
 	if ( s < 0.0 )
