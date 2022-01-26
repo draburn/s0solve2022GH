@@ -32,7 +32,7 @@ for n=1:numCurves
 	curveDat(n).matF = matF;
 	curveDat(n).vecOmega = 0.5*sum( matF.^2, 1 );
 	curveDat(n).vecOmegaModel = omega0 + vecG0'*curveDat(n).matBigDelta + ...
-	  0.5 *sum( curveDat(n).matBigDelta .* (matH0*curveDat(n).matBigDelta), 1 );
+	  0.5 * sum( curveDat(n).matBigDelta .* (matH0*curveDat(n).matBigDelta), 1 );
 	curveDat(n).vecDist = sqrt(sum( curveDat(n).matBigDelta.^2, 1 ));
 	%
 	curveDat(n).matBigDelta_fromEnd = matX - repmat( matX(:,end), 1, numPts );

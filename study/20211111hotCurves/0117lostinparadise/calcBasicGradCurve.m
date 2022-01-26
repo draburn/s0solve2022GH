@@ -16,7 +16,7 @@ function [ vecXVals, datOut ] = calcBasicGradCurve( vecX0, omega0, vecG0, matH, 
 	vecGamma = (matPsi'*vecG0) - (matLambda*vecY0);
 	%
 	lambdaAbsMin = min(abs(vecLambda))+sqrt(eps)*max(abs(vecLambda));
-	numVals = 21;
+	numVals = 101;
 	sVals = (linspace( 0.0, 1.0, numVals )).^(1.0/lambdaAbsMin);
 	%
 	sizeY = sizeX;
@@ -30,12 +30,16 @@ function [ vecXVals, datOut ] = calcBasicGradCurve( vecX0, omega0, vecG0, matH, 
 	end
 	end
 	%echo__vecYVals = vecYVals
+	vecXVals = matPsi*vecYVals;
+	vecDVals = vecXVals - vecX0;
+	omegaVals = omega0 + (vecG0'*vecDVals) + 0.5 * sum( vecDVals.*(matH*vecDVals), 1 );
 	%
 	ySumSqVals = sumsq( vecYVals, 1 );
 	nanVals = ( (isnan(ySumSqVals)) | isinf(ySumSqVals) );
-	ySumSqMax = 100.0;
-	skipVals = nanVals | (ySumSqVals>ySumSqMax);
-	vecYVals_trim = vecYVals(:,~skipVals);
-	vecXVals = matPsi*vecYVals_trim;
+	skipVals = nanVals | (omegaVals<0);
+	if ( sum(double(skipVals))>0 )
+		msg( __FILE__, __LINE__, "Discarding invalid points." );
+	end
+	vecXVals = vecXVals(:,~skipVals);
 return;
 end
