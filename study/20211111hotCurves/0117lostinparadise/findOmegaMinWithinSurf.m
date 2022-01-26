@@ -22,7 +22,7 @@ function [ vecX, retCode, datOut ] = findOmegaMinWithinSurf( vecX0, funchSurf, f
 	%
 	%
 	% Set up the objective function that combines the input funchSurf and funchOmega.
-	tauX = mygetfield( prm, "tauX", 1e-2 );
+	tauX = mygetfield( prm, "tauX", 1e-3 );
 	h0 = mygetfield( prm, "h0", norm(vecNablaOmega0)/tauX );
 	epsX = mygetfield( prm, "epsX", 1e-5 );
 	useProvidedGradients = mygetfield( prm, "useProvidedGradients", true );

@@ -7,15 +7,17 @@ function [ vecXVals, datOut ] = calcBasicLevCurve( vecX0, omega0, vecG0, matH, p
 	assert( isrealarray(matH,[sizeX,sizeX]) );
 	assert( issymmetric(matH) );
 	%
+	matS = mygetfield( prm, "matS", eye(sizeX,sizeX) );
+	matD = matS'*matS;
+	%
 	datOut = [];
 	eps075 = eps^0.75;
 	omegaMin = 0.0;
 	%
-	matI = eye(sizeX,sizeX);
 	numVals = 1001;
 	for n=1:numVals
 		s = (n-1.0)/(numVals-1.0);
-		matM = (s*matH) + ((1.0-s)*matI);
+		matM = (s*matH) + ((1.0-s)*matD);
 		[ matR, cholFlag ] = chol( matM );
 		if (0~=cholFlag)
 			msg( __FILE__, __LINE__, sprintf( "chol() failed for s = %f.", s ) );

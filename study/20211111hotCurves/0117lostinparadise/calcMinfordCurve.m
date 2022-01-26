@@ -3,7 +3,7 @@ function [ matX, datOut ] = calcMinfordCurve( vecX0, funchOmega, prm=[] )
 	sizeX = size(vecX0,1);
 	assert(isrealarray(vecX0,[sizeX,1]));
 	%
-	matS = [];
+	matS = mygetfield( prm, "matS", [] );
 	if (~isempty(matS))
 		assert(isrealarray(matS,[sizeX,sizeX]));
 		matS_nonEmpty = matS;
@@ -17,7 +17,7 @@ function [ matX, datOut ] = calcMinfordCurve( vecX0, funchOmega, prm=[] )
 	%
 	%
 	iterLimit = 10000;
-	deltaR = 0.1;
+	deltaR = 0.01;
 	vecXC = vecX0;
 	%[ omega0, vecNablaOmega0 ] = funchOmega( vecX0 );
 	%tolMagNablaOmega = mygetfield( prm, "tolMagNablaOmega", eps025*norm(vecNablaOmega0) + eps050*sizeX );

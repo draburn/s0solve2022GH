@@ -11,7 +11,8 @@ contourPlot_numColors = 64;
 contourPlot_axEq = false;
 autoAx_borderCoeff = 0.1;
 
-curveColors = 0.6*jet(numCurves);
+%curveColors = 0.6*jet(numCurves);
+curveColors = 0.6*hsv(numCurves);
 curveSymbols = [ 'o', 'x', '^', 'v', '*', 's', 'p' ];
 
 autoAx_x1Lo = vecX0(1);
@@ -45,9 +46,9 @@ for n=1:numCurves
 	curveDat(n).vecStepSize_cent = sqrt(sum( curveDat(n).matSmlDelta_cent.^2, 1 ));
 	%
 	curveDat(n).plot_color = curveColors(n,:);
-	curveDat(n).plot_markerSize = 10;
+	curveDat(n).plot_markerSize = 15;
 	curveDat(n).plot_markerStyle = curveSymbols(1+mod(n-1,max(size(curveSymbols))));
-	curveDat(n).plot_lineWidth = 2;
+	curveDat(n).plot_lineWidth = 1;
 	curveDat(n).plot_lineStyle = '-';
 	curveDat(n).plot_bigMarkerSize = 30;
 	curveDat(n).plot_bigLineWidth = 4;
