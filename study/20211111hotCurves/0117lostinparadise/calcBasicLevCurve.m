@@ -14,7 +14,7 @@ function [ vecXVals, datOut ] = calcBasicLevCurve( vecX0, omega0, vecG0, matH, p
 	eps075 = eps^0.75;
 	omegaMin = 0.0;
 	%
-	numVals = 1001;
+	numVals = 401;
 	for n=1:numVals
 		s = (n-1.0)/(numVals-1.0);
 		matM = (s*matH) + ((1.0-s)*matD);

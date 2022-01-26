@@ -2,7 +2,7 @@ ax = [];
 sizeX = 2;
 sizeF = 2;
 caseNum = 104;
-caseNum = 20;
+%caseNum = 20;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case 0

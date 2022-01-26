@@ -7,6 +7,19 @@ function [ vecXVals, datOut ] = calcBasicGradCurve( vecX0, omega0, vecG0, matH, 
 	assert( isrealarray(matH,[sizeX,sizeX]) );
 	assert( issymmetric(matH) );
 	%
+	matS = mygetfield( prm, "matS", [] );
+	if ( ~isempty(matS) )
+		msg( __FILE__, __LINE__, "Calling with GUESS scaled values." );
+		prmMod = prm;
+		prmMod.matS = [];
+		matSInv = inv(matS);
+		vecGMod = matSInv*vecG0;
+		matHMod = matSInv'*matH*matSInv;
+		vecXVals = calcBasicGradCurve( vecX0, omega0, vecGMod, matHMod, prmMod );
+		vecXVals = vecX0 + matSInv*(vecXVals-vecX0);
+		return;
+	end
+	%
 	datOut = [];
 	%
 	[ matPsi, matLambda ] = eig( matH );
@@ -16,7 +29,7 @@ function [ vecXVals, datOut ] = calcBasicGradCurve( vecX0, omega0, vecG0, matH, 
 	vecGamma = (matPsi'*vecG0) - (matLambda*vecY0);
 	%
 	lambdaAbsMin = min(abs(vecLambda))+sqrt(eps)*max(abs(vecLambda));
-	numVals = 1001;
+	numVals = 401;
 	sVals = (linspace( 1.0, 0.0, numVals )).^(1.0/lambdaAbsMin);
 	omegaMin = 0.0;
 	%

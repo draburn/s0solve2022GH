@@ -7,13 +7,20 @@ function vecXVals = calcGradCurve( vecX0, funchOmega, prm=[] )
 	vecT = mygetfield( prm, "vecT", 100.0*linspace(0.0,1.0,1001) );
 	%funchXDot_lsode = @(x,t)( -funchG(x) );
 	%
+	matS = mygetfield( prm, "matS", [] );
+	%
 	function vecG = funchG( dummyX )
 		[ omega, vecG ] = funchOmega(dummyX);
 	end
 	%
 	gScale = 0.01;
 	funchXDotOfG = @(g)( -g/sqrt( gScale^2 + (g'*g) ) );
-	funchXDot_lsode = @(x,t)( funchXDotOfG(funchG(x)) );
+	if ( isempty(matS) )
+		funchXDot_lsode = @(x,t)( funchXDotOfG(funchG(x)) );
+	else
+		matD = matS'*matS;
+		funchXDot_lsode = @(x,t)( funchXDotOfG(matD\funchG(x)) );
+	end
 	%
 	vecX = vecX0;
 	vecXVals(:,1) = vecX;
