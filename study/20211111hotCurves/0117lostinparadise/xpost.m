@@ -31,6 +31,8 @@ for n=1:numCurves
 	curveDat(n).matBigDelta = matX - repmat( vecX0, 1, numPts );
 	curveDat(n).matF = matF;
 	curveDat(n).vecOmega = 0.5*sum( matF.^2, 1 );
+	curveDat(n).vecOmegaModel = omega0 + vecG0'*curveDat(n).matBigDelta + ...
+	  0.5 *sum( curveDat(n).matBigDelta .* (matH0*curveDat(n).matBigDelta), 1 );
 	curveDat(n).vecDist = sqrt(sum( curveDat(n).matBigDelta.^2, 1 ));
 	%
 	curveDat(n).matBigDelta_fromEnd = matX - repmat( matX(:,end), 1, numPts );
@@ -73,6 +75,11 @@ matF = funchF(matX,testFuncPrm);
 f1Mesh = reshape(matF(1,:),contourPlot_numX2Vals,contourPlot_numX1Vals);
 f2Mesh = reshape(matF(2,:),contourPlot_numX2Vals,contourPlot_numX1Vals);
 omegaMesh = 0.5*( f1Mesh.^2 + f2Mesh.^2 );
+%
+d1Mesh = x1Mesh-vecX0(1);
+d2Mesh = x2Mesh-vecX0(2);
+omegaModelMesh = omega0 + (vecG0(1)*d1Mesh) + (vecG0(2)*d2Mesh) ...
+  + ((0.5*matH0(1,1))*(d1Mesh.^2)) + ((0.5*matH0(2,2))*(d2Mesh.^2)) + ((0.5*(matH0(1,2)+matH0(2,1)))*(d1Mesh.*d2Mesh));
 %
 msg( __FILE__, __LINE__, sprintf( "F1 scale: %g to %g.", min(min((f1Mesh))), max(max((f1Mesh))) ) );
 msg( __FILE__, __LINE__, sprintf( "F2 scale: %g to %g.", min(min((f2Mesh))), max(max((f2Mesh))) ) );
