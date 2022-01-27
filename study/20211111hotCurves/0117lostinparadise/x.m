@@ -7,7 +7,6 @@ xinit;
 funchOmega = @(dummyX)( testfunc2021_funcOmega(dummyX,testFuncPrm) );
 funchF = @(x)( testfunc2021_funcF(x,testFuncPrm) );
 [ omega0, vecG0, matH0 ] = testfunc2021_funcOmega( vecX0, testFuncPrm );
-matS_shared = [ 1.0, 0.0; 0.0, 3.0 ];
 %
 %
 %
@@ -54,38 +53,8 @@ end
 if (1)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcGradCurve Scaled';
-	thisCurvePrm = [];
-	thisCurvePrm.matS = matS_shared;
-	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
-	curveDat(numCurves).matX = calcGradCurve( vecX0, funchOmega, thisCurvePrm );
-	thisCurveElapsedTime = time()-thisCurveTime0;
-	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
-	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
-	curveDat(numCurves).strName = thisCurveName;
-	curveDat(numCurves).prm = thisCurvePrm;
-end
-%
-if (1)
-	numCurves++;
-	thisCurveTime0 = time();
 	thisCurveName = 'calcLevCurve';
 	thisCurvePrm = [];
-	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
-	curveDat(numCurves).matX = calcLevCurve( vecX0, funchOmega, thisCurvePrm );
-	thisCurveElapsedTime = time()-thisCurveTime0;
-	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
-	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
-	curveDat(numCurves).strName = thisCurveName;
-	curveDat(numCurves).prm = thisCurvePrm;
-end
-%
-if (1)
-	numCurves++;
-	thisCurveTime0 = time();
-	thisCurveName = 'calcLevCurve Scaled';
-	thisCurvePrm = [];
-	thisCurvePrm.matS = matS_shared;
 	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
 	curveDat(numCurves).matX = calcLevCurve( vecX0, funchOmega, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
@@ -112,38 +81,8 @@ end
 if (1)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcMinfordCurve Scaled';
-	thisCurvePrm = [];
-	thisCurvePrm.matS = matS_shared;
-	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
-	curveDat(numCurves).matX = calcMinfordCurve( vecX0, funchOmega, thisCurvePrm );
-	thisCurveElapsedTime = time()-thisCurveTime0;
-	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
-	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
-	curveDat(numCurves).strName = thisCurveName;
-	curveDat(numCurves).prm = thisCurvePrm;
-end
-%
-if (1)
-	numCurves++;
-	thisCurveTime0 = time();
 	thisCurveName = 'calcBasicLevCurve';
 	thisCurvePrm = [];
-	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
-	curveDat(numCurves).matX = calcBasicLevCurve( vecX0, omega0, vecG0, matH0, thisCurvePrm );
-	thisCurveElapsedTime = time()-thisCurveTime0;
-	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
-	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
-	curveDat(numCurves).strName = thisCurveName;
-	curveDat(numCurves).prm = thisCurvePrm;
-end
-%
-if (1)
-	numCurves++;
-	thisCurveTime0 = time();
-	thisCurveName = 'calcBasicLevCurve Scaled';
-	thisCurvePrm = [];
-	thisCurvePrm.matS = matS_shared;
 	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
 	curveDat(numCurves).matX = calcBasicLevCurve( vecX0, omega0, vecG0, matH0, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
@@ -160,6 +99,71 @@ if (1)
 	thisCurvePrm = [];
 	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
 	curveDat(numCurves).matX = calcBasicGradCurve( vecX0, omega0, vecG0, matH0, thisCurvePrm );
+	thisCurveElapsedTime = time()-thisCurveTime0;
+	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
+	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
+	curveDat(numCurves).strName = thisCurveName;
+	curveDat(numCurves).prm = thisCurvePrm;
+end
+%
+%
+%
+matS_shared = [ 1.0, 0.0; 0.0, 3.0 ];
+%matS_shared = randn(2,2)
+%
+if (1)
+	numCurves++;
+	thisCurveTime0 = time();
+	thisCurveName = 'calcGradCurve Scaled';
+	thisCurvePrm = [];
+	thisCurvePrm.matS = matS_shared;
+	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
+	curveDat(numCurves).matX = calcGradCurve( vecX0, funchOmega, thisCurvePrm );
+	thisCurveElapsedTime = time()-thisCurveTime0;
+	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
+	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
+	curveDat(numCurves).strName = thisCurveName;
+	curveDat(numCurves).prm = thisCurvePrm;
+end
+%
+if (1)
+	numCurves++;
+	thisCurveTime0 = time();
+	thisCurveName = 'calcLevCurve Scaled';
+	thisCurvePrm = [];
+	thisCurvePrm.matS = matS_shared;
+	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
+	curveDat(numCurves).matX = calcLevCurve( vecX0, funchOmega, thisCurvePrm );
+	thisCurveElapsedTime = time()-thisCurveTime0;
+	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
+	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
+	curveDat(numCurves).strName = thisCurveName;
+	curveDat(numCurves).prm = thisCurvePrm;
+end
+%
+if (1)
+	numCurves++;
+	thisCurveTime0 = time();
+	thisCurveName = 'calcMinfordCurve Scaled';
+	thisCurvePrm = [];
+	thisCurvePrm.matS = matS_shared;
+	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
+	curveDat(numCurves).matX = calcMinfordCurve( vecX0, funchOmega, thisCurvePrm );
+	thisCurveElapsedTime = time()-thisCurveTime0;
+	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
+	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
+	curveDat(numCurves).strName = thisCurveName;
+	curveDat(numCurves).prm = thisCurvePrm;
+end
+%
+if (1)
+	numCurves++;
+	thisCurveTime0 = time();
+	thisCurveName = 'calcBasicLevCurve Scaled';
+	thisCurvePrm = [];
+	thisCurvePrm.matS = matS_shared;
+	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
+	curveDat(numCurves).matX = calcBasicLevCurve( vecX0, omega0, vecG0, matH0, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
 	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
