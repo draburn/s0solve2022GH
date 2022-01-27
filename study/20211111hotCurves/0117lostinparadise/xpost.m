@@ -13,7 +13,7 @@ autoAx_borderCoeff = 0.1;
 
 %curveColors = 0.6*jet(numCurves);
 curveColors = 0.6*hsv(numCurves);
-curveSymbols = [ 'o', 'x', '^', 'v', '*', 's', 'p' ];
+curveSymbols = [ 'o', 'x', '^', 'v', '+', 's', 'p' ];
 
 autoAx_x1Lo = vecX0(1);
 autoAx_x1Hi = vecX0(1);
