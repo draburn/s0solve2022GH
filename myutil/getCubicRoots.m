@@ -48,19 +48,36 @@ function xVals = getCubicRoots( c0, c1, c2, c3, prm=[] )
 	end
 	%
 	% One of the roots should be to the left of xm, one between xm and xp, one to the right of xp.
-	msg( __FILE__, __LINE__, "THIS CODES IS A FAIR ATTEMPT, BUT OFTEN FAILS;" );
-	msg( __FILE__, __LINE__, "TODO: RIGIROUSLY RE-IMPLEMENT UN-BOUND CASES." );
-	x1 = xm-(eps^0.50)*(xp-xm)
-	xr = [ xm, xp ]
-	x3 = xp+(eps^0.50)*(xp-xm)
-	xVals(1) = fzero( funchF, x1 );
-	xVals(2) = fzero( funchF, [ xm, xp ] );
-	xVals(3) = fzero( funchF, x3 )
-	%
-	if ( xVals(1) >= xm || xm >= xVals(2) || xVals(2) >= xp || xp >= xVals(3) )
-		msg( __FILE__, __LINE__, "Calculation failed, but a more rigirous version might work." );
-		error( "Calculation failed, but a more rigirous version might work." );
+	dx = xp-xm;
+	iterMax = mygetfield( prm, "iterMax", 30 );
+	iterNum = 1;
+	while (1)
+		xlo = xm-((2.0^iterNum)*dx);
+		flo = funchF(xlo);
+		if ( flo*fm < 0.0 )
+			break;
+		end
+		iterNum++;
+		if ( iterNum > iterMax )
+			msg( __FILE__, __LINE__, "Could not find bounding point." );
+			error( "Could not find bounding point." );
+		end
 	end
+	while (1)
+		xhi = xp+((2.0^iterNum)*dx);
+		fhi = funchF(xhi);
+		if ( fhi*fp < 0.0 )
+			break;
+		end
+		iterNum++;
+		if ( iterNum > iterMax )
+			msg( __FILE__, __LINE__, "Could not find bounding point." );
+			error( "Could not find bounding point." );
+		end
+	end
+	xVals(1) = fzero( funchF, [ xlo, xm ] );
+	xVals(2) = fzero( funchF, [ xm, xp ] );
+	xVals(3) = fzero( funchF, [ xp, xhi ] );
 return
 end
 
