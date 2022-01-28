@@ -27,24 +27,12 @@ function xVals = getCubicRoots( c0, c1, c2, c3, prm=[] )
 	fm = funchF(xm);
 	fp = funchF(xp);
 	%
-	if ( 0.0 < fm*fp )
-		% Only one real root.
-		if ( 0.0 < fm*c3 )
-			x0 = mygetfield( prm, "x0", xm-(xp-xm) )
-		else
-			x0 = mygetfield( prm, "x0", xp+(xp-xm) )
-		end
+	if ( 0.0 <= fm*fp )
+		% Only one real root, or, maginally two roots;
+		%  but we can fairly handle this as one root.
+		x0 = mygetfield( prm, "x0", mypow(-c0/c3,1.0/3.0) );
 		xVals = fzero( funchF, x0 );
 		return;
-	end
-	%
-	% Consdier "marginal" cases, which have two roots.
-	if ( 0.0 == fm )
-		msg( __FILE__, __LINE__, "NOT IMPLEMENTED!" );
-		error( "NOT IMPLEMENTED!" );
-	elseif ( 0.0 == fp )
-		msg( __FILE__, __LINE__, "NOT IMPLEMENTED!" );
-		error( "NOT IMPLEMENTED!" );
 	end
 	%
 	% One of the roots should be to the left of xm, one between xm and xp, one to the right of xp.
