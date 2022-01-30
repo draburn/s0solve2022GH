@@ -457,4 +457,46 @@ grid on;
 end
 %
 %
+%
+if (1)
+numFigs++; figure(numFigs);
+funchVizLog = @(x)(log( eps025*max(max(x)) + x - min(min(x)) ));
+contourf( x1Mesh, x2Mesh, funchVizLog(omegaFOCQMesh), contourPlot_numLevels );
+colormap( mycmap(contourPlot_numColors) );
+xlabel( "x1" );
+ylabel( "x2" );
+title( "log(omegaFOCQ-omegaFOCQMin) vs x1, x2" );
+if ( contourPlot_axEq )
+	axis equal;
+end
+hold on;
+for n=1:numCurves
+	plot( ...
+	  curveDat(n).matX(1,:), curveDat(n).matX(2,:), ...
+	  [ curveDat(n).plot_markerStyle, curveDat(n).plot_lineStyle], ...
+	  'linewidth', curveDat(n).plot_lineWidth, ...
+	  'color', curveDat(n).plot_color, ...
+	  'markersize', curveDat(n).plot_markerSize );
+	plot( ...
+	  curveDat(n).matX(1,[1,end]), curveDat(n).matX(2,[1,end]), ...
+	  curveDat(n).plot_markerStyle, ...
+	  'linewidth', curveDat(n).plot_bigLineWidth, ...
+	  'color', curveDat(n).plot_color, ...
+	  'markersize', curveDat(n).plot_bigMarkerSize );
+end
+if ( doVsTheta )
+	plot( vt_matX(1,:), vt_matX(2,:), 'r-', 'linewidth', 3, 'markersize', 10 );
+	plot( vt_vecXF_off(1), vt_vecXF_off(2), 'k+', 'linewidth', 3, 'markersize', 20 );
+	plot( vt_vecXF_off(1), vt_vecXF_off(2), 'ko', 'linewidth', 3, 'markersize', 20 );
+	plot( vt_vecXF_on(1),  vt_vecXF_on(2),  'kx', 'linewidth', 3, 'markersize', 20 );
+	plot( vt_vecXF_on(1),  vt_vecXF_on(2),  'ks', 'linewidth', 3, 'markersize', 20 );
+	plot( [ vt_vecXC(1),    vt_vecXF_off(1) ], [ vt_vecXC(2),    vt_vecXF_off(2) ], 'r-' );
+	plot( [ vt_vecXC(1),    vt_vecXF_on(1)  ], [ vt_vecXC(2),    vt_vecXF_on(2)  ], 'r-' );
+	plot( [ vt_vecXF_on(1), vt_vecXF_off(1) ], [ vt_vecXF_on(2), vt_vecXF_off(2) ], 'r-' );
+end
+hold off;
+grid on;
+end
+%
+%
 msg( __FILE__, __LINE__, sprintf( "Drawing graphs took %0.3fs.", time()-vizTime0 ) );

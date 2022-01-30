@@ -167,8 +167,37 @@ end
 if (1)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcFOCQLevCurve';
+	thisCurveName = 'calcFOCQLevCurve L';
 	thisCurvePrm = [];
+	thisCurvePrm.curveSelector = -1;
+	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
+	curveDat(numCurves).matX = calcFOCQLevCurve( vecX0, vecF0, matJ0, vecPhiHat, vecEta, thisCurvePrm );
+	thisCurveElapsedTime = time()-thisCurveTime0;
+	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
+	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
+	curveDat(numCurves).strName = thisCurveName;
+	curveDat(numCurves).prm = thisCurvePrm;
+end
+if (1)
+	numCurves++;
+	thisCurveTime0 = time();
+	thisCurveName = 'calcFOCQLevCurve C';
+	thisCurvePrm = [];
+	thisCurvePrm.curveSelector = 0;
+	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
+	curveDat(numCurves).matX = calcFOCQLevCurve( vecX0, vecF0, matJ0, vecPhiHat, vecEta, thisCurvePrm );
+	thisCurveElapsedTime = time()-thisCurveTime0;
+	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
+	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
+	curveDat(numCurves).strName = thisCurveName;
+	curveDat(numCurves).prm = thisCurvePrm;
+end
+if (1)
+	numCurves++;
+	thisCurveTime0 = time();
+	thisCurveName = 'calcFOCQLevCurve R';
+	thisCurvePrm = [];
+	thisCurvePrm.curveSelector = 1;
 	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
 	curveDat(numCurves).matX = calcFOCQLevCurve( vecX0, vecF0, matJ0, vecPhiHat, vecEta, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;

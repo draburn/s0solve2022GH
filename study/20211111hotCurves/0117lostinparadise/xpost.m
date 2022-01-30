@@ -82,6 +82,15 @@ d2Mesh = x2Mesh-vecX0(2);
 omegaModelMesh = omega0 + (vecG0(1)*d1Mesh) + (vecG0(2)*d2Mesh) ...
   + ((0.5*matH0(1,1))*(d1Mesh.^2)) + ((0.5*matH0(2,2))*(d2Mesh.^2)) + ((0.5*(matH0(1,2)+matH0(2,1)))*(d1Mesh.*d2Mesh));
 %
+maxI1 = contourPlot_numX2Vals;
+maxI2 = contourPlot_numX1Vals;
+omegaFOCQMesh = zeros(maxI1,maxI2);
+for i1=1:maxI1
+for i2=1:maxI2
+	omegaFOCQMesh(i1,i2) = 0.5*sumsq(funchF_OCQ([x1Mesh(i1,i2);x2Mesh(i1,i2)]));
+end
+end
+%
 %
 msg( __FILE__, __LINE__, sprintf( "F1 scale: %g to %g.", min(min((f1Mesh))), max(max((f1Mesh))) ) );
 msg( __FILE__, __LINE__, sprintf( "F2 scale: %g to %g.", min(min((f2Mesh))), max(max((f2Mesh))) ) );
