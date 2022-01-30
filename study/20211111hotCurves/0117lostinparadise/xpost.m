@@ -82,6 +82,7 @@ d2Mesh = x2Mesh-vecX0(2);
 omegaModelMesh = omega0 + (vecG0(1)*d1Mesh) + (vecG0(2)*d2Mesh) ...
   + ((0.5*matH0(1,1))*(d1Mesh.^2)) + ((0.5*matH0(2,2))*(d2Mesh.^2)) + ((0.5*(matH0(1,2)+matH0(2,1)))*(d1Mesh.*d2Mesh));
 %
+%
 msg( __FILE__, __LINE__, sprintf( "F1 scale: %g to %g.", min(min((f1Mesh))), max(max((f1Mesh))) ) );
 msg( __FILE__, __LINE__, sprintf( "F2 scale: %g to %g.", min(min((f2Mesh))), max(max((f2Mesh))) ) );
 msg( __FILE__, __LINE__, sprintf( "omega scale: %g to %g.", min(min((omegaMesh))), max(max((omegaMesh))) ) );
