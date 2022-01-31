@@ -55,7 +55,7 @@ end
 numCurves = 0;
 %
 %
-if (1)
+if (0)
 	% FOR FOCUSED DEV, not curve viz.
 	numCurves++;
 	thisCurveTime0 = time();

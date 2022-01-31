@@ -22,7 +22,7 @@ autoAx_x1Hi = vecX0(1);
 autoAx_x2Lo = vecX0(2);
 autoAx_x2Hi = vecX0(2);
 
-trimPts = true
+trimPts = false
 
 for n=1:numCurves
 	matX = curveDat(n).matX;

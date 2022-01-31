@@ -250,7 +250,7 @@ case 920
 		%setprngstates(8635232); % The forkpitch.
 		%setprngstates(70144272); % A pitchfork.
 		%setprngstates(15273696); % The FOCQ?
-		setprngstates(34661776); % Indp closed curve.
+		setprngstates(34661776); % Indp closed curve!!!
 		temp_calpha = 100.0;
 		temp_cbeta = 0.01;
 	end
@@ -269,6 +269,18 @@ case 920
 	temp_vecEta = randn(sizeF,1);
 	for n=1:sizeF
 		testFuncPrm.ary3K(n,:,:) = randn(sizeX,sizeX);
+	end
+	applyExplicitSym = true
+	if (applyExplicitSym)
+	for k=1:sizeF
+	for m=1:sizeX
+	for n=1:m-1
+		testFuncPrm.ary3K(k,m,n) += testFuncPrm.ary3K(k,n,m);
+		testFuncPrm.ary3K(k,m,n) /= 2.0;
+		testFuncPrm.ary3K(k,n,m) = testFuncPrm.ary3K(k,m,n);
+	end
+	end
+	end
 	end
 	%%%
 	temp_vecFoo1 = temp_matJ'*temp_matJ*temp_vecPhiHat
