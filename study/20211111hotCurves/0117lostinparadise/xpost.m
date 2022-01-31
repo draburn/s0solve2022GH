@@ -4,6 +4,7 @@ postTime0 = time();
 %ax = 2*[-1,1,-1,1];
 %ax = [ 2.41, 2.42, -2.746, -2.734 ];
 %ax = [ 2.413, 2.415, -2.739, -2.733 ];
+%ax = [1.82,1.85,-2.62,-2.59]
 contourPlot_numX1Vals = 51;
 contourPlot_numX2Vals = 61;
 contourPlot_numLevels = 30;
@@ -13,7 +14,8 @@ autoAx_borderCoeff = 0.1;
 
 %curveColors = 0.6*jet(numCurves);
 curveColors = 0.6*hsv(numCurves);
-curveSymbols = [ 'o', 'x', '^', 'v', '+', 's', 'p' ];
+%curveSymbols = [ 'o', 'x', '^', 'v', '+', 's', 'p' ];
+curveSymbols = [ 'o', '+', '^', 'v', 's', 'p' ];
 
 autoAx_x1Lo = vecX0(1);
 autoAx_x1Hi = vecX0(1);
@@ -34,6 +36,9 @@ for n=1:numCurves
 	curveDat(n).vecOmega = 0.5*sum( matF.^2, 1 );
 	curveDat(n).vecOmegaModel = omega0 + vecG0'*curveDat(n).matBigDelta + ...
 	  0.5 * sum( curveDat(n).matBigDelta .* (matH0*curveDat(n).matBigDelta), 1 );
+	for m=1:numPts
+		curveDat(n).vecOmegaOCQ(m) = funchOmega_OCQ(curveDat(n).matBigDelta(:,m)+vecX0);
+	end
 	curveDat(n).vecDist = sqrt(sum( curveDat(n).matBigDelta.^2, 1 ));
 	%
 	curveDat(n).matBigDelta_fromEnd = matX - repmat( matX(:,end), 1, numPts );

@@ -6,7 +6,11 @@ startTime = time();
 xinit;
 %vecX0 = [ 4.0; -1.4 ]
 %vecX0 = [ 4.0; -1.41 ]
-vecX0 = [ 2.5; -2.0 ]
+%vecX0 = [ 2.5; -2.0 ]
+%vecX0 = [ 1.834; -2.606 ]
+%vecX0 = [ 2.0; -2.0 ]
+vecX0 = [ 2.0; -1.0 ]
+vecX0 = [ 2.2; -1.4 ]
 funchOmega = @(dummyX)( testfunc2021_funcOmega(dummyX,testFuncPrm) );
 funchF = @(x)( testfunc2021_funcF(x,testFuncPrm) );
 [ omega0, vecG0, matH0 ] = testfunc2021_funcOmega( vecX0, testFuncPrm );
@@ -109,7 +113,7 @@ if (0)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (0)
+if (1)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcMinfordCurve';
@@ -125,7 +129,7 @@ end
 %
 %
 %
-if (0)
+if (1)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcGradCurve OCQ';
@@ -139,7 +143,7 @@ if (0)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (0)
+if (1)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcLevCurve OCQ';
@@ -153,7 +157,7 @@ if (0)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (0)
+if (1)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcMinfordCurve OCQ';
@@ -181,7 +185,7 @@ if (1)
 	curveDat(numCurves).strName = thisCurveName;
 	curveDat(numCurves).prm = thisCurvePrm;
 end
-if (1)
+if (0)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcFOCQLevCurve C';
@@ -195,7 +199,7 @@ if (1)
 	curveDat(numCurves).strName = thisCurveName;
 	curveDat(numCurves).prm = thisCurvePrm;
 end
-if (1)
+if (0)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcFOCQLevCurve R';
@@ -210,7 +214,7 @@ if (1)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (0)
+if (1)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcBasicLevCurve';

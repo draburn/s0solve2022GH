@@ -1,4 +1,34 @@
 function xVals = calcCubicRoots( c0, c1, c2, c3, prm=[] )
+	%
+	if ( 0.0 == c3 )
+	if ( 0.0 == c2 )
+		if ( 0.0 == c1 )
+			xVals = [];
+			return;
+		else
+			xVals = -c0/c1;
+			return;
+		end
+	else
+		d = (c1^2) - (4.0*c0*c2);
+		if ( d < 0.0 )
+			xVals = [];
+			return;
+		elseif ( 0.0 == d )
+			xVals = -c1/(2.0*c2);
+			return;
+		end
+		xm = (-c1-sqrt(d))/(2.0*c2);
+		xp = (-c1+sqrt(d))/(2.0*c2);
+		if ( c2 > 0.0 )
+			xVals = [ xm, xp ];
+			return;
+		else
+			xVals = [ xp, xm ];
+			return;
+		end
+	end
+	end
 	assert( c3 != 0.0 );
 	%
 	function f = funcF( dummyX, c0, c1, c2, c3 )
@@ -76,6 +106,7 @@ end
 %  the extreme points.
 
 %!test
+%!	msg( __FILE__, __LINE__, "SKIPPING TEST." ); return;
 %!	%setprngstates(72583808);
 %!	%setprngstates(55260128);
 %!	%setprngstates(73702768);
@@ -145,8 +176,72 @@ end
 %!		assert( abs(f) < epsF );
 %!	end
 
+%!test
+%!	%setprngstates(56219856);
+%!	setprngstates()
+%!	numFigs = 0;
+%!	%
+%!	a = randn();
+%!	b = randn();
+%!	c = randn();
+%!	d = 0.0;
+%!	funchF = @(x) a + (x.*( b + (x.*( c + (x*d) )) ));
+%!	%
+%!	xVals = calcCubicRoots( a, b, c, d );
+%!	numVals = size(xVals,2);
+%!	assert( 2 >= numVals );
+%!	if ( 1 <= numVals )
+%!		assert( isrealarray(xVals,[1,numVals]) );
+%!		fVals = funchF(xVals);
+%!		xLo = min(xVals) - 1.0 - 1.5*(max(xVals)-min(xVals));
+%!		xHi = max(xVals) + 1.0 + 1.5*(max(xVals)-min(xVals));
+%!	else
+%!		xLo = -5.0;
+%!		xHi = 5.0;
+%!	end
+%!	numPts = 1001;
+%!	xPts = linspace( xLo, xHi, numPts );
+%!	fPts = funchF(xPts);
+%!	%
+%!	numFigs++; figure(numFigs);
+%!	plot( xPts, fPts, 'o-' );
+%!	hold on;
+%!	switch(numVals)
+%!	case 0
+%!		% Nothing to do.
+%!	case 1
+%!		plot( ...
+%!		  xVals, fVals, 'rs', 'markersize', 20, 'linewidth', 3, ...
+%!		  xVals, fVals, 'rx', 'markersize', 20, 'linewidth', 3 );
+%!	case 2
+%!		plot( ...
+%!		  xVals(1), fVals(1), 'gs', 'markersize', 20, 'linewidth', 3, ...
+%!		  xVals(1), fVals(1), 'gx', 'markersize', 20, 'linewidth', 3, ...
+%!		  xVals(2), fVals(2), 'gs', 'markersize', 20, 'linewidth', 3, ...
+%!		  xVals(2), fVals(2), 'gx', 'markersize', 20, 'linewidth', 3 );
+%!	otherwise
+%!		error( "Invalid numVals." );
+%!	end
+%!	hold off;
+%!	grid on;
+%!	%
+%!	if ( 2 == numVals )
+%!		assert( xVals(1) <= xVals(2) );
+%!		if ( 3 == numVals )
+%!			assert( xVals(2) <= xVals(3) );
+%!		end
+%!	end
+%!	%
+%!	for n=1:numVals
+%!		x = xVals(n);
+%!		f = a + (x.*( b + (x.*( c + (x*d) )) ));
+%!		epsF = (eps^0.50)*( abs(a) + abs(b*x) + abs(c*(x^2)) + abs(d*(x^3)) );
+%!		assert( abs(f) < epsF );
+%!	end
+
 
 %!test
+%!	msg( __FILE__, __LINE__, "SKIPPING TEST." ); return;
 %!	setprngstates();
 %!	%setprngstates(15451568); % Middle root nearly overlaps left.
 %!	numFigs = 0;
