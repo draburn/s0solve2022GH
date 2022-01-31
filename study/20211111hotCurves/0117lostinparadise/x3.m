@@ -4,13 +4,6 @@ numFigs = 0;
 startTime = time();
 %
 xinit;
-%vecX0 = [ 4.0; -1.4 ]
-%vecX0 = [ 4.0; -1.41 ]
-%vecX0 = [ 2.5; -2.0 ]
-%vecX0 = [ 1.834; -2.606 ]
-%vecX0 = [ 2.0; -2.0 ]
-vecX0 = [ 2.0; -1.0 ]
-vecX0 = [ 2.2; -1.4 ]
 funchOmega = @(dummyX)( testfunc2021_funcOmega(dummyX,testFuncPrm) );
 funchF = @(x)( testfunc2021_funcF(x,testFuncPrm) );
 [ omega0, vecG0, matH0 ] = testfunc2021_funcOmega( vecX0, testFuncPrm );

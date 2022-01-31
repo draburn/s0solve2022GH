@@ -2,7 +2,6 @@ ax = [];
 sizeX = 2;
 sizeF = 2;
 caseNum = 102;
-%caseNum = 20;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case 0
@@ -39,6 +38,18 @@ case 2
 	%vecX0 = [ 5.0; 0.0 ];
 	vecX0 = [ 2.2; -1.3 ];
 	%vecX0 = [ 0.02; -0.0002 ];
+	subCaseNum = 20
+	switch (subCaseNum)
+	case 0
+		% Do nothing.
+	case 10
+		vecX0 = [ -0.5; 0.2 ]
+	case 20
+		vecX0 = [ -0.08; 0.02 ]
+		ax = [ -0.1, 0.1, -0.01, 0.03 ]
+	otherwise
+		error( "Ivalid subCaseNum." );
+	end
 case 3
 	% Narrow valley.
 	testFuncPrm.sizeX = 2;
@@ -115,6 +126,21 @@ case 102
 	vecX0 = [ 3.0; 3.0 ];
 	%ax = [ 2.413, 2.415, -2.74, -2.73 ];
 	%ax = [ 2.411, 2.416, -2.75, -2.71 ];
+	subCaseNum = 20
+	switch (subCaseNum)
+	case 0
+		% Do nothing.
+	case 10
+		% OCQ is worse than cnst H.
+		vecX0 = [ 2.2; -1.4 ]
+	case 20
+		% OCQ is better than cnst H.
+		vecX0 = [ 2.4; -1.5 ]
+	case 30
+		vecX0 = [ 2.4; -2.6 ]
+	otherwise
+		error( "Ivalid subCaseNum." );
+	end
 case 103
 	% Sharp narrow valley.
 	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,61409680,true,false,false);
