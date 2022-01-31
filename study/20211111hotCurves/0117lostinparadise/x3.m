@@ -78,7 +78,7 @@ end
 %
 %
 %
-if (1)
+if (0)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcGradCurve';
@@ -92,7 +92,7 @@ if (1)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (1)
+if (0)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcLevCurve';
@@ -106,7 +106,7 @@ if (1)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (1)
+if (0)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcMinfordCurve';
@@ -122,7 +122,7 @@ end
 %
 %
 %
-if (1)
+if (0)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcGradCurve OCQ';
@@ -136,7 +136,7 @@ if (1)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (1)
+if (0)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcLevCurve OCQ';
@@ -150,7 +150,7 @@ if (1)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (1)
+if (0)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcMinfordCurve OCQ';
@@ -207,7 +207,7 @@ if (1)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (1)
+if (0)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcBasicLevCurve';
@@ -221,7 +221,7 @@ if (1)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (1)
+if (0)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcBasicGradCurve';

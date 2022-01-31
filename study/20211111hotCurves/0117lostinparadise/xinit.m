@@ -1,7 +1,7 @@
 ax = [];
 sizeX = 2;
 sizeF = 2;
-caseNum = -1;
+caseNum = 901;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case -1
@@ -168,6 +168,65 @@ case 530
 	% Cnst J great; OCQ okay.
 	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,44135872);
 	vecX0 = randn(2,1);
+case 901
+	% Try to make OCQ "1 -> 3 -> 1".
+	sizeX = 2;
+	sizeF = 2;
+	assert( sizeX == sizeF );
+	if (0)
+		temp_calpha = 100.0; %Maybe?
+		temp_cbeta = 0.01; %Maybe?
+		% These results were using testFuncPrm.matJ = randn(sizeF,sizeX) indp of "temp_matJ"!
+		%setprngstates(43661504); % Suggestive.
+		%setprngstates(56075664); % From x-pt ish.
+		%setprngstates(2017104); % All along same line.
+		%
+		% Full F still doesn't equal OCQ F, but, meh.
+		%setprngstates(60599952);
+	elseif (1)
+		%setprngstates(61937600); % A case with a sepx.
+		%setprngstates(57200560); % sepx
+		setprngstates(80098080); % Yeah, okay.
+		temp_calpha = 10000.0;
+		temp_cbeta = 0.01;
+	else
+		%setprngstates(3672896); % sepx
+		setprngstates(21322288); % sepx in correct place.
+		temp_calpha = 3.0;
+		temp_cbeta = 0.3;
+	end
+	%
+	testFuncPrm.sizeX = sizeX;
+	testFuncPrm.sizeF = sizeF;
+	temp_matJ = randn(sizeF,sizeX);
+	testFuncPrm.matJ = temp_matJ;
+	%
+	temp_matH = temp_matJ' * temp_matJ
+	[ temp_matEigVec, temp_matEigVal ] = eig(temp_matH)
+	[ temp_vecEigValOfAbsMin, temp_nOfAbsMin ] = min(abs(diag(temp_matEigVal)))
+	temp_vecPhiHat = temp_matEigVec(:,temp_nOfAbsMin)
+	temp_vecEta = randn(sizeF,1);
+	for n=1:sizeF
+		testFuncPrm.ary3K(n,:,:) = temp_vecEta(n) * ( temp_vecPhiHat * (temp_vecPhiHat') );
+	end
+	%
+	temp_matPsi = orth( eye(sizeX,sizeX) - (temp_vecPhiHat*(temp_vecPhiHat')), sqrt(eps) )
+	assert( isrealarray(temp_matPsi,[sizeX,sizeX-1]) );
+	temp_matW = temp_matJ * temp_matPsi
+	temp_matU = orth( temp_matW )
+	assert( isrealarray(temp_matU(sizeF,sizeX-1)) );
+	temp_vecVHat = orth( eye(sizeX,sizeX) - (temp_matU*(temp_matU')), sqrt(eps) )
+	assert( isrealarray(temp_vecVHat(sizeF,1)) );
+	temp_matU'*temp_vecVHat
+	assert( sum(sum(sum(sumsq(temp_matU'*temp_vecVHat)))) < sqrt(eps) );
+	%
+	temp_vecLambda = testFuncPrm.matJ * temp_vecPhiHat;
+	temp_vecF0 = temp_calpha * ( temp_matU * (temp_matU'*temp_vecLambda) ) ...
+	  - temp_cbeta * ( temp_vecVHat * (temp_vecVHat'*temp_vecLambda) );
+	%
+	vecX0 = randn(sizeX,1);
+	testFuncPrm.vecXE = vecX0;
+	testFuncPrm.vecFE = temp_vecF0;
 otherwise
 	error( "Invalid value of switch." );
 end
