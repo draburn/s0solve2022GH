@@ -22,6 +22,8 @@ autoAx_x1Hi = vecX0(1);
 autoAx_x2Lo = vecX0(2);
 autoAx_x2Hi = vecX0(2);
 
+trimPts = true
+
 for n=1:numCurves
 	matX = curveDat(n).matX;
 	%
@@ -29,6 +31,18 @@ for n=1:numCurves
 	matF = funchF(matX);
 	%
 	numPts = size(matX,2);
+	if (trimPts)
+		vecOmega = 0.5*sum(matF.^2,1);
+		keepPts = (vecOmega<vecOmega(1)+sqrt(eps)*max(abs(vecOmega)));
+		if (sum(double(keepPts))~=numPts)
+			msg( __FILE__, __LINE__, sprintf( "*** Curve %d (\"%s\") had %d points before trim. ***", n, curveDat(n).strName, numPts ) );
+			curveDat(n).matX = curveDat(n).matX(:,keepPts);
+			matX = curveDat(n).matX;
+			matF = funchF(matX);
+			numPts = size(matX,2);
+		end
+	end
+	%
 	msg( __FILE__, __LINE__, sprintf( "Curve %d (\"%s\") has %d points.", n, curveDat(n).strName, numPts ) );
 	curveDat(n).numPts = numPts;
 	curveDat(n).matBigDelta = matX - repmat( vecX0, 1, numPts );

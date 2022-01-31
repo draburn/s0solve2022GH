@@ -1,9 +1,12 @@
 ax = [];
 sizeX = 2;
 sizeF = 2;
-caseNum = 102;
+caseNum = -1;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
+case -1
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,[]);
+	vecX0 = randn(2,1);
 case 0
 	% Easy linear case.
 	testFuncPrm.sizeX = 2;
@@ -149,6 +152,22 @@ case 104
 	% Crescent
 	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,80724832,true,false,false);
 	vecX0 = [ 3.0; 3.0 ];
+case 500
+	% OCQ jump-O "happens" to be good.
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,89071616);
+	vecX0 = [ 1.0; 1.6 ];
+case 510
+	% Cnst J is better than OCQ.
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,98839248);
+	vecX0 = randn(2,1);
+case 520
+	% Dramatically bad swerve.
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,46328864);
+	vecX0 = randn(2,1);
+case 530
+	% Cnst J great; OCQ okay.
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,44135872);
+	vecX0 = randn(2,1);
 otherwise
 	error( "Invalid value of switch." );
 end
