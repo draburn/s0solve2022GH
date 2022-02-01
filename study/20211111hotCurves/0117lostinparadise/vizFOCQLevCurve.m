@@ -59,7 +59,7 @@ function [ vecXVals, datOut ] = vizFOCQLevCurve( vecX0, vecF0, matJ0, vecPhiHat,
 	%echo__vecEta = vecEta
 	%
 	%
-	numVals = 501;
+	numVals = 1001;
 	vecXVals = zeros(sizeX,numVals);
 	vecXVals(:,1) = vecX0;
 	for n=2:numVals

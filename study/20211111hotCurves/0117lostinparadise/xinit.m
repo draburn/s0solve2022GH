@@ -314,9 +314,11 @@ case 930
 	% DRaburn 2022.01.31:
 	%  better prepared here.
 	% Let's try vecLambda = 0...
-	setprngstates(0); % Non-jump split.
-	%setprngstates(66607104); % Causes an error.
-	%setprngstates();
+	%setprngstates(0); % Non-jump split.
+	%setprngstates(66607104); % Causes an error. RESOLVED
+	%setprngstates(13741184); % ERROR. RESOLVED
+	%setprngstates(89520416); % Produces a fork 2321.
+	setprngstates(73034896);
 	%
 	sizeX = 2;
 	sizeF = sizeX;
@@ -329,19 +331,20 @@ case 930
 	temp_matPhiPhiT = temp_vecPhiHat*(temp_vecPhiHat');
 	temp_matJ = temp_matJ*( temp_matIX - temp_matPhiPhiT )
 	%
-	temp_matPsi = orth( temp_matIX - temp_matPhiPhiT )
+	temp_matPsi = orth( temp_matIX - temp_matPhiPhiT, sqrt(eps) )
 	sizePsi = size(temp_matPsi,2);
 	assert( isrealarray(temp_matPsi,[sizeX,sizePsi]) );
 	assert( reldiff(temp_matPsi'*temp_matPsi,eye(sizePsi,sizePsi)) < sqrt(eps) );
 	temp_matW = temp_matJ * temp_matPsi;
-	temp_matQ = orth( temp_matW )
+	temp_matQ = orth( temp_matW, sqrt(eps) )
 	assert( isrealarray(temp_matQ,[sizeF,sizePsi]) );
 	assert( reldiff(temp_matQ'*temp_matQ,eye(sizePsi,sizePsi)) < sqrt(eps) );
 	%temp_matR = temp_matRQ'*temp_matW
 	%
-	temp_vecVHat = orth( temp_matIX - temp_matPsi*(temp_matPsi') )
+	temp_vecVHat = orth( temp_matIX - temp_matQ*(temp_matQ'), sqrt(eps) )
 	assert( isrealarray(temp_vecVHat,[sizeX,1]) );
-	%
+	assert( fleq(temp_vecVHat'*temp_vecVHat,1.0) );
+	assert( sum(sumsq(temp_vecVHat'*temp_matQ)) < sqrt(eps) );
 	if (1)
 		temp_alpha = 0.1;
 		temp_vecBeta = 10.0*(1.0+abs(randn(sizePsi,1)));
@@ -349,8 +352,15 @@ case 930
 		temp_alpha = 10.0;
 		temp_vecBeta = 0.1*1.0./(1.0+abs(randn(sizePsi,1)));
 	end
-	temp_vecF0 = temp_vecVHat*temp_alpha + temp_matPsi*temp_vecBeta;
-	temp_vecEta = temp_vecVHat*temp_alpha - temp_matPsi*temp_vecBeta;
+	%
+	beWrong = false;
+	if (beWrong)
+		temp_vecF0 = temp_vecVHat*temp_alpha + temp_matPsi*temp_vecBeta;
+		temp_vecEta = temp_vecVHat*temp_alpha - temp_matPsi*temp_vecBeta;
+	else
+		temp_vecF0 = temp_vecVHat*temp_alpha + temp_matQ*temp_vecBeta;
+		temp_vecEta = temp_vecVHat*temp_alpha - temp_matQ*temp_vecBeta;
+	end
 	%
 	testFuncPrm.sizeX = sizeX;
 	testFuncPrm.sizeF = sizeF;
