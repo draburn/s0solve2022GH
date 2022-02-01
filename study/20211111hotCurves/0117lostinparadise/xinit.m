@@ -346,6 +346,9 @@ case 930
 	assert( fleq(temp_vecVHat'*temp_vecVHat,1.0) );
 	assert( sum(sumsq(temp_vecVHat'*temp_matQ)) < sqrt(eps) );
 	if (1)
+		temp_alpha = -1.0;
+		temp_vecBeta = 5.0;
+	elseif (1)
 		temp_alpha = 0.1;
 		temp_vecBeta = 10.0*(1.0+abs(randn(sizePsi,1)));
 	else
@@ -366,6 +369,36 @@ case 930
 	testFuncPrm.sizeF = sizeF;
 	%
 	vecX0 = randn(sizeX,1);
+	testFuncPrm.vecXE = vecX0;
+	testFuncPrm.vecFE = temp_vecF0;
+	testFuncPrm.matJ = temp_matJ;
+	for n=1:sizeF
+		testFuncPrm.ary3K(n,:,:) = temp_vecEta(n) * ( temp_vecPhiHat * (temp_vecPhiHat') );
+	end
+	%
+	temp_vecF0'*temp_vecVHat*temp_vecVHat'*temp_vecEta
+	temp_vecF0'*temp_matQ*temp_matQ'*temp_vecEta
+case 940
+	% THIS DOES NOT WORK;
+	% matW'*vecEta = 0, ja?
+	sizeX = 2;
+	sizeF = 2;
+	vecX0 = [ 0.0; 0.0 ];
+	temp_matJ = [ 1.0, 0.0; 0.0, 0.0 ];
+	%
+	temp_vecPhiHat = [ 0.0; 1.0 ];
+	temp_matPsi = [ 1.0; 0.0 ];
+	temp_matQ = [ 1.0; 0.0 ];
+	temp_vecVHat = [ 0.0; 1.0 ];
+	%
+	temp_alpha = 0.1;
+	temp_beta = 100.0;
+	temp_vecBeta = temp_matQ*temp_beta;
+	temp_vecF0 = [ temp_beta; temp_alpha ];
+	temp_vecEta = [ -temp_beta; temp_alpha ];
+	%
+	testFuncPrm.sizeX = sizeX;
+	testFuncPrm.sizeF = sizeF;
 	testFuncPrm.vecXE = vecX0;
 	testFuncPrm.vecFE = temp_vecF0;
 	testFuncPrm.matJ = temp_matJ;

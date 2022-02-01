@@ -59,7 +59,7 @@ function [ vecXVals, datOut ] = vizFOCQLevCurve( vecX0, vecF0, matJ0, vecPhiHat,
 	%echo__vecEta = vecEta
 	%
 	%
-	numVals = 1001;
+	numVals = 101;
 	vecXVals = zeros(sizeX,numVals);
 	vecXVals(:,1) = vecX0;
 	for n=2:numVals
@@ -68,7 +68,7 @@ function [ vecXVals, datOut ] = vizFOCQLevCurve( vecX0, vecF0, matJ0, vecPhiHat,
 		matA = matIX - (p*(matW*(matM\(matW'))));
 		%
 		c0 = p * ( vecF0' * matA * vecLambda );
-		c1 = (1.0-p)*szsq + p*( vecLambda' * matA * vecLambda ) + 2.0*p*( vecF0' * matA * vecEta );
+		c1 = (1.0-p)*szsq + p*( vecLambda' * matA * vecLambda ) + 2.0*p*( vecF0' * matA * vecEta )
 		c2 = 3.0*p*( vecLambda' * matA * vecEta );
 		c3 = 2.0*p*( vecEta' * matA * vecEta );
 		%
