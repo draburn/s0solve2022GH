@@ -314,7 +314,9 @@ case 930
 	% DRaburn 2022.01.31:
 	%  better prepared here.
 	% Let's try vecLambda = 0...
-	setprngstates(0);
+	setprngstates(0); % Non-jump split.
+	%setprngstates(66607104); % Causes an error.
+	%setprngstates();
 	%
 	sizeX = 2;
 	sizeF = sizeX;
