@@ -1,7 +1,7 @@
 ax = [];
 sizeX = 2;
 sizeF = 2;
-caseNum = 920;
+caseNum = 930;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case -1
@@ -310,6 +310,69 @@ case 920
 	vecX0 = randn(sizeX,1);
 	testFuncPrm.vecXE = vecX0;
 	testFuncPrm.vecFE = temp_vecF0;
+case 930
+	% DRaburn 2022.01.31:
+	%  better prepared here.
+	% Let's try vecLambda = 0...
+	setprngstates(0);
+	%
+	sizeX = 2;
+	sizeF = sizeX;
+	assert( sizeX == sizeF );
+	temp_matIX = eye(sizeX,sizeX);
+	%
+	temp_matJ = randn(sizeF,sizeX);
+	temp_vecPhiHat = randn(sizeX,1);
+	temp_vecPhiHat /= norm(temp_vecPhiHat)
+	temp_matPhiPhiT = temp_vecPhiHat*(temp_vecPhiHat');
+	temp_matJ = temp_matJ*( temp_matIX - temp_matPhiPhiT )
+	%
+	temp_matPsi = orth( temp_matIX - temp_matPhiPhiT )
+	sizePsi = size(temp_matPsi,2);
+	assert( isrealarray(temp_matPsi,[sizeX,sizePsi]) );
+	assert( reldiff(temp_matPsi'*temp_matPsi,eye(sizePsi,sizePsi)) < sqrt(eps) );
+	temp_matW = temp_matJ * temp_matPsi;
+	temp_matQ = orth( temp_matW )
+	assert( isrealarray(temp_matQ,[sizeF,sizePsi]) );
+	assert( reldiff(temp_matQ'*temp_matQ,eye(sizePsi,sizePsi)) < sqrt(eps) );
+	%temp_matR = temp_matRQ'*temp_matW
+	%
+	temp_vecVHat = orth( temp_matIX - temp_matPsi*(temp_matPsi') )
+	assert( isrealarray(temp_vecVHat,[sizeX,1]) );
+	%
+	if (1)
+		temp_alpha = 0.1;
+		temp_vecBeta = 10.0*(1.0+abs(randn(sizePsi,1)));
+	else
+		temp_alpha = 10.0;
+		temp_vecBeta = 0.1*1.0./(1.0+abs(randn(sizePsi,1)));
+	end
+	temp_vecF0 = temp_vecVHat*temp_alpha + temp_matPsi*temp_vecBeta;
+	temp_vecEta = temp_vecVHat*temp_alpha - temp_matPsi*temp_vecBeta;
+	%
+	testFuncPrm.sizeX = sizeX;
+	testFuncPrm.sizeF = sizeF;
+	%
+	vecX0 = randn(sizeX,1);
+	testFuncPrm.vecXE = vecX0;
+	testFuncPrm.vecFE = temp_vecF0;
+	testFuncPrm.matJ = temp_matJ;
+	for n=1:sizeF
+		testFuncPrm.ary3K(n,:,:) = temp_vecEta(n) * ( temp_vecPhiHat * (temp_vecPhiHat') );
+	end
+	%
+	temp_vecF0'*temp_vecVHat*temp_vecVHat'*temp_vecEta
+	temp_vecF0'*temp_matQ*temp_matQ'*temp_vecEta
+	%
 otherwise
 	error( "Invalid value of switch." );
+end
+
+doKSymCheck = true;
+for k=1:testFuncPrm.sizeF
+for m=1:testFuncPrm.sizeX
+for n=1:testFuncPrm.sizeX
+	assert( fleq( testFuncPrm.ary3K(k,m,n), testFuncPrm.ary3K(k,n,m) ) );
+end
+end
 end
