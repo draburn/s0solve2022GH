@@ -1,7 +1,7 @@
 ax = [];
 sizeX = 2;
 sizeF = 2;
-caseNum = 940;
+caseNum = 941;
 msg( __FILE__, __LINE__, "*** WARNING: HAD INCONSISTENT HANDLING OF ary3K! ***" );
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
@@ -380,7 +380,7 @@ case 930
 	temp_vecF0'*temp_vecVHat*temp_vecVHat'*temp_vecEta
 	temp_vecF0'*temp_matQ*temp_matQ'*temp_vecEta
 case 940
-	%
+	% Simple ex of 1->3->1.
 	% REALIZATION:
 	%  Had thought ary3K was F*X*X,
 	%  but it was actually X*X*F with a factor of 2.
@@ -388,18 +388,12 @@ case 940
 	sizeF = 2;
 	vecX0 = [ 0.0; 0.0 ];
 	temp_matJ = [ 1.0, 0.0; 0.0, 0.0 ];
-	%%%temp_matJ = [ 1.0, 0.0; 0.0, 0.001 ];
 	%
 	temp_vecPhiHat = [ 0.0; 1.0 ];
 	temp_matPsi = [ 1.0; 0.0 ];
 	temp_matQ = [ 1.0; 0.0 ];
 	temp_vecVHat = [ 0.0; 1.0 ];
 	%
-	%temp_alpha = -1.0;
-	%temp_beta = -100.0;
-	%temp_vecBeta = temp_matQ*temp_beta;
-	%temp_vecF0 = [ temp_beta; temp_alpha ];
-	%temp_vecEta = [ -temp_beta; temp_alpha ];
 	temp_vecF0 = [ -2.0; 1.0 ]
 	temp_vecEta = [ 2.0; 1.0 ]
 	%
@@ -411,12 +405,29 @@ case 940
 	for n=1:sizeF
 		testFuncPrm.ary3K(:,:,n) = 2.0*temp_vecEta(n) * ( temp_vecPhiHat * (temp_vecPhiHat') );
 	end
+case 941
+	% Alt ex of 1->3->1.
+	sizeX = 2;
+	sizeF = 2;
+	vecX0 = [ 0.0; 0.0 ];
+	temp_matJ = [ 1.0, 0.0; 0.0, 0.1 ];
 	%
-	%temp_vecF0'*temp_vecVHat*temp_vecVHat'*temp_vecEta
-	%temp_vecF0'*temp_matQ*temp_matQ'*temp_vecEta
-	%testFuncPrm.ary3K
-	%testFuncPrm.ary3K(1,:,:)
-	%testFuncPrm.ary3K(2,:,:)
+	temp_vecPhiHat = [ 0.0; 1.0 ];
+	temp_matPsi = [ 1.0; 0.0 ];
+	temp_matQ = [ 1.0; 0.0 ];
+	temp_vecVHat = [ 0.0; 1.0 ];
+	%
+	temp_vecF0 = [ -2.0; 1.0 ]
+	temp_vecEta = [ 2.0; 1.0 ]
+	%
+	testFuncPrm.sizeX = sizeX;
+	testFuncPrm.sizeF = sizeF;
+	testFuncPrm.vecXE = vecX0;
+	testFuncPrm.vecFE = temp_vecF0;
+	testFuncPrm.matJ = temp_matJ;
+	for n=1:sizeF
+		testFuncPrm.ary3K(:,:,n) = 2.0*temp_vecEta(n) * ( temp_vecPhiHat * (temp_vecPhiHat') );
+	end
 	%
 otherwise
 	error( "Invalid value of switch." );

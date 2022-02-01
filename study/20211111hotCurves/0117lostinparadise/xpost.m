@@ -65,11 +65,11 @@ for n=1:numCurves
 	curveDat(n).vecStepSize_cent = sqrt(sum( curveDat(n).matSmlDelta_cent.^2, 1 ));
 	%
 	curveDat(n).plot_color = curveColors(n,:);
-	curveDat(n).plot_markerSize = 15;
+	curveDat(n).plot_markerSize = 10+2*n;
 	curveDat(n).plot_markerStyle = curveSymbols(1+mod(n-1,max(size(curveSymbols))));
 	curveDat(n).plot_lineWidth = 1;
 	curveDat(n).plot_lineStyle = '-';
-	curveDat(n).plot_bigMarkerSize = 30;
+	curveDat(n).plot_bigMarkerSize = 15+3*n;
 	curveDat(n).plot_bigLineWidth = 4;
 	%
 	autoAx_x1Lo = min([ autoAx_x1Lo, min( matX(1,:) ) ]);
