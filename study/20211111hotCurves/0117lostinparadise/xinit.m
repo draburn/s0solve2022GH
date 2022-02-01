@@ -1,7 +1,8 @@
 ax = [];
 sizeX = 2;
 sizeF = 2;
-caseNum = 930;
+caseNum = 940;
+msg( __FILE__, __LINE__, "*** WARNING: HAD INCONSISTENT HANDLING OF ary3K! ***" );
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case -1
@@ -379,23 +380,28 @@ case 930
 	temp_vecF0'*temp_vecVHat*temp_vecVHat'*temp_vecEta
 	temp_vecF0'*temp_matQ*temp_matQ'*temp_vecEta
 case 940
-	% THIS DOES NOT WORK;
-	% matW'*vecEta = 0, ja?
+	%
+	% REALIZATION:
+	%  Had thought ary3K was F*X*X,
+	%  but it was actually X*X*F with a factor of 2.
 	sizeX = 2;
 	sizeF = 2;
 	vecX0 = [ 0.0; 0.0 ];
 	temp_matJ = [ 1.0, 0.0; 0.0, 0.0 ];
+	%%%temp_matJ = [ 1.0, 0.0; 0.0, 0.001 ];
 	%
 	temp_vecPhiHat = [ 0.0; 1.0 ];
 	temp_matPsi = [ 1.0; 0.0 ];
 	temp_matQ = [ 1.0; 0.0 ];
 	temp_vecVHat = [ 0.0; 1.0 ];
 	%
-	temp_alpha = 0.1;
-	temp_beta = 100.0;
-	temp_vecBeta = temp_matQ*temp_beta;
-	temp_vecF0 = [ temp_beta; temp_alpha ];
-	temp_vecEta = [ -temp_beta; temp_alpha ];
+	%temp_alpha = -1.0;
+	%temp_beta = -100.0;
+	%temp_vecBeta = temp_matQ*temp_beta;
+	%temp_vecF0 = [ temp_beta; temp_alpha ];
+	%temp_vecEta = [ -temp_beta; temp_alpha ];
+	temp_vecF0 = [ -2.0; 1.0 ]
+	temp_vecEta = [ 2.0; 1.0 ]
 	%
 	testFuncPrm.sizeX = sizeX;
 	testFuncPrm.sizeF = sizeF;
@@ -403,11 +409,14 @@ case 940
 	testFuncPrm.vecFE = temp_vecF0;
 	testFuncPrm.matJ = temp_matJ;
 	for n=1:sizeF
-		testFuncPrm.ary3K(n,:,:) = temp_vecEta(n) * ( temp_vecPhiHat * (temp_vecPhiHat') );
+		testFuncPrm.ary3K(:,:,n) = 2.0*temp_vecEta(n) * ( temp_vecPhiHat * (temp_vecPhiHat') );
 	end
 	%
-	temp_vecF0'*temp_vecVHat*temp_vecVHat'*temp_vecEta
-	temp_vecF0'*temp_matQ*temp_matQ'*temp_vecEta
+	%temp_vecF0'*temp_vecVHat*temp_vecVHat'*temp_vecEta
+	%temp_vecF0'*temp_matQ*temp_matQ'*temp_vecEta
+	%testFuncPrm.ary3K
+	%testFuncPrm.ary3K(1,:,:)
+	%testFuncPrm.ary3K(2,:,:)
 	%
 otherwise
 	error( "Invalid value of switch." );
@@ -417,7 +426,8 @@ doKSymCheck = true;
 for k=1:testFuncPrm.sizeF
 for m=1:testFuncPrm.sizeX
 for n=1:testFuncPrm.sizeX
-	assert( fleq( testFuncPrm.ary3K(k,m,n), testFuncPrm.ary3K(k,n,m) ) );
+	%%%assert( fleq( testFuncPrm.ary3K(k,m,n), testFuncPrm.ary3K(k,n,m) ) );
+	assert( fleq( testFuncPrm.ary3K(m,n,k), testFuncPrm.ary3K(n,m,k) ) );
 end
 end
 end

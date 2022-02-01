@@ -20,7 +20,8 @@ if (numOptOnF)
 	[ matPsiOCQ0, matLambdaOCQ0 ] = eig(matHOCQ0)
 	[ lambdaOCQ0AbsMin, nOfOCQ0AbsMin ] = min(abs(diag(matLambdaOCQ0)))
 	vecPhiHat = matPsiOCQ0(:,nOfOCQ0AbsMin)
-	vecEta = funchF( vecX0 + vecPhiHat ) - ( vecF0 + matJ0*vecPhiHat );
+	%vecEta = ( funchF(vecX0+vecPhiHat) + funchF(vecX0-vecPhiHat) )/2.0 - vecF0
+	vecEta = funchF( vecX0 + vecPhiHat ) - ( vecF0 + matJ0*vecPhiHat )
 	%
 	%funchFOCQ = @(dummyX)( vecF0 + matJ0*(dummyX-vecX0) + vecEta*sumsq(vecPhiHat'*(dummyX-vecX0)) );
 	%funchOmegaOCQ = @(dummyX)( sumsq(funchFOCQ(dummyX),1)/2.0 );
@@ -55,7 +56,7 @@ end
 numCurves = 0;
 %
 %
-if (1)
+if (0)
 	% FOR FOCUSED DEV, not curve viz.
 	numCurves++;
 	thisCurveTime0 = time();
