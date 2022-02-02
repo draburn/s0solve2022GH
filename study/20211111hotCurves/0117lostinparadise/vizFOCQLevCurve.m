@@ -142,4 +142,4 @@ end
 %!	vecEta = randn(sizeF,1);
 %!	%
 %!	prm = [];
-%!	calcFOCQLevCurve( vecX0, vecF0, matJ0, vecPhiHat, vecEta, prm );
+%!	vizFOCQLevCurve( vecX0, vecF0, matJ0, vecPhiHat, vecEta, prm );
