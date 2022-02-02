@@ -14,13 +14,36 @@ function [ datOut ] = vizFOCQRoots( vecF0, vecLambda, vecEta, matW, prm=[] )
 	%
 	figNum = mygetfield( prm, "figNum", 20 );
 	%pVals = mygetfield( prm, "pVals", linspace(0.0,1.0,6) );
-	pVals = mygetfield( prm, "pVals", linspace(0.1,1.0,4) );
+	%pVals = mygetfield( prm, "pVals", linspace(0.0,1.0,11) );
+	%pVals = mygetfield( prm, "pVals", linspace(0.1,1.0,4) );
+	%pVals = mygetfield( prm, "pVals", linspace(0.99,1.0,11) );
+	pVals = mygetfield( prm, "pVals", [0.0,0.05,0.1,0.5,0.9,0.95,1.0] );
 	sz = mygetfield( prm, "sz", 1.0 );
 	matSY = mygetfield( prm, "matSY", eye(sizeY,sizeY) );
-	zVals = mygetfield( prm, "zVals", linspace(-2.0,4.0,1001) );
 	%
 	matIF = eye(sizeF,sizeF);
 	numPVals = length(pVals);
+	%
+	%
+	% Find min and max roots.
+	zLo = -0.1;
+	zHi = +0.1;
+	for ip=1:numPVals
+		p = pVals(ip);
+		%
+		matM = (1.0-p)*(matSY'*matSY) + p * (matW'*matW);
+		matA = matIF - p*(matW*(matM\(matW')));
+		c0 = p*(vecF0'*matA*vecLambda);
+		c1 = (1.0-p)*(sz^2) + p*(vecLambda'*matA*vecLambda) + 2.0*p*(vecF0'*matA*vecEta);
+		c2 = 3.0*p*(vecLambda'*matA*vecEta);
+		c3 = 2.0*p*(vecEta'*matA*vecEta);
+		funchXi = @(dummyZ)( c0 + c1*dummyZ + c2*(dummyZ.^2) + c3*(dummyZ.^3) );
+		%
+		zRoots = calcCubicRoots( c0, c1, c2, c3 );
+		zLo = min([zLo,min(zRoots)]);
+		zHi = max([zHi,max(zRoots)]);
+	end
+	zVals = mygetfield( prm, "zVals", linspace(zLo-0.2*(zHi-zLo),zHi+0.2*(zHi-zLo),1001) );
 	numZVals = length(zVals);
 	%
 	figure(figNum);
@@ -43,13 +66,19 @@ function [ datOut ] = vizFOCQRoots( vecF0, vecLambda, vecEta, matW, prm=[] )
 		plot( zVals, datXi(:,ip), '-', 'linewidth', 3 );
 	end
 	grid on;
-	legend( cellAry_legend, 'location', 'southeast' );
+	%legend( cellAry_legend, 'location', 'southeast' );
+	legend( cellAry_legend, 'location', 'northwest' );
 	%
 	ax = axis();
+	ax(3) = -1.0;
+	ax(4) = 1.0;
+	axis(ax);
 	plot( ...
 	  [0.0,0.0], [ax(3),ax(4)], 'k-', ...
 	  [ax(1),ax(2)], [0.0,0.0], 'k-' );
 	%
+	xiMin = 0.0;
+	xiMax = 0.0;
 	for ip=1:numPVals
 		p = pVals(ip);
 		%
@@ -64,6 +93,8 @@ function [ datOut ] = vizFOCQRoots( vecF0, vecLambda, vecEta, matW, prm=[] )
 		zRoots = calcCubicRoots( c0, c1, c2, c3 );
 		numRoots = length(zRoots);
 		switch (numRoots)
+		case 0
+			warning( "No root." );
 		case 1
 			plot( ...
 			  zRoots(1), 0.0, 'ko', 'markersize', 10, ...
@@ -83,7 +114,7 @@ function [ datOut ] = vizFOCQRoots( vecF0, vecLambda, vecEta, matW, prm=[] )
 			  zRoots(3), 0.0, 'bo', 'markersize', 10, ...
 			  zRoots(3), 0.0, 'b*', 'markersize', 10 );
 		otherwise
-			error( "?" );
+			error( "Impossible." );
 		end
 	end
 	%
@@ -93,20 +124,37 @@ end
 
 
 %!test
-%!	setprngstates(0);
+%!	%setprngstates();
+%!	%setprngstates(30577088);
+%!	%setprngstates(70188288);
+%!	%setprngstates(47280832);
+%!	%setprngstates(32188304);
+%!	setprngstates();
 %!	%
-%!	sizeX = 2;
-%!	sizeF = sizeX;
-%!	sizeY = sizeX-1;
-%!	matW = randn(sizeF,sizeY);
-%!	vecF0 = randn(sizeF,1);
-%!	vecLambda = randn(sizeF,1);
-%!	vecEta = randn(sizeF,1);
+%!	caseNum = 0
+%!	switch(caseNum)
+%!	case 0
+%!		sizeX = 2;
+%!		sizeF = sizeX;
+%!		sizeY = sizeX-1;
+%!		matW = randn(sizeF,sizeY);
+%!		vecF0 = randn(sizeF,1);
+%!		vecLambda = randn(sizeF,1);
+%!		vecEta = randn(sizeF,1);
+%!		makeQTLambdaZero = true;
+%!	case 10
+%!		matW = [ 1; 0.1 ]
+%!		vecF0 = [ 0; 1.1 ]
+%!		vecLambda = [ 0; -1 ]
+%!		vecEta = [ 0; 0.2 ]
+%!		makeQTLambdaZero = true;
+%!	otherwise
+%!		error( "Ivalid caseNum." );
+%!	end
 %!	%
 %!	matQ = orth( matW );
-%!	makeQTLambdaZero = true;
 %!	if (makeQTLambdaZero)
-%!		vecLambda = vecLambda - matQ*(matQ'*vecLambda);
+%!		vecLambda = vecLambda - matQ*(matQ'*vecLambda)
 %!	end
 %!	%
 %!	prm = [];
