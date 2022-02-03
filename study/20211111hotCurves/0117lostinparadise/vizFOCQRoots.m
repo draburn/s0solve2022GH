@@ -148,7 +148,7 @@ end
 %!	setprngstates();
 %!	%
 %!	prm = [];
-%!	caseNum = 20
+%!	caseNum = 31
 %!	switch(caseNum)
 %!	case 0
 %!		sizeX = 2;
@@ -187,6 +187,23 @@ end
 %!		vecEta = [ 0; 1.0 ]
 %!		makeQTLambdaZero = true;
 %!		prm.useCnstAHack = true;
+%!	case 30
+%!		% 1->3->1 reconnect in 3D without only sizeY hack!
+%!		matW = [ 0; 0; 1 ] % NOT 3x2???
+%!		vecF0 = [ 100.0; 0.0; 0.0 ]
+%!		vecLambda = [ -1.0; -10.0; 0.0 ]
+%!		vecEta = [ 0; 1.0; 0.0 ]
+%!		makeQTLambdaZero = true;
+%!		prm.useCnstAHack = false;
+%!	case 31
+%!		% 1->3->1 reconnect in 3D with JTJ having nullspace dim >= 1..
+%!		% No good.
+%!		matW = [ 0, 0.01; 0, 0; 1, 2 ]
+%!		vecF0 = [ 100.0; 0.0; 0.0 ]
+%!		vecLambda = [ -1.0; -10.0; 0.0 ]
+%!		vecEta = [ 0; 1.0; 0.0 ]
+%!		makeQTLambdaZero = false;
+%!		prm.useCnstAHack = false;
 %!	otherwise
 %!		error( "Ivalid caseNum." );
 %!	end
