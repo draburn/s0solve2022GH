@@ -21,12 +21,16 @@ function [ datOut ] = vizFOCQRoots( vecF0, vecLambda, vecEta, matW, prm=[] )
 	%pVals = mygetfield( prm, "pVals", [0.0,0.01,0.02,0.05,0.1,0.2,0.5,0.8,0.9,0.95,0.98,0.99,1.0] );
 	%pVals = mygetfield( prm, "pVals", [0.0381] );
 	%%%pVals = mygetfield( prm, "pVals", [0.0,0.01,0.038,0.0381,0.05,0.1,0.2,0.5,0.56,0.8,0.9,0.95,0.98,0.99,1.0] );
-	pVals = mygetfield( prm, "pVals", [0.0,0.01,0.038,0.0381,0.05,0.1,0.2,0.56,0.8,0.9,1.0] );
+	%pVals = mygetfield( prm, "pVals", [0.0,0.01,0.038,0.0381,0.05,0.1,0.2,0.56,0.8,0.9,1.0] );
+	%pVals = mygetfield( prm, "pVals", [0.0,0.05,0.1,0.5,0.9,0.95,1.0] );
+	pVals = mygetfield( prm, "pVals", linspace(0.1,1.0,10) );
+	%pVals = mygetfield( prm, "pVals", [0.8,0.9,1.0] );
 	%pVals = mygetfield( prm, "pVals", [0.56] );
 	sz = mygetfield( prm, "sz", 1.0 );
 	matSY = mygetfield( prm, "matSY", eye(sizeY,sizeY) );
 	%
 	useCnstAHack = mygetfield( prm, "useCnstAHack", false );
+	useDivPHack = mygetfield( prm, "useDivPHack", false );
 	%
 	matIF = eye(sizeF,sizeF);
 	numPVals = length(pVals);
@@ -76,6 +80,9 @@ function [ datOut ] = vizFOCQRoots( vecF0, vecLambda, vecEta, matW, prm=[] )
 		funchXi = @(dummyZ)( c0 + c1*dummyZ + c2*(dummyZ.^2) + c3*(dummyZ.^3) );
 		%
 		datXi(:,ip) = funchXi(zVals);
+		if (useDivPHack)
+			datXi(:,ip)/=(eps+p);
+		end
 		plot( zVals, datXi(:,ip), '-', 'linewidth', 3 );
 	end
 	grid on;
@@ -83,8 +90,8 @@ function [ datOut ] = vizFOCQRoots( vecF0, vecLambda, vecEta, matW, prm=[] )
 	%%%legend( cellAry_legend, 'location', 'northwest' );
 	%
 	ax = axis();
-	%ax(3) = -1.0;
-	%ax(4) = 1.0;
+	%ax(3) = -100.0;
+	%ax(4) = 100.0;
 	%axis(ax);
 	plot( ...
 	  [0.0,0.0], [ax(3),ax(4)], 'k-', ...
@@ -148,7 +155,7 @@ end
 %!	setprngstates();
 %!	%
 %!	prm = [];
-%!	caseNum = 31
+%!	caseNum = 51
 %!	switch(caseNum)
 %!	case 0
 %!		sizeX = 2;
@@ -204,13 +211,62 @@ end
 %!		vecEta = [ 0; 1.0; 0.0 ]
 %!		makeQTLambdaZero = false;
 %!		prm.useCnstAHack = false;
+%!	case 40
+%!		% Try with d > 0...
+%!		matW = [ 0, 0.01; 0.01, 0; 1, 2 ]
+%!		vecF0 = [ 100.0; 0.0; 0.0 ]
+%!		vecLambda = [ 1.0; -10.0; 0.0 ]
+%!		vecEta = [ 0; -1.0; 0.0 ]
+%!		makeQTLambdaZero = true;
+%!		prm.useCnstAHack = false;
+%!	case 50
+%!		% Try 2D 1->3->1 reconn, with reporting values.
+%!		% Pops up at end!
+%!		matW = [ 1; 0 ]
+%!		vecF0 = [ 3; -1 ]
+%!		vecLambda = [ 0; 3 ]
+%!		vecEta = [ -1; -2]
+%!		makeQTLambdaZero = true;
+%!		prm.useCnstAHack = false;
+%!	case 51
+%!		% Try 2D 1->3->1 reconn, with reporting values.
+%!		% YES! YES! YESSSS!!!!!
+%!		matW = [ 1; 0 ]
+%!		theta = 0.1
+%!		eta = 1
+%!		lambda = -3
+%!		g = -30
+%!		f = 1
+%!		vecF0 = [ g; f ];
+%!		vecLambda = [ 0; lambda ];
+%!		vecEta = [ theta; eta ];
+%!		makeQTLambdaZero = true;
+%!		prm.useCnstAHack = false;
+%!		prm.useDivPHack = false;
 %!	otherwise
 %!		error( "Ivalid caseNum." );
 %!	end
+%!	sizeF = size(matW,1);
 %!	%
 %!	matQ = orth( matW );
 %!	if (makeQTLambdaZero)
 %!		vecLambda = vecLambda - matQ*(matQ'*vecLambda)
+%!	end
+%!	%
+%!	reportVals = true;
+%!	if (reportVals)
+%!		echo__matW = matW
+%!		echo__vecF0 = vecF0
+%!		echo__vecLambda = vecLambda
+%!		echo__vecEta = vecEta
+%!		%
+%!		matA1 = eye(sizeF,sizeF) - matQ*(matQ');
+%!		echo_a = 2.0*vecEta'*[ vecEta, matA1*vecEta ];
+%!		echo_b = 3.0*vecEta'*[ vecLambda, matA1*vecLambda ];
+%!		echo_c = vecLambda'*[ vecLambda, matA1*vecLambda ] + 2.0*vecF0'*[ vecEta, matA1*vecEta ];
+%!		echo_cPlusMu = [ +Inf, echo_c(2) ];
+%!		echo_d = vecF0'*[ vecLambda, matA1*vecLambda ];
+%!		echo_coeff = [ echo_a; echo_b; echo_c; echo_cPlusMu; echo_d ]
 %!	end
 %!	%
 %!	vizFOCQRoots( vecF0, vecLambda, vecEta, matW, prm )
