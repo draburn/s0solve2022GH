@@ -142,6 +142,58 @@ function [ datOut ] = vizFOCQRoots( vecF0, vecLambda, vecEta, matW, prm=[] )
 	end
 	%
 	hold off;
+	%
+	%
+	%
+	pVals = linspace(0,1,101);
+	figure(figNum+1);
+	plot( 0, 0, 'ko', 'markersize', 10 );
+	hold on;
+	plot( 0, 0, 'kx', 'markersize', 10 );
+	for ip=1:length(pVals)
+		p = pVals(ip);
+		%
+		matM = (1.0-p)*(matSY'*matSY) + p * (matW'*matW);
+		matA = matIF - p*(matW*(matM\(matW')));
+		if (useCnstAHack)
+			matA = matIF;
+		end
+		c0 = p*(vecF0'*matA*vecLambda);
+		c1 = (1.0-p)*(sz^2) + p*(vecLambda'*matA*vecLambda) + 2.0*p*(vecF0'*matA*vecEta);
+		c2 = 3.0*p*(vecLambda'*matA*vecEta);
+		c3 = 2.0*p*(vecEta'*matA*vecEta);
+		funchXi = @(dummyZ)( c0 + c1*dummyZ + c2*(dummyZ.^2) + c3*(dummyZ.^3) );
+		%
+		zRoots = calcCubicRoots( c0, c1, c2, c3 );
+		numRoots = length(zRoots);
+		switch (numRoots)
+		case 0
+			warning( "No root." );
+		case 1
+			plot( ...
+			  zRoots(1), p, 'ko', 'markersize', 10, ...
+			  zRoots(1), p, 'k*', 'markersize', 10 );
+		case 2
+			plot( ...
+			  zRoots(1), p, 'co', 'markersize', 10, ...
+			  zRoots(1), p, 'c*', 'markersize', 10, ...
+			  zRoots(2), p, 'mo', 'markersize', 10, ...
+			  zRoots(2), p, 'm*', 'markersize', 10 );
+		case 3
+			plot( ...
+			  zRoots(1), p, 'ro', 'markersize', 10, ...
+			  zRoots(1), p, 'r*', 'markersize', 10, ...
+			  zRoots(2), p, 'go', 'markersize', 10, ...
+			  zRoots(2), p, 'g*', 'markersize', 10, ...
+			  zRoots(3), p, 'bo', 'markersize', 10, ...
+			  zRoots(3), p, 'b*', 'markersize', 10 );
+		otherwise
+			error( "Impossible." );
+		end
+	end
+	grid on;
+	hold off;
+	%
 return;
 end
 
@@ -243,9 +295,27 @@ end
 %!		makeQTLambdaZero = true;
 %!		prm.useCnstAHack = false;
 %!		prm.useDivPHack = false;
+%!	case 52
+%!		% Try with phi corresponding to smallest eigenvalue.
+%!		matW = [ 1; 0 ]
+%!		theta = 0.1
+%!		eta = 1
+%!		lambda = -3
+%!		g = -30
+%!		f = 1
+%!		vecF0 = [ g; f ];
+%!		vecLambda = [ 0; lambda ];
+%!		vecEta = [ theta; eta ];
+%!		makeQTLambdaZero = true;
+%!		prm.useCnstAHack = false;
+%!		prm.useDivPHack = true;
+%!		discrim = 12*eta^2 - 48*f*eta^3
+%!		ze = -( 1 + sqrt(3-12*f*eta)*[+1,-1]/3 )/(2*eta)
 %!	otherwise
 %!		error( "Ivalid caseNum." );
 %!	end
+%!	%prm.pVals = mygetfield( prm, "pVals", linspace(0.1,1.0,10) );
+%!	%prm.pVals = mygetfield( prm, "pVals", [0.8,0.9,1.0] );
 %!	sizeF = size(matW,1);
 %!	%
 %!	matQ = orth( matW );
