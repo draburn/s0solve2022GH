@@ -17,9 +17,16 @@ function [ datOut ] = vizFOCQRoots( vecF0, vecLambda, vecEta, matW, prm=[] )
 	%pVals = mygetfield( prm, "pVals", linspace(0.0,1.0,11) );
 	%pVals = mygetfield( prm, "pVals", linspace(0.1,1.0,4) );
 	%pVals = mygetfield( prm, "pVals", linspace(0.99,1.0,11) );
-	pVals = mygetfield( prm, "pVals", [0.0,0.05,0.1,0.5,0.9,0.95,1.0] );
+	%pVals = mygetfield( prm, "pVals", [0.0,0.05,0.1,0.5,0.9,0.95,1.0] );
+	%pVals = mygetfield( prm, "pVals", [0.0,0.01,0.02,0.05,0.1,0.2,0.5,0.8,0.9,0.95,0.98,0.99,1.0] );
+	%pVals = mygetfield( prm, "pVals", [0.0381] );
+	%%%pVals = mygetfield( prm, "pVals", [0.0,0.01,0.038,0.0381,0.05,0.1,0.2,0.5,0.56,0.8,0.9,0.95,0.98,0.99,1.0] );
+	pVals = mygetfield( prm, "pVals", [0.0,0.01,0.038,0.0381,0.05,0.1,0.2,0.56,0.8,0.9,1.0] );
+	%pVals = mygetfield( prm, "pVals", [0.56] );
 	sz = mygetfield( prm, "sz", 1.0 );
 	matSY = mygetfield( prm, "matSY", eye(sizeY,sizeY) );
+	%
+	useCnstAHack = mygetfield( prm, "useCnstAHack", false );
 	%
 	matIF = eye(sizeF,sizeF);
 	numPVals = length(pVals);
@@ -33,6 +40,9 @@ function [ datOut ] = vizFOCQRoots( vecF0, vecLambda, vecEta, matW, prm=[] )
 		%
 		matM = (1.0-p)*(matSY'*matSY) + p * (matW'*matW);
 		matA = matIF - p*(matW*(matM\(matW')));
+		if (useCnstAHack)
+			matA = matIF;
+		end
 		c0 = p*(vecF0'*matA*vecLambda);
 		c1 = (1.0-p)*(sz^2) + p*(vecLambda'*matA*vecLambda) + 2.0*p*(vecF0'*matA*vecEta);
 		c2 = 3.0*p*(vecLambda'*matA*vecEta);
@@ -56,6 +66,9 @@ function [ datOut ] = vizFOCQRoots( vecF0, vecLambda, vecEta, matW, prm=[] )
 		%
 		matM = (1.0-p)*(matSY'*matSY) + p * (matW'*matW);
 		matA = matIF - p*(matW*(matM\(matW')));
+		if (useCnstAHack)
+			matA = matIF;
+		end
 		c0 = p*(vecF0'*matA*vecLambda);
 		c1 = (1.0-p)*(sz^2) + p*(vecLambda'*matA*vecLambda) + 2.0*p*(vecF0'*matA*vecEta);
 		c2 = 3.0*p*(vecLambda'*matA*vecEta);
@@ -67,12 +80,12 @@ function [ datOut ] = vizFOCQRoots( vecF0, vecLambda, vecEta, matW, prm=[] )
 	end
 	grid on;
 	%legend( cellAry_legend, 'location', 'southeast' );
-	legend( cellAry_legend, 'location', 'northwest' );
+	%%%legend( cellAry_legend, 'location', 'northwest' );
 	%
 	ax = axis();
-	ax(3) = -1.0;
-	ax(4) = 1.0;
-	axis(ax);
+	%ax(3) = -1.0;
+	%ax(4) = 1.0;
+	%axis(ax);
 	plot( ...
 	  [0.0,0.0], [ax(3),ax(4)], 'k-', ...
 	  [ax(1),ax(2)], [0.0,0.0], 'k-' );
@@ -84,6 +97,9 @@ function [ datOut ] = vizFOCQRoots( vecF0, vecLambda, vecEta, matW, prm=[] )
 		%
 		matM = (1.0-p)*(matSY'*matSY) + p * (matW'*matW);
 		matA = matIF - p*(matW*(matM\(matW')));
+		if (useCnstAHack)
+			matA = matIF;
+		end
 		c0 = p*(vecF0'*matA*vecLambda);
 		c1 = (1.0-p)*(sz^2) + p*(vecLambda'*matA*vecLambda) + 2.0*p*(vecF0'*matA*vecEta);
 		c2 = 3.0*p*(vecLambda'*matA*vecEta);
@@ -131,7 +147,8 @@ end
 %!	%setprngstates(32188304);
 %!	setprngstates();
 %!	%
-%!	caseNum = 0
+%!	prm = [];
+%!	caseNum = 20
 %!	switch(caseNum)
 %!	case 0
 %!		sizeX = 2;
@@ -148,6 +165,28 @@ end
 %!		vecLambda = [ 0; -1 ]
 %!		vecEta = [ 0; 0.2 ]
 %!		makeQTLambdaZero = true;
+%!	case 20
+%!		% Hack, but, achieves "1 -> 3 -> 1 reconnect".
+%!		matW = [ 1; 0 ]
+%!		vecF0 = [ 100.0; 0.0 ]
+%!		vecLambda = [ -1.0; -10.0 ]
+%!		vecEta = [ 0; 1.0 ]
+%!		makeQTLambdaZero = false;
+%!		prm.useCnstAHack = true;
+%!	case 21
+%!		matW = [ 1; 0 ]
+%!		vecF0 = [ 100.0; 0.0 ]
+%!		vecLambda = [ -1.0; -10.0 ]
+%!		vecEta = [ 0; 1.0 ]
+%!		makeQTLambdaZero = false;
+%!		prm.useCnstAHack = false;
+%!	case 22
+%!		matW = [ 1; 0.01 ]
+%!		vecF0 = [ 100.0; 0.0 ]
+%!		vecLambda = [ -1.0; -10.0 ]
+%!		vecEta = [ 0; 1.0 ]
+%!		makeQTLambdaZero = true;
+%!		prm.useCnstAHack = true;
 %!	otherwise
 %!		error( "Ivalid caseNum." );
 %!	end
@@ -157,5 +196,4 @@ end
 %!		vecLambda = vecLambda - matQ*(matQ'*vecLambda)
 %!	end
 %!	%
-%!	prm = [];
 %!	vizFOCQRoots( vecF0, vecLambda, vecEta, matW, prm )

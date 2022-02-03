@@ -1,7 +1,7 @@
 ax = [];
 sizeX = 2;
 sizeF = 2;
-caseNum = 941;
+caseNum = 950;
 msg( __FILE__, __LINE__, "*** WARNING: HAD INCONSISTENT HANDLING OF ary3K! ***" );
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
@@ -419,6 +419,26 @@ case 941
 	%
 	temp_vecF0 = [ -2.0; 1.0 ]
 	temp_vecEta = [ 2.0; 1.0 ]
+	%
+	testFuncPrm.sizeX = sizeX;
+	testFuncPrm.sizeF = sizeF;
+	testFuncPrm.vecXE = vecX0;
+	testFuncPrm.vecFE = temp_vecF0;
+	testFuncPrm.matJ = temp_matJ;
+	for n=1:sizeF
+		testFuncPrm.ary3K(:,:,n) = 2.0*temp_vecEta(n) * ( temp_vecPhiHat * (temp_vecPhiHat') );
+	end
+	%
+case 950
+	% Alt ex of 1->3->1.
+	sizeX = 2;
+	sizeF = 2;
+	vecX0 = [ 0.0; 0.0 ];
+	%
+	temp_matJ = [ 0.7338877403168940, -0.6195981167712608; 0.0143551588197744, 1.8483570954250721 ];
+	temp_vecF0 = [ 4.36785955790190; 1.72861458692108 ];
+	temp_vecPhiHat = [ -0.991770000512950; -0.128032285313289 ];
+	temp_vecEta = [ -0.781166501131071; -0.246713234246678 ];
 	%
 	testFuncPrm.sizeX = sizeX;
 	testFuncPrm.sizeF = sizeF;

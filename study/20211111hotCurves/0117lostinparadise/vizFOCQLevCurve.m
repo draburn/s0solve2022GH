@@ -59,13 +59,14 @@ function [ vecXVals, datOut ] = vizFOCQLevCurve( vecX0, vecF0, matJ0, vecPhiHat,
 	%echo__vecEta = vecEta
 	%
 	%
-	numVals = 101;
+	matIF = eye(sizeF,sizeF);
+	numVals = 1001;
 	vecXVals = zeros(sizeX,numVals);
 	vecXVals(:,1) = vecX0;
 	for n=2:numVals
 		p = (n-1.0)/(numVals-1.0);
 		matM = ((1.0-p)*matD) + (p*matWTW);
-		matA = matIX - (p*(matW*(matM\(matW'))));
+		matA = matIF - (p*(matW*(matM\(matW'))));
 		%
 		c0 = p * ( vecF0' * matA * vecLambda );
 		c1 = (1.0-p)*szsq + p*( vecLambda' * matA * vecLambda ) + 2.0*p*( vecF0' * matA * vecEta );
@@ -126,20 +127,26 @@ end
 
 
 %!test
-%!	setprngstates(0);
+%!	%setprngstates(36736720); % with 3,3
+%!	%setprngstates(80839888);
+%!	%setprngstates(15032096);
+%!	%setprngstates(57340816); % Back towards start.
+%!	%setprngstates(43351360); % Another "back towards start".
+%!	%setprngstates(36508352);
+%!	setprngstates(35426864); % Crosses self.
 %!	%
-%!	sizeF = 2 + round(abs(randn()));
-%!	sizeX = 2 + round((sizeF-2.0)*rand());
+%!	sizeF = 2 + round(abs(randn()))
+%!	sizeX = 2 + round((sizeF-2.0)*rand())
 %!	%
-%!	vecF0 = randn(sizeF,1);
-%!	matJ0 = randn(sizeF,sizeX);
+%!	vecF0 = randn(sizeF,1)
+%!	matJ0 = randn(sizeF,sizeX)
 %!	vecX0 = randn(sizeX,1);
 %!	%
 %!	matH00 = matJ0'*matJ0;
 %!	[ matPsi00, matLambda00 ] = eig(matH00);
 %!	[ lambda00AbsMin00, nOfAbsMin00 ] = min(abs(diag(matLambda00)));
-%!	vecPhiHat = matPsi00(:,nOfAbsMin00);
-%!	vecEta = randn(sizeF,1);
+%!	vecPhiHat = matPsi00(:,nOfAbsMin00)
+%!	vecEta = randn(sizeF,1)
 %!	%
 %!	prm = [];
 %!	vizFOCQLevCurve( vecX0, vecF0, matJ0, vecPhiHat, vecEta, prm );
