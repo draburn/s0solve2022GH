@@ -48,7 +48,7 @@ function [ vecXVals, datOut ] = calcFOCQLevCurve( vecX0, vecF0, matJ0, vecPhiHat
 	%echo__vecEta = vecEta
 	%
 	%
-	numVals = 51;
+	numVals = 501;
 	vecXVals = zeros(sizeX,numVals);
 	vecXVals(:,1) = vecX0;
 	for n=2:numVals

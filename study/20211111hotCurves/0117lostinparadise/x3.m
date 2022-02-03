@@ -93,7 +93,7 @@ if (1)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (1)
+if (0)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcLevCurve';
@@ -107,7 +107,7 @@ if (1)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (1)
+if (0)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcMinfordCurve';

@@ -23,7 +23,7 @@ function [ datOut ] = vizFOCQRoots( vecF0, vecLambda, vecEta, matW, prm=[] )
 	%%%pVals = mygetfield( prm, "pVals", [0.0,0.01,0.038,0.0381,0.05,0.1,0.2,0.5,0.56,0.8,0.9,0.95,0.98,0.99,1.0] );
 	%pVals = mygetfield( prm, "pVals", [0.0,0.01,0.038,0.0381,0.05,0.1,0.2,0.56,0.8,0.9,1.0] );
 	%pVals = mygetfield( prm, "pVals", [0.0,0.05,0.1,0.5,0.9,0.95,1.0] );
-	pVals = mygetfield( prm, "pVals", linspace(0.1,1.0,10) );
+	pVals = mygetfield( prm, "pVals", linspace(0.1,1.0,10) )
 	%pVals = mygetfield( prm, "pVals", [0.8,0.9,1.0] );
 	%pVals = mygetfield( prm, "pVals", [0.56] );
 	sz = mygetfield( prm, "sz", 1.0 );
@@ -87,7 +87,7 @@ function [ datOut ] = vizFOCQRoots( vecF0, vecLambda, vecEta, matW, prm=[] )
 	end
 	grid on;
 	%legend( cellAry_legend, 'location', 'southeast' );
-	%%%legend( cellAry_legend, 'location', 'northwest' );
+	legend( cellAry_legend, 'location', 'northwest' );
 	%
 	ax = axis();
 	%ax(3) = -100.0;
@@ -207,7 +207,7 @@ end
 %!	setprngstates();
 %!	%
 %!	prm = [];
-%!	caseNum = 51
+%!	caseNum = 53
 %!	switch(caseNum)
 %!	case 0
 %!		sizeX = 2;
@@ -296,13 +296,14 @@ end
 %!		prm.useCnstAHack = false;
 %!		prm.useDivPHack = false;
 %!	case 52
-%!		% Try with phi corresponding to smallest eigenvalue.
+%!		% Look at marginal connection.
 %!		matW = [ 1; 0 ]
-%!		theta = 0.1
-%!		eta = 1
-%!		lambda = -3
-%!		g = -30
-%!		f = 1
+%!		c = 0.79;
+%!		theta = 0.1*c
+%!		eta = 1*c
+%!		lambda = -3*c
+%!		g = -30*c
+%!		f = 1*c
 %!		vecF0 = [ g; f ];
 %!		vecLambda = [ 0; lambda ];
 %!		vecEta = [ theta; eta ];
@@ -311,10 +312,27 @@ end
 %!		prm.useDivPHack = true;
 %!		discrim = 12*eta^2 - 48*f*eta^3
 %!		ze = -( 1 + sqrt(3-12*f*eta)*[+1,-1]/3 )/(2*eta)
+%!	case 53
+%!		% Get case with smallest eigenvalue?
+%!		matW = [ 3.1; 0 ]
+%!		theta = 0.1
+%!		eta = 1
+%!		lambda = -3
+%!		g = -100
+%!		f = 1
+%!		vecF0 = [ g; f ];
+%!		vecLambda = [ 0; lambda ];
+%!		vecEta = [ theta; eta ];
+%!		makeQTLambdaZero = true;
+%!		prm.useCnstAHack = false;
+%!		prm.useDivPHack = false;
+%!		discrim = 12*eta^2 - 48*f*eta^3
+%!		ze = -( 1 + sqrt(3-12*f*eta)*[+1,-1]/3 )/(2*eta)
 %!	otherwise
 %!		error( "Ivalid caseNum." );
 %!	end
 %!	%prm.pVals = mygetfield( prm, "pVals", linspace(0.1,1.0,10) );
+%!	prm.pVals = mygetfield( prm, "pVals", linspace(0,1,11) );
 %!	%prm.pVals = mygetfield( prm, "pVals", [0.8,0.9,1.0] );
 %!	sizeF = size(matW,1);
 %!	%
