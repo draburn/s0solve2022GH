@@ -17,7 +17,7 @@ function [ matX, datOut ] = calcMinfordCurve( vecX0, funchOmega, prm=[] )
 	%
 	%
 	iterLimit = 10000;
-	deltaR = 0.1;
+	deltaR = 0.05;
 	vecXC = vecX0;
 	%[ omega0, vecNablaOmega0 ] = funchOmega( vecX0 );
 	%tolMagNablaOmega = mygetfield( prm, "tolMagNablaOmega", eps025*norm(vecNablaOmega0) + eps050*sizeX );

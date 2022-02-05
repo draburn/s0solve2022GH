@@ -1,7 +1,7 @@
 ax = [];
 sizeX = 2;
 sizeF = 2;
-caseNum = 960;
+caseNum = 10020;
 msg( __FILE__, __LINE__, "*** WARNING: HAD INCONSISTENT HANDLING OF ary3K! ***" );
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
@@ -468,7 +468,80 @@ case 960
 	for n=1:sizeF
 		testFuncPrm.ary3K(:,:,n) = 2.0*temp_vecEta(n) * ( temp_vecPhiHat * (temp_vecPhiHat') );
 	end
+case 10010
+	% Copy of case 940, deomnstrating "'phi' 1->3->1";
+	sizeX = 2;
+	sizeF = 2;
+	vecX0 = [ 0.0; 0.0 ];
+	temp_matJ = [ 1.0, 0.0; 0.0, 0.0 ];
 	%
+	temp_vecPhiHat = [ 0.0; 1.0 ];
+	temp_matPsi = [ 1.0; 0.0 ];
+	temp_matQ = [ 1.0; 0.0 ];
+	temp_vecVHat = [ 0.0; 1.0 ];
+	%
+	temp_vecF0 = [ -2.0; 1.0 ]
+	temp_vecEta = [ 2.0; 1.0 ]
+	%
+	testFuncPrm.sizeX = sizeX;
+	testFuncPrm.sizeF = sizeF;
+	testFuncPrm.vecXE = vecX0;
+	testFuncPrm.vecFE = temp_vecF0;
+	testFuncPrm.matJ = temp_matJ;
+	for n=1:sizeF
+		testFuncPrm.ary3K(:,:,n) = 2.0*temp_vecEta(n) * ( temp_vecPhiHat * (temp_vecPhiHat') );
+	end
+	%
+case 10011
+	% Similar to case 941, deomnstrating "disconnected closed loop".
+	sizeX = 2;
+	sizeF = 2;
+	vecX0 = [ 0.0; 0.0 ];
+	temp_matJ = [ 1.0, 0.0; 0.0, 0.02 ];
+	%
+	temp_vecPhiHat = [ 0.0; 1.0 ];
+	temp_matPsi = [ 1.0; 0.0 ];
+	temp_matQ = [ 1.0; 0.0 ];
+	temp_vecVHat = [ 0.0; 1.0 ];
+	%
+	temp_vecF0 = [ -2.0; 1.0 ]
+	temp_vecEta = [ 2.0; 1.0 ]
+	%
+	testFuncPrm.sizeX = sizeX;
+	testFuncPrm.sizeF = sizeF;
+	testFuncPrm.vecXE = vecX0;
+	testFuncPrm.vecFE = temp_vecF0;
+	testFuncPrm.matJ = temp_matJ;
+	for n=1:sizeF
+		testFuncPrm.ary3K(:,:,n) = 2.0*temp_vecEta(n) * ( temp_vecPhiHat * (temp_vecPhiHat') );
+	end
+	%
+case 10020
+	% Copy of case 960, demonstrating "'backwards connected' 1->3->1"
+	%  -- also called "1->3->1 reconnect" --
+	%  though there is an additional "->3" afterwards;
+	% Note: I suspect this "->3" is unavoidable in 2D when the vector "phiHat"
+	% is taken to be the eigenvector corresponding to the smallest eigenvalue of J'*J.
+	% Note: This suspicion is based on numerous trials with random values and manual attempts,
+	% but I have not analyzed the algebra in detal.
+	%
+	sizeX = 2;
+	sizeF = 2;
+	vecX0 = [ 0.0; 0.0 ];
+	%
+	temp_matJ = [ 3.1, 0.0; 0.0, -3.0 ];
+	temp_vecF0 = [ -100.0; 1.0 ];
+	temp_vecPhiHat = [ 0.0; 1.0 ];
+	temp_vecEta = [ 0.1; 1.0 ];
+	%
+	testFuncPrm.sizeX = sizeX;
+	testFuncPrm.sizeF = sizeF;
+	testFuncPrm.vecXE = vecX0;
+	testFuncPrm.vecFE = temp_vecF0;
+	testFuncPrm.matJ = temp_matJ;
+	for n=1:sizeF
+		testFuncPrm.ary3K(:,:,n) = 2.0*temp_vecEta(n) * ( temp_vecPhiHat * (temp_vecPhiHat') );
+	end
 otherwise
 	error( "Invalid value of switch." );
 end

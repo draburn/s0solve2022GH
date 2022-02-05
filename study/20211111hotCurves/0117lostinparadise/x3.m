@@ -51,6 +51,18 @@ if (numOptOnF)
 	end
 end
 %
+doVizFOCQRoots = true;
+if (doVizFOCQRoots)
+	temp_matPsi = orth( eye(sizeX,sizeX) - (vecPhiHat*(vecPhiHat')), sqrt(eps) );
+	temp_vecLambda = matJ0*vecPhiHat;
+	temp_matW = matJ0*temp_matPsi;
+	prm_vizFOCQRoots = [];
+	prm_vizFOCQRoots.figNum = 20;
+	vizFOCQRoots( vecF0, temp_vecLambda, vecEta, temp_matW, prm_vizFOCQRoots );
+	clear temp_vecLambda;
+	clear temp_matPsi;
+end
+%
 %
 %
 numCurves = 0;
@@ -107,7 +119,7 @@ if (0)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (0)
+if (1)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcMinfordCurve';

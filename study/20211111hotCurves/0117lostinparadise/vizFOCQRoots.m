@@ -13,19 +13,8 @@ function [ datOut ] = vizFOCQRoots( vecF0, vecLambda, vecEta, matW, prm=[] )
 	assert( isrealarray(matW,[sizeF,sizeY]) );
 	%
 	figNum = mygetfield( prm, "figNum", 20 );
-	%pVals = mygetfield( prm, "pVals", linspace(0.0,1.0,6) );
 	%pVals = mygetfield( prm, "pVals", linspace(0.0,1.0,11) );
-	%pVals = mygetfield( prm, "pVals", linspace(0.1,1.0,4) );
-	%pVals = mygetfield( prm, "pVals", linspace(0.99,1.0,11) );
-	%pVals = mygetfield( prm, "pVals", [0.0,0.05,0.1,0.5,0.9,0.95,1.0] );
-	%pVals = mygetfield( prm, "pVals", [0.0,0.01,0.02,0.05,0.1,0.2,0.5,0.8,0.9,0.95,0.98,0.99,1.0] );
-	%pVals = mygetfield( prm, "pVals", [0.0381] );
-	%%%pVals = mygetfield( prm, "pVals", [0.0,0.01,0.038,0.0381,0.05,0.1,0.2,0.5,0.56,0.8,0.9,0.95,0.98,0.99,1.0] );
-	%pVals = mygetfield( prm, "pVals", [0.0,0.01,0.038,0.0381,0.05,0.1,0.2,0.56,0.8,0.9,1.0] );
-	%pVals = mygetfield( prm, "pVals", [0.0,0.05,0.1,0.5,0.9,0.95,1.0] );
-	pVals = mygetfield( prm, "pVals", linspace(0.1,1.0,10) )
-	%pVals = mygetfield( prm, "pVals", [0.8,0.9,1.0] );
-	%pVals = mygetfield( prm, "pVals", [0.56] );
+	pVals = mygetfield( prm, "pVals", [0.0,0.01,0.02,0.05,0.1,0.3,0.5,0.7,0.9,0.95,0.98,0.99,1.00] );
 	sz = mygetfield( prm, "sz", 1.0 );
 	matSY = mygetfield( prm, "matSY", eye(sizeY,sizeY) );
 	%

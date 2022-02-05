@@ -15,7 +15,8 @@ autoAx_borderCoeff = 0.1;
 %curveColors = 0.6*jet(numCurves);
 curveColors = 0.6*hsv(numCurves);
 %curveSymbols = [ 'o', 'x', '^', 'v', '+', 's', 'p' ];
-curveSymbols = [ 'o', '+', '^', 'v', 's', 'p' ];
+%curveSymbols = [ 'o', '+', '^', 'v', 's', 'p' ];
+curveSymbols = [ 'o', '^', 'v', 's', 'p' ];
 
 autoAx_x1Lo = vecX0(1);
 autoAx_x1Hi = vecX0(1);
@@ -65,11 +66,11 @@ for n=1:numCurves
 	curveDat(n).vecStepSize_cent = sqrt(sum( curveDat(n).matSmlDelta_cent.^2, 1 ));
 	%
 	curveDat(n).plot_color = curveColors(n,:);
-	curveDat(n).plot_markerSize = 10+2*n;
+	curveDat(n).plot_markerSize = 8+3*(numCurves-n);
 	curveDat(n).plot_markerStyle = curveSymbols(1+mod(n-1,max(size(curveSymbols))));
-	curveDat(n).plot_lineWidth = 1;
+	curveDat(n).plot_lineWidth = 2;
 	curveDat(n).plot_lineStyle = '-';
-	curveDat(n).plot_bigMarkerSize = 15+3*n;
+	curveDat(n).plot_bigMarkerSize = 10+4*(2*numCurves-n);
 	curveDat(n).plot_bigLineWidth = 4;
 	%
 	autoAx_x1Lo = min([ autoAx_x1Lo, min( matX(1,:) ) ]);
