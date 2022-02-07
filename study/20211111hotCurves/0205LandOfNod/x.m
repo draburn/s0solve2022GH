@@ -71,36 +71,14 @@ end
 numCurves = 0;
 %
 %
-if (0)
-	% FOR FOCUSED DEV, not curve viz.
+%
+if (1)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'DEV';
-	thisCurvePrm = [];
-	thisCurvePrm.matS = [ 5.0, 0.0; 0.0, 1.0 ];
-	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
-	curveDat(numCurves).matX = vizFOCQLevCurve( vecX0, vecF0, matJ0, vecPhiHat, vecEta, thisCurvePrm );
-	thisCurveElapsedTime = time()-thisCurveTime0;
-	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
-	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
-	curveDat(numCurves).strName = thisCurveName;
-	curveDat(numCurves).prm = thisCurvePrm;
-	%
-	%xpost;
-	%xviz;
-	msg( __FILE__, __LINE__, sprintf("Elapsed time is %0.3fs.", time()-startTime) );
-	return
-end
-%
-%
-%
-if (0)
-	numCurves++;
-	thisCurveTime0 = time();
-	thisCurveName = 'calcGradCurve';
+	thisCurveName = 'calcGradCurve_alytG';
 	thisCurvePrm = [];
 	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
-	curveDat(numCurves).matX = calcGradCurve( vecX0, funchOmega, thisCurvePrm );
+	curveDat(numCurves).matX = calcGradCurve_alytG( vecX0, funchOmega, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
 	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
