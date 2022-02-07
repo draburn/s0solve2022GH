@@ -12,7 +12,7 @@ function [ vecXPts, datOut ] = calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat
 	sizeX = size(vecX0,1);
 	sizeF = size(vecF0,1);
 	debugMode = mygetfield( prm, "debugMode", false );
-	curveSelector = mygetfield( prm, "curveSelector", 0 );
+	curveSelector = mygetfield( prm, "curveSelector", 2 );
 	numPts = mygetfield( prm, "numPts", 101 );
 	sz = mygetfield( prm, "sz", 1.0 );
 	matSY = mygetfield( prm, "matSY", eye(sizeX-1,sizeX-1) );
@@ -83,15 +83,25 @@ function [ vecXPts, datOut ] = calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat
 			msg( __FILE__, __LINE__, "Case with two roots is not fully supported." );
 			vecXPts(:,n) = vecXRoots(:,1);
 		case 3
-			if ( curveSelector < -0.5 )
+			switch (curveSelector)
+			case -1
 				vecXPts(:,n) = vecXRoots(:,1);
-			elseif ( curveSelector < 0.5 )
+			case 0
 				vecXPts(:,n) = vecXRoots(:,2);
-			else
+			case 1
 				vecXPts(:,n) = vecXRoots(:,3);
+			case 2
+				vecXPrev = vecXPts(:,n-1);
+				if ( norm(vecXRoots(:,3)-vecXPrev) < norm(vecXRoots(:,1)-vecXPrev) )
+					vecXPts(:,n) = vecXRoots(:,3);
+				else
+					vecXPts(:,n) = vecXRoots(:,1);
+				end
+			otherwise
+				error("Invalid value of curveSelector.");
 			end
 		otherwise
-			error("Invalid case.");
+			error("Number of roots is not 1, 2, or 3. This should be impossible.");
 		end
 	end
 	%
@@ -137,22 +147,28 @@ end
 %!	%
 %!	%
 %!	prm.curveSelector = -1;
-%!	vecXPts= calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat, vecEta, prm );
+%!	vecXPts = calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat, vecEta, prm );
 %!	numPts = size(vecXPts,2);
 %!	assert( isrealarray(vecXPts,[sizeX,numPts]) );
 %!	vecXPts_l = vecXPts;
 %!	%
 %!	prm.curveSelector = 0;
-%!	vecXPts= calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat, vecEta, prm );
+%!	vecXPts = calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat, vecEta, prm );
 %!	numPts = size(vecXPts,2);
 %!	assert( isrealarray(vecXPts,[sizeX,numPts]) );
 %!	vecXPts_c = vecXPts;
 %!	%
 %!	prm.curveSelector = +1;
-%!	vecXPts= calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat, vecEta, prm );
+%!	vecXPts = calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat, vecEta, prm );
 %!	numPts = size(vecXPts,2);
 %!	assert( isrealarray(vecXPts,[sizeX,numPts]) );
 %!	vecXPts_r = vecXPts;
+%!	%
+%!	prm.curveSelector = +2;
+%!	vecXPts = calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat, vecEta, prm );
+%!	numPts = size(vecXPts,2);
+%!	assert( isrealarray(vecXPts,[sizeX,numPts]) );
+%!	vecXPts_cts = vecXPts;
 %!	%
 %!	%
 %!	%
@@ -181,12 +197,14 @@ end
 %!	hold on;
 %!	plot( ...
 %!	  vecX0(1), vecX0(2), 'kp', 'linewidth', 5, 'markersize', 40, ...
-%!	  vecXPts_l(1,:), vecXPts_l(2,:), 'rv-', 'linewidth', 2, 'markersize', 10, ...
-%!	  vecXPts_l(1,end), vecXPts_l(2,end), 'rv-', 'linewidth', 4, 'markersize', 25, ...
+%!	  vecXPts_l(1,:), vecXPts_l(2,:), 'rv-', 'linewidth', 2, 'markersize', 20, ...
+%!	  vecXPts_l(1,end), vecXPts_l(2,end), 'rv-', 'linewidth', 4, 'markersize', 35, ...
 %!	  vecXPts_c(1,:), vecXPts_c(2,:), 'gs-', 'linewidth', 2, 'markersize', 15, ...
 %!	  vecXPts_c(1,end), vecXPts_c(2,end), 'gs-', 'linewidth', 4, 'markersize', 30, ...
-%!	  vecXPts_r(1,:), vecXPts_r(2,:), 'b^-', 'linewidth', 2, 'markersize', 20, ...
-%!	  vecXPts_r(1,end), vecXPts_r(2,end), 'b^-', 'linewidth', 4, 'markersize', 35 );
+%!	  vecXPts_r(1,:), vecXPts_r(2,:), 'b^-', 'linewidth', 2, 'markersize', 10, ...
+%!	  vecXPts_r(1,end), vecXPts_r(2,end), 'b^-', 'linewidth', 4, 'markersize', 25, ...
+%!	  vecXPts_cts(1,:), vecXPts_cts(2,:), 'co-', 'linewidth', 2, 'markersize', 5, ...
+%!	  vecXPts_cts(1,end), vecXPts_cts(2,end), 'co-', 'linewidth', 4, 'markersize', 20 );
 %!	hold off;
 %!	grid on;
 %!	xlabel( "x1" );

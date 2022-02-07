@@ -18,6 +18,7 @@ doFOCQ_L = false; doFOCQ_C = false; doFOCQ_R = false;
 %
 %doGrad_alytG = true; doLev_dispena = true; doLev_minford = true;
 %doGrad_cnstH = true; doLev_cnstH = true;
+doFOCQ_cts = true;
 doFOCQ_L = true; doFOCQ_C = true; doFOCQ_R = true;
 %
 %
@@ -114,6 +115,21 @@ if (doLev_minford)
 	thisCurveName = 'calcLevCurve_alytG_minford';
 	thisCurvePrm = [];
 	curveDat(numCurves).matX = calcLevCurve_alytG_minford( vecX0, funchOmega, thisCurvePrm );
+	thisCurveElapsedTime = time()-thisCurveTime0;
+	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
+	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
+	curveDat(numCurves).strName = thisCurveName;
+	curveDat(numCurves).prm = thisCurvePrm;
+end
+%
+%
+if (doFOCQ_cts)
+	numCurves++;
+	thisCurveTime0 = time();
+	thisCurveName = 'calcLevCurve_focq cts';
+	thisCurvePrm = [];
+	thisCurvePrm.curveSelector = 2;
+	curveDat(numCurves).matX = calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat, vecEta, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
 	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
