@@ -3,7 +3,7 @@
 % Calculates omega(x) = omega_base @ x if x is inside the surface,
 %  omega(x) = omega_base + (x-s)' * nabla omega_base + 0.5 * ||x-s||^2 * ( h0 + ||nabla omega_base||/tau ) @s(x)
 %  is x is outside the surface, where s(x) is the point x pulled to the surface.
-% ( Note that alternative approaches are possible, but, I'm going with this one. )
+% Note: This is more "within or pulled to" the surface than strictly within the surface.
 % Input...
 %  vecXVals: collection of position vectors; size() is definitionally [ sizeX, numVals ].
 %  funchOmegaBase: function handle for omega_base; should be able to calculate

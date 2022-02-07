@@ -1,8 +1,9 @@
 % Function...
 %  [ vecXPts, datOut ] = calcLevCurve_alytG_minford( vecX0, funchOmegaG, prm=[] )
-% Calculates points along the Minford (minimum for given distance) Levenberg curve for funcOmega using findOmegaMinWithinSurf().
+% Calculates points along the Minford (minimum for given distance) Levenberg curve for funcOmega using FMINUNC().
 % funchOmegaG must support the following interface:
 %  [ omega, vecG ] = funchOmegaG( vecX )
+% Note: That this function uses funcOmegaWithinSurf; alternative approaches to "minford" are possible.
 
 function [ matX, datOut ] = calcLevCurve_alytG_minford( vecX0, funchOmegaG, prm=[] )
 	%
@@ -19,6 +20,13 @@ function [ matX, datOut ] = calcLevCurve_alytG_minford( vecX0, funchOmegaG, prm=
 		end
 	end
 	%
+	[ omega0, vecG0 ] = funchOmegaG( vecX0 );
+	if (debugMode)
+		assert( isrealscalar(omega0) );
+		assert( isrealarray(vecG0,[sizeX,1]) );
+	end
+	h0 = norm(vecG0)/targetStepSize;
+	%
 	vecXC = vecX0;
 	datOut = [];
 	%
@@ -34,29 +42,37 @@ function [ matX, datOut ] = calcLevCurve_alytG_minford( vecX0, funchOmegaG, prm=
 		end
 		%
 		% Do work.
-		prm_fomwis = [];
-		prm_fomwis.tauX = targetStepSize;
-		prm_fomwis.epsX = targetStepSize/100.0;
-		vecX_next = findOmegaMinWithinSurf( vecX, funchSurf, funchOmegaG );
-		if (debugMode)
-			assert( isrealarray(vecX_next,[sizeX,1]) );
+		prm_fowis = [];
+		prm_fowis.h0 = h0;
+		prm_fowis.tau = targetStepSize/10.0;
+		prm_fowis.epsX = targetStepSize/100.0;
+		fcn = @(dummyX)( funcOmegaWithinSurf( dummyX, funchOmegaG, funchSurf, prm_fowis ) );
+		fminunc_opts = optimset( 'GradObj', 'on' );
+		vecX = fminunc( fcn, vecX, fminunc_opts );
+		if ( debugMode )
+			assert( isrealarray(vecX,[sizeX,1]) );
 		end
 		%
 		if ( isempty(matS) )
-			s_next = norm(vecX_next-vecXC);
+			s_next = norm(vecX-vecXC);
 		else
-			s_next = norm(matS*(vecX_next-vecXC));
+			s_next = norm(matS*(vecX-vecXC));
 		end
 		if ( s_next < bigR - (0.5*targetStepSize) )
 			%msg( __FILE__, __LINE__, "Reached local min." );
+			matX(:,n) = vecX;
 			return;
 		end
 		if ( s_next > bigR )
+			if ( debugMode )
+			if ( s_next > bigR + targetStepSize )
+				msg( __FILE__, __LINE__, "WARNING: Generated vecX is well outside surface. This should never happen." );
+			end
+			end
 			% Pull point back to surface.
-			vecX_next = vecXC + bigR*(vecX_next-vecXC)/s_next;
+			vecX = vecXC + bigR*(vecX-vecXC)/s_next;
 		end
-		matX(:,n) = vecX_next;
-		vecX = vecX_next;
+		matX(:,n) = vecX;
 	end
 	%
 return;
