@@ -11,6 +11,16 @@ funchOmega = @(dummyX)( testfunc2021_funcOmega(dummyX,testFuncPrm) );
 funchF = @(x)( testfunc2021_funcF(x,testFuncPrm) );
 [ omega0, vecG0, matH0 ] = testfunc2021_funcOmega( vecX0, testFuncPrm );
 %
+%
+doGrad_alytG = false; doLev_dispena = false; doLev_minford = false;
+doGrad_cnstH = false; doLev_cnstH = false;
+doFOCQ_L = false; doFOCQ_C = false; doFOCQ_R = false;
+%
+%doGrad_alytG = true; doLev_dispena = true; doLev_minford = true;
+%doGrad_cnstH = true; doLev_cnstH = true;
+doFOCQ_L = true; doFOCQ_C = true; doFOCQ_R = true;
+%
+%
 numOptOnF = true;
 if (numOptOnF)
 	[ vecF0, matJ0 ] = funchF( vecX0, testFuncPrm );
@@ -54,7 +64,7 @@ if (numOptOnF)
 	end
 end
 %
-doVizFOCQRoots = false;
+doVizFOCQRoots = true;
 if (doVizFOCQRoots)
 	temp_matPsi = orth( eye(sizeX,sizeX) - (vecPhiHat*(vecPhiHat')), sqrt(eps) );
 	temp_vecLambda = matJ0*vecPhiHat;
@@ -72,7 +82,7 @@ numCurves = 0;
 %
 %
 %
-if (1)
+if (doGrad_alytG)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcGradCurve_alytG';
@@ -85,7 +95,7 @@ if (1)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (1)
+if (doLev_dispena)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcLevCurve_alytG_dispena';
@@ -98,7 +108,7 @@ if (1)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (1)
+if (doLev_minford)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcLevCurve_alytG_minford';
@@ -112,79 +122,39 @@ if (1)
 end
 %
 %
-%
-if (0)
+if (doFOCQ_L)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcGradCurve OCQ';
-	thisCurvePrm = [];
-	curveDat(numCurves).matX = calcGradCurve( vecX0, funchOmega_OCQ, thisCurvePrm );
-	thisCurveElapsedTime = time()-thisCurveTime0;
-	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
-	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
-	curveDat(numCurves).strName = thisCurveName;
-	curveDat(numCurves).prm = thisCurvePrm;
-end
-%
-if (0)
-	numCurves++;
-	thisCurveTime0 = time();
-	thisCurveName = 'calcLevCurve OCQ';
-	thisCurvePrm = [];
-	curveDat(numCurves).matX = calcLevCurve( vecX0, funchOmega_OCQ, thisCurvePrm );
-	thisCurveElapsedTime = time()-thisCurveTime0;
-	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
-	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
-	curveDat(numCurves).strName = thisCurveName;
-	curveDat(numCurves).prm = thisCurvePrm;
-end
-%
-if (0)
-	numCurves++;
-	thisCurveTime0 = time();
-	thisCurveName = 'calcMinfordCurve OCQ';
-	thisCurvePrm = [];
-	curveDat(numCurves).matX = calcMinfordCurve( vecX0, funchOmega_OCQ, thisCurvePrm );
-	thisCurveElapsedTime = time()-thisCurveTime0;
-	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
-	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
-	curveDat(numCurves).strName = thisCurveName;
-	curveDat(numCurves).prm = thisCurvePrm;
-end
-%
-if (0)
-	numCurves++;
-	thisCurveTime0 = time();
-	thisCurveName = 'calcFOCQLevCurve L';
+	thisCurveName = 'calcLevCurve_focq L';
 	thisCurvePrm = [];
 	thisCurvePrm.curveSelector = -1;
-	curveDat(numCurves).matX = calcFOCQLevCurve( vecX0, vecF0, matJ0, vecPhiHat, vecEta, thisCurvePrm );
+	curveDat(numCurves).matX = calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat, vecEta, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
 	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
 	curveDat(numCurves).strName = thisCurveName;
 	curveDat(numCurves).prm = thisCurvePrm;
 end
-if (0)
+if (doFOCQ_C)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcFOCQLevCurve C';
+	thisCurveName = 'calcLevCurve_focq C';
 	thisCurvePrm = [];
 	thisCurvePrm.curveSelector = 0;
-	curveDat(numCurves).matX = calcFOCQLevCurve( vecX0, vecF0, matJ0, vecPhiHat, vecEta, thisCurvePrm );
+	curveDat(numCurves).matX = calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat, vecEta, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
 	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
 	curveDat(numCurves).strName = thisCurveName;
 	curveDat(numCurves).prm = thisCurvePrm;
 end
-if (0)
+if (doFOCQ_R)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcFOCQLevCurve R';
+	thisCurveName = 'calcLevCurve_focq R';
 	thisCurvePrm = [];
 	thisCurvePrm.curveSelector = 1;
-	curveDat(numCurves).matX = calcFOCQLevCurve( vecX0, vecF0, matJ0, vecPhiHat, vecEta, thisCurvePrm );
+	curveDat(numCurves).matX = calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat, vecEta, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
 	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
@@ -192,7 +162,8 @@ if (0)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (1)
+%
+if (doGrad_cnstH)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcGradCurve_cnstH';
@@ -204,8 +175,7 @@ if (1)
 	curveDat(numCurves).strName = thisCurveName;
 	curveDat(numCurves).prm = thisCurvePrm;
 end
-%
-if (1)
+if (doLev_cnstH)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcLevCurve_cnstH';
