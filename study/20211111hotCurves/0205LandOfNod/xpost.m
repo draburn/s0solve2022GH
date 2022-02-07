@@ -13,7 +13,7 @@ contourPlot_axEq = false;
 autoAx_borderCoeff = 0.1;
 
 %curveColors = 0.6*jet(numCurves);
-curveColors = 0.6*hsv(numCurves);
+curveColors = 0.7*hsv(numCurves);
 %curveSymbols = [ 'o', 'x', '^', 'v', '+', 's', 'p' ];
 %curveSymbols = [ 'o', '+', '^', 'v', 's', 'p' ];
 curveSymbols = [ 'o', '^', 'v', 's', 'p' ];

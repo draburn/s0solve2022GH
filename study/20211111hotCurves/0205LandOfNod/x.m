@@ -86,13 +86,13 @@ if (1)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (0)
+if (1)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcLevCurve';
+	thisCurveName = 'calcLevDispenaCurve_alytG';
 	thisCurvePrm = [];
 	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
-	curveDat(numCurves).matX = calcLevCurve( vecX0, funchOmega, thisCurvePrm );
+	curveDat(numCurves).matX = calcLevDispenaCurve_alytG( vecX0, funchOmega, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
 	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
