@@ -17,14 +17,14 @@ if (numOptOnF)
 	%echo__omega0 = omega0
 	%echo__vecG0 = vecG0
 	%echo__matH0 = matH0
-	omegaOCQ0 = 0.5*(vecF0'*vecF0)
-	vecGOCQ0 = matJ0'*vecF0
-	matHOCQ0 = matJ0'*matJ0
-	[ matPsiOCQ0, matLambdaOCQ0 ] = eig(matHOCQ0)
-	[ lambdaOCQ0AbsMin, nOfOCQ0AbsMin ] = min(abs(diag(matLambdaOCQ0)))
-	vecPhiHat = matPsiOCQ0(:,nOfOCQ0AbsMin)
+	omegaOCQ0 = 0.5*(vecF0'*vecF0);
+	vecGOCQ0 = matJ0'*vecF0;
+	matHOCQ0 = matJ0'*matJ0;
+	[ matPsiOCQ0, matLambdaOCQ0 ] = eig(matHOCQ0);
+	[ lambdaOCQ0AbsMin, nOfOCQ0AbsMin ] = min(abs(diag(matLambdaOCQ0)));
+	vecPhiHat = matPsiOCQ0(:,nOfOCQ0AbsMin);
 	%vecEta = ( funchF(vecX0+vecPhiHat) + funchF(vecX0-vecPhiHat) )/2.0 - vecF0
-	vecEta = funchF( vecX0 + vecPhiHat ) - ( vecF0 + matJ0*vecPhiHat )
+	vecEta = funchF( vecX0 + vecPhiHat ) - ( vecF0 + matJ0*vecPhiHat );
 	%
 	%funchFOCQ = @(dummyX)( vecF0 + matJ0*(dummyX-vecX0) + vecEta*sumsq(vecPhiHat'*(dummyX-vecX0)) );
 	%funchOmegaOCQ = @(dummyX)( sumsq(funchFOCQ(dummyX),1)/2.0 );
@@ -98,7 +98,7 @@ if (1)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (1)
+if (0)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcLevCurve_alytG_minford';
@@ -192,7 +192,7 @@ if (0)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (1)
+if (0)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcGradCurve_cnstH';
@@ -205,7 +205,7 @@ if (1)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (1)
+if (0)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcLevCurve_cnstH';

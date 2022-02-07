@@ -56,17 +56,21 @@ function [ vecXPts, datOut ] = calcGradCurve_cnstH( vecX0, omega0, vecG0, matH, 
 	vecY0 = matPsi'*vecX0;
 	vecGamma = (matPsi'*vecG0) - (matLambda*vecY0);
 	%
-	lambdaAbsMin = min(abs(vecLambda))+sqrt(eps)*max(abs(vecLambda));
-	sPts = (linspace( 1.0, 0.0, numPts )).^(1.0/lambdaAbsMin);
+	%%%fooExpo = min(abs(vecLambda)) + 0.01*(1.0+max(abs(vecLambda)));
+	%%%pPts = (linspace( 1.0, 0.0, numPts )).^(1.0/fooExpo)
+	pPts = linspace(1.0,0.0,numPts);
+	% Force p values to be concentrated near start and end.
+	pPts = 1.0 - ((1.0-(pPts.^2)).^4);
+	%
 	%
 	sizeY = sizeX;
 	vecGOL = vecGamma./vecLambda;
 	vecYPts = zeros(sizeY,numPts);
 	for n=1:sizeY
 	if ( 0.0 == vecLambda(n) )
-		vecYPts(n,:) = vecY0(n) + vecGamma(n)*log(sPts);
+		vecYPts(n,:) = vecY0(n) + vecGamma(n)*log(pPts);
 	else
-		vecYPts(n,:) = ( vecY0(n) + vecGOL(n) ) * (sPts.^vecLambda(n)) - vecGOL(n);
+		vecYPts(n,:) = ( vecY0(n) + vecGOL(n) ) * (pPts.^vecLambda(n)) - vecGOL(n);
 	end
 	end
 	vecXPts = matPsi*vecYPts;

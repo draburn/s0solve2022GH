@@ -1,7 +1,7 @@
 ax = [];
 sizeX = 2;
 sizeF = 2;
-caseNum = 2;
+caseNum = 10010;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case -1
@@ -479,8 +479,8 @@ case 10010
 	temp_matQ = [ 1.0; 0.0 ];
 	temp_vecVHat = [ 0.0; 1.0 ];
 	%
-	temp_vecF0 = [ -2.0; 1.0 ]
-	temp_vecEta = [ 2.0; 1.0 ]
+	temp_vecF0 = [ -2.0; 1.0 ];
+	temp_vecEta = [ 2.0; 1.0 ];
 	%
 	testFuncPrm.sizeX = sizeX;
 	testFuncPrm.sizeF = sizeF;
@@ -503,8 +503,8 @@ case 10011
 	temp_matQ = [ 1.0; 0.0 ];
 	temp_vecVHat = [ 0.0; 1.0 ];
 	%
-	temp_vecF0 = [ -2.0; 1.0 ]
-	temp_vecEta = [ 2.0; 1.0 ]
+	temp_vecF0 = [ -2.0; 1.0 ];
+	temp_vecEta = [ 2.0; 1.0 ];
 	%
 	testFuncPrm.sizeX = sizeX;
 	testFuncPrm.sizeF = sizeF;
