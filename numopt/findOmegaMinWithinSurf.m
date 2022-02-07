@@ -1,14 +1,22 @@
-function [ vecX, retCode, datOut ] = findOmegaMinWithinSurf( vecX0, funchSurf, funchOmega, prm=[] )
-	debugMode = mygetfield( prm, "debugMode", true );
+% Function...
+%  [ vecX, retCode, datOut ] = findOmegaMinWithinSurf( vecX0, funchSurf, funchOmegaG, prm=[] )
+% Unless prm.useProvidedGradients is set to FALSE, funchOmegaG should support the following interface.
+%  [ omega, vecG ] = funchOmegaG( vecX )
+
+function [ vecX, retCode, datOut ] = findOmegaMinWithinSurf( vecX0, funchSurf, funchOmegaG, prm=[] )
+	debugMode = mygetfield( prm, "debugMode", false );
 	%
 	% Validate main input.
 	sizeX = size(vecX0,1);
 	if ( debugMode )
+		msg( __FILE__, __LINE__, "Using debugMode." );
 		assert( isscalar(debugMode) );
 		assert( isbool(debugMode) );
 		assert( isrealarray(vecX0,[sizeX,1]) );
+	end
+	[ omega0, vecNablaOmega0 ] = funchOmegaG( vecX0 );
+	if ( debugMode )
 		[ vecS0, vecU0, vecV0, matNablaST0 ] = funchSurf( vecX0 );
-		[ omega0, vecNablaOmega0 ] = funchOmega( vecX0 );
 		assert( isrealarray(vecS0,[sizeX,1]) );
 		assert( isrealarray(vecU0,[sizeX,1]) );
 		assert( isrealarray(vecV0,[sizeX,1]) );
@@ -21,7 +29,7 @@ function [ vecX, retCode, datOut ] = findOmegaMinWithinSurf( vecX0, funchSurf, f
 	datOut = [];
 	%
 	%
-	% Set up the objective function that combines the input funchSurf and funchOmega.
+	% Set up the objective function that combines the input funchSurf and funchOmegaG.
 	tauX = mygetfield( prm, "tauX", 1e-2 );
 	h0 = mygetfield( prm, "h0", norm(vecNablaOmega0)/tauX );
 	epsX = mygetfield( prm, "epsX", 1e-5 );
@@ -34,10 +42,11 @@ function [ vecX, retCode, datOut ] = findOmegaMinWithinSurf( vecX0, funchSurf, f
 		assert( isscalar(useProvidedGradients) );
 		assert( isbool(useProvidedGradients) );
 	end
-	prm.h0 = h0;
-	prm.tau = tauX;
-	prm.epsX = epsX;
-	funchBigF = @(dummyX)( funcOmegaWithinSurf( dummyX, funchOmega, funchSurf, prm ) );
+	prm_fowis = [];
+	prm_fowis.h0 = h0;
+	prm_fowis.tau = tauX;
+	prm_fowis.epsX = epsX;
+	funchBigF = @(dummyX)( funcOmegaWithinSurf( dummyX, funchOmegaG, funchSurf, prm_fowis ) );
 	%
 	%
 	% Do work.

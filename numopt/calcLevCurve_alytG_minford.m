@@ -12,6 +12,7 @@ function [ matX, datOut ] = calcLevCurve_alytG_minford( vecX0, funchOmegaG, prm=
 	targetStepSize = mygetfield( prm, "targetStepSize", 0.1 );
 	matS = mygetfield( prm, "matS", [] );
 	if (debugMode)
+		msg( __FILE__, __LINE__, "Using debugMode." );
 		assert(isrealarray(vecX0,[sizeX,1]));
 		if (~isempty(matS))
 			assert(isrealarray(matS,[sizeX,sizeX]));
@@ -33,6 +34,9 @@ function [ matX, datOut ] = calcLevCurve_alytG_minford( vecX0, funchOmegaG, prm=
 		end
 		%
 		% Do work.
+		prm_fomwis = [];
+		prm_fomwis.tauX = targetStepSize;
+		prm_fomwis.epsX = targetStepSize/100.0;
 		vecX_next = findOmegaMinWithinSurf( vecX, funchSurf, funchOmegaG );
 		if (debugMode)
 			assert( isrealarray(vecX_next,[sizeX,1]) );
@@ -47,14 +51,9 @@ function [ matX, datOut ] = calcLevCurve_alytG_minford( vecX0, funchOmegaG, prm=
 			%msg( __FILE__, __LINE__, "Reached local min." );
 			return;
 		end
-		if (debugMode)
 		if ( s_next > bigR )
-			if ( s_next > bigR + (0.5*targetStepSize) )
-				msg( __FILE__, __LINE__, "WARNING: Generated point lies well outside surface." );
-			end
 			% Pull point back to surface.
 			vecX_next = vecXC + bigR*(vecX_next-vecXC)/s_next;
-		end
 		end
 		matX(:,n) = vecX_next;
 		vecX = vecX_next;

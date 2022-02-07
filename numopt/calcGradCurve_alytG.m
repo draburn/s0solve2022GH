@@ -9,6 +9,7 @@ function [ vecXPts, datOut ] = calcGradCurve_alytG( vecX0, funchOmegaG, prm=[] )
 	debugMode = mygetfield( prm, "debugMode", false );
 	sizeX = size(vecX0,1);
 	if (debugMode)
+		msg( __FILE__, __LINE__, "Using debugMode." );
 		assert( isscalar(debugMode) );
 		assert( isbool(debugMode) );
 		assert( isrealarray(vecX0,[sizeX,1]) );

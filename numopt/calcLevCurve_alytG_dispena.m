@@ -11,6 +11,7 @@ function [ vecXPts, datOut ] = calcLevCurve_alytG_dispena( vecX0, funchOmegaG, p
 	numPts =  mygetfield( prm, "numPts", 101 );
 	matS = mygetfield( prm, "matS", [] );
 	if (debugMode)
+		msg( __FILE__, __LINE__, "Using debugMode." );
 		assert( isscalar(debugMode) );
 		assert( isbool(debugMode) );
 		assert( isrealarray(vecX0,[sizeX,1]) );
