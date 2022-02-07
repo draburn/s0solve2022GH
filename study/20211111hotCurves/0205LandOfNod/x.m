@@ -89,10 +89,10 @@ end
 if (1)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcLevDispenaCurve_alytG';
+	thisCurveName = 'calcLevCurve_alytG_dispena';
 	thisCurvePrm = [];
 	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
-	curveDat(numCurves).matX = calcLevDispenaCurve_alytG( vecX0, funchOmega, thisCurvePrm );
+	curveDat(numCurves).matX = calcLevCurve_alytG_dispena( vecX0, funchOmega, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
 	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
@@ -100,13 +100,13 @@ if (1)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (0)
+if (1)
 	numCurves++;
 	thisCurveTime0 = time();
-	thisCurveName = 'calcMinfordCurve';
+	thisCurveName = 'calcLevCurve_alytG_minford';
 	thisCurvePrm = [];
 	msg( __FILE__, __LINE__, sprintf( "Calculating %s...", thisCurveName ) );
-	curveDat(numCurves).matX = calcMinfordCurve( vecX0, funchOmega, thisCurvePrm );
+	curveDat(numCurves).matX = calcLevCurve_alytG_minford( vecX0, funchOmega, thisCurvePrm );
 	thisCurveElapsedTime = time()-thisCurveTime0;
 	msg( __FILE__, __LINE__, sprintf( "Calculation of %s took %0.3fs.", thisCurveName, thisCurveElapsedTime ) );
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
@@ -213,7 +213,6 @@ if (1)
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
 	curveDat(numCurves).strName = thisCurveName;
 	curveDat(numCurves).prm = thisCurvePrm;
-	curveDat(numCurves).matX(:,end)
 end
 %
 if (1)
@@ -228,7 +227,6 @@ if (1)
 	curveDat(numCurves).elapsedTime = thisCurveElapsedTime;
 	curveDat(numCurves).strName = thisCurveName;
 	curveDat(numCurves).prm = thisCurvePrm;
-	curveDat(numCurves).matX(:,end)
 end
 %
 xpost;

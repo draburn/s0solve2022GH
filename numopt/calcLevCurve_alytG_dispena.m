@@ -1,10 +1,10 @@
 % Function...
-%  [ vecXPts, datOut ] = calcLevDispenaCurve_alytG( vecX0, funchOmega, prm=[] )
+%  [ vecXPts, datOut ] = calcLevCurve_alytG_dispena( vecX0, funchOmegaG, prm=[] )
 % Calculates points along the Dispena (distance penalty) Levenberg curve for funcOmega using FMINUNC().
-% funchOmega must support the following interface:
-%  [ omega, vecG ] = funchOmega( vecX )
+% funchOmegaG must support the following interface:
+%  [ omega, vecG ] = funchOmegaG( vecX )
 
-function [ vecXPts, datOut ] = calcLevDispenaCurve_alytG( vecX0, funchOmegaG, prm=[] )
+function [ vecXPts, datOut ] = calcLevCurve_alytG_dispena( vecX0, funchOmegaG, prm=[] )
 	%
 	sizeX = size(vecX0,1);
 	debugMode = mygetfield( prm, "debugMode", false );
@@ -110,7 +110,7 @@ end
 %!	prm = [];
 %!	prm.debugMode = true;
 %!	prm.matS = eye(sizeX,sizeX);
-%!	vecXPts = calcLevDispenaCurve_alytG( vecX0, funchOmegaG, prm );
+%!	vecXPts = calcLevCurve_alytG_dispena( vecX0, funchOmegaG, prm );
 %!	numPts = size(vecXPts,2);
 %!	assert( isrealarray(vecXPts,[sizeX,numPts]) );
 %!	%

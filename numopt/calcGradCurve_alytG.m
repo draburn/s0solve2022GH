@@ -1,8 +1,8 @@
 % Function...
-%  [ vecXPts, datOut ] = calcGradCurve_alytG( vecX0, funchOmega, prm=[] )
+%  [ vecXPts, datOut ] = calcGradCurve_alytG( vecX0, funchOmegaG, prm=[] )
 % Calculates points along the gradient-descent curve for funcOmega using LSODE().
-% funchOmega must support the following interface:
-%  [ omega, vecG ] = funchOmega( vecX )
+% funchOmegaG must support the following interface:
+%  [ omega, vecG ] = funchOmegaG( vecX )
 
 function [ vecXPts, datOut ] = calcGradCurve_alytG( vecX0, funchOmegaG, prm=[] )
 	%
@@ -73,6 +73,7 @@ function [ vecXPts, datOut ] = calcGradCurve_alytG( vecX0, funchOmegaG, prm=[] )
 	vecXPts(:,end+1) = vecXF;
 return;
 end
+
 
 %!function [ omega, vecG ] = funcOmegaG( vecX, vecX0, omega0, vecG0, matH0 )
 %!	vecY = vecX-vecX0;
