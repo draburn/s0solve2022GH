@@ -98,7 +98,7 @@ if (1)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (0)
+if (1)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcLevCurve_alytG_minford';
@@ -192,7 +192,7 @@ if (0)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (0)
+if (1)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcGradCurve_cnstH';
@@ -205,7 +205,7 @@ if (0)
 	curveDat(numCurves).prm = thisCurvePrm;
 end
 %
-if (0)
+if (1)
 	numCurves++;
 	thisCurveTime0 = time();
 	thisCurveName = 'calcLevCurve_cnstH';

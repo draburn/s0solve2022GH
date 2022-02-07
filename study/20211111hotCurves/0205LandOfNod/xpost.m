@@ -24,6 +24,7 @@ autoAx_x2Lo = vecX0(2);
 autoAx_x2Hi = vecX0(2);
 
 trimPts = true;
+trimStepSize = eps^0.75;
 
 for n=1:numCurves
 	matX = curveDat(n).matX;
@@ -35,6 +36,9 @@ for n=1:numCurves
 	if (trimPts)
 		vecOmega = 0.5*sum(matF.^2,1);
 		keepPts = ( vecOmega <= 3.0*vecOmega(1)+sqrt(eps)*max(abs(vecOmega)) );
+		dropPtsBCDistFromEnd = (sumsq(matX-matX(:,end),1)<trimStepSize);
+		dropPtsBCDistFromEnd(end) = false;
+		keepPts = keepPts & (~dropPtsBCDistFromEnd);
 		if (sum(double(keepPts))~=numPts)
 			%msg( __FILE__, __LINE__, sprintf( "*** Curve %d (\"%s\") had %d points before trim. ***", n, curveDat(n).strName, numPts ) );
 			numPts_before = numPts;
