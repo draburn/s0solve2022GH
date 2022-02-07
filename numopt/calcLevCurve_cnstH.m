@@ -32,7 +32,9 @@ function [ vecXPts, datOut ] = calcLevCurve_cnstH( vecX0, omega0, vecG0, matH, p
 	matD = matS'*matS;
 	eps075 = eps^0.75;
 	%
-	for n=1:numPts
+	% Do main loop.
+	vecXPts(:,1) = vecX0;
+	for n=2:numPts
 		s = (n-1.0)/(numPts-1.0);
 		matM = (s*matH) + ((1.0-s)*matD);
 		[ matR, cholFlag ] = chol( matM );
@@ -59,12 +61,15 @@ function [ vecXPts, datOut ] = calcLevCurve_cnstH( vecX0, omega0, vecG0, matH, p
 		% All points were accepted.
 		return;
 	elseif ( 2 == n )
+		% This is bad.
 		msg( __FILE__, __LINE__, "Only one point was accepted." );
 		return;
 	end
 	vecXPts = vecXPts(:,1:n-1);
 	%
-	%msg( __FILE__, __LINE__, "Extrapolating to omegaMin." );
+	%
+	% DRaburn 2022.02.06:
+	%  Extrapolate to omegaMin using last two points.
 	vecXA = vecXPts(:,end-1);
 	vecXB = vecXPts(:,end);
 	vecZ = vecXB-vecXA; % We'll take a step in this direction...

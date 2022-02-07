@@ -27,6 +27,8 @@ function [ vecXPts, datOut ] = calcGradCurve_cnstH( vecX0, omega0, vecG0, matH, 
 	%
 	matS = mygetfield( prm, "matS", [] );
 	if ( ~isempty(matS) )
+		% Draburn 2022.02.06:
+		%  This recursive call is clunky, but works.
 		%msg( __FILE__, __LINE__, "Calling with scaled values." );
 		prmMod = prm;
 		prmMod.matS = [];
@@ -43,6 +45,11 @@ function [ vecXPts, datOut ] = calcGradCurve_cnstH( vecX0, omega0, vecG0, matH, 
 	%
 	datOut = [];
 	%
+	% Do main calculations.
+	% DRaburn 2022.02.06:
+	%  The current code involves Inf and/or NaN calculations for non-positive eigenvalues.
+	%  Also, some of the results might not be well-scaled.
+	%  But, improving this is not a priority.
 	[ matPsi, matLambda ] = eig( matH );
 	vecLambda = diag(matLambda);
 	%
@@ -66,6 +73,9 @@ function [ vecXPts, datOut ] = calcGradCurve_cnstH( vecX0, omega0, vecG0, matH, 
 	vecDPts = vecXPts - vecX0;
 	omegaPts = omega0 + (vecG0'*vecDPts) + 0.5 * sum( vecDPts.*(matH*vecDPts), 1 );
 	%
+	% DRaburn 2022.02.06:
+	%  Now get rid of the points that were Inf or NaN.
+	%  The sumsq is particularly tacky, but, whatever.
 	ySumSqPts = sumsq( vecYPts, 1 );
 	nanPts = ( (isnan(ySumSqPts)) | isinf(ySumSqPts) );
 	skipPts = nanPts | (omegaPts<omegaMin);
@@ -84,7 +94,8 @@ function [ vecXPts, datOut ] = calcGradCurve_cnstH( vecX0, omega0, vecG0, matH, 
 		return;
 	end
 	%
-	%msg( __FILE__, __LINE__, "Extrapolating to omegaMin." );
+	% DRaburn 2022.02.06:
+	%  Extrapolate to omegaMin using last two points.
 	vecXA = vecXPts(:,end-1);
 	vecXB = vecXPts(:,end);
 	vecZ = vecXB-vecXA; % We'll take a step in this direction...
