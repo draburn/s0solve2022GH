@@ -97,11 +97,23 @@ function [ vecXPts, datOut ] = calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat
 			case -2
 				vecDeltaRoots = vecXRoots-vecX0;
 				vecFRoots = vecF0 + matJ0*vecDeltaRoots + vecEta*((vecPhiHat'*vecDeltaRoots).^2);
-				xiRoots = p*(vecFRoots.^2) + (1.0-p)*( (sz*zRoots).^2 + sumsq(matSY*vecYRoots,1) );
+				xiRoots = p*sumsq(vecFRoots,1) + (1.0-p)*( (sz*zRoots).^2 + sumsq(matSY*vecYRoots,1) );
 				if ( xiRoots(1) < xiRoots(3) )
 					vecXPts(:,n) = vecXRoots(:,1);
 				else
 					vecXPts(:,n) = vecXRoots(:,3);
+				end
+				% If we're at the roots (1==p), then both solutions should have 0 == xi;
+				% but, finite precision issues may mess things up.
+				% So, for the last point, force us to stay with the current root,
+				% as per 2 == curveSelector.
+				if ( abs(p-1.0)<sqrt(eps) )
+					vecXPrev = vecXPts(:,n-1);
+					if ( norm(vecXRoots(:,3)-vecXPrev) < norm(vecXRoots(:,1)-vecXPrev) )
+						vecXPts(:,n) = vecXRoots(:,3);
+					else
+						vecXPts(:,n) = vecXRoots(:,1);
+					end
 				end
 			case -1
 				vecXPts(:,n) = vecXRoots(:,1);
@@ -219,10 +231,10 @@ end
 %!	%
 %!	%
 %!	%
-%!	x1Lo = min([ min(vecXPts_l(1,:)), min(vecXPts_c(1,:)), min(vecXPts_r(1,:)) ])
-%!	x1Hi = max([ max(vecXPts_l(1,:)), max(vecXPts_c(1,:)), max(vecXPts_r(1,:)) ])
-%!	x2Lo = min([ min(vecXPts_l(2,:)), min(vecXPts_c(2,:)), min(vecXPts_r(2,:)) ])
-%!	x2Hi = max([ max(vecXPts_l(2,:)), max(vecXPts_c(2,:)), max(vecXPts_r(2,:)) ])
+%!	x1Lo = min([ min(vecXPts_l(1,:)), min(vecXPts_c(1,:)), min(vecXPts_r(1,:)) ]);
+%!	x1Hi = max([ max(vecXPts_l(1,:)), max(vecXPts_c(1,:)), max(vecXPts_r(1,:)) ]);
+%!	x2Lo = min([ min(vecXPts_l(2,:)), min(vecXPts_c(2,:)), min(vecXPts_r(2,:)) ]);
+%!	x2Hi = max([ max(vecXPts_l(2,:)), max(vecXPts_c(2,:)), max(vecXPts_r(2,:)) ]);
 %!	x1Diff = max([ 0.1, x1Hi-x1Lo ]);
 %!	x2Diff = max([ 0.1, x2Hi-x2Lo ]);
 %!	x1Lo = x1Lo - 0.3*x1Diff;
@@ -257,7 +269,7 @@ end
 %!	grid on;
 %!	xlabel( "x1" );
 %!	ylabel( "x2" );
-%!	title( "sqrt(omega) vs x1, x2" );
+%!	title( "sqrt(omega) vs x1, x2 -- all 4 curves" );
 
 
 %!test
@@ -330,10 +342,10 @@ end
 %!	end
 %!	%
 %!	%
-%!	x1Lo = min([ min(vecXPts_l(1,:)), min(vecXPts_c(1,:)), min(vecXPts_r(1,:)), min(vecXPts(1,:)) ])
-%!	x1Hi = max([ max(vecXPts_l(1,:)), max(vecXPts_c(1,:)), max(vecXPts_r(1,:)), max(vecXPts(1,:)) ])
-%!	x2Lo = min([ min(vecXPts_l(2,:)), min(vecXPts_c(2,:)), min(vecXPts_r(2,:)), min(vecXPts(2,:)) ])
-%!	x2Hi = max([ max(vecXPts_l(2,:)), max(vecXPts_c(2,:)), max(vecXPts_r(2,:)), max(vecXPts(2,:)) ])
+%!	x1Lo = min([ min(vecXPts_l(1,:)), min(vecXPts_c(1,:)), min(vecXPts_r(1,:)), min(vecXPts(1,:)) ]);
+%!	x1Hi = max([ max(vecXPts_l(1,:)), max(vecXPts_c(1,:)), max(vecXPts_r(1,:)), max(vecXPts(1,:)) ]);
+%!	x2Lo = min([ min(vecXPts_l(2,:)), min(vecXPts_c(2,:)), min(vecXPts_r(2,:)), min(vecXPts(2,:)) ]);
+%!	x2Hi = max([ max(vecXPts_l(2,:)), max(vecXPts_c(2,:)), max(vecXPts_r(2,:)), max(vecXPts(2,:)) ]);
 %!	x1Diff = max([ 0.1, x1Hi-x1Lo ]);
 %!	x2Diff = max([ 0.1, x2Hi-x2Lo ]);
 %!	x1Lo = x1Lo - 0.3*x1Diff;
@@ -365,7 +377,7 @@ end
 %!	grid on;
 %!	xlabel( "x1" );
 %!	ylabel( "x2" );
-%!	title( "sqrt(omega) vs x1, x2" );
+%!	title( "sqrt(omega) vs x1, x2 -- cts curve + pts" );
 
 
 
@@ -440,10 +452,10 @@ end
 %!	end
 %!	%
 %!	%
-%!	x1Lo = min([ min(vecXPts_l(1,:)), min(vecXPts_c(1,:)), min(vecXPts_r(1,:)), min(vecXPts(1,:)) ])
-%!	x1Hi = max([ max(vecXPts_l(1,:)), max(vecXPts_c(1,:)), max(vecXPts_r(1,:)), max(vecXPts(1,:)) ])
-%!	x2Lo = min([ min(vecXPts_l(2,:)), min(vecXPts_c(2,:)), min(vecXPts_r(2,:)), min(vecXPts(2,:)) ])
-%!	x2Hi = max([ max(vecXPts_l(2,:)), max(vecXPts_c(2,:)), max(vecXPts_r(2,:)), max(vecXPts(2,:)) ])
+%!	x1Lo = min([ min(vecXPts_l(1,:)), min(vecXPts_c(1,:)), min(vecXPts_r(1,:)), min(vecXPts(1,:)) ]);
+%!	x1Hi = max([ max(vecXPts_l(1,:)), max(vecXPts_c(1,:)), max(vecXPts_r(1,:)), max(vecXPts(1,:)) ]);
+%!	x2Lo = min([ min(vecXPts_l(2,:)), min(vecXPts_c(2,:)), min(vecXPts_r(2,:)), min(vecXPts(2,:)) ]);
+%!	x2Hi = max([ max(vecXPts_l(2,:)), max(vecXPts_c(2,:)), max(vecXPts_r(2,:)), max(vecXPts(2,:)) ]);
 %!	x1Diff = max([ 0.1, x1Hi-x1Lo ]);
 %!	x2Diff = max([ 0.1, x2Hi-x2Lo ]);
 %!	x1Lo = x1Lo - 0.3*x1Diff;
@@ -475,4 +487,4 @@ end
 %!	grid on;
 %!	xlabel( "x1" );
 %!	ylabel( "x2" );
-%!	title( "sqrt(omega) vs x1, x2" );
+%!	title( "sqrt(omega) vs x1, x2 -- xi min curve + pts" );
