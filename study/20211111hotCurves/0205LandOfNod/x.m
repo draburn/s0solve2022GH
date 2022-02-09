@@ -16,7 +16,7 @@ doGrad_alytG = false; doLev_dispena = false; doLev_minford = false;
 doGrad_cnstH = false; doLev_cnstH = false;
 doFOCQ_L = false; doFOCQ_C = false; doFOCQ_R = false;
 %
-%doGrad_alytG = true; doLev_dispena = true; doLev_minford = true;
+doGrad_alytG = true; doLev_dispena = true; doLev_minford = true;
 %doGrad_cnstH = true; doLev_cnstH = true;
 doFOCQ_cts = true;
 doFOCQ_L = true; doFOCQ_C = true; doFOCQ_R = true;

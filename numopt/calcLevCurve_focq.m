@@ -165,7 +165,7 @@ end
 %!		matJ0 = randn(sizeF,sizeX);
 %!		vecEta = randn(sizeF,1);
 %!	case 10010
-%!		% "1->3->1 detour".
+%!		% "1->3->1 detour loop".
 %!		vecX0 = zeros(sizeX,1);
 %!		vecF0 = [ -2.0; 1.0 ];
 %!		matJ0 = [ 1.0, 0.0; 0.0, 0.0 ];
@@ -289,7 +289,7 @@ end
 %!		matJ0 = randn(sizeF,sizeX);
 %!		vecEta = randn(sizeF,1);
 %!	case 10010
-%!		% "1->3->1 detour".
+%!		% "1->3->1 detour loop".
 %!		vecX0 = zeros(sizeX,1);
 %!		vecF0 = [ -2.0; 1.0 ];
 %!		matJ0 = [ 1.0, 0.0; 0.0, 0.0 ];
@@ -398,7 +398,7 @@ end
 %!		matJ0 = randn(sizeF,sizeX);
 %!		vecEta = randn(sizeF,1);
 %!	case 10010
-%!		% "1->3->1 detour".
+%!		% "1->3->1 detour loop".
 %!		vecX0 = zeros(sizeX,1);
 %!		vecF0 = [ -2.0; 1.0 ];
 %!		matJ0 = [ 1.0, 0.0; 0.0, 0.0 ];
