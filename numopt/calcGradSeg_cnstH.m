@@ -49,6 +49,10 @@ function [ vecXPts, datOut ] = calcGradSeg_cnstH( vecX0, omega0, vecG0, matH, pr
 	% So:
 	%  omega = omega0 + (-vecG0'*vecG0)*p + (0.5*vecG0'*matH*vecG0)*(p^2).
 	p = calcLinishRootOfQuad( 0.5*(vecG0'*matH*vecG0), -(vecG0'*vecG0), omega0 );
+	if ( p<=0.0 )
+		msg( __FILE__, __LINE__, "WARNING: Terminal point of gradient segment is in wrong direction. This should be impossible." );
+		warning( "WARNING: Terminal point of gradient segment is in wrong direction. This should be impossible." );
+	end
 	vecXPts = vecX0 - vecG0*linspace(0.0,p,numPts);
 return;
 end
