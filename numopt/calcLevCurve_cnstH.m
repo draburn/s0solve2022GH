@@ -12,7 +12,7 @@ function [ vecXPts, datOut ] = calcLevCurve_cnstH( vecX0, omega0, vecG0, matH, p
 	debugMode = mygetfield( prm, "debugMode", false );
 	matS = mygetfield( prm, "matS", eye(sizeX,sizeX) );
 	omegaMin = mygetfield( prm, "omegaMin", 0.0 );
-	numPts = mygetfield( prm, "numPts", 401 );
+	numPts = mygetfield( prm, "numPts", 101 );
 	if (debugMode)
 		msg( __FILE__, __LINE__, "Using debugMode." );
 		assert( isscalar(debugMode) );

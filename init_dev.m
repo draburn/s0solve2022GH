@@ -9,7 +9,7 @@ commondefs;
 my_editor = "/usr/bin/mousepad";
 EDITOR( [my_editor ' %s'] ); % Moot if not USING_GUI; see options within GUI.
 %
-switch 2
+switch 3
 case 0
 	msg(__FILE__,__LINE__,"Adding path \"study/20211111hotCurves/0117lostinparadise/\".");
 	addpath( "study/20211111hotCurves/0117lostinparadise/" );
@@ -20,8 +20,8 @@ case 2
 	msg(__FILE__,__LINE__,"Adding path \"study/20220208NoiseCompensation/0208OneDLinPlusRand/\".");
 	addpath( "study/20220208NoiseCompensation/0208OneDLinPlusRand/" );
 case 3
-	msg(__FILE__,__LINE__,"Adding path \"study/20211111hotCurves/0110review/\".");
-	addpath( "study/20211111hotCurves/0110review/" );
+	msg(__FILE__,__LINE__,"Adding path \"study/20211111hotCurves/0210ThreeDim/\".");
+	addpath( "study/20211111hotCurves/0210ThreeDim/" );
 case 4
 otherwise
 	msg(__FILE__,__LINE__,"Invalid case.");
