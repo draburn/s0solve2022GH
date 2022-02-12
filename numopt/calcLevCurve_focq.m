@@ -11,7 +11,7 @@ function [ vecXPts, datOut ] = calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat
 	%
 	sizeX = size(vecX0,1);
 	sizeF = size(vecF0,1);
-	debugMode = mygetfield( prm, "debugMode", false );
+	debugMode = mygetfield( prm, "debugMode", true );
 	sz = mygetfield( prm, "sz", 1.0 );
 	matSY = mygetfield( prm, "matSY", eye(sizeX-1,sizeX-1) );
 	curveSelector = mygetfield( prm, "curveSelector", 2 );
@@ -52,7 +52,7 @@ function [ vecXPts, datOut ] = calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat
 	%  Contrary to notes, take matPsi to span all of sizeX except vecPhiHat.
 	%  Or, rather, assume matJ*matPsi is non-singular.
 	matIX = eye(sizeX,sizeX);
-	matPsi = orth( matIX - (vecPhiHat*(vecPhiHat')) );
+	matPsi = orth( matIX - (vecPhiHat*(vecPhiHat')), sqrt(eps) );
 	if ( debugMode )
 		assert( isrealarray(matPsi,[sizeX,sizeX-1]) );
 		matShy = [ vecPhiHat, matPsi ];

@@ -1,7 +1,13 @@
 ax = [];
-caseNum = -2;
+caseNum = 18153952;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
+case -20
+	sizeX = 3;
+	sizeF = 3;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,[]); % Calls setprngstates.
+	testFuncPrm.ary3K *= 0.0;
+	vecX0 = randn(sizeX,1);
 case -2
 	sizeX = 10;
 	sizeF = 10;
@@ -36,6 +42,12 @@ case 100
 	sizeX = 3;
 	sizeF = 3;
 	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,0); % Calls setprngstates.
+	vecX0 = randn(sizeX,1);
+case 18153952
+	sizeX = 3;
+	sizeF = 3;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,18153952); % Calls setprngstates.
+	testFuncPrm.ary3K *= 0.0;
 	vecX0 = randn(sizeX,1);
 case 82177120
 	sizeX = 3;
