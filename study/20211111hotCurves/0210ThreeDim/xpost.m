@@ -32,14 +32,16 @@ for n=1:numCurves
 	curveDat(n).z2Vals = vecZ2Hat'*(curveDat(n).vecBigDeltaVals);
 	curveDat(n).vecZRVals = curveDat(n).vecBigDeltaVals - vecZ1Hat*curveDat(n).z1Vals - vecZ2Hat*curveDat(n).z2Vals;
 	curveDat(n).zdVals = sqrt(sumsq( curveDat(n).vecZRVals, 1));
+	curveDat(n).vecFVals_cnstJ = vecF0 + matJ0*curveDat(n).vecBigDeltaVals;
+	curveDat(n).omegaVals_cnstJ = 0.5*sumsq(curveDat(n).vecFVals_cnstJ,1);
 	%
 	%
 	curveDat(n).plot_color = curveColors(n,:);
-	curveDat(n).plot_markerSize = 8+3*(numCurves-n);
+	curveDat(n).plot_markerSize = 4+3*(numCurves-n);
 	curveDat(n).plot_markerStyle = curveSymbols(1+mod(n-1,max(size(curveSymbols))));
 	curveDat(n).plot_lineWidth = 2;
 	curveDat(n).plot_lineStyle = '-';
-	curveDat(n).plot_bigMarkerSize = 10+4*(2*numCurves-n);
+	curveDat(n).plot_bigMarkerSize = 4+3*(2*numCurves-n);
 	curveDat(n).plot_bigLineWidth = 4;
 	%
 	%
@@ -67,6 +69,10 @@ contourPlot_vecXVals = vecX0 + vecZ1Hat*reshape(contourPlot_z1Mesh,1,[]) + vecZ2
 contourPlot_vecFVals = funchF( contourPlot_vecXVals );
 contourPlot_omegaVals = 0.5*sumsq(contourPlot_vecFVals,1);
 contourPlot_omegaMesh = reshape( contourPlot_omegaVals, contourPlot_numZ2Vals, contourPlot_numZ1Vals );
+%
+contourPlot_vecFVals_cnstJ = vecF0 + matJ0*contourPlot_vecXVals;
+contourPlot_omegaVals_cnstJ = 0.5*sumsq(contourPlot_vecFVals_cnstJ,1);
+contourPlot_omegaMesh_cnstJ = reshape( contourPlot_omegaVals_cnstJ, contourPlot_numZ2Vals, contourPlot_numZ1Vals );
 %
 %
 %
