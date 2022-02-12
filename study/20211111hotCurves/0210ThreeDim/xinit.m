@@ -1,5 +1,5 @@
 ax = [];
-caseNum = 100;
+caseNum = 10;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case -20
@@ -36,6 +36,16 @@ case 1
 	testFuncPrm.vecXE = [1:sizeX]';
 	testFuncPrm.vecFE = zeros(sizeF,1);
 	testFuncPrm.matJ = diag([1:sizeX]);
+	testFuncPrm.ary3K = zeros(sizeX,sizeX,sizeF);
+	vecX0 = zeros(sizeX,1);
+case 10
+	sizeX = 3;
+	sizeF = 3;
+	testFuncPrm.sizeX = sizeX;
+	testFuncPrm.sizeF = sizeF;
+	testFuncPrm.vecXE = [1:sizeX]';
+	testFuncPrm.vecFE = zeros(sizeF,1);
+	testFuncPrm.matJ = diag([1:sizeX].^4);
 	testFuncPrm.ary3K = zeros(sizeX,sizeX,sizeF);
 	vecX0 = zeros(sizeX,1);
 case 100

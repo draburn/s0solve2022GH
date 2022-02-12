@@ -45,7 +45,7 @@ for n=1:numCurves
 	curveDat(n).plot_lineWidth = 2;
 	curveDat(n).plot_lineStyle = '-';
 	curveDat(n).plot_bigMarkerSize = 4+3*(2*numCurves-n);
-	curveDat(n).plot_bigLineWidth = 4;
+	curveDat(n).plot_bigLineWidth = 2;
 	%
 	%
 	autoAx_z1Lo = min([ autoAx_z1Lo, min( curveDat(n).z1Vals ) ]);
