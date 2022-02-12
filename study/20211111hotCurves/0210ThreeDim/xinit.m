@@ -1,5 +1,5 @@
 ax = [];
-caseNum = 1;
+caseNum = 100;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case 0

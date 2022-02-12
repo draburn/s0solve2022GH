@@ -27,9 +27,10 @@ autoAx_z2Hi = vecX0(2);
 for n=1:numCurves
 	curveDat(n).vecFVals = funchF( curveDat(n).vecXVals );
 	curveDat(n).omegaVals = 0.5*sumsq(curveDat(n).vecFVals,1);
-	curveDat(n).z1Vals = vecZ1Hat'*( curveDat(n).vecXVals - vecX0 );
-	curveDat(n).z2Vals = vecZ2Hat'*( curveDat(n).vecXVals - vecX0 );
-	curveDat(n).vecZRVals = curveDat(n).vecXVals - vecZ1Hat*curveDat(n).z1Vals - vecZ2Hat*curveDat(n).z2Vals;
+	curveDat(n).vecBigDeltaVals = curveDat(n).vecXVals - vecX0;
+	curveDat(n).z1Vals = vecZ1Hat'*(curveDat(n).vecBigDeltaVals);
+	curveDat(n).z2Vals = vecZ2Hat'*(curveDat(n).vecBigDeltaVals);
+	curveDat(n).vecZRVals = curveDat(n).vecBigDeltaVals - vecZ1Hat*curveDat(n).z1Vals - vecZ2Hat*curveDat(n).z2Vals;
 	curveDat(n).zdVals = sqrt(sumsq( curveDat(n).vecZRVals, 1));
 	%
 	%
