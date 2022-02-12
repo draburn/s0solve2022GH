@@ -5,11 +5,12 @@ vizTime0 = time();
 useAxEq = false;
 plotLegend = true;
 plotCurveZ1Z2 = true;
-plotCurveZ1Z2_cnstJ = true;
+plotCurveZ1Z2_cnstJ = false;
 plotCurveZ1ZD = true;
 plotOmegaVsZ1 = true;
 plotOmegaVsZ1_cnstJ = true;
 plotOmegaVsN = true;
+plotZ1VsDAC = true;
 %
 %
 %
@@ -221,6 +222,37 @@ if ( plotOmegaVsN )
 		  'markersize', curveDat(n).plot_markerSize );
 		plot( ...
 		  [0.0,curveDat(n).numPts-1.0], sqrt(curveDat(n).omegaVals([1,end])), ...
+		  curveDat(n).plot_markerStyle, ...
+		  'linewidth', curveDat(n).plot_bigLineWidth, ...
+		  'color', curveDat(n).plot_color, ...
+		  'markersize', curveDat(n).plot_bigMarkerSize );
+	end
+	hold off;
+	grid on;
+end
+%
+%
+%
+if ( plotZ1VsDAC )
+	numFigs++; figure(numFigs);
+	funchVizLog = @(x)(log( eps025*max(max(x)) + x - min(min(x)) ));
+	plot( [0.0,norm(vecXE-vecX0)], [0.0,0.0], 'k-' );
+	xlabel( "DAC" );
+	ylabel( "z1" );
+	title( "z1 vs DAC" );
+	if ( useAxEq )
+		axis equal;
+	end
+	hold on;
+	for n=1:numCurves
+		plot( ...
+		  curveDat(n).dacVals, curveDat(n).z1Vals, ...
+		  [ curveDat(n).plot_markerStyle, curveDat(n).plot_lineStyle], ...
+		  'linewidth', curveDat(n).plot_lineWidth, ...
+		  'color', curveDat(n).plot_color, ...
+		  'markersize', curveDat(n).plot_markerSize );
+		plot( ...
+		  curveDat(n).dacVals([1,end]), curveDat(n).z1Vals([1,end]), ...
 		  curveDat(n).plot_markerStyle, ...
 		  'linewidth', curveDat(n).plot_bigLineWidth, ...
 		  'color', curveDat(n).plot_color, ...

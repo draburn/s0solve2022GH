@@ -34,6 +34,8 @@ for n=1:numCurves
 	curveDat(n).zdVals = sqrt(sumsq( curveDat(n).vecZRVals, 1));
 	curveDat(n).vecFVals_cnstJ = vecF0 + matJ0*curveDat(n).vecBigDeltaVals;
 	curveDat(n).omegaVals_cnstJ = 0.5*sumsq(curveDat(n).vecFVals_cnstJ,1);
+	curveDat(n).bigDeltaNormVals = sqrt(sumsq(curveDat(n).vecBigDeltaVals,1));
+	curveDat(n).dacVals = [ 0.0, cumsum(sqrt(sumsq(diff(curveDat(n).vecXVals,1,2),1))) ];
 	%
 	%
 	curveDat(n).plot_color = curveColors(n,:);

@@ -1,7 +1,17 @@
 ax = [];
-caseNum = 100;
+caseNum = -2;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
+case -2
+	sizeX = 10;
+	sizeF = 10;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,[]); % Calls setprngstates.
+	vecX0 = randn(sizeX,1);
+case -1
+	sizeX = 3;
+	sizeF = 3;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,[]); % Calls setprngstates.
+	vecX0 = randn(sizeX,1);
 case 0
 	sizeX = 3;
 	sizeF = 3;
@@ -26,6 +36,11 @@ case 100
 	sizeX = 3;
 	sizeF = 3;
 	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,0); % Calls setprngstates.
+	vecX0 = randn(sizeX,1);
+case 82177120
+	sizeX = 3;
+	sizeF = 3;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,82177120); % Calls setprngstates.
 	vecX0 = randn(sizeX,1);
 otherwise
 	error( "Invalid value of switch." );
@@ -78,3 +93,4 @@ doFOCQ_C0jtj = false;
 doFOCQ_R0jtj = false;
 doGrad_cnstJ = false;
 doLev_cnstJ = false;
+doGradSeg_cnstJ = false;
