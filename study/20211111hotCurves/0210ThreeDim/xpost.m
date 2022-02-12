@@ -19,6 +19,22 @@ vecZ1Hat = vecZ1/norm(vecZ1);
 vecZ2 = vecZ2 - vecZ1Hat*(vecZ1Hat'*vecZ2);
 assert( 0.0 ~= norm(vecZ2) );
 vecZ2Hat = vecZ2/norm(vecZ2);
+for n=1:3
+	vecZ3 = zeros(sizeX,1);
+	vecZ3(n) = 1.0;
+	vecZ3 = vecZ3 - vecZ1Hat*(vecZ1Hat'*vecZ3);
+	vecZ3 = vecZ3 - vecZ2Hat*(vecZ2Hat'*vecZ3);
+	if ( 0.0 == norm(vecZ3) )
+		continue;
+	end
+	vecZ3Hat = vecZ3/norm(vecZ3);
+	vecZ3 = vecZ3 - vecZ1Hat*(vecZ1Hat'*vecZ3);
+	vecZ3 = vecZ3 - vecZ2Hat*(vecZ2Hat'*vecZ3);
+	if ( 0.0 == norm(vecZ3) )
+		continue;
+	end
+	vecZ3Hat = vecZ3/norm(vecZ3);
+end
 %
 autoAx_z1Lo = vecX0(1);
 autoAx_z1Hi = vecX0(1);
@@ -30,6 +46,7 @@ for n=1:numCurves
 	curveDat(n).vecBigDeltaVals = curveDat(n).vecXVals - vecX0;
 	curveDat(n).z1Vals = vecZ1Hat'*(curveDat(n).vecBigDeltaVals);
 	curveDat(n).z2Vals = vecZ2Hat'*(curveDat(n).vecBigDeltaVals);
+	curveDat(n).z3Vals = vecZ3Hat'*(curveDat(n).vecBigDeltaVals);
 	curveDat(n).vecZRVals = curveDat(n).vecBigDeltaVals - vecZ1Hat*curveDat(n).z1Vals - vecZ2Hat*curveDat(n).z2Vals;
 	curveDat(n).zdVals = sqrt(sumsq( curveDat(n).vecZRVals, 1));
 	curveDat(n).vecFVals_cnstJ = vecF0 + matJ0*curveDat(n).vecBigDeltaVals;

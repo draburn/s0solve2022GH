@@ -156,9 +156,6 @@ if ( plotOmegaVsZ1 )
 	xlabel( "z1" );
 	ylabel( "sqrt(omega)" );
 	title( "sqrt(omega) vs z1" );
-	if ( useAxEq )
-		axis equal;
-	end
 	hold on;
 	for n=1:numCurves
 		plot( ...
@@ -184,9 +181,6 @@ if ( plotOmegaVsZ1_cnstJ )
 	xlabel( "z1" );
 	ylabel( "sqrt(omega cnstJ)" );
 	title( "sqrt(omega cnstJ) vs z1" );
-	if ( useAxEq )
-		axis equal;
-	end
 	hold on;
 	for n=1:numCurves
 		plot( ...
@@ -271,9 +265,6 @@ if ( plotOmegaVsDAC )
 	xlabel( "DAC" );
 	ylabel( "sqrt(omega)" );
 	title( "sqrt(omega) vs DAC" );
-	if ( useAxEq )
-		axis equal;
-	end
 	hold on;
 	for n=1:numCurves
 		plot( ...
@@ -302,9 +293,6 @@ if ( plotOmegaVsBigDelta )
 	xlabel( "Delta Norm" );
 	ylabel( "sqrt(omega)" );
 	title( "sqrt(omega) vs Delta Norm" );
-	if ( useAxEq )
-		axis equal;
-	end
 	hold on;
 	for n=1:numCurves
 		plot( ...
@@ -333,9 +321,6 @@ if ( plotMIVVsZ1 )
 	xlabel( "z1" );
 	ylabel( "|| F cnstJ - F ||" );
 	title( "|| F cnstJ - F || vs z1" );
-	if ( useAxEq )
-		axis equal;
-	end
 	hold on;
 	for n=1:numCurves
 		plot( ...
