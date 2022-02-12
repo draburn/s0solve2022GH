@@ -1,5 +1,5 @@
 ax = [];
-caseNum = -2;
+caseNum = 100;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case -20
@@ -73,13 +73,21 @@ matH0_jtj = matJ0'*matJ0;
 %
 vecXE = testFuncPrm.vecXE;
 [ vecFE, matJE ] = funchF( vecXE );
-[ omegaE, vecGrad, matHE_full ] = funchOmega( vecXE );
+[ omegaE, vecGradE, matHE_full ] = funchOmega( vecXE );
+%
+vecXVals_temp = calcGradSeg_cnstH( vecX0, omega0, vecG0, matH0_jtj, [] );
+vecXG_jtj = vecXVals_temp(:,end);
+%[ vecFG_jtj, matJG_jtj ] = funchF( vecXG_jtj );
+%[ omegaEG_jtj, vecGradG_jtj, matHG_jtj ] = funchOmega( vecXG_jtj );
+vecFG_jtj = funchF( vecXG_jtj );
+omegaG_jtj = funchOmega( vecXG_jtj );
+modelInaccuracyG_jtj = norm( vecF0 + matJ0*(vecXG_jtj-vecX0) - vecFG_jtj ) / norm(vecF0);
 %
 %
 %
 doExtCheck = true;
 if (doExtCheck)
-	assert( sumsq(vecGrad) < sqrt(eps)*( sumsq(vecFE) + sum(sumsq(matJE)) + sum(sumsq(matHE_full)) ) );
+	assert( sumsq(vecGradE) < sqrt(eps)*( sumsq(vecFE) + sum(sumsq(matJE)) + sum(sumsq(matHE_full)) ) );
 end
 %
 %
@@ -111,3 +119,7 @@ doGradSeg_cnstH_jtj = false;
 doGrad_cnstH_full = false;
 doLev_cnstH_full = false;
 doGradSeg_cnstH_full = false;
+doPostGradJTJ_minXi0 = false;
+doPostGradJTJ_grad_cnstH = false;
+doPostGradJTJ_lev_cnstH = false;
+doPostGradJTJ_gradSeg_cnstH = false;

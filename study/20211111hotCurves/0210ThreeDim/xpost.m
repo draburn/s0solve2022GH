@@ -33,6 +33,7 @@ for n=1:numCurves
 	curveDat(n).vecZRVals = curveDat(n).vecBigDeltaVals - vecZ1Hat*curveDat(n).z1Vals - vecZ2Hat*curveDat(n).z2Vals;
 	curveDat(n).zdVals = sqrt(sumsq( curveDat(n).vecZRVals, 1));
 	curveDat(n).vecFVals_cnstJ = vecF0 + matJ0*curveDat(n).vecBigDeltaVals;
+	curveDat(n).modelInaccuracyVals_cnstJ = sqrt(sumsq( curveDat(n).vecFVals_cnstJ - curveDat(n).vecFVals, 1 ));
 	curveDat(n).omegaVals_cnstJ = 0.5*sumsq(curveDat(n).vecFVals_cnstJ,1);
 	curveDat(n).bigDeltaNormVals = sqrt(sumsq(curveDat(n).vecBigDeltaVals,1));
 	curveDat(n).dacVals = [ 0.0, cumsum(sqrt(sumsq(diff(curveDat(n).vecXVals,1,2),1))) ];

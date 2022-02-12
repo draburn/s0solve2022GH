@@ -11,7 +11,7 @@ function [ vecXPts, datOut ] = calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat
 	%
 	sizeX = size(vecX0,1);
 	sizeF = size(vecF0,1);
-	debugMode = mygetfield( prm, "debugMode", true );
+	debugMode = mygetfield( prm, "debugMode", false );
 	sz = mygetfield( prm, "sz", 1.0 );
 	matSY = mygetfield( prm, "matSY", eye(sizeX-1,sizeX-1) );
 	curveSelector = mygetfield( prm, "curveSelector", 2 );
