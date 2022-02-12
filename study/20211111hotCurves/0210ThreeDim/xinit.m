@@ -1,5 +1,5 @@
 ax = [];
-caseNum = 18153952;
+caseNum = -2;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case -20
@@ -44,6 +44,7 @@ case 100
 	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,0); % Calls setprngstates.
 	vecX0 = randn(sizeX,1);
 case 18153952
+	% Full steps are good; grad segment doesn't go far enough.
 	sizeX = 3;
 	sizeF = 3;
 	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,18153952); % Calls setprngstates.

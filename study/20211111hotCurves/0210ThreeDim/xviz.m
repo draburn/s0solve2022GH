@@ -9,10 +9,10 @@ plotCurveZ1Z2_cnstJ = false;
 plotCurveZ1ZD = true;
 plotOmegaVsZ1 = true;
 plotOmegaVsZ1_cnstJ = true;
-plotOmegaVsN = true;
+plotOmegaVsN = false;
 plotZ1VsDAC = false;
-plotOmegaVsDAC = true;
-plotOmegaVsBigDelta = true;
+plotOmegaVsDAC = false;
+plotOmegaVsBigDelta = false;
 %
 %
 %
