@@ -6,16 +6,18 @@ startTime = time();
 %
 xinit;
 %
-%doGrad_alytG = true; doLev_dispena = true;
+doGrad_alytG = true;
+%doLev_dispena = true;
 %doLev_minford = true;
-%doFOCQ_minXi0_jtj = true;
-doFOCQ_minXi0_fullish = true;
-doFOCQ_L0jtj = true; doFOCQ_C0jtj = true; doFOCQ_R0jtj = true;
+doFOCQ_minXi0_jtj = true;
+%doFOCQ_minXi0_fullish = true;
+%doFOCQ_L0jtj = true; doFOCQ_C0jtj = true; doFOCQ_R0jtj = true;
 %doGrad_cnstH_jtj = true; doLev_cnstH_jtj = true; doGradSeg_cnstH_jtj = true;
 %doGrad_cnstH_full = true; doLev_cnstH_full = true; doGradSeg_cnstH_full = true;
-%doLev_cnstH_jtj = true; doGradSeg_cnstH_jtj = true;
-%doGradSeg_cnstH_jtj_scaled = true;
+doLev_cnstH_jtj = true; doGradSeg_cnstH_jtj = true;
+doGradSeg_cnstH_jtj_scaled = true;
 doLev_cnstH_full = true; doGradSeg_cnstH_full = true;
+doGradSeg_cnstH_full_scaled = true;
 %doPostGradJTJ_minXi0 = true;
 %doPostGradJTJ_grad_cnstH = true; doPostGradJTJ_lev_cnstH = true; doPostGradJTJ_gradSeg_cnstH = true;
 %
@@ -200,6 +202,18 @@ if ( doGradSeg_cnstH_full )
 	curveDat(numCurves).startTime = time();
 	curveDat(numCurves).strName = 'calcGradSeg_cnstH full';
 	curveDat(numCurves).prm = [];
+	curveDat(numCurves).vecXVals = calcGradSeg_cnstH( vecX0, omega0, vecG0, matH0_full, curveDat(numCurves).prm );
+	curveDat(numCurves).numPts = size( curveDat(numCurves).vecXVals, 2 );
+	curveDat(numCurves).elapsedTime = time() - curveDat(numCurves).startTime;
+	msg( __FILE__, __LINE__, sprintf( "  %s: %d pts in %0.3fs.", ...
+	  curveDat(numCurves).strName, curveDat(numCurves).numPts, curveDat(numCurves).elapsedTime ) );
+end
+if ( doGradSeg_cnstH_full_scaled )
+	numCurves++;
+	curveDat(numCurves).startTime = time();
+	curveDat(numCurves).strName = 'calcGradSeg_cnstH full SCALED';
+	curveDat(numCurves).prm = [];
+	curveDat(numCurves).prm.matS = diag(diag(matH0_full));
 	curveDat(numCurves).vecXVals = calcGradSeg_cnstH( vecX0, omega0, vecG0, matH0_full, curveDat(numCurves).prm );
 	curveDat(numCurves).numPts = size( curveDat(numCurves).vecXVals, 2 );
 	curveDat(numCurves).elapsedTime = time() - curveDat(numCurves).startTime;
