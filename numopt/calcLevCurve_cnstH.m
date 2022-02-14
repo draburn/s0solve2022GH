@@ -12,7 +12,7 @@ function [ vecXPts, datOut ] = calcLevCurve_cnstH( vecX0, omega0, vecG0, matH, p
 	debugMode = mygetfield( prm, "debugMode", false );
 	matS = mygetfield( prm, "matS", eye(sizeX,sizeX) );
 	omegaMin = mygetfield( prm, "omegaMin", 0.0 );
-	numPts = mygetfield( prm, "numPts", 101 );
+	%
 	if (debugMode)
 		msg( __FILE__, __LINE__, "Using debugMode." );
 		assert( isscalar(debugMode) );
@@ -24,7 +24,28 @@ function [ vecXPts, datOut ] = calcLevCurve_cnstH( vecX0, omega0, vecG0, matH, p
 		assert( issymmetric(matH) );
 		assert( isrealarray(matS,[sizeX,sizeX]) );
 		assert( isrealscalar(omegaMin) );
+	end
+	%
+	numPts = mygetfield( prm, "numPts", 101 );
+	pPts = mygetfield( prm, "pPts", [] );
+	if (isempty(pPts))
+		pPts = linspace( 0.0, 1.0, numPts );
+		% Force p values to be concentrated near start and end.
+		pPts = 1.0 - ((1.0-(pPts.^4)).^4);
+	elseif (1==pPts)
+		% Use linear spacing in p.
+		pPts = linspace( 0.0, 1.0, numPts )
+	elseif (-1==pPts)
+		% Use linear-ish spacing in mu.
+		pPts(1) = 0.0;
+		absMaxEigVal = eigs(matH,1);
+		pPts(2:numPts) = 1.0./(1.0+linspace(sqrt(numPts-1.0)*absMaxEigVal,0.0,numPts-1));
+	else
+		numPts = size(pPts,2);
+	end
+	if (debugMode)
 		assert( isrealscalar(numPts) );
+		assert( isrealarray(pPts,[1,numPts]) );
 	end
 	%
 	datOut = [];
@@ -34,23 +55,26 @@ function [ vecXPts, datOut ] = calcLevCurve_cnstH( vecX0, omega0, vecG0, matH, p
 	%
 	% Do main loop.
 	vecXPts(:,1) = vecX0;
+	hadIssueWithLastPt = false;
 	for n=2:numPts
-		s = (n-1.0)/(numPts-1.0);
-		matM = (s*matH) + ((1.0-s)*matD);
+		p = pPts(n);
+		matM = (p*matH) + ((1.0-p)*matD);
 		[ matR, cholFlag ] = chol( matM );
 		if (0~=cholFlag)
 			if (debugMode)
-				msg( __FILE__, __LINE__, sprintf( "chol() failed for s = %f.", s ) );
+				msg( __FILE__, __LINE__, sprintf( "chol() failed for p = %f.", p ) );
 			end
+			hadIssueWithLastPt = true;
 			break;
 		end
-		vecDelta = matR \ ( matR' \ ( -s*vecG0) );
+		vecDelta = matR \ ( matR' \ ( -p*vecG0) );
 		%
 		omega = omega0 + vecG0'*vecDelta + 0.5*vecDelta'*matH*vecDelta;
 		if ( omega < omegaMin )
 			if (debugMode)
 				msg( __FILE__, __LINE__, sprintf( "omega = %f.", omega ) );
 			end
+			hadIssueWithLastPt = true;
 			break;
 		end
 		%
@@ -65,7 +89,9 @@ function [ vecXPts, datOut ] = calcLevCurve_cnstH( vecX0, omega0, vecG0, matH, p
 		msg( __FILE__, __LINE__, "Only one point was accepted." );
 		return;
 	end
-	vecXPts = vecXPts(:,1:n-1);
+	if (~hadIssueWithLastPt)
+		return;
+	end
 	%
 	%
 	% DRaburn 2022.02.06:

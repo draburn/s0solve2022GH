@@ -1,5 +1,5 @@
 ax = [];
-caseNum = 21;
+caseNum = 100;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case -20
@@ -159,6 +159,7 @@ doLev_cnstH_jtj = false;
 doGradSeg_cnstH_jtj = false;
 doGrad_cnstH_full = false;
 doLev_cnstH_full = false;
+doGradSeg_cnstH_jtj_scaled = false;
 doGradSeg_cnstH_full = false;
 doPostGradJTJ_minXi0 = false;
 doPostGradJTJ_grad_cnstH = false;
