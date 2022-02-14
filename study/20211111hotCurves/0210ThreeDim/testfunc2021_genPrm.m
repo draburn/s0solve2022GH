@@ -4,7 +4,8 @@ function testFuncPrm = testfunc2021_genPrm( ...
   prngstates = 0, ...
   forceBadMin = true, ...
   forceSingleExt = true, ...
-  forceGoodBehavior = true )
+  forceGoodBehavior = true, ...
+  prm = [] )
 	%
 	assert(isposintscalar(sizeX));
 	assert(isposintscalar(sizeF));
@@ -25,6 +26,12 @@ function testFuncPrm = testfunc2021_genPrm( ...
 	vecXE = randn(sizeX,1);
 	vecFE = randn(sizeF,1);
 	matJPre = randn(sizeF,sizeX);
+	if (~isempty(prm))
+		matJPreMod = mygetfield(prm,"matJPreMod",[]);
+		if (~isempty(matJPreMod))
+			matJPre = matJPre.*matJPreMod;
+		end
+	end
 	ary3K = randn(sizeX,sizeX,sizeF);
 	%
 	testFuncPrm.vecXE = vecXE;

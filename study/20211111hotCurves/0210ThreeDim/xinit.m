@@ -1,5 +1,5 @@
 ax = [];
-caseNum = 60420592;
+caseNum = 6042059200;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case -200
@@ -130,6 +130,14 @@ case 60420592
 	sizeF = 2;
 	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,60420592); % Calls setprngstates.
 	vecX0 = randn(sizeX,1);
+case 6042059200
+	% Hack of 60420592.
+	sizeX = 2;
+	sizeF = 2;
+	tfpPrm.matJPreMod = ones(sizeF,sizeX);
+	tfpPrm.matJPreMod(1,1) = 100.0;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,60420592,true,true,true,tfpPrm); % Calls setprngstates.
+	vecX0 = [ -1.55494508772561; -1.15714300019889 ];
 otherwise
 	error( "Invalid value of switch." );
 end

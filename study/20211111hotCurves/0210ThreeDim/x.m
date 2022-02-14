@@ -6,18 +6,18 @@ startTime = time();
 %
 xinit;
 %
-doGrad_alytG = true;
-%doLev_dispena = true;
+%doGrad_alytG = true;
+doLev_dispena = true;
 %doLev_minford = true;
 doFOCQ_minXi0_jtj = true;
-%doFOCQ_minXi0_fullish = true;
+doFOCQ_minXi0_fullish = true;
 %doFOCQ_L0jtj = true; doFOCQ_C0jtj = true; doFOCQ_R0jtj = true;
 %doGrad_cnstH_jtj = true; doLev_cnstH_jtj = true; doGradSeg_cnstH_jtj = true;
 %doGrad_cnstH_full = true; doLev_cnstH_full = true; doGradSeg_cnstH_full = true;
 doLev_cnstH_jtj = true; doGradSeg_cnstH_jtj = true;
-doGradSeg_cnstH_jtj_scaled = true;
+%doGradSeg_cnstH_jtj_scaled = true;
 doLev_cnstH_full = true; doGradSeg_cnstH_full = true;
-doGradSeg_cnstH_full_scaled = true;
+%doGradSeg_cnstH_full_scaled = true;
 %doPostGradJTJ_minXi0 = true;
 %doPostGradJTJ_grad_cnstH = true; doPostGradJTJ_lev_cnstH = true; doPostGradJTJ_gradSeg_cnstH = true;
 %
