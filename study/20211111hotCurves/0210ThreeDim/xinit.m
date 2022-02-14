@@ -1,7 +1,12 @@
 ax = [];
-caseNum = 100;
+caseNum = 60420592;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
+case -200
+	sizeX = 2;
+	sizeF = 2;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,[]); % Calls setprngstates.
+	vecX0 = randn(sizeX,1);
 case -20
 	sizeX = 3;
 	sizeF = 3;
@@ -84,6 +89,11 @@ case 100
 	sizeF = 3;
 	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,0); % Calls setprngstates.
 	vecX0 = randn(sizeX,1);
+case 200
+	sizeX = 2;
+	sizeF = 2;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,0); % Calls setprngstates.
+	vecX0 = randn(sizeX,1);
 case 18153952
 	% Full steps are good; grad segment doesn't go far enough.
 	sizeX = 3;
@@ -95,6 +105,30 @@ case 82177120
 	sizeX = 3;
 	sizeF = 3;
 	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,82177120); % Calls setprngstates.
+	vecX0 = randn(sizeX,1);
+case 57863392
+	% Case where scaled grad is very bad but grad and Lev are okay?!?!
+	sizeX = 2;
+	sizeF = 2;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,57863392); % Calls setprngstates.
+	vecX0 = randn(sizeX,1);
+case 17381488
+	% Lev has dramatic knee, but it's not too bad.
+	sizeX = 2;
+	sizeF = 2;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,17381488); % Calls setprngstates.
+	vecX0 = randn(sizeX,1);
+case 93023744
+	% Lev has knee, but it's good.
+	sizeX = 2;
+	sizeF = 2;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,93023744); % Calls setprngstates.
+	vecX0 = randn(sizeX,1);
+case 60420592
+	% Lev has bad knee.
+	sizeX = 2;
+	sizeF = 2;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,60420592); % Calls setprngstates.
 	vecX0 = randn(sizeX,1);
 otherwise
 	error( "Invalid value of switch." );

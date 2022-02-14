@@ -19,6 +19,8 @@ vecZ1Hat = vecZ1/norm(vecZ1);
 vecZ2 = vecZ2 - vecZ1Hat*(vecZ1Hat'*vecZ2);
 assert( 0.0 ~= norm(vecZ2) );
 vecZ2Hat = vecZ2/norm(vecZ2);
+vecZ3Hat = zeros(sizeX,1); % Unless...
+if ( 3 <= sizeX )
 for n=1:3
 	vecZ3 = zeros(sizeX,1);
 	vecZ3(n) = 1.0;
@@ -34,6 +36,7 @@ for n=1:3
 		continue;
 	end
 	vecZ3Hat = vecZ3/norm(vecZ3);
+end
 end
 %
 autoAx_z1Lo = vecX0(1);
