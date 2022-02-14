@@ -1,5 +1,5 @@
 ax = [];
-caseNum = 10;
+caseNum = 21;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case -20
@@ -48,6 +48,37 @@ case 10
 	testFuncPrm.matJ = diag([1:sizeX].^4);
 	testFuncPrm.ary3K = zeros(sizeX,sizeX,sizeF);
 	vecX0 = zeros(sizeX,1);
+case 20
+	sizeX = 10;
+	sizeF = 10;
+	testFuncPrm.sizeX = sizeX;
+	testFuncPrm.sizeF = sizeF;
+	testFuncPrm.vecXE = [1:sizeX]';
+	testFuncPrm.vecFE = zeros(sizeF,1);
+	testFuncPrm.matJ = diag([1:sizeX].^4);
+	testFuncPrm.ary3K = zeros(sizeX,sizeX,sizeF);
+	vecX0 = zeros(sizeX,1);
+case 21
+	% A rather more harshly scaled perfectly linear case.
+	sizeX = 10;
+	sizeF = 10;
+	testFuncPrm.sizeX = sizeX;
+	testFuncPrm.sizeF = sizeF;
+	testFuncPrm.vecXE = [1:sizeX]';
+	testFuncPrm.vecFE = zeros(sizeF,1);
+	testFuncPrm.matJ = diag([1:sizeX].^4);
+	testFuncPrm.ary3K = zeros(sizeX,sizeX,sizeF);
+	vecX0 = [
+	  2.35540053044716e-07
+	  1.20593217315640e-04
+	  4.63288261115714e-03
+	  6.13143311393352e-02
+	  4.41288800438645e-01
+	  1.99003962965689e+00
+	  5.35919717615100e+00
+	  7.94276375465571e+00
+	  9.00000006011073e+00
+	  9.83329957602381e+00 ];
 case 100
 	sizeX = 3;
 	sizeF = 3;

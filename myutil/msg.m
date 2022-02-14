@@ -15,6 +15,11 @@
 %   Here, unfortunately, it may be necessary to use some "thisFile",
 %   a la, 'thisFile = foo.m'; 'msg( thisFile, __LINE__, "Hello world!" );' instead.
 function msg( fileName, lineNum, msgStr )
+	if ( 3 ~= nargin )
+		msg( __FILE__, __LINE__, "Invalid number of arguments." );
+		print_usage();
+		return; % Superfluous?
+	end
 	clockNow = clock();
 	printf( "%02d:%02d:%02d.%03d [%s.%d] %s\n", ...
 	  clockNow(4), ...
