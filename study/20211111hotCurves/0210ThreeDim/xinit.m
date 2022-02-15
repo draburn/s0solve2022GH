@@ -1,5 +1,5 @@
 ax = [];
-caseNum = 33215776;
+caseNum = 24863760;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case -200
@@ -164,6 +164,83 @@ case 33215776
 	sizeF = 2;
 	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,33215776); % Calls setprngstates.
 	vecX0 = randn(sizeX,1);
+% FOCQ has problem that the Hessian it creates can become near singular!
+case 92861392
+	% Incomplete H happens(?) to work better.
+	sizeX = 10;
+	sizeF = 10;
+	tfpPrm.matJPreMod = ones(sizeF,sizeX);
+	tfpPrm.matJPreMod(1,1) = 100.0;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,92861392,true,true,true,tfpPrm); % Calls setprngstates.
+	vecX0 = randn(sizeX,1);
+case 16972064
+	% Incomplete H works better... simply because go further?
+	sizeX = 10;
+	sizeF = 10;
+	tfpPrm.matJPreMod = ones(sizeF,sizeX);
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,16972064,true,true,true,tfpPrm); % Calls setprngstates.
+	vecX0 = randn(sizeX,1);
+case 24863760
+	% This series shows that, eventually, fullH lev works better than GradSeg.
+	sizeX = 10;
+	sizeF = 10;
+	tfpPrm.matJPreMod = ones(sizeF,sizeX);
+	tfpPrm.matJPreMod(1,1) = 100.0;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,24863760,true,true,true,tfpPrm); % Calls setprngstates.
+	vecX0 = randn(sizeX,1);
+case 248637600
+	sizeX = 10;
+	sizeF = 10;
+	tfpPrm.matJPreMod = ones(sizeF,sizeX);
+	tfpPrm.matJPreMod(1,1) = 100.0;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,24863760,true,true,true,tfpPrm); % Calls setprngstates.
+	vecX0 = [
+   1.1218289295761961
+  -0.3131780139675279
+  -0.0273462000313375
+   0.9219300326592453
+   0.5379316015292686
+  -1.3401189413199019
+   0.6951780266277590
+   1.8973609645115661
+  -0.7582780111621039
+  -0.2809873182812455 ];
+case 2486376000
+	sizeX = 10;
+	sizeF = 10;
+	tfpPrm.matJPreMod = ones(sizeF,sizeX);
+	tfpPrm.matJPreMod(1,1) = 100.0;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,24863760,true,true,true,tfpPrm); % Calls setprngstates.
+	vecX0 = [
+   1.975092966945005
+   0.188873649800122
+  -0.105078454721219
+   1.169757165784755
+   0.387402544301125
+  -1.384002705820496
+   0.307047767943948
+   2.877357974929572
+  -0.587240943379158
+  -0.684905657837635 ]
+case 24863760000
+	sizeX = 10;
+	sizeF = 10;
+	tfpPrm.matJPreMod = ones(sizeF,sizeX);
+	tfpPrm.matJPreMod(1,1) = 100.0;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,24863760,true,true,true,tfpPrm); % Calls setprngstates.
+	vecX0 = [
+   2.0352528931197127
+  -0.0898576057572611
+  -0.4898814288852988
+   1.1760393436596661
+   0.5303932870468410
+  -1.2690823049690900
+   0.2838296155453070
+   3.5207821261889642
+  -0.6474772721824390
+  -0.5067712772108053 ];
+
+%zzz
 otherwise
 	error( "Invalid value of switch." );
 end

@@ -1,4 +1,5 @@
-funchFOCQ_temp = @(dummyX)( vecF0 + matJ0*(dummyX-vecX0) + vecEta0_jtj*(vecPhi0_jtj'*(dummyX-vecX0))^2 );
+%funchFOCQ_temp = @(dummyX)( vecF0 + matJ0*(dummyX-vecX0) + vecEta0_jtj*(vecPhi0_jtj'*(dummyX-vecX0))^2 );
+funchFOCQ_temp = funchF;
 funchOm_temp = @(dummyX)( sumsq(funchFOCQ_temp(dummyX))/2.0 );
 vecX_temp = vecXG_jtj;
 %vecX_temp = vecX0-2.0*vecG0/norm(vecG0)

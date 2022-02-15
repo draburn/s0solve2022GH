@@ -24,7 +24,7 @@ function [ vecXPts, datOut ] = calcLevCurve_alytG_dispena( vecX0, funchOmegaG, p
 	end
 	pPts = linspace( 0.0, 1.0, numPts );
 	% Force p values to be concentrated near start and end.
-	pPts = 1.0 - ((1.0-(pPts.^2)).^4);
+	pPts = 1.0 - ((1.0-(pPts.^4)).^4);
 	%
 	if (isempty(matS))
 		matD = [];
