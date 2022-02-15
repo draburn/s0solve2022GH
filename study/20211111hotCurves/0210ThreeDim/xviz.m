@@ -8,12 +8,12 @@ plotCurveZ1Z2 = true;
 plotCurveZ1Z2_cnstJ = false;
 plotCurveZ1ZD = true;
 plotOmegaVsZ1 = true;
-plotOmegaVsZ1_cnstJ = true;
+plotOmegaVsZ1_cnstJ = false;
 plotOmegaVsN = false;
 plotZ1VsDAC = false;
 plotOmegaVsDAC = false;
 plotOmegaVsBigDelta = false;
-plotMIVVsZ1 = true;
+plotMIVVsZ1 = false;
 %
 %
 %

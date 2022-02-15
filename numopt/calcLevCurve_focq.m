@@ -15,13 +15,6 @@ function [ vecXPts, datOut ] = calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat
 	sz = mygetfield( prm, "sz", 1.0 );
 	matSY = mygetfield( prm, "matSY", eye(sizeX-1,sizeX-1) );
 	curveSelector = mygetfield( prm, "curveSelector", 2 );
-	pPts = mygetfield( prm, "pPts", [] );
-	numPts = mygetfield( prm, "numPts", 101 );
-	if (isempty(pPts))
-		pPts = linspace( 0.0, 1.0, numPts );
-	else
-		numPts = size(pPts,2);
-	end
 	if ( debugMode );
 		msg( __FILE__, __LINE__, "Using debugMode." );
 		assert( isscalar(debugMode) )
@@ -38,8 +31,31 @@ function [ vecXPts, datOut ] = calcLevCurve_focq( vecX0, vecF0, matJ0, vecPhiHat
 		assert( isrealarray(matSY,[sizeX-1,sizeX-1]) );
 		%
 		assert( isrealscalar(curveSelector) );
+	end
+	%
+	numPts = mygetfield( prm, "numPts", 101 );
+	pPts = mygetfield( prm, "pPts", [] );
+	if (isempty(pPts))
+		pPts = linspace( 0.0, 1.0, numPts );
+		% Force p values to be concentrated near start and end.
+		pPts = 1.0 - ((1.0-(pPts.^4)).^4);
+	elseif (1==pPts)
+		% Use linear spacing in p.
+		pPts = linspace( 0.0, 1.0, numPts )
+	elseif (-1==pPts)
+		% Use linear-ish spacing in mu.
+		pPts(1) = 0.0;
+		absMaxEigVal = eigs(matH,1);
+		pPts(2:numPts) = 1.0./(1.0+linspace(sqrt(numPts-1.0)*absMaxEigVal,0.0,numPts-1));
+	else
+		numPts = size(pPts,2);
+	end
+	if (debugMode)
+		assert( isrealscalar(numPts) );
 		assert( isrealarray(pPts,[1,numPts]) );
 	end
+	%
+	%
 	%
 	vecXPts = [];
 	if ( nargout >= 2 )

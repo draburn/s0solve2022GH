@@ -1,5 +1,5 @@
 ax = [];
-caseNum = 60420592;
+caseNum = 33215776;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case -200
@@ -12,6 +12,13 @@ case -20
 	sizeF = 3;
 	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,[]); % Calls setprngstates.
 	testFuncPrm.ary3K *= 0.0;
+	vecX0 = randn(sizeX,1);
+case -3
+	sizeX = 10;
+	sizeF = 10;
+	tfpPrm.matJPreMod = ones(sizeF,sizeX);
+	tfpPrm.matJPreMod(1,1) = 100.0;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,[],true,true,true,tfpPrm); % Calls setprngstates.
 	vecX0 = randn(sizeX,1);
 case -2
 	sizeX = 10;
@@ -138,6 +145,25 @@ case 6042059200
 	tfpPrm.matJPreMod(1,1) = 100.0;
 	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,60420592,true,true,true,tfpPrm); % Calls setprngstates.
 	vecX0 = [ -1.55494508772561; -1.15714300019889 ];
+% Looking at Lev H_patch.
+case 37176128
+	% gradSeg >~ Lev patch >> OCQ
+	sizeX = 10;
+	sizeF = 10;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,37176128); % Calls setprngstates.
+	vecX0 = randn(sizeX,1);
+case 55566400
+	% gradSeg >> OCQ ~ lev patch
+	sizeX = 10;
+	sizeF = 10;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,55566400); % Calls setprngstates.
+	vecX0 = randn(sizeX,1);
+case 33215776
+	% OCQ has bad knee.
+	sizeX = 2;
+	sizeF = 2;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,33215776); % Calls setprngstates.
+	vecX0 = randn(sizeX,1);
 otherwise
 	error( "Invalid value of switch." );
 end

@@ -12,10 +12,10 @@ doLev_dispena = true;
 %
 doFOCQ_minXi0_jtj = true;
 %doFOCQ_L0jtj = true; doFOCQ_C0jtj = true; doFOCQ_R0jtj = true;
-doFOCQ_minXi0_fullish = true;
+%doFOCQ_minXi0_fullish = true;
 %
 %doGrad_cnstH_jtj = true;
-doLev_cnstH_jtj = true;
+%doLev_cnstH_jtj = true;
 doGradSeg_cnstH_jtj = true;
 %doGradSeg_cnstH_jtj_scaled = true;
 %
@@ -25,8 +25,8 @@ doGradSeg_cnstH_patch = true;
 %doGradSeg_cnstH_patch_scaled = true;
 %
 %doGrad_cnstH_full = true;
-doLev_cnstH_full = true;
-doGradSeg_cnstH_full = true;
+%doLev_cnstH_full = true;
+%doGradSeg_cnstH_full = true;
 %doGradSeg_cnstH_full_scaled = true;
 %
 %doPostGradJTJ_minXi0 = true;
@@ -203,7 +203,7 @@ if ( doLev_cnstH_patch )
 	curveDat(numCurves).startTime = time();
 	curveDat(numCurves).strName = 'calcLevCurve_cnstH patch';
 	curveDat(numCurves).prm = [];
-	curveDat(numCurves).prm.pPts = -1; % Use mu spacing.
+	%curveDat(numCurves).prm.pPts = -1; % Use mu spacing.
 	%curveDat(numCurves).prm.pPts = 1; % Use p spacing.
 	curveDat(numCurves).vecXVals = calcLevCurve_cnstH( vecX0, omega0, vecG0, matH0_patch, curveDat(numCurves).prm );
 	curveDat(numCurves).numPts = size( curveDat(numCurves).vecXVals, 2 );
