@@ -9,17 +9,30 @@ xinit;
 %doGrad_alytG = true;
 doLev_dispena = true;
 %doLev_minford = true;
+%
 doFOCQ_minXi0_jtj = true;
-doFOCQ_minXi0_fullish = true;
 %doFOCQ_L0jtj = true; doFOCQ_C0jtj = true; doFOCQ_R0jtj = true;
-%doGrad_cnstH_jtj = true; doLev_cnstH_jtj = true; doGradSeg_cnstH_jtj = true;
-%doGrad_cnstH_full = true; doLev_cnstH_full = true; doGradSeg_cnstH_full = true;
-doLev_cnstH_jtj = true; doGradSeg_cnstH_jtj = true;
+doFOCQ_minXi0_fullish = true;
+%
+%doGrad_cnstH_jtj = true;
+doLev_cnstH_jtj = true;
+doGradSeg_cnstH_jtj = true;
 %doGradSeg_cnstH_jtj_scaled = true;
-doLev_cnstH_full = true; doGradSeg_cnstH_full = true;
+%
+%doGrad_cnstH_patch = true;
+doLev_cnstH_patch = true;
+doGradSeg_cnstH_patch = true;
+%doGradSeg_cnstH_patch_scaled = true;
+%
+%doGrad_cnstH_full = true;
+doLev_cnstH_full = true;
+doGradSeg_cnstH_full = true;
 %doGradSeg_cnstH_full_scaled = true;
+%
 %doPostGradJTJ_minXi0 = true;
 %doPostGradJTJ_grad_cnstH = true; doPostGradJTJ_lev_cnstH = true; doPostGradJTJ_gradSeg_cnstH = true;
+%
+%
 %
 msg( __FILE__, __LINE__, "Calculating curves..." );
 numCurves = 0;
@@ -172,7 +185,55 @@ if ( doGradSeg_cnstH_jtj_scaled )
 	msg( __FILE__, __LINE__, sprintf( "  %s: %d pts in %0.3fs.", ...
 	  curveDat(numCurves).strName, curveDat(numCurves).numPts, curveDat(numCurves).elapsedTime ) );
 end
-
+%
+%
+if ( doGrad_cnstH_patch )
+	numCurves++;
+	curveDat(numCurves).startTime = time();
+	curveDat(numCurves).strName = 'calcGradCurve_cnstH patch';
+	curveDat(numCurves).prm = [];
+	curveDat(numCurves).vecXVals = calcGradCurve_cnstH( vecX0, omega0, vecG0, matH0_patch, curveDat(numCurves).prm );
+	curveDat(numCurves).numPts = size( curveDat(numCurves).vecXVals, 2 );
+	curveDat(numCurves).elapsedTime = time() - curveDat(numCurves).startTime;
+	msg( __FILE__, __LINE__, sprintf( "  %s: %d pts in %0.3fs.", ...
+	  curveDat(numCurves).strName, curveDat(numCurves).numPts, curveDat(numCurves).elapsedTime ) );
+end
+if ( doLev_cnstH_patch )
+	numCurves++;
+	curveDat(numCurves).startTime = time();
+	curveDat(numCurves).strName = 'calcLevCurve_cnstH patch';
+	curveDat(numCurves).prm = [];
+	curveDat(numCurves).prm.pPts = -1; % Use mu spacing.
+	%curveDat(numCurves).prm.pPts = 1; % Use p spacing.
+	curveDat(numCurves).vecXVals = calcLevCurve_cnstH( vecX0, omega0, vecG0, matH0_patch, curveDat(numCurves).prm );
+	curveDat(numCurves).numPts = size( curveDat(numCurves).vecXVals, 2 );
+	curveDat(numCurves).elapsedTime = time() - curveDat(numCurves).startTime;
+	msg( __FILE__, __LINE__, sprintf( "  %s: %d pts in %0.3fs.", ...
+	  curveDat(numCurves).strName, curveDat(numCurves).numPts, curveDat(numCurves).elapsedTime ) );
+end
+if ( doGradSeg_cnstH_patch )
+	numCurves++;
+	curveDat(numCurves).startTime = time();
+	curveDat(numCurves).strName = 'calcGradSeg_cnstH patch';
+	curveDat(numCurves).prm = [];
+	curveDat(numCurves).vecXVals = calcGradSeg_cnstH( vecX0, omega0, vecG0, matH0_patch, curveDat(numCurves).prm );
+	curveDat(numCurves).numPts = size( curveDat(numCurves).vecXVals, 2 );
+	curveDat(numCurves).elapsedTime = time() - curveDat(numCurves).startTime;
+	msg( __FILE__, __LINE__, sprintf( "  %s: %d pts in %0.3fs.", ...
+	  curveDat(numCurves).strName, curveDat(numCurves).numPts, curveDat(numCurves).elapsedTime ) );
+end
+if ( doGradSeg_cnstH_patch_scaled )
+	numCurves++;
+	curveDat(numCurves).startTime = time();
+	curveDat(numCurves).strName = 'calcGradSeg_cnstH patch SCALED';
+	curveDat(numCurves).prm = [];
+	curveDat(numCurves).prm.matS = diag(diag(matH0_patch));
+	curveDat(numCurves).vecXVals = calcGradSeg_cnstH( vecX0, omega0, vecG0, matH0_patch, curveDat(numCurves).prm );
+	curveDat(numCurves).numPts = size( curveDat(numCurves).vecXVals, 2 );
+	curveDat(numCurves).elapsedTime = time() - curveDat(numCurves).startTime;
+	msg( __FILE__, __LINE__, sprintf( "  %s: %d pts in %0.3fs.", ...
+	  curveDat(numCurves).strName, curveDat(numCurves).numPts, curveDat(numCurves).elapsedTime ) );
+end
 %
 %
 if ( doGrad_cnstH_full )

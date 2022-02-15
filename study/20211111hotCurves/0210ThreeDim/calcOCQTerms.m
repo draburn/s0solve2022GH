@@ -3,7 +3,7 @@ function [ vecPhiHat, vecEta, lambdaAbsMin, matPsi, matLambda ] = calcOCQTerms( 
 	[ lambdaAbsMin, nOfAbsMin ] = min(abs(diag(matLambda)));
 	vecPhiHat = matPsi(:,nOfAbsMin);
 	if ( nargout >= 2 )
-		vecEta = (funchF( vecX0 + epsX*vecPhiHat ) - funchF( vecX0 - epsX*vecPhiHat ))/(2.0*epsX);
+		vecEta = ( funchF( vecX0 + epsX*vecPhiHat ) + funchF( vecX0 - epsX*vecPhiHat ) - 2.0*funchF(vecX0) )/(2.0*epsX*epsX);
 	end
 return;
 end

@@ -1,5 +1,5 @@
 ax = [];
-caseNum = 6042059200;
+caseNum = 60420592;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case -200
@@ -153,6 +153,7 @@ funchOmega = @(dummyX)( testfunc2021_funcOmega(dummyX,testFuncPrm) );
 matH0_jtj = matJ0'*matJ0;
 [ vecPhi0_full, vecEta0_full ] = calcOCQTerms( vecX0, funchF, matH0_full );
 [ vecPhi0_jtj,  vecEta0_jtj  ] = calcOCQTerms( vecX0, funchF, matH0_jtj  );
+matH0_patch = matH0_jtj + vecPhi0_jtj * ( 2.0*vecF0'*vecEta0_jtj ) * (vecPhi0_jtj');
 %
 vecXE = testFuncPrm.vecXE;
 [ vecFE, matJE ] = funchF( vecXE );
@@ -200,6 +201,10 @@ doGrad_cnstH_jtj = false;
 doLev_cnstH_jtj = false;
 doGradSeg_cnstH_jtj = false;
 doGradSeg_cnstH_jtj_scaled = false;
+doGrad_cnstH_patch = false;
+doLev_cnstH_patch = false;
+doGradSeg_cnstH_patch = false;
+doGradSeg_cnstH_patch_scaled = false;
 doGrad_cnstH_full = false;
 doLev_cnstH_full = false;
 doGradSeg_cnstH_full = false;
