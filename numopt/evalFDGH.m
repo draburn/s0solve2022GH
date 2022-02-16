@@ -9,6 +9,7 @@ function [ omega0, vecG0, matH0 ] = evalFDGH( vecX0, funchOmega, prm=[] )
 	epsG = mygetfield( prm, "epsG", eps^0.4 );
 	assert( isrealscalar(epsG) );
 	assert( 0.0 < epsG );
+	vecG0 = zeros(sizeX,1);
 	for n=1:sizeX
 		vecXP = vecX0; vecXP(n) += epsG;
 		vecXM = vecX0; vecXM(n) -= epsG;
@@ -20,6 +21,7 @@ function [ omega0, vecG0, matH0 ] = evalFDGH( vecX0, funchOmega, prm=[] )
 	epsH = mygetfield( prm, "epsG", eps^0.2 );
 	assert( isrealscalar(epsH) );
 	assert( 0.0 < epsH );
+	matH0 = zeros(sizeX,sizeX);
 	for m=1:sizeX
 	for n=1:sizeX
 		vecXPP = vecX0; vecXPP(m) += epsH; vecXPP(n) += epsH;

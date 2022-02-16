@@ -10,17 +10,17 @@ xinit;
 doLev_dispena = true;
 %doLev_minford = true;
 %
-%doFOCQ_minXi0_jtj = true;
-%doFOCQ_L0jtj = true; doFOCQ_C0jtj = true; doFOCQ_R0jtj = true;
+doFOCQ_minXi0_jtj = true;
+doFOCQ_L0jtj = true; doFOCQ_C0jtj = true; doFOCQ_R0jtj = true;
 %doFOCQ_minXi0_fullish = true;
 %
 %doGrad_cnstH_jtj = true;
 %doLev_cnstH_jtj = true;
-doGradSeg_cnstH_jtj = true;
+%doGradSeg_cnstH_jtj = true;
 %doGradSeg_cnstH_jtj_scaled = true;
 %
 %doGrad_cnstH_patch = true;
-%doLev_cnstH_patch = true;
+doLev_cnstH_patch = true;
 doGradSeg_cnstH_patch = true;
 %doGradSeg_cnstH_patch_scaled = true;
 %

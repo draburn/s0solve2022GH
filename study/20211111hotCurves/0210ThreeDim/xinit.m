@@ -1,5 +1,5 @@
 ax = [];
-caseNum = 24863760;
+caseNum = 202;
 msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 switch (caseNum)
 case -200
@@ -97,10 +97,23 @@ case 100
 	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,0); % Calls setprngstates.
 	vecX0 = randn(sizeX,1);
 case 200
+	% Case 10 in test findLocMin_alytJ_mk2.
 	sizeX = 2;
 	sizeF = 2;
 	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,0); % Calls setprngstates.
 	vecX0 = randn(sizeX,1);
+case 201
+	% Case 10 in test findLocMin_alytJ_mk2 after 1 iter.
+	sizeX = 2;
+	sizeF = 2;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,0); % Calls setprngstates.
+	vecX0 = [ -1.201856631190661; 0.800849410485127 ];
+case 202
+	% Case 10 in test findLocMin_alytJ_mk2 after 2 iter.
+	sizeX = 2;
+	sizeF = 2;
+	testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,0); % Calls setprngstates.
+	vecX0 = [ -1.207639929526584; 0.753256846539469 ];
 case 18153952
 	% Full steps are good; grad segment doesn't go far enough.
 	sizeX = 3;

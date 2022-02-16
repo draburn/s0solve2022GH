@@ -18,11 +18,11 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 	iterLimit = mygetfield( prm, "iterLimit", 100 );
 	omegaFallTol = mygetfield( prm, "omegaFallTol", sqrt(eps) );
 	stepSizeTol = mygetfield( prm, "stepSizeTol", sqrt(eps) );
-	%patchDimMax = mygetfield( prm, "patchDimMax", 1 );
-	%patchThresh = mygetfield( prm, "patchThresh", 1e-4 );
-	patchDimMax = mygetfield( prm, "patchDimMax", sizeX );
-	patchThresh = mygetfield( prm, "patchThresh", 2.0 );
-	patchEpsX = mygetfield( prm, "patchEpsX", 1e-4 );
+	%patchDimMax = mygetfield( prm, "patchDimMax", 0 ); patchThresh = mygetfield( prm, "patchThresh", 0.0 );
+	%patchDimMax = mygetfield( prm, "patchDimMax", 1 ); patchThresh = mygetfield( prm, "patchThresh", 1e-2 );
+	patchDimMax = mygetfield( prm, "patchDimMax", 1 ); patchThresh = mygetfield( prm, "patchThresh", 2.0 );
+	%patchDimMax = mygetfield( prm, "patchDimMax", sizeX ); patchThresh = mygetfield( prm, "patchThresh", 2.0 );
+	patchEpsX = mygetfield( prm, "patchEpsX", 1e-5 );
 	if (debugMode)
 		assert( isrealscalar(omegaMin) );
 		assert( isrealscalar(gNormTol) );
@@ -61,9 +61,9 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 	% Prep main loop.
 	vecX = vecX0;
 	vecF = vecF0;
-	matJ = matJ0;
-	omega = omega0;
-	vecG = vecG0;
+	matJ = matJ0
+	omega = omega0
+	vecG = vecG0
 	iterCount = 0;
 	while (1)
 		% Check pre-iter success conditions.
@@ -78,6 +78,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 		%
 		% Check pre-iter imposed limits.
 		iterCount++;
+		msg( __FILE__, __LINE__, sprintf( "~~~ ITERATION %d ~~~", iterCount ) );
 		if ( iterCount > iterLimit )
 			msgif( debugMode, __FILE__, __LINE__, "Reached iterLimit." );
 			return;
@@ -89,11 +90,10 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 		matP = zeros(sizeX,sizeX);
 		if ( 1 <= patchDimMax )
 			[ matPsi, matLambda ] = eig( matJTJ );
-			vecLambda = diag(matLambda)
-			[ vecAbsLambdaSortVal, vecAbsLambdaSortIndex ] = sort(abs(vecLambda));
-			vecEigToPatch = vecAbsLambdaSortIndex( vecAbsLambdaSortVal <= patchThresh*vecAbsLambdaSortVal(end) )
+			[ vecAbsLambdaSortVal, vecAbsLambdaSortIndex ] = sort(abs(diag(matLambda)));
+			vecEigToPatch = vecAbsLambdaSortIndex( vecAbsLambdaSortVal <= patchThresh*vecAbsLambdaSortVal(end) );
 			if ( length(vecEigToPatch) > patchDimMax )
-				vecEigToPatch = vecEigToPatch(1:patchDimMax)
+				vecEigToPatch = vecEigToPatch(1:patchDimMax);
 			end
 			%
 			for n=1:length(vecEigToPatch);
@@ -101,7 +101,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 				vecFP = funchFJ( vecX + patchEpsX*matPsi(:,m) );
 				vecFM = funchFJ( vecX - patchEpsX*matPsi(:,m) );
 				assert( abs( norm(matPsi(:,m)) - 1.0 ) < sqrt(eps) );
-				h = (vecF'*( vecFP + vecFM - (2.0*vecF) )) / (patchEpsX*patchEpsX);
+				h = (vecF'*( vecFP + vecFM - (2.0*vecF) )) / (patchEpsX*patchEpsX)
 				if ( 0.0 >= h )
 					msg( __FILE__, __LINE__, "Would-be h term is not positive. This scenario deserves futher attention!" );
 				end
@@ -111,15 +111,22 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 			if (debugMode&&(length(vecEigToPatch)>0))
 				funchOmegaFD = @(dummyX)( sumsq(funchFJ(dummyX))/2.0 );
 				[ omegaFD, vecGFD, matHFD ] = evalFDGH( vecX, funchOmegaFD );
-				patchCheckA = diag(matPsi'*matHFD*matPsi)(vecEigToPatch)'
-				patchCheckB = diag(matPsi'*(matJTJ+matP)*matPsi)(vecEigToPatch)'
+				patchCheckA = diag(matPsi'*matHFD*matPsi)(vecEigToPatch);
+				patchCheckB = diag(matPsi'*(matJTJ+matP)*matPsi)(vecEigToPatch);
 				if ( reldiff(patchCheckA,patchCheckB) > eps^0.2 )
-					msg( __FILE__, __LINE__, "patchCheckA and patchCheckB do not seem to agree." );
+					echo__patchCheckA = patchCheckA'
+					echo__patchCheckB = patchCheckB'
+					msg( __FILE__, __LINE__, "*** WARNING: patchCheckA and patchCheckB do not seem to agree. This should be impossible. ***" );
 				end
 			end
 		end
-		matH = matJTJ + matP;
-		msg( __FILE__, __LINE__, "RETURN!" ); return
+		%rcond(matJTJ)
+		matH = matJTJ + matP
+		[ omegaFD, vecGFD, matHFD ] = evalFDGH( vecX, @(dummyX)( sumsq(funchFJ(dummyX))/2.0 ) );
+		echo__matHFD = matHFD
+		%%%matH = matHFD;
+		%rcond(matH)
+		%msg( __FILE__, __LINE__, "RETURN!" ); return
 		%
 		%
 		%
@@ -137,6 +144,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 		omega_next = sumsq(vecF_next)/2.0;
 		if ( omega_next >= omega )
 			msg( __FILE__, __LINE__, "Omega increased." );
+			echo__omega_next = omega_next
 			return;
 		end
 		vecG_next = matJ_next'*vecF_next;
@@ -148,10 +156,10 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 		matJ_prev = matJ;
 		omega_prev = omega;
 		vecG_prev = vecG;
-		vecX = vecX_next;
+		vecX = vecX_next
 		vecF = vecF_next;
-		matJ = matJ_next;
-		omega = omega_next;
+		matJ = matJ_next
+		omega = omega_next
 		vecG = vecG_next;
 		%
 		%
@@ -189,7 +197,7 @@ end
 
 
 %!test
-%!	caseNum = 10;
+%!	caseNum = 100;
 %!	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 %!	switch (caseNum)
 %!	case 0
@@ -206,6 +214,15 @@ end
 %!		sizeX = 2;
 %!		sizeF = 2;
 %!		testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,0); % Calls setprngstates.
+%!		%echo__vecFE = testFuncPrm.vecFE
+%!		%echo__omegaE = sumsq(testFuncPrm.vecFE)/2.0
+%!		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
+%!		vecX0 = zeros(sizeX,1);
+%!	case 11
+%!		sizeX = 2;
+%!		sizeF = 2;
+%!		tfpPrm.matJPreMod = [ 1.0, 1.0; 0.0, 0.0 ];
+%!		testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,0,true,true,true,tfpPrm); % Calls setprngstates.
 %!		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
 %!		vecX0 = zeros(sizeX,1);
 %!	case 20
@@ -216,6 +233,18 @@ end
 %!		testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,0,true,true,true,tfpPrm); % Calls setprngstates.
 %!		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
 %!		vecX0 = zeros(sizeX,1);
+%!	case 100
+%!		sizeX = 2;
+%!		sizeF = 2;
+%!		testFuncPrm.sizeX = 2;
+%!		testFuncPrm.sizeF = 2;
+%!		testFuncPrm.vecXE = [ 0.0; 0.0 ];
+%!		testFuncPrm.vecFE = [ 0.0; 1.0 ];
+%!		testFuncPrm.matJ = [ 1.0, 1.0; 0.0, 0.0 ];
+%!		testFuncPrm.ary3K(:,:,1) = [ 0.0, 0.0; 0.0, 0.0 ];
+%!		testFuncPrm.ary3K(:,:,2) = [ 2.0, 0.0; 0.0, 2.0 ];
+%!		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
+%!		vecX0 = ones(sizeX,1);
 %!	otherwise
 %!		error( "Invalid caseNum." );
 %!	endswitch

@@ -3,6 +3,7 @@ vizTime0 = time();
 %msg( __FILE__, __LINE__, "Drawing graphs..." );
 %
 useAxEq = false;
+%
 plotLegend = true;
 plotCurveZ1Z2 = true;
 plotCurveZ1Z2_cnstJ = false;
@@ -47,7 +48,7 @@ if ( plotLegend )
 		  'color', curveDat(n).plot_color, ...
 		  'markersize', curveDat(n).plot_markerSize );
 	end
-	plot( [0.0,norm(vecXE-vecX0)], [0.0,0.0], 'k-' );
+	%plot( [0.0,norm(vecXE-vecX0)], [0.0,0.0], 'k-' );
 	hold off;
 	title( "Legend" );
 	grid on;
@@ -64,7 +65,7 @@ if ( plotCurveZ1Z2 )
 	ylabel( "z2" );
 	title( "sqrt(omega) vs ( z1, z2 )" );
 	hold on;
-	plot( [0.0,norm(vecXE-vecX0)], [0.0,0.0], 'k-' );
+	%plot( [0.0,norm(vecXE-vecX0)], [0.0,0.0], 'k-' );
 	if ( useAxEq )
 		axis equal;
 	end
@@ -94,7 +95,7 @@ if ( plotCurveZ1Z2_cnstJ )
 	ylabel( "z2" );
 	title( "sqrt(omega cnstJ) vs ( z1, z2 )" );
 	hold on;
-	plot( [0.0,norm(vecXE-vecX0)], [0.0,0.0], 'k-' );
+	%plot( [0.0,norm(vecXE-vecX0)], [0.0,0.0], 'k-' );
 	if ( useAxEq )
 		axis equal;
 	end
@@ -152,12 +153,24 @@ end
 if ( plotOmegaVsZ1 )
 	numFigs++; figure(numFigs);
 	funchVizLog = @(x)(log( eps025*max(max(x)) + x - min(min(x)) ));
-	plot( [0.0,norm(vecXE-vecX0)], [0.0,0.0], 'k-' );
+	n = 1;
+	plot( ...
+	  curveDat(n).z1Vals, sqrt(curveDat(n).omegaVals), ...
+	  [ curveDat(n).plot_markerStyle, curveDat(n).plot_lineStyle], ...
+	  'linewidth', curveDat(n).plot_lineWidth, ...
+	  'color', curveDat(n).plot_color, ...
+	  'markersize', curveDat(n).plot_markerSize );
+	hold on;
+	plot( ...
+	  curveDat(n).z1Vals([1,end]), sqrt(curveDat(n).omegaVals([1,end])), ...
+	  curveDat(n).plot_markerStyle, ...
+	  'linewidth', curveDat(n).plot_bigLineWidth, ...
+	  'color', curveDat(n).plot_color, ...
+	  'markersize', curveDat(n).plot_bigMarkerSize );
 	xlabel( "z1" );
 	ylabel( "sqrt(omega)" );
 	title( "sqrt(omega) vs z1" );
-	hold on;
-	for n=1:numCurves
+	for n=2:numCurves
 		plot( ...
 		  curveDat(n).z1Vals, sqrt(curveDat(n).omegaVals), ...
 		  [ curveDat(n).plot_markerStyle, curveDat(n).plot_lineStyle], ...
@@ -171,6 +184,7 @@ if ( plotOmegaVsZ1 )
 		  'color', curveDat(n).plot_color, ...
 		  'markersize', curveDat(n).plot_bigMarkerSize );
 	end
+	%plot( [0.0,norm(vecXE-vecX0)], [0.0,0.0], 'k-' );
 	hold off;
 	grid on;
 end

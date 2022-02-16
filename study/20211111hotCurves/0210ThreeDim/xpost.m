@@ -39,10 +39,10 @@ for n=1:3
 end
 end
 %
-autoAx_z1Lo = vecX0(1);
-autoAx_z1Hi = vecX0(1);
-autoAx_z2Lo = vecX0(2);
-autoAx_z2Hi = vecX0(2);
+autoAx_z1Lo = 0.0;
+autoAx_z1Hi = 0.0;
+autoAx_z2Lo = 0.0;
+autoAx_z2Hi = 0.0;
 for n=1:numCurves
 	curveDat(n).vecFVals = funchF( curveDat(n).vecXVals );
 	curveDat(n).omegaVals = 0.5*sumsq(curveDat(n).vecFVals,1);
