@@ -5,25 +5,33 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 	%
 	% Parse input.
 	sizeX = size(vecX0,1);
-	%
 	debugMode = mygetfield( prm, "debugMode", true );
-	omegaMin = mygetfield( prm, "omegaMin", 0.0 );
-	gNormTol = mygetfield( prm, "gNormTol", 0.0 );
-	iterLimit = mygetfield( prm, "iterLimit", 100 );
-	omegaFallTol = mygetfield( prm, "omegaFallTol", sqrt(eps) );
-	stepSizeTol = mygetfield( prm, "stepSizeTol", sqrt(eps) );
-	hessianType = mygetfield( prm, "hessianType", 0 );
 	if (debugMode)
 		msg( __FILE__, __LINE__, "Using debugMode." );
 		assert( isrealarray(vecX0,[sizeX,1]) );
 		assert( isscalar(debugMode) );
 		assert( isbool(debugMode) );
+	end
+	%
+	omegaMin = mygetfield( prm, "omegaMin", 0.0 );
+	gNormTol = mygetfield( prm, "gNormTol", 0.0 );
+	iterLimit = mygetfield( prm, "iterLimit", 100 );
+	omegaFallTol = mygetfield( prm, "omegaFallTol", sqrt(eps) );
+	stepSizeTol = mygetfield( prm, "stepSizeTol", sqrt(eps) );
+	%patchDimMax = mygetfield( prm, "patchDimMax", 1 );
+	%patchThresh = mygetfield( prm, "patchThresh", 1e-4 );
+	patchDimMax = mygetfield( prm, "patchDimMax", sizeX );
+	patchThresh = mygetfield( prm, "patchThresh", 2.0 );
+	patchEpsX = mygetfield( prm, "patchEpsX", 1e-4 );
+	if (debugMode)
 		assert( isrealscalar(omegaMin) );
 		assert( isrealscalar(gNormTol) );
 		assert( isrealscalar(iterLimit) );
 		assert( isrealscalar(omegaFallTol) );
 		assert( isrealscalar(stepSizeTol) );
-		assert( isrealscalar(hessianType) );
+		assert( isrealscalar(patchDimMax) );
+		assert( isrealscalar(patchThresh) );
+		assert( isrealscalar(patchEpsX) );
 	endif
 	%
 	[ vecF0, matJ0 ] = funchFJ( vecX0 );
@@ -76,14 +84,42 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 		endif
 		%
 		%
-		% Calculate Hessian.
-		matH_jtj = matJ'*matJ;
-		switch ( hessianType )
-		case 0
-			matH = matH_jtj;
-		otherwise
-			error( "Invalid hessianType." );
-		endswitch
+		% Calculate Hessian and Patch.
+		matJTJ = matJ'*matJ;
+		matP = zeros(sizeX,sizeX);
+		if ( 1 <= patchDimMax )
+			[ matPsi, matLambda ] = eig( matJTJ );
+			vecLambda = diag(matLambda)
+			[ vecAbsLambdaSortVal, vecAbsLambdaSortIndex ] = sort(abs(vecLambda));
+			vecEigToPatch = vecAbsLambdaSortIndex( vecAbsLambdaSortVal <= patchThresh*vecAbsLambdaSortVal(end) )
+			if ( length(vecEigToPatch) > patchDimMax )
+				vecEigToPatch = vecEigToPatch(1:patchDimMax)
+			end
+			%
+			for n=1:length(vecEigToPatch);
+				m = vecEigToPatch(n);
+				vecFP = funchFJ( vecX + patchEpsX*matPsi(:,m) );
+				vecFM = funchFJ( vecX - patchEpsX*matPsi(:,m) );
+				assert( abs( norm(matPsi(:,m)) - 1.0 ) < sqrt(eps) );
+				h = (vecF'*( vecFP + vecFM - (2.0*vecF) )) / (patchEpsX*patchEpsX);
+				if ( 0.0 >= h )
+					msg( __FILE__, __LINE__, "Would-be h term is not positive. This scenario deserves futher attention!" );
+				end
+				matP += abs(h)*(matPsi(:,m)*(matPsi(:,m)'));
+			end
+			%
+			if (debugMode&&(length(vecEigToPatch)>0))
+				funchOmegaFD = @(dummyX)( sumsq(funchFJ(dummyX))/2.0 );
+				[ omegaFD, vecGFD, matHFD ] = evalFDGH( vecX, funchOmegaFD );
+				patchCheckA = diag(matPsi'*matHFD*matPsi)(vecEigToPatch)'
+				patchCheckB = diag(matPsi'*(matJTJ+matP)*matPsi)(vecEigToPatch)'
+				if ( reldiff(patchCheckA,patchCheckB) > eps^0.2 )
+					msg( __FILE__, __LINE__, "patchCheckA and patchCheckB do not seem to agree." );
+				end
+			end
+		end
+		matH = matJTJ + matP;
+		msg( __FILE__, __LINE__, "RETURN!" ); return
 		%
 		%
 		%
@@ -96,7 +132,6 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 			return;
 		end
 		vecDelta = -( matR \ ( matR' \ vecG ) );
-		%
 		vecX_next = vecX + vecDelta;
 		[ vecF_next, matJ_next ] = funchFJ( vecX_next );
 		omega_next = sumsq(vecF_next)/2.0;
@@ -142,12 +177,19 @@ end
 %!	sizeX = size(vecX,1);
 %!	matJ = diag((1:sizeX));
 %!	vecF = matJ*( vecX - (1:sizeX)' );
-%!	%vecF = vecX - (1:sizeX)';
+%!endfunction
+%!function [ vecF, matJ ] = funcFJ_nonlin( vecX )
+%!	sizeX = size(vecX,1);
+%!	vecXE = (1:sizeX)';
+%!	matA = diag((1:sizeX));
+%!	matA(2,1) = (sizeX+1);
+%!	vecF = matA*((vecX-vecXE)).^2;
+%!	matJ = diag((1:sizeX));
 %!endfunction
 
 
 %!test
-%!	caseNum = 1;
+%!	caseNum = 10;
 %!	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 %!	switch (caseNum)
 %!	case 0
@@ -160,6 +202,20 @@ end
 %!		sizeF = 10;
 %!		vecX0 = zeros(sizeX,1);
 %!		funchFJ = @(dummyX)( funcFJ_easy(dummyX) );
+%!	case 10
+%!		sizeX = 2;
+%!		sizeF = 2;
+%!		testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,0); % Calls setprngstates.
+%!		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
+%!		vecX0 = zeros(sizeX,1);
+%!	case 20
+%!		sizeX = 2;
+%!		sizeF = 2;
+%!		tfpPrm.matJPreMod = ones(sizeF,sizeX);
+%!		tfpPrm.matJPreMod(1,1) = 100.0;
+%!		testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,0,true,true,true,tfpPrm); % Calls setprngstates.
+%!		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
+%!		vecX0 = zeros(sizeX,1);
 %!	otherwise
 %!		error( "Invalid caseNum." );
 %!	endswitch
