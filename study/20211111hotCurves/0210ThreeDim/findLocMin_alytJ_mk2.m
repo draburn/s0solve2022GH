@@ -58,6 +58,12 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 	end
 	%
 	%
+	trackHJBroyd = debugMode;
+	if ( trackHJBroyd)
+		matJ_HJBroyd = matJ0
+		matH_HJBroyd = matJ0'*matJ0
+	end
+	%
 	% Prep main loop.
 	vecX = vecX0;
 	vecF = vecF0;
@@ -127,6 +133,9 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 		%%%matH = matHFD;
 		%rcond(matH)
 		%msg( __FILE__, __LINE__, "RETURN!" ); return
+		if ( 1==iterCount && trackHJBroyd )
+			matH_HJBroyd += matP
+		end
 		%
 		%
 		%
@@ -148,6 +157,23 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 			return;
 		end
 		vecG_next = matJ_next'*vecF_next;
+		%
+		if ( trackHJBroyd )
+			vecDeltaX = vecX_next - vecX;
+			vecDeltaF = vecF_next - vecF;
+			matDeltaJ_HJBroyd = ( vecDeltaF - matJ_HJBroyd * vecDeltaX ) * (vecDeltaX') / sumsq(vecDeltaX);
+			matJ_HJBroyd_next = matJ_HJBroyd + matDeltaJ_HJBroyd;
+			assert( reldiff(matJ_HJBroyd_next*vecDeltaX,vecDeltaF) < sqrt(eps) );
+			%
+			vecDeltaG = matJ_HJBroyd_next'*vecF_next - matJ_HJBroyd'*vecF; % This eq is particularly suspect.
+			foo = matH_HJBroyd*vecDeltaX;
+			matDeltaH_HJBroyd = (vecDeltaG*(vecDeltaG'))/(vecDeltaG'*vecDeltaX) - (foo*(foo'))/(foo'*vecDeltaX);
+			matH_HJBroyd_next = matH_HJBroyd + matDeltaH_HJBroyd;
+			assert( reldiff(matH_HJBroyd_next*vecDeltaX,vecDeltaG) < sqrt(eps) );
+			%
+			matJ_HJBroyd = matJ_HJBroyd_next
+			matH_HJBroyd = matH_HJBroyd_next
+		end
 		%
 		%
 		% Take step.
@@ -197,7 +223,7 @@ end
 
 
 %!test
-%!	caseNum = 100;
+%!	caseNum = 101;
 %!	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 %!	switch (caseNum)
 %!	case 0
@@ -245,6 +271,18 @@ end
 %!		testFuncPrm.ary3K(:,:,2) = [ 2.0, 0.0; 0.0, 2.0 ];
 %!		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
 %!		vecX0 = ones(sizeX,1);
+%!	case 101
+%!		sizeX = 2;
+%!		sizeF = 2;
+%!		testFuncPrm.sizeX = 2;
+%!		testFuncPrm.sizeF = 2;
+%!		testFuncPrm.vecXE = [ 0.0; 0.0 ];
+%!		testFuncPrm.vecFE = [ 0.0; 1.0 ];
+%!		testFuncPrm.matJ = [ 1.0, 1.0; 0.0, 0.0 ];
+%!		testFuncPrm.ary3K(:,:,1) = [ 0.0, 0.0; 0.0, 0.0 ];
+%!		testFuncPrm.ary3K(:,:,2) = [ 2.0, 0.0; 0.0, 2.0 ];
+%!		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
+%!		vecX0 = 0.01*ones(sizeX,1);
 %!	otherwise
 %!		error( "Invalid caseNum." );
 %!	endswitch
