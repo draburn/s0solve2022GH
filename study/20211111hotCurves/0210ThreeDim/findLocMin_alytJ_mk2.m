@@ -11,11 +11,11 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 		assert( isrealarray(vecX0,[sizeX,1]) );
 		assert( isscalar(debugMode) );
 		assert( isbool(debugMode) );
-	end
+	endif
 	%
 	omegaMin = mygetfield( prm, "omegaMin", 0.0 );
 	gNormTol = mygetfield( prm, "gNormTol", 0.0 );
-	iterLimit = mygetfield( prm, "iterLimit", 100 );
+	iterLimit = mygetfield( prm, "iterLimit", 10 );
 	omegaFallTol = mygetfield( prm, "omegaFallTol", sqrt(eps) );
 	stepSizeTol = mygetfield( prm, "stepSizeTol", sqrt(eps) );
 	%patchDimMax = mygetfield( prm, "patchDimMax", 0 ); patchThresh = mygetfield( prm, "patchThresh", 0.0 );
@@ -23,6 +23,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 	patchDimMax = mygetfield( prm, "patchDimMax", 1 ); patchThresh = mygetfield( prm, "patchThresh", 2.0 );
 	%patchDimMax = mygetfield( prm, "patchDimMax", sizeX ); patchThresh = mygetfield( prm, "patchThresh", 2.0 );
 	patchEpsX = mygetfield( prm, "patchEpsX", 1e-5 );
+	relFallThresh = mygetfield( prm, "relFallThresh", 0.5 );
 	if (debugMode)
 		assert( isrealscalar(omegaMin) );
 		assert( isrealscalar(gNormTol) );
@@ -32,6 +33,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 		assert( isrealscalar(patchDimMax) );
 		assert( isrealscalar(patchThresh) );
 		assert( isrealscalar(patchEpsX) );
+		assert( isrealscalar(relFallThresh) );
 	endif
 	%
 	[ vecF0, matJ0 ] = funchFJ( vecX0 );
@@ -55,21 +57,21 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 	matIX = eye(sizeX,sizeX);
 	if ( nargout >= 2 )
 		datOut = [];
-	end
+	endif
 	%
 	%
-	trackHJBroyd = debugMode;
-	if ( trackHJBroyd)
+	trackHJBroyd = false;
+	if ( trackHJBroyd )
 		matJ_HJBroyd = matJ0
 		matH_HJBroyd = matJ0'*matJ0
-	end
+	endif
 	%
 	% Prep main loop.
 	vecX = vecX0;
 	vecF = vecF0;
-	matJ = matJ0
+	matJ = matJ0;
 	omega = omega0
-	vecG = vecG0
+	vecG = vecG0;
 	iterCount = 0;
 	while (1)
 		% Check pre-iter success conditions.
@@ -84,7 +86,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 		%
 		% Check pre-iter imposed limits.
 		iterCount++;
-		msg( __FILE__, __LINE__, sprintf( "~~~ ITERATION %d ~~~", iterCount ) );
+		%msg( __FILE__, __LINE__, sprintf( "~~~ ITERATION %d ~~~", iterCount ) );
 		if ( iterCount > iterLimit )
 			msgif( debugMode, __FILE__, __LINE__, "Reached iterLimit." );
 			return;
@@ -93,6 +95,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 		%
 		% Calculate Hessian and Patch.
 		matJTJ = matJ'*matJ;
+		%
 		matP = zeros(sizeX,sizeX);
 		if ( 1 <= patchDimMax )
 			[ matPsi, matLambda ] = eig( matJTJ );
@@ -100,19 +103,19 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 			vecEigToPatch = vecAbsLambdaSortIndex( vecAbsLambdaSortVal <= patchThresh*vecAbsLambdaSortVal(end) );
 			if ( length(vecEigToPatch) > patchDimMax )
 				vecEigToPatch = vecEigToPatch(1:patchDimMax);
-			end
+			endif
 			%
 			for n=1:length(vecEigToPatch);
 				m = vecEigToPatch(n);
 				vecFP = funchFJ( vecX + patchEpsX*matPsi(:,m) );
 				vecFM = funchFJ( vecX - patchEpsX*matPsi(:,m) );
 				assert( abs( norm(matPsi(:,m)) - 1.0 ) < sqrt(eps) );
-				h = (vecF'*( vecFP + vecFM - (2.0*vecF) )) / (patchEpsX*patchEpsX)
+				h = (vecF'*( vecFP + vecFM - (2.0*vecF) )) / (patchEpsX*patchEpsX);
 				if ( 0.0 >= h )
 					msg( __FILE__, __LINE__, "Would-be h term is not positive. This scenario deserves futher attention!" );
-				end
+				endif
 				matP += abs(h)*(matPsi(:,m)*(matPsi(:,m)'));
-			end
+			endfor
 			%
 			if (debugMode&&(length(vecEigToPatch)>0))
 				funchOmegaFD = @(dummyX)( sumsq(funchFJ(dummyX))/2.0 );
@@ -123,39 +126,63 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 					echo__patchCheckA = patchCheckA'
 					echo__patchCheckB = patchCheckB'
 					msg( __FILE__, __LINE__, "*** WARNING: patchCheckA and patchCheckB do not seem to agree. This should be impossible. ***" );
-				end
-			end
-		end
+				endif
+			endif
+		endif
 		%rcond(matJTJ)
-		matH = matJTJ + matP
+		matH = matJTJ + matP;
 		[ omegaFD, vecGFD, matHFD ] = evalFDGH( vecX, @(dummyX)( sumsq(funchFJ(dummyX))/2.0 ) );
-		echo__matHFD = matHFD
+		echo__matHFD = matHFD;
 		%%%matH = matHFD;
 		%rcond(matH)
 		%msg( __FILE__, __LINE__, "RETURN!" ); return
 		if ( 1==iterCount && trackHJBroyd )
 			matH_HJBroyd += matP
-		end
+		endif
 		%
 		%
 		%
 		% Pick step.
-		% REPLACE THIS WITH BACKTRACKING.
-		mu = 0.0;
-		[ matR, cholFlag ] = chol( matH + (mu*matIX) );
-		if ( 0 ~= cholFlag )
-			msg( __FILE__, __LINE__, "Cholesky factorization of Hessian failed." );
-			return;
-		end
-		vecDelta = -( matR \ ( matR' \ vecG ) );
-		vecX_next = vecX + vecDelta;
+		% THIS IS VERY CRUDE.
+		hScale = eigs(matH,1);
+		assert( hScale > 0.0 );
+		for mu = hScale*[ 0.0, 1e-8, 1e-4, 1e-2, 1e-1, 1e0, 2e0, 3e0, 1e1, 1e2, 1e3, 1e4 ]
+		%for mu = 0
+			[ matR, cholFlag ] = chol( matH + (mu*matIX) );
+			if ( 0 ~= cholFlag )
+				msg( __FILE__, __LINE__, "Cholesky factorization of Hessian failed." );
+				continue;
+			endif
+			vecDeltaX_trial = -( matR \ ( matR' \ vecG ) );
+			%
+			vecX_trial = vecX + vecDeltaX_trial;
+			omegaModel_trial = omega + vecG'*vecDeltaX_trial + 0.5*(vecDeltaX_trial'*matH*vecDeltaX_trial);
+			omegaFallModel_trial = omega - omegaModel_trial;
+			assert( 0.0 < omegaFallModel_trial );
+			vecF_trial = funchFJ( vecX_trial );
+			omega_trial = sumsq(vecF_trial)/2.0;
+			omegaFall_trial = omega - omega_trial;
+			if ( omegaFall_trial < relFallThresh*omegaFallModel_trial )
+				% Fall is insufficient, possibly negative.
+				% NOTE: As long as vecF isn't too crazy, we might be able to pick up some info about H.
+				% This is for later.
+				% IF OMEGAFALL_TRIAL INCREASES FROM PREV MU, USE THAT MU INSTEAD?
+				continue;
+			endif
+			mu_final = mu
+			break;
+		endfor
+		%
+		%
+		% Validate step.
+		vecX_next = vecX_trial;
 		[ vecF_next, matJ_next ] = funchFJ( vecX_next );
 		omega_next = sumsq(vecF_next)/2.0;
 		if ( omega_next >= omega )
 			msg( __FILE__, __LINE__, "Omega increased." );
 			echo__omega_next = omega_next
 			return;
-		end
+		endif
 		vecG_next = matJ_next'*vecF_next;
 		%
 		if ( trackHJBroyd )
@@ -173,7 +200,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 			%
 			matJ_HJBroyd = matJ_HJBroyd_next
 			matH_HJBroyd = matH_HJBroyd_next
-		end
+		endif
 		%
 		%
 		% Take step.
@@ -182,9 +209,9 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk2( vecX0, funchFJ, prm=[] )
 		matJ_prev = matJ;
 		omega_prev = omega;
 		vecG_prev = vecG;
-		vecX = vecX_next
+		vecX = vecX_next;
 		vecF = vecF_next;
-		matJ = matJ_next
+		matJ = matJ_next;
 		omega = omega_next
 		vecG = vecG_next;
 		%
@@ -223,7 +250,7 @@ end
 
 
 %!test
-%!	caseNum = 101;
+%!	caseNum = 100;
 %!	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 %!	switch (caseNum)
 %!	case 0
