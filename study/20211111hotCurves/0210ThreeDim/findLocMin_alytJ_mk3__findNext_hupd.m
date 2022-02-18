@@ -1,7 +1,4 @@
-msg( __FILE__, __LINE__, "WIP!" );
-vecX_next = vecX - 0.0001*vecG;
-return;
-
+%msg( __FILE__, __LINE__, "WIP RETURN!" ); vecX_next = vecX - 0.0001*vecG; return;
 %
 matK = zeros(sizeX,sizeX);
 trialCount = 0;
@@ -22,8 +19,7 @@ while (1)
 	%
 	%
 	% Generate step
-	genLimit = 100;
-	matD = matI(sizeX,sizeX);
+	matD = eye(sizeX,sizeX);
 	%
 	genCount = 0;
 	mu = 0.0;
@@ -31,23 +27,33 @@ while (1)
 	matH = (matH'+matH)/2.0;
 	while (1)
 		genCount++;
+		genLimit = 100; % MAKE PARAM
 		if ( genCount > genLimit )
 			msgif( debugMode, __FILE__, __LINE__, "Reached genLimit." );
 			return;
 		endif
 		%
 		[ matR, cholFlag ] = chol( matH + mu*matD );
+		hodScale = max(abs(diag(matH)))/max(abs(diag(matD)));
 		if ( 0~=cholFlag )
-			error( "TODO: Increase mu to guarantee pos-def." );
+			if ( 0.0 == mu )
+				mu = sqrt(eps)*hodScale;
+				continue;
+			endif
+			msg( __FILE__, __LINE__, "ERROR: matH appears to have a negative eigenvalue; this should be impossible." );
+			mu *= 2.0;
+			mu += 0.001*hodScale;
 			continue;
 		endif
 		vecDelta_trial = -( matR \ ( matR' \ vecG ) );
 		%
 		if ( norm(vecDelta_trial) > dGenMin )
-			error( "TODO: Increase mu to be under dGenMin." );
+			error( "TODO: Increase mu to be under trust region / dGenMin." );
+			% We'll target about half of dGenMin.
 			continue;
 		endif
 		dGenMin = norm(vecDelta_trial);
+		msg( __FILE__, __LINE__, "WIP RETURN!" ); vecX_next = vecX + vecDelta_trial; return;
 		%
 		omegaModel_trial = omega + vecG'*vecDelta_trial + 0.5*(vecDelta_trial'*matH*vecDelta_trial);
 		if ( omegaModel_trial < -eps*abs(omega) )
@@ -60,9 +66,12 @@ while (1)
 		% Should we also check omegaFallTol and stepSizeTol???
 		wolfeC = 0.9; % MAKE PARAM
 		if ( abs(vecDelta_trial'*(vecG+matH*vecDelta_trial)) >= wolfeC * abs(vecDelta_trial'*vecG) )
-			msgif( debugMode, __FILE__, __LINE__, "Step is too small per Wolfe curvature condition. Giving up." );
+			msgif( true, __FILE__, __LINE__, "Step is too small per Wolfe curvature condition. Giving up." );
+			msgif( true, __FILE__, __LINE__, "Is this happens frequently, consider modifying how mu is calculated" );
+			msgif( true, __FILE__, __LINE__, " while maintaining other constraints." );
 			fooLHS = vecDelta_trial'*(vecG+matH*vecDelta_trial)
 			fooRHS = vecDelta_trial'*vecG
+			return;
 		endif
 		%
 		break;
