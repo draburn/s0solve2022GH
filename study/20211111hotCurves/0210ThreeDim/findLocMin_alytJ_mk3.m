@@ -19,7 +19,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 	omegaMin = mygetfield( prm, "omegaMin", 0.0 );
 	gNormTol = mygetfield( prm, "gNormTol", 0.0 );
 	iterLimit = mygetfield( prm, "iterLimit", 10 );
-	stepType = mygetfield( prm, "stepType", 20 );
+	stepType = mygetfield( prm, "stepType", 100 );
 	c0_trustRegion = mygetfield( prm, "c0_trustRegion", 100.0 );
 	stepSizeTol = mygetfield( prm, "stepSizeTol", sqrt(eps) );
 	omegaFallAbsTol = mygetfield( prm, "omegaFallAbsTol", eps );
@@ -62,12 +62,12 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 	if ( omega0 <= omegaMin )
 		msg( __FILE__, __LINE__, "Initial omega is below target min." );
 		return;
-	end
+	endif
 	vecG0 = matJ0'*vecF0;
 	if ( norm(vecG0) <= gNormTol )
 		msg( __FILE__, __LINE__, "Initial gradient is below tolerance." );
 		return;
-	end
+	endif
 	matJTJ0 = matJ0'*matJ0;
 	dTreg0 = c0_trustRegion * norm(vecF0) / sqrt(max(abs(diag(matJTJ0))));
 	%
@@ -108,6 +108,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 		%
 		%
 		% Do work!
+		% Note that dTreg may be change internally.
 		switch (stepType)
 		case 0
 			% Simple grad.
@@ -138,18 +139,20 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 			matH = matJTJ + abs(h)*(vecPhiHat*(vecPhiHat'));
 			hScale = max(abs(diag(matH)));
 			vecX_next = vecX - ( matH + 1e-4*hScale*eye(sizeX) ) \ vecG;
-		%case 100
-			%findLocMin_alytJ_mk3__findNext_hupd;
+		case 100
+			findLocMin_alytJ_mk3__findNext_hupd;
 		otherwise
 			error( "Invalid stepType." );
-		end
+		endswitch
 		%
 		%
 		% Validate step.
 		if ( ~isrealarray(vecX_next,[sizeX,1]) );
 			msg( __FILE__, __LINE__, "vecX_next is not a valid vector." );
 			return;
-		end
+		elseif ( norm(vecX_next-vecX) > dTreg )
+			msg( __FILE__, __LINE__, "Step moves outside trust region!" );
+		endif
 		[ vecF_next, matJ_next ] = funchFJ( vecX_next );
 		omega_next = sumsq(vecF_next)/2.0
 		if ( omega_next >= omega )
@@ -187,7 +190,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 		endif
 	endwhile
 return;
-end
+endfunction
 
 
 %!function [ vecF, matJ ] = funcFJ_trivial( vecX )
