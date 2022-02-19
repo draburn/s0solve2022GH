@@ -1,5 +1,7 @@
 %msg( __FILE__, __LINE__, "WIP RETURN!" ); vecX_next = vecX - 0.0001*vecG; return;
 %
+%echo__vecX = vecX
+%echo__vecG = vecG
 matK = zeros(sizeX,sizeX);
 trialCount = 0;
 haveBestSoFar = false;
@@ -34,8 +36,11 @@ while (1)
 		[ matR, cholFlag ] = chol( matH + mu*eye(sizeX) );
 		hScale = max(abs(diag(matH)));
 		if ( 0~=cholFlag )
+			msgif( false, __FILE__, __LINE__, "Chol failed." );
+			msgif( false, __FILE__, __LINE__, "We need a better way to set mu when chol fails." );
+			msgif( false, __FILE__, __LINE__, "And, we need to check to ensure the calculated delta is good." );
 			if ( 0.0 == mu )
-				mu = 1e-4*hScale;
+				mu = 1e-2*hScale;
 				% Using mu = sqrt(eps)*hScale causes numerical issues, caseNum 100.
 				continue;
 			endif
@@ -44,7 +49,7 @@ while (1)
 			mu += 0.001*hScale;
 			continue;
 		endif
-		vecDelta_trial = -( matR \ ( matR' \ vecG ) )
+		vecDelta_trial = -( matR \ ( matR' \ vecG ) );
 		%
 		% Note that dGenMin starts at dTreg.
 		if ( norm(vecDelta_trial) >= dGenMin )
@@ -81,7 +86,6 @@ while (1)
 			% Could this overbacktrack? I don't know.
 			continue;
 		endif
-		msg( __FILE__, __LINE__, "WIP RETURN!" ); vecX_next = vecX + vecDelta_trial; return;
 		%
 		%
 		% Check if step is too small.
@@ -152,7 +156,7 @@ while (1)
 	% Check outright acceptance criterion.
 	c_acceptOutright = 0.3; % MAKE PARAM
 	if ( omega_trial <= (1.0-c_acceptOutright)*omega + c_acceptOutright*omegaModel_trial )
-		msgif( debug, __FILE__, __LINE__, "Step is very good!" );
+		msgif( debugMode, __FILE__, __LINE__, "Step is very good!" );
 		if (haveBestSoFar)
 			assert( ~isempty(omega_trial) );
 			if ( omega_trial >= omega_next )
@@ -167,6 +171,8 @@ while (1)
 		omega_next = omega_trial;
 		return;
 	endif
+	%
+	msg( __FILE__, __LINE__, "WIP RETURN!" ); vecX_next = vecX + vecDelta_trial; return;
 	%
 	% Is this the best result so far?
 	if ( ~haveBestSoFar )
@@ -191,5 +197,6 @@ while (1)
 		omega_next = omega_trial;
 	endif
 	%
+	msg( __FILE__, __LINE__, "*** Updating K! ***" );
 	matK += (2.0*(omega_trial-omegaModel_trial)/sumsq(vecDelta_trial)^2)*(vecDelta_trial*(vecDelta_trial'));
 endwhile
