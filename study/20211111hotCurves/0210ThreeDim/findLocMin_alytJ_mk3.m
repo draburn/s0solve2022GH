@@ -18,7 +18,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 	%
 	omegaMin = mygetfield( prm, "omegaMin", 0.0 );
 	gNormTol = mygetfield( prm, "gNormTol", 0.0 );
-	iterLimit = mygetfield( prm, "iterLimit", 10 );
+	iterLimit = mygetfield( prm, "iterLimit", 5 );
 	stepType = mygetfield( prm, "stepType", 100 );
 	c0_trustRegion = mygetfield( prm, "c0_trustRegion", 100.0 );
 	stepSizeTol = mygetfield( prm, "stepSizeTol", sqrt(eps) );
@@ -153,6 +153,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 		elseif ( norm(vecX_next-vecX) > dTreg )
 			msg( __FILE__, __LINE__, "Step moves outside trust region!" );
 		endif
+		%echo__vecX_next = vecX_next
 		[ vecF_next, matJ_next ] = funchFJ( vecX_next );
 		omega_next = sumsq(vecF_next)/2.0
 		if ( omega_next >= omega )
@@ -161,6 +162,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 			return;
 		endif
 		vecG_next = matJ_next'*vecF_next;
+		matJTJ_next = matJ_next'*matJ_next;
 		%
 		%
 		% Take step.
@@ -169,12 +171,14 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 		matJ_prev = matJ;
 		omega_prev = omega;
 		vecG_prev = vecG;
+		matJTJ_prev = matJTJ;
 		%
 		vecX = vecX_next;
 		vecF = vecF_next;
 		matJ = matJ_next;
 		omega = omega_next;
 		vecG = vecG_next;
+		matJTJ = matJTJ_next;
 		%
 		%
 		% Check post-iter imposed limits.
@@ -214,7 +218,7 @@ endfunction
 
 
 %!test
-%!	caseNum = 100;
+%!	caseNum = 103;
 %!	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 %!	switch (caseNum)
 %!	case 0
@@ -251,6 +255,7 @@ endfunction
 %!		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
 %!		vecX0 = zeros(sizeX,1);
 %!	case 100
+%!		msg( __FILE__, __LINE__, "*** WARNING: This is a 'perfectly balanced' case! ***" );
 %!		sizeX = 2;
 %!		sizeF = 2;
 %!		testFuncPrm.sizeX = 2;
@@ -263,6 +268,7 @@ endfunction
 %!		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
 %!		vecX0 = ones(sizeX,1);
 %!	case 101
+%!		msg( __FILE__, __LINE__, "*** WARNING: This is a 'perfectly balanced' case! ***" );
 %!		sizeX = 2;
 %!		sizeF = 2;
 %!		testFuncPrm.sizeX = 2;
@@ -274,6 +280,30 @@ endfunction
 %!		testFuncPrm.ary3K(:,:,2) = [ 2.0, 0.0; 0.0, 2.0 ];
 %!		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
 %!		vecX0 = 0.01*ones(sizeX,1);
+%!	case 102
+%!		sizeX = 2;
+%!		sizeF = 2;
+%!		testFuncPrm.sizeX = 2;
+%!		testFuncPrm.sizeF = 2;
+%!		testFuncPrm.vecXE = [ 0.0; 0.0 ];
+%!		testFuncPrm.vecFE = [ 0.0; 1.0 ];
+%!		testFuncPrm.matJ = [ 1.0, 1.0; 0.0, 0.0 ];
+%!		testFuncPrm.ary3K(:,:,1) = [ 0.0, 0.0; 0.0, 0.0 ];
+%!		testFuncPrm.ary3K(:,:,2) = [ 2.0, 0.0; 0.0, 2.0 ];
+%!		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
+%!		vecX0 = [ 1.0; 0.9 ];
+%!	case 103
+%!		sizeX = 2;
+%!		sizeF = 2;
+%!		testFuncPrm.sizeX = 2;
+%!		testFuncPrm.sizeF = 2;
+%!		testFuncPrm.vecXE = [ 0.0; 0.0 ];
+%!		testFuncPrm.vecFE = [ 0.0; 1.0 ];
+%!		testFuncPrm.matJ = [ 1.0, 1.0; 0.0, 0.0 ];
+%!		testFuncPrm.ary3K(:,:,1) = [ 0.0, 0.0; 0.0, 0.0 ];
+%!		testFuncPrm.ary3K(:,:,2) = [ 2.0, 0.0; 0.0, 2.0 ];
+%!		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
+%!		vecX0 = 0.01*[ 1.0; 0.9 ];
 %!	otherwise
 %!		error( "Invalid caseNum." );
 %!	endswitch
