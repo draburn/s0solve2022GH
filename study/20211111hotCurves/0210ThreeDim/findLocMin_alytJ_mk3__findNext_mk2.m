@@ -71,23 +71,6 @@ while (1)
 			continue;
 		endif
 		vecDelta_trial = -( matR \ ( matR' \ vecG ) );
-		if ( false && reldiff(vecDelta_trial(1),vecDelta_trial(2)) > 0.1 )
-			msg( __FILE__, __LINE__, "Looks like matH is poorly behaved!" );
-			echo__vecX = vecX
-			echo__vecF = vecF
-			echo__matJ = matJ
-			echo__omega = omega
-			echo__vecG = vecG
-			echo__matJTJ = matJTJ
-			echo__matK = matK
-			echo__matH = matH
-			echo__mu = mu
-			echo__matM = matM
-			echo__matR = matR
-			echo__vecDelta_trial = vecDelta_trial
-			echo__Hdelta = matH*vecDelta_trial
-			error( "Looks like matH is poorly behaved." );
-		end
 		omegaModelMin = omega + vecG'*vecDelta_trial + 0.5*(vecDelta_trial'*matH*vecDelta_trial);
 		%
 		% Note that dGenMin starts at dTreg.
@@ -162,6 +145,18 @@ while (1)
 		continue;
 	endif
 	omega_trial = sumsq(vecF_trial,1)/2.0;
+	if ( debugMode )
+		msg( __FILE__, __LINE__, "FEVAL INFO DUMP..." );
+		echo__omega = omega
+		echo__vecG = vecG
+		echo__matJTJ = matJTJ
+		echo__matK = matK
+		echo__matH = matH
+		echo__omegaModelMin = omegaModelMin
+		echo__vecDelta_trial = vecDelta_trial
+		echo__omegaModel_trial = omegaModel_trial
+		echo__omega_trial = omega_trial
+	endif
 	%
 	%
 	%
@@ -198,8 +193,11 @@ while (1)
 	omegaAcceptOutright = (1.0-c_acceptOutright)*omega + c_acceptOutright*omegaModelMin;
 	if ( omega_trial <= omegaAcceptOutright )
 		msgif( debugMode, __FILE__, __LINE__, "Step is very good!" );
-		msgif( omega_trial < omegaModel_trial, __FILE__, __LINE__, "Trial is better than model!" );
-		msgif( omega_trial < omegaModelMin, __FILE__, __LINE__, "Trial is better than model min!!!" );
+		if ( omega_trial < omegaModelMin )
+			msgif( omega_trial < omegaModelMin, __FILE__, __LINE__, "Trial is better than model min!!!" );
+		elseif ( omega_trial < omegaModel_trial )
+			msgif( omega_trial < omegaModel_trial, __FILE__, __LINE__, "Trial is better than model!" );
+		endif
 		if (haveBestSoFar)
 			assert( ~isempty(omega_trial) );
 			if ( omega_trial >= omega_next )

@@ -221,7 +221,7 @@ endfunction
 
 
 %!test
-%!	caseNum = 102;
+%!	caseNum = 104;
 %!	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 %!	switch (caseNum)
 %!	case 0
@@ -307,6 +307,18 @@ endfunction
 %!		testFuncPrm.ary3K(:,:,2) = [ 2.0, 0.0; 0.0, 2.0 ];
 %!		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
 %!		vecX0 = 0.01*[ 1.0; 0.9 ];
+%!	case 104
+%!		sizeX = 2;
+%!		sizeF = 2;
+%!		testFuncPrm.sizeX = 2;
+%!		testFuncPrm.sizeF = 2;
+%!		testFuncPrm.vecXE = [ 0.0; 0.0 ];
+%!		testFuncPrm.vecFE = [ 0.0; 1.0 ];
+%!		testFuncPrm.matJ = [ 1.0, 1.0; 0.0, 0.0 ];
+%!		testFuncPrm.ary3K(:,:,1) = [ 0.0, 0.0; 0.0, 0.0 ];
+%!		testFuncPrm.ary3K(:,:,2) = [ 2.0, 0.0; 0.0, 2.0 ];
+%!		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
+%!		vecX0 = [ 1.0; 2.0 ];
 %!	otherwise
 %!		error( "Invalid caseNum." );
 %!	endswitch
