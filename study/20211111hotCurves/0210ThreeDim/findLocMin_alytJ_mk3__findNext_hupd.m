@@ -19,8 +19,6 @@ while (1)
 	%
 	%
 	% Generate step
-	matD = eye(sizeX,sizeX);
-	%
 	genCount = 0;
 	mu = 0.0;
 	matH = matJTJ + matK;
@@ -33,33 +31,49 @@ while (1)
 			return;
 		endif
 		%
-		[ matR, cholFlag ] = chol( matH + mu*matD );
-		hodScale = max(abs(diag(matH)))/max(abs(diag(matD)));
+		[ matR, cholFlag ] = chol( matH + mu*eye(sizeX) );
+		hScale = max(abs(diag(matH)));
 		if ( 0~=cholFlag )
 			if ( 0.0 == mu )
-				mu = sqrt(eps)*hodScale;
+				mu = sqrt(eps)*hScale;
 				continue;
 			endif
 			msg( __FILE__, __LINE__, "ERROR: matH appears to have a negative eigenvalue; this should be impossible." );
 			mu *= 2.0;
-			mu += 0.001*hodScale;
+			mu += 0.001*hScale;
 			continue;
 		endif
-		vecDelta_trial = -( matR \ ( matR' \ vecG ) );
+		vecDelta_trial = -( matR \ ( matR' \ vecG ) )
 		%
-		if ( norm(vecDelta_trial) > dGenMin )
-			error( "TODO: Increase mu to be under trust region / dGenMin." );
+		% Note that dGenMin starts at dTreg.
+		if ( norm(vecDelta_trial) >= dGenMin )
+			%error( "TODO: Increase mu to be under trust region / dGenMin." );
+			muPrev = mu
+			% Model: ||delta||^2 = ( a / (b+mu) )^2,
+			%  match ||delta||^2 and d/dmu||delta||^2 and muPrev.
+			vecDeltaPrime_trial = -( matR \ ( matR' \ vecDelta_trial ) )
+			dsq = sumsq(vecDelta_trial,1)
+			ddsqdmu = 2.0*(vecDelta_trial'*vecDeltaPrime_trial)
+			assert( 0.0 > ddsqdmu );
+			b = 2.0*dsq/(-ddsqdmu) - muPrev
+			a = 2.0*(dsq^1.5)/(-ddsqdmu)
 			% We'll target about half of dGenMin.
+			dTrgt = 0.5*dGenMin
+			mu = (a/dTrgt) - b
+			assert( mu > 0.0 );
+			% This could possibly over backtrack, but, we won't worry about that case.
+			% A linear model (||delta||^2 = a + b*mu) would avoid over backtracking,
+			%  but, the convergence there may be very slow.
 			continue;
 		endif
 		dGenMin = norm(vecDelta_trial);
-		msg( __FILE__, __LINE__, "WIP RETURN!" ); vecX_next = vecX + vecDelta_trial; return;
 		%
 		omegaModel_trial = omega + vecG'*vecDelta_trial + 0.5*(vecDelta_trial'*matH*vecDelta_trial);
 		if ( omegaModel_trial < -eps*abs(omega) )
 			error( "TODO: Increase mu so that omegaModel is not negative." );
 			continue;
 		endif
+		msg( __FILE__, __LINE__, "WIP RETURN!" ); vecX_next = vecX + vecDelta_trial; return;
 		%
 		%
 		% Check if step is too small.
