@@ -19,7 +19,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 	omegaMin = mygetfield( prm, "omegaMin", 0.0 );
 	gNormTol = mygetfield( prm, "gNormTol", 0.0 );
 	iterLimit = mygetfield( prm, "iterLimit", 5 );
-	stepType = mygetfield( prm, "stepType", 100 );
+	stepType = mygetfield( prm, "stepType", 102 );
 	c0_trustRegion = mygetfield( prm, "c0_trustRegion", 100.0 );
 	stepSizeTol = mygetfield( prm, "stepSizeTol", sqrt(eps) );
 	omegaFallAbsTol = mygetfield( prm, "omegaFallAbsTol", eps );
@@ -141,6 +141,9 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 			vecX_next = vecX - ( matH + 1e-4*hScale*eye(sizeX) ) \ vecG;
 		case 100
 			findLocMin_alytJ_mk3__findNext_hupd;
+		case 102
+			fnprm.dTreg = dTreg;
+			vecX_next = findLocMin_alytJ_mk3__findNext_mk2( vecX, vecF, matJ, funchFJ, fnprm );
 		otherwise
 			error( "Invalid stepType." );
 		endswitch
@@ -218,7 +221,7 @@ endfunction
 
 
 %!test
-%!	caseNum = 103;
+%!	caseNum = 102;
 %!	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 %!	switch (caseNum)
 %!	case 0
