@@ -1,3 +1,5 @@
+% This is the same as findLocMin_alytJ_mk3__findNext_hupd, but functionalized.
+
 function [ vecX_next, retCode, datOut ] = findLocMin_alytJ_mk3__findNext_mk2( vecX0, vecF0, matJ0, funchF, prm=[], datIn=[] )
 
 % Unpack input.
