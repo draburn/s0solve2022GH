@@ -129,6 +129,7 @@ while (1)
 	%
 	vecX_trial = vecX + vecDelta_trial;
 	vecF_trial = funchFJ( vecX_trial );
+	fevalCount++;
 	if ( ~isrealarray(vecF_trial,[sizeF,1]) )
 		msgif( debugMode, __FILE__, __LINE__, "Function evaluation failed." );
 		if (haveBestSoFar)

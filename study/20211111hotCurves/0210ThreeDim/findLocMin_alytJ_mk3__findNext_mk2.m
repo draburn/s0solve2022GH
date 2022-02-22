@@ -1,6 +1,6 @@
 % This is the same as findLocMin_alytJ_mk3__findNext_hupd, but functionalized.
 
-function [ vecX_next, retCode, datOut ] = findLocMin_alytJ_mk3__findNext_mk2( vecX0, vecF0, matJ0, funchF, prm=[], datIn=[] )
+function [ vecX_next, datOut ] = findLocMin_alytJ_mk3__findNext_mk2( vecX0, vecF0, matJ0, funchF, prm=[], datIn=[] )
 
 % Unpack input.
 sizeX = size(vecX0,1);
@@ -31,6 +31,7 @@ vecX_next = []; % Keep track of best so far.
 vecF_next = []; % Keep track of best so far.
 omega_next = []; % Keep track of best so far.
 dGenMin = dTreg;
+datOut.fevalCount = 0;
 while (1)
 	% Check pre-iter imposed limits.
 	trialCount++;
@@ -134,6 +135,7 @@ while (1)
 	%
 	vecX_trial = vecX + vecDelta_trial;
 	vecF_trial = funchF( vecX_trial );
+	datOut.fevalCount++;
 	if ( ~isrealarray(vecF_trial,[sizeF,1]) )
 		msgif( debugMode, __FILE__, __LINE__, "Function evaluation failed." );
 		if (haveBestSoFar)

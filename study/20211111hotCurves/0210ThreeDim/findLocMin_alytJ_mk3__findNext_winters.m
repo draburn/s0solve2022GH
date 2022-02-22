@@ -55,6 +55,7 @@ function [ vecX_next, datOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX0, 
 		echo__matK0 = matK0
 		echo__vecX0 = vecX0
 		echo__vecF0 = vecF0
+		echo__matJTJ0 = matJTJ0
 		echo__omega0 = omega0
 		echo__vecG0 = vecG0
 		echo__dTreg0 = dTreg0
@@ -73,6 +74,7 @@ function [ vecX_next, datOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX0, 
 	dTreg = dTreg0;
 	doMainLoop = true;
 	iterCount = 0;
+	datOut.fevalCount = 0;
 	while ( doMainLoop )
 		%
 		iterCount++;
@@ -121,7 +123,7 @@ function [ vecX_next, datOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX0, 
 					msgif( debugMode, __FILE__, __LINE__, "  start with mu = upper bound for eigenvalue of H, and target omega = 0.0." );
 					msgif( debugMode, __FILE__, __LINE__, "  increase mu exponentially until chol() works." );
 					msgif( debugMode, __FILE__, __LINE__, "But, POITROME." );
-					[ matPsi_eig, matLambad_eig ] = eig( matH );
+					[ matPsi_eig, matLambda_eig ] = eig( matH );
 					muCrit = -min(diag(matLambda_eig));
 					assert( 0.0 < muCrit );
 					mu = muCrit + muReguCoeff * ( muCrit + hAbsMax );
@@ -222,10 +224,12 @@ function [ vecX_next, datOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX0, 
 					mu = mu + sumsq(vecG0)*(omegaTrgt-omegaModel)/((omega0-omegaTrgt)*(omega0-omegaModel));
 					assert( mu > muLo );
 				else
-					% Just use a linear model.
+					%%%% Just use a linear model.
 					mu = muLo + (muHi-muLo)*(omegaTrgt-omegaModelOfMuLo)/(omegaModelOfMuHi-omegaModelOfMuLo);
 					assert( mu > muLo );
 					assert( mu < muHi );
+					% Actually, bisection looks faster.
+					%%%mu = (muLo+muHi)/2.0;
 				end
 				% Update matM, matR, and vecDelta.
 				matM = matH + mu*matI;
@@ -250,6 +254,7 @@ function [ vecX_next, datOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX0, 
 				doMainLoop = false;
 				break;
 			end
+			%%% THIS CRITERIA IS NOT VERY SENSIBLE!
 			if ( abs(omegaModel-omega_bsf) <= omegaTol )
 				msgif( debugMode, __FILE__, __LINE__, sprintf( "Model offers insufficient improvement over best so far ( %g vs %g ).", omegaModel, omega_bsf ) );
 				doMainLoop = false;
@@ -272,6 +277,7 @@ function [ vecX_next, datOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX0, 
 			echo__omegaModel = omegaModel
 		end
 		vecF = funchF( vecX );
+		datOut.fevalCount++;
 		%
 		% If feval failed, cut trust region size.
 		if ( ~isrealarray(vecF,[sizeF,1]) )

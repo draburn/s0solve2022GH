@@ -18,7 +18,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 	%
 	omegaMin = mygetfield( prm, "omegaMin", 0.0 );
 	gNormTol = mygetfield( prm, "gNormTol", 0.0 );
-	iterLimit = mygetfield( prm, "iterLimit", 5 );
+	iterLimit = mygetfield( prm, "iterLimit", 20 );
 	%stepType = mygetfield( prm, "stepType", 102 );
 	%stepType = mygetfield( prm, "stepType", 200 );
 	stepType = mygetfield( prm, "stepType", 201 );
@@ -42,10 +42,14 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 	if ( nargout >= 2 )
 		datOut = [];
 	endif
+	fevalCount = 0;
+	jevalCount = 0;
 	%
 	%
 	% Do pre-loop analysis.
 	[ vecF0, matJ0 ] = funchFJ( vecX0 );
+	fevalCount++;
+	jevalCount++;
 	sizeF = size(vecF0,1);
 	if (debugMode)
 		assert( isrealarray(vecF0,[sizeF,1]) );
@@ -92,6 +96,8 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 	matJTJ = matJTJ0;
 	dTreg = dTreg0;
 	iterCount = 0;
+	datOut.fevalCountVals(iterCount+1) = fevalCount;
+	datOut.omegaVals(iterCount+1) = omega;
 	while (1)
 		% Check pre-iter success conditions.
 		if ( omega <= omegaMin )
@@ -132,6 +138,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 			[ lambdaAbsMin, nOfAbsMin ] = min(abs(diag(matLambda)));
 			vecPhiHat = matPsi(:,nOfAbsMin);
 			h = vecF'*( funchFJ( vecX + epsX*vecPhiHat ) + funchFJ( vecX - epsX*vecPhiHat ) - 2.0*vecF )/(epsX*epsX);
+			fevalCount += 2;
 			matH = matJTJ + abs(h)*(vecPhiHat*(vecPhiHat'));
 			vecX_next = vecX - matH \ vecG;
 		case 21
@@ -141,6 +148,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 			[ lambdaAbsMin, nOfAbsMin ] = min(abs(diag(matLambda)));
 			vecPhiHat = matPsi(:,nOfAbsMin);
 			h = vecF'*( funchFJ( vecX + epsX*vecPhiHat ) + funchFJ( vecX - epsX*vecPhiHat ) - 2.0*vecF )/(epsX*epsX);
+			fevalCount += 2;
 			matH = matJTJ + abs(h)*(vecPhiHat*(vecPhiHat'));
 			hScale = max(abs(diag(matH)));
 			vecX_next = vecX - ( matH + 1e-4*hScale*eye(sizeX) ) \ vecG;
@@ -148,10 +156,12 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 			findLocMin_alytJ_mk3__findNext_hupd;
 		case 102
 			fnprm.dTreg = dTreg;
-			vecX_next = findLocMin_alytJ_mk3__findNext_mk2( vecX, vecF, matJ, funchFJ, fnprm );
+			[ vecX_next, fndatOut ] = findLocMin_alytJ_mk3__findNext_mk2( vecX, vecF, matJ, funchFJ, fnprm );
+			fevalCount += fndatOut.fevalCount;
 		case 200
 			fnprm = [];
-			vecX_next = findLocMin_alytJ_mk3__findNext_winters( vecX, vecF, matJ, funchFJ, fnprm );
+			[ vecX_next, fndatOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX, vecF, matJ, funchFJ, fnprm );
+			fevalCount += fndatOut.fevalCount;
 		case 201
 			fnprm = [];
 			if ( isrealscalar(winters_dTreg) )
@@ -163,6 +173,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 			[ vecX_next, fndatOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX, vecF, matJ, funchFJ, fnprm );
 			winters_matK = fndatOut.matK;
 			winters_dTreg = fndatOut.dTreg;
+			fevalCount += fndatOut.fevalCount;
 		otherwise
 			error( "Invalid stepType." );
 		endswitch
@@ -202,14 +213,20 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 		vecG = vecG_next;
 		matJTJ = matJTJ_next;
 		%
+		datOut.fevalCountVals(iterCount+1) = fevalCount;
+		datOut.omegaVals(iterCount+1) = omega;
 		%
-		useWintersK = false;
+		%
+		useWintersK = true;
 		if ( useWintersK )
 			if ( isrealarray(winters_matK,[sizeX,sizeX]) )
 				% Impose deltaK * deltaX = (deltaJ)'*J*deltaX.
 				fooX = vecX - vecX_prev;
 				fooY = (matJ-matJ_prev)' * (matJ*(fooX));
 				fooS = sumsq(fooX);
+				deltaK = ( fooY*(fooX') + fooX*(fooY') - (fooX*(fooX'))*(fooX'*fooY)/fooS )/fooS
+				echo__deltaKTimesFooX = deltaK*fooX
+				echo__fooY = fooY
 				winters_matK += ( fooY*(fooX') + fooX*(fooY') - (fooX*(fooX'))*(fooX'*fooY)/fooS )/fooS;
 			else
 				msg( __FILE__, __LINE__, "Don't have winters K." );
@@ -357,3 +374,7 @@ endfunction
 %!	endswitch
 %!	%
 %!	[ vecXF, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ );
+%!	%
+%!	figure();
+%!	semilogy( datOut.fevalCountVals, datOut.omegaVals-sumsq(testFuncPrm.vecFE,1)/2.0, 'o-' );
+%!	grid on;
