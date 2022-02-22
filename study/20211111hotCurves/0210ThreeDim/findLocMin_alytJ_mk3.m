@@ -71,6 +71,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 	endif
 	matJTJ0 = matJ0'*matJ0;
 	dTreg0 = c0_trustRegion * norm(vecF0) / sqrt(max(abs(diag(matJTJ0))));
+	%%%dTreg0 = c0_trustRegion * norm(vecG0) / max(abs(diag(matJTJ0))); % This might make more sense.
 	%
 	trackHJBroyd = false;
 	if ( trackHJBroyd )
@@ -146,7 +147,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 			fnprm.dTreg = dTreg;
 			vecX_next = findLocMin_alytJ_mk3__findNext_mk2( vecX, vecF, matJ, funchFJ, fnprm );
 		case 200
-			fnprm.dTreg = dTreg;
+			fnprm = [];
 			vecX_next = findLocMin_alytJ_mk3__findNext_winters( vecX, vecF, matJ, funchFJ, fnprm );
 		otherwise
 			error( "Invalid stepType." );
@@ -164,7 +165,7 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 		[ vecF_next, matJ_next ] = funchFJ( vecX_next );
 		omega_next = sumsq(vecF_next)/2.0
 		if ( omega_next >= omega )
-			msg( __FILE__, __LINE__, "Omega increased." );
+			msg( __FILE__, __LINE__, "Omega did not decrease." );
 			echo__omega_next = omega_next;
 			return;
 		endif

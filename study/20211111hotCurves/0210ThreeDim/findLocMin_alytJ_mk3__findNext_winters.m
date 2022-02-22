@@ -28,24 +28,35 @@ function [ vecX_next, datOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX0, 
 		clear vecJF_testB;
 	endif
 	%
-	omega0 = sumsq(vecF0,1)/2.0;
-	if ( 0.0 == omega0 )
-		msg( __FILE__, __LINE__, "omega0 is already zero." );
-		return;
-	end
-	vecG0 = matJ0'*vecF0;
-	if ( 0.0 == norm(vecG0) )
-		msg( __FILE__, __LINE__, "vecG0 is already zero." );
-		return;
-	end
 	matI = eye(sizeX,sizeX);
+	omega0 = sumsq(vecF0,1)/2.0;
+	vecG0 = matJ0'*vecF0;
 	matJTJ0 = matJ0'*matJ0;
+	if ( 0.0 == norm(vecG0) )
+		msg( __FILE__, __LINE__, "vecG0 is zero." );
+		return;
+	elseif ( 0.0 == omega0 )
+		msg( __FILE__, __LINE__, "omega0 is below tolerance." );
+		return;
+	endif
 	matK0 = mygetfield( prm, "matK0", zeros(sizeX,sizeX) );
-	dTreg0 = mygetfield( prm, "dTreg", 100.0 * norm(vecF0) / sqrt(max(abs(diag(matJTJ0)))));
+	dTreg0 = mygetfield( prm, "dTreg", 100.0 * norm(vecG0) / max(abs(diag(matJTJ0))) );
+	omegaTol = mygetfield( prm, "omegaRelTol", 1e-4*omega0 );
 	if ( debugMode )
 		assert( isrealarray(matK0,[sizeX,sizeX]) );
 		assert( issymmetric(matK0) );
 		assert( isrealscalar(dTreg0) );
+		assert( isrealscalar(omegaTol) );
+		assert( 0.0 <= omegaTol );
+	end
+	%
+	if (debugMode)
+		msg( __FILE__, __LINE__, "Input values..." );
+		echo__vecX0 = vecX0
+		echo__vecF0 = vecF0
+		echo__omega0 = omega0
+		echo__vecG0 = vecG0
+		echo__dTreg0 = dTreg0
 	end
 	%
 	haveBSF = false;
@@ -57,35 +68,51 @@ function [ vecX_next, datOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX0, 
 	vecF_prev = [];
 	omega_prev = [];
 	%
-	dTreg = dTreg0; % Trust region size *IS* modified in this code.
-	matJTJ = matJTJ0; % matJTJ is *NOT* modified in this code; J is assumed to be exact.
-	matK = matK0; % matK *IS* modified in this code.
+	matK = matK0;
+	dTreg = dTreg0;
 	doMainLoop = true;
+	iterCount = 0;
 	while ( doMainLoop )
+		%
+		iterCount++;
+		iterLimit = 100;
+		if ( iterCount > iterLimit )
+			msg( __FILE__, __LINE__, "Reached iterLimit." );
+			doMainLoop = false;
+			break;
+		end
+		%
+		%
+		%matH = matJTJ0 + matK;
+		%%% [ vecDelta, ftdatOut ] = findLocMinJ__findTrial( omega0, vecG0, matH, dTreg, ftprm );
+		%%% assert( norm(vecDelta) < dTreg );
+		%%% omegaModel = omega0 + vecG0'*vecDelta + 0.5*(vecDelta'*matH*vecDelta);
+		%%% assert( omegaModel >= 0.0 );
+		%%% vecFModel = vecF0 + matJ0*vecDelta;
+		%%% dTreg = ftdatOut.dTreg;
 		%
 		% Find the vecX_trial corresponding to the min omega of the current model,
 		% subject to the trust region.
 		% But first, find a value of mu that works...
 		% We could try to make use of a previous mu, if we have one, but, POITROME.
-		matH = matJTJ + matK;
+		matH = matJTJ0 + matK;
 		hAbsMax = max(max(abs(matH)));
 		if ( 0.0 == hAbsMax )
 			msg( __FILE__, __LINE__, "matH is zero. This is unexpected, but can be handled." );
 			mu = norm(vecG0)/omega0;
 			matM = matH + mu*matI;
-			[ matR, cholFlag ] = chol( matM );
-			if ( 0~=cholFlag )
-				msg( __FILE__, __LINE__, "Cholesky factorization failed for matH = 0 case with mu for omegaModel = 0. This should be impossible!" );
-				return;
-			endif
+			matR = chol( matM );
+			cholFlag = 0; % Since chol() didn't error away.
 		else
 			mu = 0.0;
 			matM = matH + mu*matI;
+			msgif( debugMode, __FILE__, __LINE__, "Trying chol with mu = 0.0." );
 			[ matR, cholFlag ] = chol( matM );
 			if ( 0~=cholFlag )
 				muReguCoeff = 1e-5;
 				mu = muReguCoeff * hAbsMax;
 				matM = matH + mu*matI;
+				msgif( debugMode, __FILE__, __LINE__, "Trying chol with small mu for regularization." );
 				[ matR, cholFlag ] = chol( matM );
 				if ( 0~=cholFlag )
 					msgif( debugMode, __FILE__, __LINE__, "Hessian appears to have a negative eigenvalue." );
@@ -98,16 +125,18 @@ function [ vecX_next, datOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX0, 
 					assert( 0.0 < muCrit );
 					mu = muCrit + muReguCoeff * ( muCrit + hAbsMax );
 					matM = matH + mu*matI;
-					matR = chol( matM ); % Can but shouldn't throw an error.
-					cholFlag = 0; % Since we got here.
+					matR = chol( matM );
+					cholFlag = 0; % Since chol() didn't error away.
 				endif
 			endif
 		endif
-		vecDelta = -( matR \ ( matR' \ vecG0 ) )
+		vecDelta = -( matR \ ( matR' \ vecG0 ) );
 		deltaNorm = norm(vecDelta);
 		%
 		%
+		%
 		if ( norm(vecDelta) > dTreg )
+			msgif( debugMode, __FILE__, __LINE__, sprintf( "mu = %g, norm(vecDelta) = %g, dTreg = %g.", mu, norm(vecDelta), dTreg ) );
 			treg_relTol = 0.3;
 			treg_iterLimit = 10;
 			haveMuHi = false;
@@ -118,6 +147,9 @@ function [ vecX_next, datOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX0, 
 				treg_iterCount++;
 				if ( treg_iterCount > treg_iterLimit )
 					msg( __FILE__, __LINE__, "Failed to satisfy trust region constraint in allowed number of iterations." );
+					if ( ~haveMuHi )
+						mu = muHi;
+					end
 					break;
 				end
 				if ( norm(vecDelta) > dTreg )
@@ -148,7 +180,8 @@ function [ vecX_next, datOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX0, 
 				% Update matM, matR, and vecDelta.
 				matM = matH + mu*matI;
 				matR = chol( matM ); % Can but shouldn't throw an error.
-				vecDelta = -( matR \ ( matR' \ vecG ) );
+				vecDelta = -( matR \ ( matR' \ vecG0 ) );
+				msgif( debugMode, __FILE__, __LINE__, sprintf( "mu = %g, norm(vecDelta) = %g, dTreg = %g.", mu, norm(vecDelta), dTreg ) );
 			endwhile
 		endif
 		%
@@ -156,6 +189,7 @@ function [ vecX_next, datOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX0, 
 		%
 		omegaModel = omega0 + vecG0'*vecDelta + 0.5*(vecDelta'*matH*vecDelta);
 		if ( omegaModel < -eps*omega0 )
+			msgif( debugMode, __FILE__, __LINE__, sprintf( "mu = %g, norm(vecDelta) = %g, omegaModel = %g.", mu, norm(vecDelta), omegaModel ) );
 			% Make omegaModel non-negative.
 			omnn_tol = 0.3;
 			omnn_iterLimit = 10;
@@ -165,10 +199,11 @@ function [ vecX_next, datOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX0, 
 			muLo = mu;
 			omegaModelOfMuLo = omegaModel;
 			omnn_iterCount = 0;
-			while ( omegaModel < -eps*omega0 || omegaModel > omegaModelPositiveTol*omega0 )
+			while ( omegaModel < -eps*omega0 || omegaModel > omnn_tol*omega0 )
 				omnn_iterCount++;
 				if ( omnn_iterCount > omnn_iterLimit )
 					msg( __FILE__, __LINE__, "Failed to satisfy omegaModel non-negative constraint in allowed number of iterations." );
+					mu = muLo; % Omega model there is negative, but, okay.
 					break;
 				end
 				if ( omegaModel < -eps*omega0 )
@@ -194,84 +229,88 @@ function [ vecX_next, datOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX0, 
 				% Update matM, matR, and vecDelta.
 				matM = matH + mu*matI;
 				matR = chol( matM ); % Can but shouldn't throw an error.
-				vecDelta = -( matR \ ( matR' \ vecG ) );
+				vecDelta = -( matR \ ( matR' \ vecG0 ) );
+				omegaModel = omega0 + vecG0'*vecDelta + 0.5*(vecDelta'*matH*vecDelta);
+				msgif( debugMode, __FILE__, __LINE__, sprintf( "mu = %g, norm(vecDelta) = %g, omegaModel = %g.", mu, norm(vecDelta), omegaModel ) );
 			endwhile
-			dTreg = norm(vecDelta);
+			dTreg = norm(vecDelta); % This isn't strictly necessary?
 		endif
+		if ( omegaModel < 0.0 )
+			omegaModel = 0.0;
+		end
+		vecFModel = vecF0 + matJ0*vecDelta;
 		%
 		%
 		%
-		msg( __FILE__, __LINE__, "WIP RETURN!" ); vecX_next = vecX0 - 0.0001*vecG0; return;
-		
-		
-		
-		% Now we have our suggested step.
-		% Is it worth doing a feval?
-		
-		
-		error( "FOLLOWING CODE IS PRE-WIP." );
-		
-		doStepGenLoop = true;
-		while ( doStepGenLoop )
-			% If ||deltaX|| is very large compared to ||g||/||H||, issue a warning.
-			%
-			% If the newly generated step is larger than the previous step, issue a warning.
-			%
-			doStepGenLoop = false;
-		endwhile
+		% Decide whether or not to do a feval.
+		if (haveBSF)
+			if ( omegaModel >= omega_bsf )
+				msgif( debugMode, __FILE__, __LINE__, sprintf( "Model is worse than best so far ( %g >= %g ).", omegaModel, omega_bsf ) );
+				doMainLoop = false;
+				break;
+			end
+			if ( abs(omegaModel-omega_bsf) <= omegaTol )
+				msgif( debugMode, __FILE__, __LINE__, sprintf( "Model offers insufficient improvement over best so far ( %g vs %g ).", omegaModel, omega_bsf ) );
+				doMainLoop = false;
+				break;
+			end
+		end
+		if ( abs(omegaModel-omega0) <= omegaTol )
+			msgif( debugMode, __FILE__, __LINE__, sprintf( "Model offers insufficient improvement ( %g vs %g ).", omegaModel, omega0 ) );
+			doMainLoop = false;
+			break;
+		end
 		%
 		%
-		% Determine whether or not its worth doing a feval.
-		% If our new vecX_trial is sufficientlly close to our best trial,
-		% or omegaModel_trial wouldn't be much better than omegaBest,
-		% then, just accept the best and return.
-		% TO-DO!
-		% if we have a BSF and Model_trial is worse, flag a warning and return.
-		% if we have no BSF, compare omegaModel_trial to omega0
-		%   ( omegaModel_trial > 0.999 * omega0 ) % Reduction in omega is too small to be worthwhile.
-		% if we have a BSF, compare omegaModel_trial to omega_bsf.
 		%
-		% Do a feval.
-		vecF_trial = funchF( vecX_trial );
+		vecX = vecX0 + vecDelta;
+		if (debugMode)
+			msgif( debugMode, __FILE__, __LINE__, "Performing function evaluation..." );
+			echo__vecX = vecX
+			echo__vecFModel = vecFModel
+			echo__omegaModel = omegaModel
+		end
+		vecF = funchF( vecX );
 		%
 		% If feval failed, cut trust region size.
-		if ( ~isrealarray(vecF_trial,[sizeF,1]) )
+		if ( ~isrealarray(vecF,[sizeF,1]) )
 			msgif( debugMode, __FILE__, __LINE__, "Function evaluation failed." );
-			if (havePrevTrial)
+			if (havePrev)
 				msgif( __FILE__, __LINE__, "Function evaluation failed even though it succeeded for an earlier trial step!" );
 				msgif( __FILE__, __LINE__, "This suggests the invalid space is not simply at distant values of x." );
 			endif
-			if ( 0.0 >= coeff_reduceTregOnFevalFail )
-				msgif( debugMode, __FILE__, __LINE__, "Bailing because feval failed and 0.0 >= coeff_reduceTregOnFevalFail." );
-				return;
-			endif
+			coeff_reduceTregOnFevalFail = 0.1;
 			dTreg = coeff_reduceTregOnFevalFail * norm(vecDelta);
 			continue;
 		endif
+		if (debugMode)
+			echo__vecF = vecF
+		end
+		%
+		%
 		%
 		% If vecF_trial is radically different from vecFModel_trial, bail.
 		% We could check to see how close vecF_trial is to (1-b)*vecF0 + b*vecFModel_trial,
 		%  for the value of b in [0,1] that minimizes the difference, but,
 		%  assuming norm( vecFModel_trial - vecF0 ) <= norm( vecF0 ),
 		%  and coeff_declareModelIsRadicallyWrong is > 2 ish(?), this isn't necessary.
-		if ( norm( vecF_trial - vecFModel_trial ) >= coeff_declareModelIsRadicallyWrong * norm(vecF0) )
+		coeff_declareModelIsRadicallyWrong = 2.0;
+		if ( norm( vecF - vecFModel ) >= coeff_declareModelIsRadicallyWrong * norm(vecF0) )
 			msgif( debugMode, __FILE__, __LINE__, "Function was radically different at trial point." );
-			if (havePrevTrial)
+			if (havePrev)
 				msgif( __FILE__, __LINE__, "Function was radically different even though it was reasonable for an earlier trial step!" );
 				msgif( __FILE__, __LINE__, "This suggests the presence of a sepratrix." );
 			endif
-			if ( 0.0 >= coeff_reduceTregOnRadicallyWrong )
-				msgif( debugMode, __FILE__, __LINE__, "Bailing because feval failed and 0.0 >= coeff_reduceTregOnFevalFail." );
-				return;
-			endif
+			coeff_reduceTregOnRadicallyWrong = 0.1;
 			dTreg = coeff_reduceTregOnRadicallyWrong * norm(vecDelta);
+			msgif( debugMode, __FILE__, __LINE__, sprintf( "Set dTreg to %g.", dTreg ) );
 			continue;
 		endif
 		%
-		omega_trial = sumsq(vecF_trial,1)/2.0;
-		if ( havePrevTrial )
-		if ( omega_trial > omega_prevTrial )
-			msg( __FILE__, __LINE__, "omega_trial > omega_prevTrial; this suggests a sepratrix." );
+		omega = sumsq(vecF,1)/2.0
+		if ( havePrev )
+		if ( omega > omega_prev )
+			msg( __FILE__, __LINE__, "omega > omega_prev; this suggests a sepratrix." );
 		endif
 		endif
 		%
@@ -279,208 +318,35 @@ function [ vecX_next, datOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX0, 
 		%
 		% Let's update our model with this new info.
 		msgif( debugMode, __FILE__, __LINE__, "Updating K!" );
-		matK += (2.0*(omega_trial-omegaModel_trial)/sumsq(vecDeltaX_trial)^2)*(vecDeltaX_trial*(vecDeltaX_trial'));
+		matK += (2.0*(omega-omegaModel)/sumsq(vecDelta)^2)*(vecDelta*(vecDelta'));
 		%
-		if ( ~haveBSF && omega_trial < omega0 )
+		if ( ~haveBSF && omega < omega0 )
 			haveBSF = true;
-			vecX_bsf = vecX_trial;
-			vecF_bsf = vecF_trial;
-			omega_bsf = omega_trial;
-		elseif ( omega_trial < omega_bsf )
+			vecX_bsf = vecX;
+			vecF_bsf = vecF;
+			omega_bsf = omega;
+		elseif ( omega < omega_bsf )
 			haveBSF = true; % Redundant.
-			vecX_bsf = vecX_trial;
-			vecF_bsf = vecF_trial;
-			omega_bsf = omega_trial;
+			vecX_bsf = vecX;
+			vecF_bsf = vecF;
+			omega_bsf = omega;
 		endif
 		%
 		% Under various circumstances, we could know that our trial point would be the next trial point,
 		% so there's no need to calculate a new trial.
 		% But, POITROME.
-		havePrevTrial = true;
-		vecX_prevTrial = vecX_trial;
-		vecF_prevTrial = vecF_trial;
-		omega_prevTrial = omega_trial;
+		havePrev = true;
+		vecX_prev = vecX;
+		vecF_prev = vecF;
+		omega_prev = omega;
 		continue;
 	endwhile
-	
-	
-	
-	error( "Reached junk code." );
-	
-	
-	
-%
-%echo__vecX = vecX
-%echo__vecG = vecG
-matK = zeros(sizeX,sizeX);
-trialCount = 0;
-haveBestSoFar = false;
-vecX_next = []; % Keep track of best so far.
-vecF_next = []; % Keep track of best so far.
-omega_next = []; % Keep track of best so far.
-dGenMin = dTreg;
-while (1)
-	% Check pre-iter imposed limits.
-	trialCount++;
-	trialLimit = 100;
-	if ( trialCount > trialLimit )
-		msgif( debugMode, __FILE__, __LINE__, "Reached trialLimit." );
-		return;
-	endif
 	%
-	%
-	%
-	% Generate step
-	genCount = 0;
-	mu = 0.0;
-	matH = matJTJ + matK;
-	matH = (matH'+matH)/2.0;
-	while (1)
-		genCount++;
-		genLimit = 100; % MAKE PARAM
-		if ( genCount > genLimit )
-			msgif( debugMode, __FILE__, __LINE__, "Reached genLimit." );
-			return;
-		endif
-		%
-		matM = matH + mu*eye(sizeX);
-		[ matR, cholFlag ] = chol( matM );
-		hScale = max(abs(diag(matH)));
-		if ( 0~=cholFlag || min(abs(diag(matR))) <= 1e-4*max(abs(diag(matR))) )
-			msgif( false, __FILE__, __LINE__, "Chol failed." );
-			msgif( false, __FILE__, __LINE__, "We need a better way to set mu when chol fails." );
-			msgif( false, __FILE__, __LINE__, "And, we need to check to ensure the calculated delta is good." );
-			if ( 0.0 == mu )
-				mu = 1e-2*hScale;
-				% Using mu = sqrt(eps)*hScale causes numerical issues, caseNum 100.
-				continue;
-			endif
-			msg( __FILE__, __LINE__, "ERROR: matH appears to have a negative eigenvalue; this should be impossible." );
-			mu *= 2.0;
-			mu += 0.001*hScale;
-			continue;
-		endif
-		vecDelta_trial = -( matR \ ( matR' \ vecG ) );
-		omegaModelMin = omega + vecG'*vecDelta_trial + 0.5*(vecDelta_trial'*matH*vecDelta_trial);
-		%
-		% Note that dGenMin starts at dTreg.
-		if ( norm(vecDelta_trial) >= dGenMin )
-			% Increase mu to be under trust region / dGenMin.
-			muPrev = mu;
-			% Model: ||delta||^2 = ( a / (b+mu) )^2,
-			%  match ||delta||^2 and d/dmu(||delta||^2) at muPrev.
-			vecDeltaPrime_trial = -( matR \ ( matR' \ vecDelta_trial ) );
-			dsq = sumsq(vecDelta_trial,1);
-			ddsqdmu = 2.0*(vecDelta_trial'*vecDeltaPrime_trial);
-			assert( 0.0 > ddsqdmu );
-			b = 2.0*dsq/(-ddsqdmu) - muPrev;
-			a = 2.0*(dsq^1.5)/(-ddsqdmu);
-			% We'll target about half of dGenMin.
-			dTrgt = 0.5*dGenMin;
-			mu = (a/dTrgt) - b;
-			assert( mu > muPrev );
-			% This could possibly over backtrack, but, we won't worry about that case.
-			% A linear model (||delta||^2 = a + b*mu) would avoid over backtracking,
-			%  but, the convergence there may be very slow.
-			continue;
-		endif
-		dGenMin = norm(vecDelta_trial);
-		%
-		omegaModel_trial = omega + vecG'*vecDelta_trial + 0.5*(vecDelta_trial'*matH*vecDelta_trial);
-		if ( omegaModel_trial < -eps*abs(omega) )
-			% Increase mu so that omegaModel is not negative.
-			muPrev = mu
-			% Model: omegaModel = omega - ( g^2 / (c+mu) ).
-			%  match omega at muPrev.
-			omegaTrgt = 0.5*omega;
-			mu = muPrev + sumsq(vecG)*(omegaTrgt-omegaModel_trial)/((omega-omegaTrgt)*(omega-omegaModel_trial));
-			assert( mu > muPrev );
-			% Could this overbacktrack? I don't know.
-			continue;
-		endif
-		%
-		%
-		% Check if step is too small.
-		% Should we also check omegaFallTol and stepSizeTol???
-		wolfeC = 1.0; % MAKE PARAM
-		if ( abs(vecDelta_trial'*(vecG+matH*vecDelta_trial)) >= wolfeC * abs(vecDelta_trial'*vecG) )
-			msgif( true, __FILE__, __LINE__, "Step is too small per Wolfe curvature condition. Giving up." );
-			msgif( true, __FILE__, __LINE__, "Is this happens frequently, consider modifying how mu is calculated" );
-			msgif( true, __FILE__, __LINE__, " while maintaining other constraints." );
-			fooLHS = vecDelta_trial'*(vecG+matH*vecDelta_trial)
-			fooRHS = vecDelta_trial'*vecG
-			return;
-		endif
-		%
-		break;
-	endwhile
-	vecFModel_trial = vecF + matJ*vecDelta_trial; % No quad info here.
-	omegaModel_trial = omega + vecG'*vecDelta_trial + 0.5*(vecDelta_trial'*matH*vecDelta_trial); % Repeated. POITROME.
-	vecGModel_trial = vecG + matH*vecDelta_trial; % Some quad info here.
-	%
-	%
-	% Having gotten here, the step is reasonable enough that we can use the results to update matK.
-	if ( omega_trial >= omega )
-		msgif( debugMode, __FILE__, __LINE__, "omega_trial >= omega" );
-		msgif( debugMode, __FILE__, __LINE__, "Updating K!" );
-		matK += (2.0*(omega_trial-omegaModel_trial)/sumsq(vecDelta_trial)^2)*(vecDelta_trial*(vecDelta_trial'));
-		continue;
-	endif
-	%
-	%
-	%
-	% Check outright acceptance criterion.
-	c_acceptOutright = 0.3; % MAKE PARAM
-	omegaAcceptOutright = (1.0-c_acceptOutright)*omega + c_acceptOutright*omegaModelMin;
-	if ( omega_trial <= omegaAcceptOutright )
-		msgif( debugMode, __FILE__, __LINE__, "Step is very good!" );
-		if ( omega_trial < omegaModelMin )
-			msgif( omega_trial < omegaModelMin, __FILE__, __LINE__, "Trial is better than model min!!!" );
-		elseif ( omega_trial < omegaModel_trial )
-			msgif( omega_trial < omegaModel_trial, __FILE__, __LINE__, "Trial is better than model!" );
-		endif
-		if (haveBestSoFar)
-			assert( ~isempty(omega_trial) );
-			if ( omega_trial >= omega_next )
-				error( "Somehow this very good step is no better than an earlier one. This should be impossible." );
-			endif
-		endif
-		% Update to matK won'd be used, but, let's do it anyway.
-		matK += (2.0*(omega_trial-omegaModel_trial)/sumsq(vecDelta_trial)^2)*(vecDelta_trial*(vecDelta_trial'));
-		haveBestSoFar = true; % Though, this result won't be used anywhere.
-		vecX_next = vecX_trial;
-		vecF_next = vecF_trial;
-		omega_next = omega_trial;
-		return;
-	endif
-	%
-	%msg( __FILE__, __LINE__, "WIP RETURN!" ); vecX_next = vecX + vecDelta_trial; return;
-	%
-	% Is this the best result so far?
-	if ( ~haveBestSoFar )
-		haveBestSoFar = true;
-		vecX_next = vecX_trial;
-		vecF_next = vecF_trial;
-		omega_next = omega_trial;
-	elseif ( omega_trial > omega_next )
-		msgif( debugMode, __FILE__, __LINE__, "omega_trial > omega_next. This suggests a sepratrix." );
-		% We'll accept the best so far (==next) if it's below a loose threshold...
-		c_acceptReluctant = 1e-3; % MAKE PARAM
-		vecDelta_next = vecX_next - vecX;
-		omegaModel_next = omega + vecG'*vecDelta_next + 0.5*(vecDelta_next'*matH*vecDelta_next); % Repeated. POITROME.
-		% Note that omegaModel_next uses the current K, not the one used to calc _next.
-		if ( omega_next <= (1.0-c_acceptReluctant)*omega + c_acceptReluctant*omegaModel_next )
-			msg( __FILE__, __LINE__, "Omega increased while backtracking and previous(?) trial is good enough." );
-			return;
-		end
-	elseif ( omega_trial < omega_next )
-		vecX_next = vecX_trial;
-		vecF_next = vecF_trial;
-		omega_next = omega_trial;
-	endif
-	%
-	msgif( debugMode, __FILE__, __LINE__, "Updating K!" );
-	matK += (2.0*(omega_trial-omegaModel_trial)/sumsq(vecDelta_trial)^2)*(vecDelta_trial*(vecDelta_trial'));
-endwhile
-
+	if ( haveBSF )
+		vecX_next = vecX_bsf
+	else
+		vecX_next = vecX0
+		msg( __FILE__, __LINE__, "Failed." );
+	end
+	return;
 endfunction
