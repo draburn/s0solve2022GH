@@ -20,7 +20,8 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 	gNormTol = mygetfield( prm, "gNormTol", 0.0 );
 	iterLimit = mygetfield( prm, "iterLimit", 5 );
 	%stepType = mygetfield( prm, "stepType", 102 );
-	stepType = mygetfield( prm, "stepType", 200 );
+	%stepType = mygetfield( prm, "stepType", 200 );
+	stepType = mygetfield( prm, "stepType", 201 );
 	c0_trustRegion = mygetfield( prm, "c0_trustRegion", 100.0 );
 	stepSizeTol = mygetfield( prm, "stepSizeTol", sqrt(eps) );
 	omegaFallAbsTol = mygetfield( prm, "omegaFallAbsTol", eps );
@@ -79,6 +80,8 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 		matH_HJBroyd = matJ0'*matJ0
 	endif
 	%
+	winters_dTreg = [];
+	winters_matK = [];
 	%
 	% Prep main loop.
 	vecX = vecX0; % Probably repeated, but, clarifying.
@@ -149,6 +152,17 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 		case 200
 			fnprm = [];
 			vecX_next = findLocMin_alytJ_mk3__findNext_winters( vecX, vecF, matJ, funchFJ, fnprm );
+		case 201
+			fnprm = [];
+			if ( isrealscalar(winters_dTreg) )
+				fnprm.dTreg0 = winters_dTreg;
+			endif
+			if ( isrealarray(winters_matK,[sizeX,sizeX]) )
+				fnprm.matK0 = winters_matK;
+			endif
+			[ vecX_next, fndatOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX, vecF, matJ, funchFJ, fnprm );
+			winters_matK = fndatOut.matK;
+			winters_dTreg = fndatOut.dTreg;
 		otherwise
 			error( "Invalid stepType." );
 		endswitch
@@ -187,6 +201,20 @@ function [ vecX, datOut ] = findLocMin_alytJ_mk3( vecX0, funchFJ, prm=[] )
 		omega = omega_next;
 		vecG = vecG_next;
 		matJTJ = matJTJ_next;
+		%
+		%
+		useWintersK = false;
+		if ( useWintersK )
+			if ( isrealarray(winters_matK,[sizeX,sizeX]) )
+				% Impose deltaK * deltaX = (deltaJ)'*J*deltaX.
+				fooX = vecX - vecX_prev;
+				fooY = (matJ-matJ_prev)' * (matJ*(fooX));
+				fooS = sumsq(fooX);
+				winters_matK += ( fooY*(fooX') + fooX*(fooY') - (fooX*(fooX'))*(fooX'*fooY)/fooS )/fooS;
+			else
+				msg( __FILE__, __LINE__, "Don't have winters K." );
+			endif
+		endif
 		%
 		%
 		% Check post-iter imposed limits.

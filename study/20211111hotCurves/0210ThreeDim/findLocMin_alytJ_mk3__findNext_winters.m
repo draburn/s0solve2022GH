@@ -52,6 +52,7 @@ function [ vecX_next, datOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX0, 
 	%
 	if (debugMode)
 		msg( __FILE__, __LINE__, "Input values..." );
+		echo__matK0 = matK0
 		echo__vecX0 = vecX0
 		echo__vecF0 = vecF0
 		echo__omega0 = omega0
@@ -342,6 +343,10 @@ function [ vecX_next, datOut ] = findLocMin_alytJ_mk3__findNext_winters( vecX0, 
 		continue;
 	endwhile
 	%
+	if (nargout>=2)
+		datOut.dTreg = dTreg;
+		datOut.matK = matK;
+	end
 	if ( haveBSF )
 		vecX_next = vecX_bsf
 	else
