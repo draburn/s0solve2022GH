@@ -10,6 +10,7 @@ function [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
 	sizeX = size(vecG,1);
 	debugMode = mygetfield( prm, "debugMode", true );
 	if ( debugMode )
+		msg( __FILE__, __LINE__, "Using debugMode." );
 		assert( isrealscalar(omega0) );
 		assert( isrealarray(vecG,[sizeX,1]) );
 		assert( isrealarray(matH,[sizeX,sizeX]) );
@@ -26,11 +27,11 @@ function [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
 	omegaModelMin = 0.0;
 	omegaModelMinRelTol = 0.4;
 	if ( ~isempty(prm) )
-		cmdlPrm = mygetfield( prm, "cmdlPrm", cmdlPrm );
+		cdmlPrm = mygetfield( prm, "cdmlPrm", cdmlPrm );
 		deltaNormMax = mygetfield( prm, "deltaNormMax", deltaNormMax );
 		deltaNormMaxRelTol = mygetfield( prm, "deltaNormMaxRelTol", deltaNormMaxRelTol );
 		omegaModelMin = mygetfield( prm, "omegaModelMin", omegaModelMin );
-		omegaModelMinRelTol = mygetifled( prm, "omegaModelMinRelTol", omegaModelMinRelTol );
+		omegaModelMinRelTol = mygetfield( prm, "omegaModelMinRelTol", omegaModelMinRelTol );
 	endif
 	useDeltaNormMax = ~isempty(deltaNormMax);
 	useOmegaModelMin = ~isempty(omegaModelMin);
@@ -47,7 +48,7 @@ function [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
 			assert( isrealscalar(omegaModelMinRelTol) );
 			assert( 0.0 < omegaModelMinRelTol );
 			assert( omegaModelMinRelTol < 1.0 );
-		elseif
+		endif
 	endif
 	%
 	% Set default return values.
@@ -85,7 +86,7 @@ function [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
 	%
 	% Find the largest valid step we can (or, at least, something close).
 	[ vecDelta, cdmlDatOut ] = calcDeltaMaxLev( vecG, matH, cdmlPrm );
-	mu = cmdlDatOut.mu;
+	mu = cdmlDatOut.mu;
 	matR = cdmlDatOut.matR;
 	%
 	%
@@ -170,7 +171,7 @@ function [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
 			% Model: omegaModel = omega0 - ( g^2 / (c+mu) ).
 			%  match omega at previous mu.
 			% Omega is harder to model than delta. This is not a great model, but, should be good enough.
-			mu = mu + normGSq*(omegaTrgt-omegaModel)/((omega0-omegaTrgt)*(omega0-omegaModel));
+			mu = mu + gNormSq*(omegaTrgt-omegaModel)/((omega0-omegaTrgt)*(omega0-omegaModel));
 			assert( mu > muLo );
 			matM = matH + mu*matI;
 			matR = chol( matM );
@@ -241,8 +242,8 @@ function [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
 	elseif ( haveBTedForDeltaNormMax )
 		assert( ~haveBTedForOmegaModelMin );
 		% muLo should not satisfy deltaNormMax but mu should.
-		assert( norm(vecDelta_muLo) < deltaNormMax );
-		assert( norm(vecDelta) >= deltaNormMax );
+		assert( norm(vecDelta_muLo) > deltaNormMax );
+		assert( norm(vecDelta) <= deltaNormMax );
 		% If mu also satisfies deltaNormMin, then we're done.
 		% Otherwise, we'll forward track to get a mu that does satisfy deltaNormMin.
 		if ( norm(vecDelta) < deltaNormMin )
@@ -253,7 +254,7 @@ function [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
 			deltaNorm_muHi = norm(vecDelta_muHi);
 			deltaNorm_muLo = norm(vecDelta_muLo);
 			% Use secant method.
-			deltaNormTrgt = ( deltaNormMax + deltaNormMin ) / 2.0;
+			deltaNormTrgt = ( deltaNormMax + deltaNormMin ) / 2.0
 			iterLimit = 10;
 			iterCount = 0;
 			while ( 1 )
@@ -268,6 +269,7 @@ function [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
 				endif
 				%
 				mu = muLo + (muHi-muLo)*(deltaNormTrgt-deltaNorm_muLo)/(deltaNorm_muHi-deltaNorm_muLo);
+				%
 				assert( muLo < mu );
 				assert( mu < muHi );
 				matM = matH + mu*matI;
@@ -302,6 +304,83 @@ function [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
 		datOut.matR = matR;
 		datOut.omegaModel = omegaModel;
 		datOut.trustRegionShouldBeUpdated = haveBTedForOmegaModelMin;
-	end
+	endif
 return;
 endfunction
+
+
+%!test
+%!	msg( __FILE__, __LINE__, "~~~ Positive Definite Test ~~~ " );
+%!	omega0 = 1.0
+%!	vecG = [ 1.0; 0.0 ]
+%!	matH = eye(2,2)
+%!	prm = []
+%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+
+
+%!test
+%!	msg( __FILE__, __LINE__, "~~~ OmegaModelMin Test ~~~ " );
+%!	omega0 = 0.3
+%!	vecG = [ 1.0; 0.0 ]
+%!	matH = eye(2,2)
+%!	prm = [];
+%!	prm.omegaModelMinRelTol = 0.01
+%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+
+
+%!test
+%!	msg( __FILE__, __LINE__, "~~~ Sans OmegaModelMin Test ~~~ " );
+%!	omega0 = 0.3
+%!	vecG = [ 1.0; 0.0 ]
+%!	matH = eye(2,2)
+%!	prm = [];
+%!	prm.omegaModelMin = []
+%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+
+
+%!test
+%!	msg( __FILE__, __LINE__, "~~~ DeltaNormMax Test ~~~ " );
+%!	omega0 = 0.3
+%!	vecG = [ 1.0; 0.0 ]
+%!	matH = eye(2,2)
+%!	prm = [];
+%!	prm.deltaNormMax = 0.3;
+%!	prm.deltaNormMaxRelTol = 0.01
+%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+
+
+%!test
+%!	msg( __FILE__, __LINE__, "~~~ DeltaNormMax Sans OmegaModelMin Test ~~~ " );
+%!	omega0 = 0.3
+%!	vecG = [ 1.0; 0.0 ]
+%!	matH = eye(2,2)
+%!	prm = [];
+%!	prm.omegaModelMin = [];
+%!	prm.deltaNormMax = 0.3;
+%!	prm.deltaNormMaxRelTol = 0.01
+%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+
+
+%!test
+%!	msg( __FILE__, __LINE__, "~~~ Weak DeltaNormMax Sans OmegaModelMin Test ~~~ " );
+%!	omega0 = 0.3
+%!	vecG = [ 1.0; 0.0 ]
+%!	matH = eye(2,2)
+%!	prm = [];
+%!	prm.omegaModelMin = [];
+%!	prm.deltaNormMax = 0.5;
+%!	prm.deltaNormMaxRelTol = 0.01
+%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+
+
+%!test
+%!	msg( __FILE__, __LINE__, "~~~ Weak DeltaNormMax Test ~~~ " );
+%!	omega0 = 0.3
+%!	vecG = [ 1.0; 0.0 ]
+%!	matH = eye(2,2)
+%!	prm = [];
+%!	prm.omegaModelMin = 0.0;
+%!	prm.omegaModelMinRelTol = 0.01;
+%!	prm.deltaNormMax = 0.5;
+%!	prm.deltaNormMaxRelTol = 0.01
+%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
