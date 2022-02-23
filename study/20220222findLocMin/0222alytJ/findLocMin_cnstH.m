@@ -18,8 +18,10 @@ function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], da
 	gNormSq = sumsq(vecG);
 	gNorm = sqrt(gNormSq);
 	hNorm = sqrt(sum(sumsq(matH)));
-	omegaModelMin = mygetfield( prm, "omegaModelMin", [] );
 	deltaNormMax = mygetfield( prm, "deltaNormMax", 100.0*gNorm/hNorm );
+	deltaNormMaxRelTol = mygetfield( prm, "deltaNormMaxTol", 0.4 );
+	omegaModelMin = mygetfield( prm, "omegaModelMin", [] );
+	omegaModelMinRelTol = mygetifled( prm, "omegaModelMinRelTol", 0.4 );
 	%
 	%
 	% Set default return values.
@@ -84,69 +86,134 @@ function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], da
 		clear muReguCoeff;
 	endif
 	vecDelta = -( matR \ (matR'\vecG) );
-	%
-	%
-	% Apply deltaNormMax (the trust region).
-	if ( isrealscalar(deltaNormMax) )
-	if ( norm(vecDelta) > deltaNormMax )
-		assert( deltaNormMax > 0.0 );
-		deltaNormMin = 0.6*deltaNormMax; % Arbitrary-ish.
-		deltaNormTrgt = ( deltaNormMax + deltaNormMin ) / 2.0;
-		%
-		% Save current delta(mu) in case needed later.
-		mu_prev = mu;
-		matR_prev = matR;
-		vecDelta_prev = vecDelta;
-		%
-		% Model: ||delta||^2 = ( a / (b+mu) )^2,
-		%  match ||delta||^2 and d/dmu(||delta||^2) at previous mu.
-		vecDeltaPrime = -( matR \ ( matR' \ vecDelta ) );
-		dsq = sumsq(vecDelta,1);
-		ddsqdmu = 2.0*(vecDelta'*vecDeltaPrime);
-		assert( 0.0 > ddsqdmu );
-		b = 2.0*dsq/(-ddsqdmu) - mu;
-		a = 2.0*(dsq^1.5)/(-ddsqdmu);
-		%
-		mu = (a/deltaNormTrgt) - b;
-		matM = matH + mu*matI;
-		matR = chol( matM );
-		vecDelta = -( matR \ ( matR' \ vecG ) );
-		%
-		if ( norm(vecDelta) > deltaNormMax || norm(vecDelta) < deltaNormMin )
-			% Use exhaustive method.
-			findLocMin_cnstH__deltaNorm;
-		endif
-	endif
-	endif
 	omegaModel = omegaModel = omega0 + vecG'*vecDelta + 0.5*(vecDelta'*matH*vecDelta);
 	%
 	%
-	% Apply deltaNormMax (the trust region).
+	%
+	% Apply constraints...
+	% As we apply a constraint and backtrack, keep track of previous value of mu (which doesn't satisfy the constraint)
+	% so we can forwardtrack later in case we overshot the constraint.
+	% We'll keep track of quantities that require some effort to calculate:
+	%  mu, matR, vecDelta, omegaModel.
+	% We could track more, but, POITROME.
+	%
+	%
+	% If necessary, backtrack to satisfy deltaNormMax (trust region).
+	haveBTedForDeltaNormMax = false;
+	if ( isrealscalar(deltaNormMax) )
+	if ( norm(vecDelta) > deltaNormMax )
+		assert( deltaNormMax > 0.0 );
+		deltaNormMin = (1.0-deltaNormMaxRelTol)*deltaNormMax;
+		%
+		deltaNormTrgt = ( deltaNormMax + deltaNormMin ) / 2.0; % For first iteration.
+		iterLimit = 10; % Arbitrary.
+		iterCount = 0;
+		while ( norm(vecDelta) > deltaNormMax )
+			iterCount++;
+			if ( iterCount > iterLimit )
+				msg( __FILE__, __LINE__, "Failed to satisfy deltaNormMax (trust region constraint)." );
+				return;
+			endif
+			%
+			muLo = mu;
+			matR_muLo = matR;
+			vecDetla_muLo = vecDelta;
+			omegaModel_muLo = omegaModel;
+			%
+			% Model: ||delta||^2 = ( a / (b+mu) )^2,
+			%  match ||delta||^2 and d/dmu(||delta||^2) at previous mu.
+			vecDeltaPrime = -( matR \ ( matR' \ vecDelta ) );
+			dsq = sumsq(vecDelta,1);
+			ddsqdmu = 2.0*(vecDelta'*vecDeltaPrime);
+			assert( 0.0 > ddsqdmu );
+			b = 2.0*dsq/(-ddsqdmu) - mu;
+			a = 2.0*(dsq^1.5)/(-ddsqdmu);
+			%
+			mu = (a/deltaNormTrgt) - b;
+			matM = matH + mu*matI;
+			matR = chol( matM );
+			vecDelta = -( matR \ ( matR' \ vecG ) );
+			%
+			haveBTedForDeltaNormMax = true;
+			deltaNormTrgt = deltaNormMin; % Be more aggressive for subsequent iterations.
+		endwhile
+	endif
+	endif
+	%
+	%
+	%
+	haveBTedForOmegaModelMin = false;
 	if ( isrealscalar(omegaModelMin) )
 	if ( omegaModel < omegaModelMin )
+		% Since we apply omegaModelMin after deltaNormMax,
+		%  and, since we've gotten here,
+		% This means the deltaNormMax constraint is superfluous;
+		%  only the omegaModelMin constraint matters.
 		assert( omegaModelMin < omega0 );
-		omegaModelMax = omegaModelMin + 0.5*(omega0-omegaModelMin);
-		omegaTrgt = ( omegaModelMax + omegaModelMin ) / 2.0;
+		omegaModelMax = omegaModelMin + omegaModelMinRelTol*(omega0-omegaModelMin);
 		%
-		% Save current delta(mu) in case needed later.
-		mu_prev = mu;
-		matR_prev = matR;
-		vecDelta_prev = vecDelta;
-		omegaModel_prev = omegaModel;
-		%
-		% Model: omegaModel = omega0 - ( g^2 / (c+mu) ).
-		%  match omega at previous mu.
-		mu = mu + normGSq*(omegaTrgt-omegaModel)/((omega0-omegaTrgt)*(omega0-omegaModel));
-		matM = matH + mu*matI;
-		matR = chol( matM );
-		vecDelta = -( matR \ ( matR' \ vecG ) );
-		omegaModel = omegaModel = omega0 + vecG'*vecDelta + 0.5*(vecDelta'*matH*vecDelta);
-		%
-		if ( omegaModel > omegaModelMax || omegaModel < omegaModelMin )
-			% Use exhaustive method.
-			findLocMin_cnstH__omega;
-		endif
+		omegaTrgt = ( omegaModelMax + omegaModelMin ) / 2.0; % For first iteration.
+		iterLimit = 10; % Arbitrary.
+		iterCount = 0;
+		while ( norm(vecDelta) > deltaNormMax )
+			iterCount++;
+			if ( iterCount > iterLimit )
+				msg( __FILE__, __LINE__, "Failed to satisfy omegaModelMin (model reasonableness constraint)." );
+				return;
+			endif
+			%
+			muLo = mu;
+			matR_muLo = matR;
+			vecDetla_muLo = vecDelta;
+			omegaModel_muLo = omegaModel;
+			%
+			% Use quadratic model...
+			error( "TO-DO!" );
+			% Model: omegaModel = omega0 - ( g^2 / (c+mu) ).
+			%  match omega at previous mu.
+			mu = mu + normGSq*(omegaTrgt-omegaModel)/((omega0-omegaTrgt)*(omega0-omegaModel));
+			matM = matH + mu*matI;
+			matR = chol( matM );
+			vecDelta = -( matR \ ( matR' \ vecG ) );
+			omegaModel = omega0 + vecG'*vecDelta + 0.5*(vecDelta'*matH*vecDelta);
+			%
+			haveBTedForOmegaModelMin = true;
+			omegaTrgt = omegaModelMax; % Be more aggressive for subsequent iterations.
+		endwhile
 	endif
+	endif
+	%
+	%
+	%
+	% We possibly may have over backtracked.
+	if ( haveBTedForOmegaModelMin )
+		% Since omegaModelMin was applied after deltaNormMax,
+		%  the deltaNormMax constraint is irrelevant.
+		% mu should now satisfy omegaModelMin, and muLo should not.
+		assert( omegaModel >= omegaModelMin );
+		assert( omegaModel_muLo < omegaModelMin );
+		% If mu also satisfies omegaModelMax, then we're done.
+		% Otherwise, we'll forward track to get a mu that does satisfy omegaModelMax.
+		if ( omegaModel > omegaModelMax )
+			muHi = mu;
+			matR_muHi = matR
+			vecDelta_muHi = vecDelta;
+			omegaModel_muHi = omegaModel;
+			error( "TO-DO!" );
+		endif
+	elseif (haveBTedForDeltaNormMax)
+		% mu should now satisfy deltaNormMax, and muLo should not.
+		assert( norm(vecDelta) >= deltaNormMax );
+		assert( norm(vecDelta_muLo) < deltaNormMax );
+		% If mu also satisfies deltaNormMin, then we're done.
+		% Otherwise, we'll forward track to get a mu that does satisfy deltaNormMin.
+		if ( norm(vecDelta) < deltaNormMin )
+			muHi = mu;
+			matR_muHi = matR
+			vecDelta_muHi = vecDelta;
+			omegaModel_muHi = omegaModel;
+			error( "TO-DO!" );
+		endif
 	endif
 return;
 endfunction
