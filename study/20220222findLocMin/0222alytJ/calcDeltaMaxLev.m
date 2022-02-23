@@ -1,5 +1,7 @@
 % Function...
 %  [ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm=[] )
+% Calculates vecDelta corresponding to the unconstrained minimization of the omega model.
+% If Hessian is not positive definite, the result may be somewhat arbitrarily large.
 
 function [ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm=[] )
 	%

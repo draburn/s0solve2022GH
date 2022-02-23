@@ -70,15 +70,34 @@ function [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
 		return;
 	endif
 	if ( 0.0 == hNorm )
+		stepConstrainedByOmegaModelMin = false;
 		if ( useDeltaNormMax && useOmegaModelMin  )
-			vecDelta = -min([ deltaNormMax/gNorm, (omega0-omegaModelMin)/gNormSq ]) * vecG;
+			assert( deltaNormMax > 0.0 );
+			assert( omega0 > omegaModelMin );
+			muD = gNorm/deltaNormMax;
+			muO = gNormSq/(omega0-omegaModelMin);
+			if (muO>muD)
+				mu = muO;
+				stepConstrainedByOmegaModelMin = true;
+			else
+				mu = muD;
+			endif
 		elseif ( useDeltaNormMax )
-			vecDelta = -(deltaNormMax/gNorm) * vecG;
+			assert( deltaNormMax > 0.0 );
+			mu = gNorm/deltaNormMax;
 		elseif ( useOmegaModelMin )
-			vecDelta = -((omega0-omegaModelMin)/gNormSq) * vecG;
+			assert( omega0 > omegaModelMin );
+			mu = gNormSq/(omega0-omegaModelMin);
+			stepConstrainedByOmegaModelMin = true;
 		else
 			msgif( debugMode, __FILE__, __LINE__, "Hessian is zero, gradient is not, and there is no constraint on step." );
+			mu = 0.0;
 		endif
+		vecDelta = vecG/(-mu);
+		datOut.mu = mu;
+		datOut.matR = sqrt(mu)*matI;
+		datOut.omegaModel = omega0 + vecG'*vecDelta + 0.5*(vecDelta'*matH*vecDelta);
+		datOut.trustRegionShouldBeUpdated = stepConstrainedByOmegaModelMin;
 		return;
 	endif
 	%
@@ -314,7 +333,8 @@ endfunction
 %!	omega0 = 1.0
 %!	vecG = [ 1.0; 0.0 ]
 %!	matH = eye(2,2)
-%!	prm = []
+%!	prm = [];
+%!	echo__prm = prm
 %!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
 
 
@@ -324,7 +344,8 @@ endfunction
 %!	vecG = [ 1.0; 0.0 ]
 %!	matH = eye(2,2)
 %!	prm = [];
-%!	prm.omegaModelMinRelTol = 0.01
+%!	prm.omegaModelMinRelTol = 0.01;
+%!	echo__prm = prm
 %!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
 
 
@@ -334,7 +355,8 @@ endfunction
 %!	vecG = [ 1.0; 0.0 ]
 %!	matH = eye(2,2)
 %!	prm = [];
-%!	prm.omegaModelMin = []
+%!	prm.omegaModelMin = [];
+%!	echo__prm = prm
 %!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
 
 
@@ -345,7 +367,8 @@ endfunction
 %!	matH = eye(2,2)
 %!	prm = [];
 %!	prm.deltaNormMax = 0.3;
-%!	prm.deltaNormMaxRelTol = 0.01
+%!	prm.deltaNormMaxRelTol = 0.01;
+%!	echo__prm = prm
 %!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
 
 
@@ -357,7 +380,8 @@ endfunction
 %!	prm = [];
 %!	prm.omegaModelMin = [];
 %!	prm.deltaNormMax = 0.3;
-%!	prm.deltaNormMaxRelTol = 0.01
+%!	prm.deltaNormMaxRelTol = 0.01;
+%!	echo__prm = prm
 %!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
 
 
@@ -369,7 +393,8 @@ endfunction
 %!	prm = [];
 %!	prm.omegaModelMin = [];
 %!	prm.deltaNormMax = 0.5;
-%!	prm.deltaNormMaxRelTol = 0.01
+%!	prm.deltaNormMaxRelTol = 0.01;
+%!	echo__prm = prm
 %!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
 
 
@@ -382,5 +407,39 @@ endfunction
 %!	prm.omegaModelMin = 0.0;
 %!	prm.omegaModelMinRelTol = 0.01;
 %!	prm.deltaNormMax = 0.5;
-%!	prm.deltaNormMaxRelTol = 0.01
+%!	prm.deltaNormMaxRelTol = 0.01;
+%!	echo__prm = prm
+%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+
+
+%!test
+%!	msg( __FILE__, __LINE__, "~~~ Zero Hessian Test ~~~ " );
+%!	omega0 = 0.3
+%!	vecG = [ 1.0; 0.0 ]
+%!	matH = zeros(2,2)
+%!	prm = [];
+%!	echo__prm = prm
+%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+
+
+%!test
+%!	msg( __FILE__, __LINE__, "~~~ Zero Hessian Test With DeltaNormMax ~~~ " );
+%!	omega0 = 0.3
+%!	vecG = [ 1.0; 0.0 ]
+%!	matH = zeros(2,2)
+%!	prm = [];
+%!	prm.deltaNormMax = 0.2;
+%!	echo__prm = prm
+%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+
+
+%!test
+%!	msg( __FILE__, __LINE__, "~~~ Zero Hessian Test With DeltaNormMax Sans OmegaModelMin ~~~ " );
+%!	omega0 = 0.3
+%!	vecG = [ 1.0; 0.0 ]
+%!	matH = zeros(2,2)
+%!	prm = [];
+%!	prm.deltaNormMax = 0.2;
+%!	prm.omegaModelMin = [];
+%!	echo__prm = prm
 %!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
