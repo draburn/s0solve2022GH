@@ -83,63 +83,21 @@ function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], da
 		endif
 		clear muReguCoeff;
 	endif
-	clear matM;
 	vecDelta = -( matR \ (matR'\vecG) );
 	%
 	%
 	% Apply deltaNormMax (the trust region).
 	if ( isrealscalar(deltaNormMax) )
 	if ( norm(vecDelta) > deltaNormMax )
-		deltaNormMin = 0.6*deltaNormMax; % Arbitrary-ish.
-		findLocMin_cnstH__deltaNorm;
-	endif
-	endif
-	
-	msg( __FILE__, __LINE__, "HACK OUTPUT RETURN!" ); vecDelta = -0.0001*vecG0; return;
-
-	error( "GARBAGE CODE BELOW!" );
-	
-	
-	
-	%
-	%
-	constrainDeltaNorm = false;
-	if ( isrealscalar(deltaNormMax) )
-	if ( norm(vecDelta) > deltaNormMax )
-		constrainDeltaNorm = true;
-	endif
-	endif
-	constrainOmegaModel = false;
-	if ( isrealscalar(omegaModelMin) )
-	if ( omgeaModel < omegaModelMin )
-		constrainOmegaModel = true;
-	endif
-	endif
-	%
-	appplyConstraint = ( constrainDeltaNorm || constrainOmegaModel );
-	if ( applyConstraint )
-		% Find a high value of mu that satisfies the constraints.
-		muHi = 10.0*hNorm + 10.0*gNorm/deltaNormMax; % Arbitrary-ish.
-		
-		
-		
-		muLo = mu;
-		vecDeltaOfMuLo = vecDelta;
-		omegaOfMuLo = omega;
-		
-	endif
-	
-	error( "GARBAGE CODE BELOW!" );
-	
-	
-	% Apply deltaNormMax (the trust region).
-	if ( isrealscalar(deltaNormMax) )
-	if ( norm(vecDelta) > deltaNormMax )
-		msgif( debugMode, __FILE__, __LINE__, sprintf( "Applying deltaNormMax: deltaNormMax = %f; mu = %f; norm(vecDelta) = %f.", deltaNormMax, mu, norm(vecDelta) ) );
-		%
-		% First, do a one-shot targetting center.
+		assert( deltaNormMax > 0.0 );
 		deltaNormMin = 0.6*deltaNormMax; % Arbitrary-ish.
 		deltaNormTrgt = ( deltaNormMax + deltaNormMin ) / 2.0;
+		%
+		% Save current delta(mu) in case needed later.
+		mu_prev = mu;
+		matR_prev = matR;
+		vecDelta_prev = vecDelta;
+		%
 		% Model: ||delta||^2 = ( a / (b+mu) )^2,
 		%  match ||delta||^2 and d/dmu(||delta||^2) at previous mu.
 		vecDeltaPrime = -( matR \ ( matR' \ vecDelta ) );
@@ -155,44 +113,40 @@ function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], da
 		vecDelta = -( matR \ ( matR' \ vecG ) );
 		%
 		if ( norm(vecDelta) > deltaNormMax || norm(vecDelta) < deltaNormMin )
-			% Do loop as needed
-			error( "Not implemented" );
-		endwhile
+			% Use exhaustive method.
+			findLocMin_cnstH__deltaNorm;
+		endif
 	endif
 	endif
-	
-	error( "END." );
 	omegaModel = omegaModel = omega0 + vecG'*vecDelta + 0.5*(vecDelta'*matH*vecDelta);
 	%
 	%
-	% Apply omegaMin and, if relevant, note updated trust region size.
-	deltaNormMaxSuggested = [];
-	if ( isrealscalar(omegaMin) )
-	if ( omegaModel < omegaMin )
-		msgif( debugMode, __FILE__, __LINE__, sprintf( "Applying omegaMin: omegaMin = %f; mu = %f; omegaModel = %f.", omegaMin, mu, omegaModel ) );
-		assert( omegaMin < omega0 );
-		omegaTrgt = omegaMin;
+	% Apply deltaNormMax (the trust region).
+	if ( isrealscalar(omegaModelMin) )
+	if ( omegaModel < omegaModelMin )
+		assert( omegaModelMin < omega0 );
+		omegaModelMax = omegaModelMin + 0.5*(omega0-omegaModelMin);
+		omegaTrgt = ( omegaModelMax + omegaModelMin ) / 2.0;
+		%
+		% Save current delta(mu) in case needed later.
+		mu_prev = mu;
+		matR_prev = matR;
+		vecDelta_prev = vecDelta;
+		omegaModel_prev = omegaModel;
+		%
 		% Model: omegaModel = omega0 - ( g^2 / (c+mu) ).
 		%  match omega at previous mu.
 		mu = mu + normGSq*(omegaTrgt-omegaModel)/((omega0-omegaTrgt)*(omega0-omegaModel));
 		matM = matH + mu*matI;
 		matR = chol( matM );
 		vecDelta = -( matR \ ( matR' \ vecG ) );
+		omegaModel = omegaModel = omega0 + vecG'*vecDelta + 0.5*(vecDelta'*matH*vecDelta);
 		%
-		msgif( debugMode, __FILE__, __LINE__, sprintf( "  Result: mu = %f; omegaModel = %f.", mu, omegaModel ) );
-		if ( omegaModel < omegaMin )
-			msg( __FILE__, __LINE__, sprintf( "WARNING: Failed to satisfy omegaMin (%f vs %f).", omegaMin, omegaModel ) );
-			msg( __FILE__, __LINE__, "  Consider writing a loop to fix this." );
-		elseif ( omegaModel > (omega0+omegaMin)/2.0 )
-			msg( __FILE__, __LINE__, sprintf( "WARNING: Considerably overshot omegaMin (%f vs %f).", omegaMin, omegaModel ) );
-			msg( __FILE__, __LINE__, "  Consider writing a loop to fix this." );
+		if ( omegaModel > omegaModelMax || omegaModel < omegaModelMin )
+			% Use exhaustive method.
+			findLocMin_cnstH__omega;
 		endif
-		%
-		deltaNormMaxSuggested = norm(vecDelta);
-		%
-		clear omegaTrgt;
 	endif
 	endif
-	%
 return;
 endfunction
