@@ -7,7 +7,7 @@ function [ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm=[] )
 	sizeX = size(vecG,1);
 	debugMode = mygetfield( prm, "debugMode", true );
 	if ( debugMode )
-		assert( isrealscalar(omega0) );
+		msg( __FILE__, __LINE__, "Using debugMode." );
 		assert( isrealarray(vecG,[sizeX,1]) );
 		assert( isrealarray(matH,[sizeX,sizeX]) );
 		assert( issymmetric(matH) );
@@ -66,7 +66,7 @@ function [ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm=[] )
 	endif
 	%
 	%
-	mu = max([ 0.0, mu0 ]) + muReguCoeff*hMaxAbs;
+	mu = max([ 0.0, mu0 ]) + muReguCoeff*hNorm;
 	matM = matH + mu*matI;
 	[ matR, cholFlag ] = chol( matM );
 	if ( 0 == cholFlag )
@@ -79,7 +79,7 @@ function [ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm=[] )
 		return;
 	endif
 	endif
-	msgif( debugMode, __FILE__, __LINE__, "Cholesky factorization with 'slightly larger' my failed." );
+	msgif( debugMode, __FILE__, __LINE__, "Cholesky factorization with 'slightly larger' mu failed." );
 	%
 	%
 	msgif( debugMode, __FILE__, __LINE__, "Finding muCrit using eig()." );
@@ -107,3 +107,37 @@ function [ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm=[] )
 	%
 	%
 endfunction
+
+
+%!test
+%!	msg( __FILE__, __LINE__, "~~~ Positive Definite Test ~~~ " );
+%!	vecG = [ 1.0; 0.0 ]
+%!	matH = eye(2,2)
+%!	prm = []
+%!	[ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm )
+
+
+%!test
+%!	msg( __FILE__, __LINE__, "~~~ Positive Semi-Definite Test ~~~ " );
+%!	vecG = [ 1.0; 0.0 ]
+%!	matH = [ 1.0, 0.0; 0.0, 0.0 ]
+%!	prm = []
+%!	[ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm )
+
+
+%!test
+%!	msg( __FILE__, __LINE__, "~~~ Positive Semi-Definite Test With Specified Mu ~~~ " );
+%!	vecG = [ 1.0; 0.0 ]
+%!	matH = [ 1.0, 0.0; 0.0, 0.0 ]
+%!	prm = []
+%!	prm.mu0 = 1e-8
+%!	[ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm )
+
+
+%!test
+%!	msg( __FILE__, __LINE__, "~~~ Negative Definite / Indefinite Test ~~~ " );
+%!	msg( __FILE__, __LINE__, "~~~ NPD Test ~~~ " );
+%!	vecG = [ 1.0; 0.0 ]
+%!	matH = -eye(2,2)
+%!	prm = []
+%!	[ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm )
