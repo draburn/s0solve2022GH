@@ -79,38 +79,14 @@ function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], da
 	%
 	%
 	% Find the largest valid step we can (or, at least, something close).
-	% Consider letting an inital guess for mu be passed in.
-	mu = 0.0;
-	matM = matH + mu*matI;
-	[ matR, cholFlag ] = chol( matM );
-	if ( 0 ~= cholFlag )
-		msgif( debugMode, __FILE__, __LINE__, "Cholesky factorization with mu zero failed; trying with a small mu." );
-		mu = muReguCoeff*hMaxAbs;
-		matM = matH + mu*matI;
-		[ matR, cholFlag ] = chol( matM );
-		if ( 0 ~= cholFlag )
-			msgif( debugMode, __FILE__, __LINE__, "Cholesky factorization with small mu failed; finding muCrit." );
-			msgif( debugMode, __FILE__, __LINE__, "Calling eig(). This may be slow. Faster approaches may be possible, such as:" );
-			msgif( debugMode, __FILE__, __LINE__, "  start with mu = upper bound for eigenvalue of H, and target omega = 0.0; or," );
-			msgif( debugMode, __FILE__, __LINE__, "  increase mu exponentially until chol() works." );
-			[ matPsi_eig, matLambda_eig ] = eig( matH );
-			muCrit = -min(diag(matLambda_eig));
-			mu = muCrit + muReguCoeff * ( muCrit + hNorm );
-			matM = matH + mu*matI;
-			matR = chol( matM );
-			%
-			clear matPsi_eig;
-			clear matLambda_eig;
-			clear muCrit;
-		endif
-	endif
+	findLocMin_cnstH__findStart;
 	vecDelta = -( matR \ (matR'\vecG) );
 	%
 	%
 	%
 	% Apply constraints...
 	% As we apply a constraint and backtrack, keep track of previous value of mu (which doesn't satisfy the constraint)
-	% so we can forwardtrack later in case we overshot the constraint.
+	%  so we can forwardtrack later in case we overshot the constraint.
 	% We'll keep track of quantities that require some effort to calculate:
 	%  mu, matR, vecDelta, and (late) omegaModel.
 	% We could track more, but, POITROME.
@@ -120,9 +96,7 @@ function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], da
 	haveBTedForDeltaNormMax = false;
 	if ( isrealscalar(deltaNormMax) )
 	if ( norm(vecDelta) > deltaNormMax )
-		assert( deltaNormMax > 0.0 );
 		deltaNormMin = (1.0-deltaNormMaxRelTol)*deltaNormMax;
-		%
 		deltaNormTrgt = ( deltaNormMax + deltaNormMin ) / 2.0; % For first iteration.
 		iterLimit = 10; % Arbitrary.
 		iterCount = 0;
@@ -147,14 +121,24 @@ function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], da
 			a = 2.0*(dsq^1.5)/(-ddsqdmu);
 			%
 			mu = (a/deltaNormTrgt) - b;
+			assert( mu > muLo );
 			matM = matH + mu*matI;
 			matR = chol( matM );
 			vecDelta = -( matR \ ( matR' \ vecG ) );
-			assert( mu > muLo );
 			%
 			haveBTedForDeltaNormMax = true;
 			deltaNormTrgt = deltaNormMin; % Be more aggressive for subsequent iterations.
 		endwhile
+		if ( debugMode )
+			clear deltaNormTrgt;
+			clear iterLimit;
+			clear iterCount;
+			clear vecDeltaPrime;
+			clear dsq;
+			clear ddsqdmu;
+			clear b;
+			clear a;
+		endif
 	endif
 	endif
 	%
@@ -164,17 +148,12 @@ function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], da
 	haveBTedForOmegaModelMin = false;
 	if ( useOmegaModelMin )
 	if ( omegaModel < omegaModelMin )
-		% Since we apply omegaModelMin after deltaNormMax,
-		%  and, since we've gotten here,
-		% This means the deltaNormMax constraint is superfluous;
-		%  only the omegaModelMin constraint matters.
-		assert( omegaModelMin < omega0 );
 		omegaModelMax = omegaModelMin + omegaModelMinRelTol*(omega0-omegaModelMin);
 		%
 		omegaTrgt = ( omegaModelMax + omegaModelMin ) / 2.0; % For first iteration.
 		iterLimit = 10; % Arbitrary.
 		iterCount = 0;
-		while ( norm(vecDelta) > deltaNormMax )
+		while ( omegaModel < omegaModelMin )
 			iterCount++;
 			if ( iterCount > iterLimit )
 				msg( __FILE__, __LINE__, "Failed to satisfy omegaModelMin (model reasonableness constraint)." );
@@ -190,11 +169,11 @@ function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], da
 			%  match omega at previous mu.
 			% Not a great model, but, should be good enough.
 			mu = mu + normGSq*(omegaTrgt-omegaModel)/((omega0-omegaTrgt)*(omega0-omegaModel));
+			assert( mu > muLo );
 			matM = matH + mu*matI;
 			matR = chol( matM );
 			vecDelta = -( matR \ ( matR' \ vecG ) );
 			omegaModel = omega0 + vecG'*vecDelta + 0.5*(vecDelta'*matH*vecDelta);
-			assert( mu > muLo );
 			%
 			haveBTedForOmegaModelMin = true;
 			omegaTrgt = omegaModelMax; % Be more aggressive for subsequent iterations.
@@ -206,29 +185,28 @@ function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], da
 	%
 	% We possibly may have over backtracked.
 	if ( haveBTedForOmegaModelMin )
-		% Since omegaModelMin was applied after deltaNormMax,
-		%  the deltaNormMax constraint is irrelevant.
-		% mu should now satisfy omegaModelMin, and muLo should not.
-		assert( omegaModel >= omegaModelMin );
+		% Since omegaModelMin was applied after deltaNormMax, the deltaNormMax constraint is now irrelevant.
+		% muLo should not satisfy the constraint but mu should.
 		assert( omegaModel_muLo < omegaModelMin );
+		assert( omegaModel >= omegaModelMin );
 		% If mu also satisfies omegaModelMax, then we're done.
 		% Otherwise, we'll forward track to get a mu that does satisfy omegaModelMax.
 		if ( omegaModel > omegaModelMax )
 			muHi = mu;
-			matR_muHi = matR
+			matR_muHi = matR;
 			vecDelta_muHi = vecDelta;
 			omegaModel_muHi = omegaModel;
 			error( "Not implemented." );
 		endif
 	elseif (haveBTedForDeltaNormMax)
-		% mu should now satisfy deltaNormMax, and muLo should not.
-		assert( norm(vecDelta) >= deltaNormMax );
+		% muLo should not satisfy deltaNormMax but mu should.
 		assert( norm(vecDelta_muLo) < deltaNormMax );
+		assert( norm(vecDelta) >= deltaNormMax );
 		% If mu also satisfies deltaNormMin, then we're done.
 		% Otherwise, we'll forward track to get a mu that does satisfy deltaNormMin.
 		if ( norm(vecDelta) < deltaNormMin )
 			muHi = mu;
-			matR_muHi = matR
+			matR_muHi = matR;
 			vecDelta_muHi = vecDelta;
 			omegaModel_muHi = omegaModel;
 			error( "Not implemented." );
