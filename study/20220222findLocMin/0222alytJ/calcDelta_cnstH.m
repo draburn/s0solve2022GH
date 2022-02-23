@@ -1,9 +1,9 @@
 % Function...
-%  [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], datIn=[] )
+%  [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
 % Returns vecDelta corresponding to the local min of the omega model,
 %  possibly subject to a trust region and a "reasonableness" constraint (such as omega >= 0).
 
-function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], datIn=[] )
+function [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
 	%
 	%
 	% Parse input.
@@ -20,16 +20,21 @@ function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], da
 	hNorm = sqrt(sum(sumsq(matH)));
 	matI = eye(sizeX,sizeX);
 	%
-	muReguCoeff = muReguCoeff( prm, "muReguCoeff", 1.0e-5 );
-	deltaNormMax = mygetfield( prm, "deltaNormMax", 100.0*gNorm/hNorm );
-	deltaNormMaxRelTol = mygetfield( prm, "deltaNormMaxRelTol", 0.4 );
-	omegaModelMin = mygetfield( prm, "omegaModelMin", [] );
-	omegaModelMinRelTol = mygetifled( prm, "omegaModelMinRelTol", 0.4 );
+	cdmlPrm = [];
+	deltaNormMax = [];
+	deltaNormMaxRelTol = 0.4;
+	omegaModelMin = 0.0;
+	omegaModelMinRelTol = 0.4;
+	if ( ~isempty(prm) )
+		cmdlPrm = mygetfield( prm, "cmdlPrm", cmdlPrm );
+		deltaNormMax = mygetfield( prm, "deltaNormMax", deltaNormMax );
+		deltaNormMaxRelTol = mygetfield( prm, "deltaNormMaxRelTol", deltaNormMaxRelTol );
+		omegaModelMin = mygetfield( prm, "omegaModelMin", omegaModelMin );
+		omegaModelMinRelTol = mygetifled( prm, "omegaModelMinRelTol", omegaModelMinRelTol );
+	endif
 	useDeltaNormMax = ~isempty(deltaNormMax);
 	useOmegaModelMin = ~isempty(omegaModelMin);
 	if ( debugMode )
-		assert( isrealscalar(muReguCoeff) );
-		assert( 0.0 < muReguCoeff );
 		if ( useDeltaNormMax )
 			assert( isrealscalar(deltaNormMax) );
 			assert( 0.0 < deltaNormMax );
@@ -44,7 +49,6 @@ function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], da
 			assert( omegaModelMinRelTol < 1.0 );
 		elseif
 	endif
-	%
 	%
 	% Set default return values.
 	vecDelta = zeros(sizeX,1);
@@ -78,19 +82,18 @@ function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], da
 	endif
 	%
 	%
+	%
 	% Find the largest valid step we can (or, at least, something close).
-	findLocMin_cnstH__findStart;
-	vecDelta = -( matR \ (matR'\vecG) );
+	[ vecDelta, cdmlDatOut ] = calcDeltaMaxLev( vecG, matH, cdmlPrm );
+	mu = cmdlDatOut.mu;
+	matR = cdmlDatOut.matR;
 	%
 	%
 	%
 	% Apply constraints...
 	% As we apply a constraint and backtrack, keep track of previous value of mu (which doesn't satisfy the constraint)
 	%  so we can forwardtrack later in case we overshot the constraint.
-	% We'll keep track of quantities that require some effort to calculate:
-	%  mu, matR, vecDelta, and (late) omegaModel.
-	% We could track more, but, POITROME.
-	%
+	% We'll keep track of quantities that are useful: mu, matR, vecDelta, and (later) omegaModel.
 	%
 	% If necessary, backtrack to satisfy deltaNormMax (trust region).
 	haveBTedForDeltaNormMax = false;
@@ -144,12 +147,11 @@ function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], da
 	%
 	%
 	%
-	omegaModel = omegaModel = omega0 + vecG'*vecDelta + 0.5*(vecDelta'*matH*vecDelta);
+	omegaModel = omega0 + vecG'*vecDelta + 0.5*(vecDelta'*matH*vecDelta);
 	haveBTedForOmegaModelMin = false;
 	if ( useOmegaModelMin )
 	if ( omegaModel < omegaModelMin )
 		omegaModelMax = omegaModelMin + omegaModelMinRelTol*(omega0-omegaModelMin);
-		%
 		omegaTrgt = ( omegaModelMax + omegaModelMin ) / 2.0; % For first iteration.
 		iterLimit = 10; % Arbitrary.
 		iterCount = 0;
@@ -162,12 +164,12 @@ function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], da
 			%
 			muLo = mu;
 			matR_muLo = matR;
-			vecDetla_muLo = vecDelta;
+			vecDelta_muLo = vecDelta;
 			omegaModel_muLo = omegaModel;
 			%
 			% Model: omegaModel = omega0 - ( g^2 / (c+mu) ).
 			%  match omega at previous mu.
-			% Not a great model, but, should be good enough.
+			% Omega is harder to model than delta. This is not a great model, but, should be good enough.
 			mu = mu + normGSq*(omegaTrgt-omegaModel)/((omega0-omegaTrgt)*(omega0-omegaModel));
 			assert( mu > muLo );
 			matM = matH + mu*matI;
@@ -196,9 +198,48 @@ function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], da
 			matR_muHi = matR;
 			vecDelta_muHi = vecDelta;
 			omegaModel_muHi = omegaModel;
-			error( "Not implemented." );
+			omegaModelTrgt = ( omegaModelMax + omegaModelMin ) / 2.0;
+			iterLimit = 10;
+			iterCount = 0;
+			while ( 1 )
+				iterCount++;
+				if ( iterCount > iterLimit )
+					msg( __FILE__, __LINE__, "Failed to satisfy omegaModelMinRelTol." );
+					mu = muHi;
+					vecDelta = vecDelta_muHi;
+					matR = matR_muHi;
+					omegaModel = omegaModel_muHi;
+					break;
+				endif
+				%
+				mu = muLo + (muHi-muLo)*(omegaModelTrgt-omegaModel_muLo)/(omegaModel_muHi-omegaModel_muLo);
+				assert( muLo < mu );
+				assert( mu < muHi );
+				matM = matH + mu*matI;
+				matR = chol( matM );
+				vecDelta = -( matR \ ( matR' \ vecG ) );
+				omegaModel = omega0 + vecG'*vecDelta + 0.5*(vecDelta'*matH*vecDelta);
+				%
+				if ( omegaModel < omegaModelMin )
+					assert( mu > muLo );
+					muLo = mu;
+					matR_muLo = matR;
+					vecDelta_muLo = vecDelta;
+					omegaModel_muLo = omegaModel;
+					continue;
+				elseif ( omegaModel > omegaModelMax )
+					assert( mu < muHi );
+					muHi = mu;
+					matR_muHi = matR;
+					vecDelta_muHi = vecDelta;
+					omegaModel_muHi = omegaModel;
+					continue;
+				endif
+				break;
+			endwhile
 		endif
-	elseif (haveBTedForDeltaNormMax)
+	elseif ( haveBTedForDeltaNormMax )
+		assert( ~haveBTedForOmegaModelMin );
 		% muLo should not satisfy deltaNormMax but mu should.
 		assert( norm(vecDelta_muLo) < deltaNormMax );
 		assert( norm(vecDelta) >= deltaNormMax );
@@ -208,9 +249,59 @@ function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[], da
 			muHi = mu;
 			matR_muHi = matR;
 			vecDelta_muHi = vecDelta;
-			omegaModel_muHi = omegaModel;
-			error( "Not implemented." );
+			%
+			deltaNorm_muHi = norm(vecDelta_muHi);
+			deltaNorm_muLo = norm(vecDelta_muLo);
+			% Use secant method.
+			deltaNormTrgt = ( deltaNormMax + deltaNormMin ) / 2.0;
+			iterLimit = 10;
+			iterCount = 0;
+			while ( 1 )
+				iterCount++;
+				if ( iterCount > iterLimit )
+					msg( __FILE__, __LINE__, "Failed to satisfy deltaNormMaxRelTol." );
+					mu = muHi;
+					vecDelta = vecDelta_muHi;
+					matR = matR_muHi;
+					omegaModel = omegaModel_muHi;
+					break;
+				endif
+				%
+				mu = muLo + (muHi-muLo)*(deltaNormTrgt-deltaNorm_muLo)/(deltaNorm_muHi-deltaNorm_muLo);
+				assert( muLo < mu );
+				assert( mu < muHi );
+				matM = matH + mu*matI;
+				matR = chol( matM );
+				vecDelta = -( matR \ ( matR' \ vecG ) );
+				%
+				deltaNorm = norm(vecDelta);
+				if ( deltaNorm < deltaNormMin )
+					assert( mu < muHi );
+					muHi = mu;
+					matR_muHi = matR;
+					vecDelta_muHi = vecDelta;
+					deltaNorm_muHi = deltaNorm;
+					continue;
+				elseif ( deltaNorm > deltaNormMax )
+					assert( mu > muLo );
+					muLo = mu;
+					matR_muLo = matR;
+					vecDelta_muLo = vecDelta;
+					omegaModel_muLo = omegaModel;
+					deltaNorm_muLo = deltaNorm;
+					continue;
+				endif
+				break;
+			endwhile
+			omegaModel = omega0 + vecG'*vecDelta + 0.5*(vecDelta'*matH*vecDelta);
 		endif
 	endif
+	%
+	if ( nargout >= 2 )
+		datOut.mu = mu;
+		datOut.matR = matR;
+		datOut.omegaModel = omegaModel;
+		datOut.trustRegionShouldBeUpdated = haveBTedForOmegaModelMin;
+	end
 return;
 endfunction
