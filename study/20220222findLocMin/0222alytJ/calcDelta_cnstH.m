@@ -61,12 +61,12 @@ function [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
 	% Handle "corner zero" cases.
 	if ( useOmegaModelMin )
 	if ( omegaModelMin >= omega0 )
-		msgif( debugMode, __FILE__, __LINE__, "Initial objective value is already below specified minimum." );
+		msgif( __FILE__, __LINE__, "WARNING: Initial objective value is already below specified minimum." );
 		return;
 	endif
 	endif
 	if ( 0.0 == gNorm )
-		msgif( debugMode, __FILE__, __LINE__, "Initial gradient is zero." );
+		msgif( __FILE__, __LINE__, "WARNING: Initial gradient is zero." );
 		return;
 	endif
 	if ( 0.0 == hNorm )
@@ -90,8 +90,8 @@ function [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
 			mu = gNormSq/(omega0-omegaModelMin);
 			stepConstrainedByOmegaModelMin = true;
 		else
-			msgif( debugMode, __FILE__, __LINE__, "Hessian is zero, gradient is not, and there is no constraint on step." );
-			mu = 0.0;
+			msgif( __FILE__, __LINE__, "WARNING: Hessian is zero, gradient is not, and there is no constraint on step." );
+			return;
 		endif
 		vecDelta = vecG/(-mu);
 		datOut.mu = mu;
@@ -126,7 +126,7 @@ function [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
 		while ( norm(vecDelta) > deltaNormMax )
 			iterCount++;
 			if ( iterCount > iterLimit )
-				msg( __FILE__, __LINE__, "Failed to satisfy deltaNormMax (trust region constraint)." );
+				msg( __FILE__, __LINE__, "WARNING: Failed to satisfy deltaNormMax (trust region constraint)." );
 				return;
 			endif
 			%
@@ -178,7 +178,7 @@ function [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
 		while ( omegaModel < omegaModelMin )
 			iterCount++;
 			if ( iterCount > iterLimit )
-				msg( __FILE__, __LINE__, "Failed to satisfy omegaModelMin (model reasonableness constraint)." );
+				msg( __FILE__, __LINE__, "WARNING: Failed to satisfy omegaModelMin (model reasonableness constraint)." );
 				return;
 			endif
 			%
@@ -224,7 +224,7 @@ function [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
 			while ( 1 )
 				iterCount++;
 				if ( iterCount > iterLimit )
-					msg( __FILE__, __LINE__, "Failed to satisfy omegaModelMinRelTol." );
+					msg( __FILE__, __LINE__, "WARNING: Failed to satisfy omegaModelMinRelTol." );
 					mu = muHi;
 					vecDelta = vecDelta_muHi;
 					matR = matR_muHi;
@@ -279,7 +279,7 @@ function [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
 			while ( 1 )
 				iterCount++;
 				if ( iterCount > iterLimit )
-					msg( __FILE__, __LINE__, "Failed to satisfy deltaNormMaxRelTol." );
+					msg( __FILE__, __LINE__, "WARNING: Failed to satisfy deltaNormMaxRelTol." );
 					mu = muHi;
 					vecDelta = vecDelta_muHi;
 					matR = matR_muHi;
