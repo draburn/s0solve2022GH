@@ -158,6 +158,20 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 			matH = matJTJ + abs(h)*(vecPhiHat*(vecPhiHat'));
 			hScale = max(abs(diag(matH)));
 			vecX_next = vecX - ( matH + 1e-4*hScale*eye(sizeX) ) \ vecG;
+		case 30
+			% Basic newton with BT, but no TR.
+			flmcjPrm = [];
+			flmcjPrm.doKUpdating = false;
+			[ vecX_next, flmcjDatOut ] = findLocMin_cnstJ( vecX, vecF, matJ, funchFJ, flmcjPrm );
+			fevalCount += flmcjDatOut.fevalCount;
+		case 31
+			% Basic newton with BT and TR.
+			flmcjPrm = [];
+			flmcjPrm.doKUpdating = false;
+			flmcjPrm.deltaNormMax = dTreg; % Could be empty.
+			[ vecX_next, flmcjDatOut ] = findLocMin_cnstJ( vecX, vecF, matJ, funchFJ, flmcjPrm );
+			fevalCount += flmcjDatOut.fevalCount;
+			dTreg = flmcjDatOut.deltaNormMax;
 		case 100
 			% Baisc flmcj.
 			flmcjPrm = [];
@@ -167,7 +181,7 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 			% flmcj with K and dTreg passing.
 			flmcjPrm = [];
 			flmcjPrm.matK = matK;
-			flmcjPrm.deltaNormMax = dTreg; % Could be empgy;
+			flmcjPrm.deltaNormMax = dTreg; % Could be empty.
 			[ vecX_next, flmcjDatOut ] = findLocMin_cnstJ( vecX, vecF, matJ, funchFJ, flmcjPrm );
 			dTreg = flmcjDatOut.deltaNormMax;
 			matK = flmcjDatOut.matK;

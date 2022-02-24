@@ -125,6 +125,12 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		%
 		%
 		%
+		% Force next step to be smaller.
+		if (havePrev)
+			deltaNormMax = btForceFactor*norm(vecX_prev-vecX0);
+			msgif( debugMode, __FILE__, __LINE__, sprintf( "Set deltaNormMax to %g.", deltaNormMax ) );
+		endif
+		%
 		% Calculate trial step.
 		matH = matJTJ + matK;
 		cdlPrm = [];
@@ -235,9 +241,6 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		vecX_prev = vecX;
 		vecF_prev = vecF;
 		omega_prev = omega;
-		%
-		deltaNormMax = btForceFactor*norm(vecDelta);
-		msgif( debugMode, __FILE__, __LINE__, sprintf( "Set deltaNormMax to %g.", deltaNormMax ) );
 	endwhile
 	%
 	%

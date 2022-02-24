@@ -107,8 +107,8 @@
 	%
 	figure();
 	semilogy( ...
-	  datOut.fevalCountVals, datOut.omegaVals-sumsq(testFuncPrm.vecFE)/2.0, 'o-', ...
-	  datOut.fevalCountVals(2:end), datOut.deltaNormVals, 'x-' );
+	  datOut.fevalCountVals, datOut.omegaVals-sumsq(testFuncPrm.vecFE)/2.0+eps, 'o-', ...
+	  datOut.fevalCountVals(2:end), datOut.deltaNormVals+eps, 'x-' );
 	grid on;
 	xlabel( "feval count" );
 	legend( "omega", "||delta||", "location", "northeast" );
