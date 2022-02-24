@@ -1,6 +1,6 @@
 	clear;
 	%
-	caseNum = 102;
+	caseNum = 200;
 	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 	switch (caseNum)
 	case 0
@@ -98,6 +98,14 @@
 		testFuncPrm.ary3K(:,:,2) = [ 2.0, 0.0; 0.0, 2.0 ];
 		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
 		vecX0 = [ 1.0; 2.0 ];
+	case 200
+		sizeX = 20;
+		sizeF = 20;
+		tfpPrm.matJPreMod = ones(sizeF,sizeX);
+		tfpPrm.matJPreMod(1,1) = 10.0;
+		testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,1,true,true,true,tfpPrm); % Calls setprngstates.
+		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
+		vecX0 = zeros(sizeX,1);
 	otherwise
 		error( "Invalid caseNum." );
 	endswitch

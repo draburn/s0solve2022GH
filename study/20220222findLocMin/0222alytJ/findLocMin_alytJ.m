@@ -21,6 +21,7 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 	omegaFallAbsTol = eps;
 	omegaFallRelTol = sqrt(eps);
 	iterLimit = 100;
+	%stepType = 31;
 	stepType = 110;
 	wintersKUpdate = true;
 	if ( ~isempty(prm) )
