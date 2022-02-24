@@ -16,15 +16,12 @@ function [ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm=[] )
 	endif
 	hNorm = sqrt(sum(sumsq(matH)));
 	matI = eye(sizeX,sizeX);
-	mu0 = 0.0;
 	muReguCoeff = 1.0e-5;
 	if ( ~isempty(prm) )
-		mu0 = mygetfield( prm, "mu0", mu0 );
 		muReguCoeff = mygetfield( prm, "muReguCoeff", muReguCoeff );
 	endif
 	if ( debugMode )
 		assert( 0~=hNorm );
-		assert( isrealscalar(mu0) );
 		assert( isrealscalar(muReguCoeff) );
 		assert( 0.0 < muReguCoeff );
 	endif
@@ -34,7 +31,7 @@ function [ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm=[] )
 	% Not bothering to check if vecG = 0; also, user could possibly want mu and matR.
 	%
 	%
-	mu = mu0;
+	mu = 0.0;
 	matM = matH + mu*matI;
 	[ matR, cholFlag ] = chol( matM );
 	if ( 0 == cholFlag )
@@ -47,28 +44,10 @@ function [ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm=[] )
 		return;
 	endif
 	endif
-	msgif( debugMode, __FILE__, __LINE__, "Cholesky factorization with mu0 failed." );
+	msgif( debugMode, __FILE__, __LINE__, "Cholesky factorization with mu = 0.0 failed." );
 	%
 	%
-	if ( mu0 < 0.0 )
-		mu = 0.0;
-		matM = matH + mu*matI;
-		[ matR, cholFlag ] = chol( matM );
-		if ( 0 == cholFlag )
-		if ( min(abs(diag(matR))) > sqrt(eps)*max(abs(diag(matR))) )
-			vecDelta = -( matR \ (matR'\vecG) );
-			if ( nargout >= 2 )
-				datOut.mu = mu;
-				datOut.matR = matR;
-			endif
-			return;
-		endif
-		endif
-		msgif( debugMode, __FILE__, __LINE__, "Cholesky factorization with mu = 0.0 failed." );
-	endif
-	%
-	%
-	mu = max([ 0.0, mu0 ]) + muReguCoeff*hNorm;
+	mu = muReguCoeff*hNorm;
 	matM = matH + mu*matI;
 	[ matR, cholFlag ] = chol( matM );
 	if ( 0 == cholFlag )
@@ -81,7 +60,7 @@ function [ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm=[] )
 		return;
 	endif
 	endif
-	msgif( debugMode, __FILE__, __LINE__, "Cholesky factorization with 'slightly larger' mu failed." );
+	msgif( debugMode, __FILE__, __LINE__, "Cholesky factorization with small positive mu failed." );
 	%
 	%
 	msgif( debugMode, __FILE__, __LINE__, "Finding muCrit using eig()." );
@@ -128,17 +107,7 @@ endfunction
 
 
 %!test
-%!	msg( __FILE__, __LINE__, "~~~ Positive Semi-Definite Test With Specified Mu ~~~ " );
-%!	vecG = [ 1.0; 0.0 ]
-%!	matH = [ 1.0, 0.0; 0.0, 0.0 ]
-%!	prm = []
-%!	prm.mu0 = 1e-8
-%!	[ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm )
-
-
-%!test
 %!	msg( __FILE__, __LINE__, "~~~ Negative Definite / Indefinite Test ~~~ " );
-%!	msg( __FILE__, __LINE__, "~~~ NPD Test ~~~ " );
 %!	vecG = [ 1.0; 0.0 ]
 %!	matH = -eye(2,2)
 %!	prm = []
