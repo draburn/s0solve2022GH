@@ -9,7 +9,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 	% Parse input.
 	sizeX = size(vecX0,1);
 	sizeF = size(vecF0,1);
-	debugMode = mygetfield( prm, "debugMode", true );
+	debugMode = mygetfield( prm, "debugMode", false );
 	if ( debugMode )
 		assert( isrealarray(vecX0,[sizeX,1]) );
 		assert( isrealarray(vecF0,[sizeF,1]) );
@@ -130,7 +130,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		cdlPrm = [];
 		cdlPrm.deltaNormMax = deltaNormMax; % May be empty.
 		cdlPrm.deltaNormMaxRelTol = deltaNormMaxRelTol;
-		[ vecDelta, cdlDatOut ] = calcDeltaLev( omega0, vecG, matH, cdlPrm )
+		[ vecDelta, cdlDatOut ] = calcDeltaLev( omega0, vecG, matH, cdlPrm );
 		vecFModel = vecF0 + (matJ*vecDelta);
 		omegaModel = cdlDatOut.omegaModel;
 		%
@@ -207,7 +207,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		%
 		%
 		% Look at result.
-		omega = sumsq(vecF,1)/2.0
+		omega = sumsq(vecF,1)/2.0;
 		if ( havePrev )
 		if ( omega > omega_prev )
 			msgif( ~haveNotedSepx, __FILE__, __LINE__, "omega > omega_prev; this suggests a sepratrix." );
@@ -246,7 +246,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 	if ( nargout >= 2 )
 		datOut.fevalCount = fevalCount;
 		datOut.vecF = vecF_best;
-		datOut.omega = omega;
+		datOut.omega = omega_best;
 		datOut.matK = matK;
 		datOut.deltaNormMax = deltaNormMax;
 	endif

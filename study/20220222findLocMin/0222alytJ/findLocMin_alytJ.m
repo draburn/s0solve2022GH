@@ -1,7 +1,7 @@
 % Function...
-%  [ vecX, datOut ] = findLocMin_cnstJ( vecX0, funchFJ, prm=[] )
+%  [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 
-function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, funchFJ, prm=[] )
+function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 	%
 	%
 	% Parse input.
@@ -181,10 +181,13 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, funchFJ, prm=[] )
 		if ( ~isrealarray(vecX_next,[sizeX,1]) );
 			msg( __FILE__, __LINE__, "vecX_next is not a valid vector." );
 			return;
+		elseif ( norm(vecX_next-vecX) <= stepSizeTol )
+			msg( __FILE__, __LINE__, "Step is below tol." );
+			return;
 		elseif ( norm(vecX_next-vecX) > dTreg )
 			msg( __FILE__, __LINE__, "Step moves outside trust region!" );
 		endif
-		echo__vecX_next = vecX_next
+		%echo__vecX_next = vecX_next
 		datOut.deltaNormVals(iterCount) = norm( vecX_next - vecX );
 		[ vecF_next, matJ_next ] = funchFJ( vecX_next );
 		fevalCount++;
@@ -220,10 +223,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, funchFJ, prm=[] )
 		%
 		%
 		% Check post-iter imposed limits.
-		if ( norm(vecX-vecX_prev) <= stepSizeTol )
-			msg( __FILE__, __LINE__, "Reached stepSizeTol." );
-			return;
-		elseif ( abs(omega-omega_prev) <= omegaFallAbsTol )
+		if ( abs(omega-omega_prev) <= omegaFallAbsTol )
 			msg( __FILE__, __LINE__, "Reached omegaFallAbsTol." );
 			return;
 		elseif ( abs(omega-omega_prev) <= omegaFallRelTol*abs(omega) )
