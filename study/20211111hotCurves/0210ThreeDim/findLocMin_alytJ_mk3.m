@@ -266,7 +266,12 @@ endfunction
 %!	matA = diag((1:sizeX));
 %!	matA(2,1) = (sizeX+1);
 %!	vecF = matA*((vecX-vecXE)).^2;
-%!	matJ = diag((1:sizeX));
+%!	matJ = zeros(sizeX,sizeX);
+%!	for n=1:sizeX
+%!	for m=1:sizeX
+%!		matJ(n,m) = 2.0*matA(n,m)*(vecX(m)-vecXE(m));
+%!	end
+%!	end
 %!endfunction
 
 

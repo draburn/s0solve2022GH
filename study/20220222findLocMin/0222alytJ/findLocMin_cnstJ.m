@@ -25,7 +25,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		vecJF_testA = ( funchF( vecX0 + vecDelta_test ) - funchF( vecX0 - vecDelta_test ) ) / 2.0;
 		vecJF_testB = matJ*vecDelta_test;
 		if ( sumsq(vecJF_testA-vecJF_testB) > sqrt(eps)*(sumsq(vecJF_testA)+sumsq(vecJF_testA)) )
-			msg( __FILE__, __LINE__, "*** WARNING: Jacobian calculated by funchFJ appears to be incorrect. ***" );
+			error( "Jacobian calculated by funchFJ appears to be incorrect." );
 		else
 			msg( __FILE__, __LINE__, "Jacobian calculated by funchFJ appears to be correct." );
 		endif
@@ -278,8 +278,6 @@ endfunction
 %!	[ vecF0, matJ ] = funchFJ(vecX0)
 %!	prm = [];
 %!	[ vecXF, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchFJ, prm )
-%!	%[ vecF0, matJ ] = funchFJ(vecXF); [ vecXF, datOut ] = findLocMin_cnstJ( vecXF, vecF0, matJ, funchFJ, prm )
-%!	%[ vecF0, matJ ] = funchFJ(vecXF); [ vecXF, datOut ] = findLocMin_cnstJ( vecXF, vecF0, matJ, funchFJ, prm )
 %!	vecFF = funchFJ( vecXF );
 %!	omega0 = sumsq(vecF0,1)/2.0
 %!	omegaF = sumsq(vecFF,1)/2.0
