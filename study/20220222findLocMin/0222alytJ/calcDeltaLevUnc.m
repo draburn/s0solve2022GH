@@ -1,9 +1,9 @@
 % Function...
-%  [ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm=[] )
+%  [ vecDelta, datOut ] = calcDeltaLevUnc( vecG, matH, prm=[] )
 % Calculates vecDelta corresponding to the unconstrained minimization of the omega model.
 % If Hessian is not positive definite, the result may be somewhat arbitrarily large.
 
-function [ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm=[] )
+function [ vecDelta, datOut ] = calcDeltaLevUnc( vecG, matH, prm=[] )
 	%
 	%
 	sizeX = size(vecG,1);
@@ -33,8 +33,7 @@ function [ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm=[] )
 	%
 	% Not bothering to check if vecG = 0; also, user could possibly want mu and matR.
 	if ( 0.0 == hNorm )
-		msg( __FILE__, __LINE__, "WARNING: Hessian is zero." );
-		return;
+		error( "Input Hessian is zero." );
 	end
 	%
 	%
@@ -103,7 +102,7 @@ endfunction
 %!	vecG = [ 1.0; 0.0 ]
 %!	matH = eye(2,2)
 %!	prm = []
-%!	[ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm )
+%!	[ vecDelta, datOut ] = calcDeltaLevUnc( vecG, matH, prm )
 
 
 %!test
@@ -111,7 +110,7 @@ endfunction
 %!	vecG = [ 1.0; 0.0 ]
 %!	matH = [ 1.0, 0.0; 0.0, 0.0 ]
 %!	prm = []
-%!	[ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm )
+%!	[ vecDelta, datOut ] = calcDeltaLevUnc( vecG, matH, prm )
 
 
 %!test
@@ -119,4 +118,4 @@ endfunction
 %!	vecG = [ 1.0; 0.0 ]
 %!	matH = -eye(2,2)
 %!	prm = []
-%!	[ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm )
+%!	[ vecDelta, datOut ] = calcDeltaLevUnc( vecG, matH, prm )

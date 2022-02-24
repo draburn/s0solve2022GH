@@ -1,9 +1,9 @@
 % Function...
-%  [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[] )
+%  [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 % Returns vecDelta corresponding to the local min of the omega model,
 %  possibly subject to a trust region and a "reasonableness" constraint (such as omega >= 0).
 
-function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[] )
+function [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 	%
 	%
 	% Parse input.
@@ -90,21 +90,22 @@ function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[] )
 			mu = gNormSq/(omega0-omegaModelMin);
 			stepConstrainedByOmegaModelMin = true;
 		else
-			msgif( __FILE__, __LINE__, "WARNING: Hessian is zero, gradient is not, and there is no constraint on step." );
-			return;
+			error( "WARNING: Hessian is zero, gradient is not, and there is no constraint on step." );
 		endif
 		vecDelta = vecG/(-mu);
-		datOut.mu = mu;
-		datOut.matR = sqrt(mu)*matI;
-		datOut.omegaModel = omega0 + vecG'*vecDelta + 0.5*(vecDelta'*matH*vecDelta);
-		datOut.trustRegionShouldBeUpdated = stepConstrainedByOmegaModelMin;
+		if ( nargout >= 2 )
+			datOut.mu = mu;
+			datOut.matR = sqrt(mu)*matI;
+			datOut.omegaModel = omega0 + vecG'*vecDelta + 0.5*(vecDelta'*matH*vecDelta);
+			datOut.trustRegionShouldBeUpdated = stepConstrainedByOmegaModelMin;
+		endif
 		return;
 	endif
 	%
 	%
 	%
 	% Find the largest valid step we can (or, at least, something close).
-	[ vecDelta, cdmlDatOut ] = calcDeltaMaxLev( vecG, matH, cdmlPrm );
+	[ vecDelta, cdmlDatOut ] = calcDeltaLevUnc( vecG, matH, cdmlPrm );
 	mu = cdmlDatOut.mu;
 	matR = cdmlDatOut.matR;
 	%
@@ -335,7 +336,7 @@ endfunction
 %!	matH = eye(2,2)
 %!	prm = [];
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm )
 
 
 %!test
@@ -346,7 +347,7 @@ endfunction
 %!	prm = [];
 %!	prm.omegaModelMinRelTol = 0.01;
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm )
 
 
 %!test
@@ -357,7 +358,7 @@ endfunction
 %!	prm = [];
 %!	prm.omegaModelMin = [];
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm )
 
 
 %!test
@@ -369,7 +370,7 @@ endfunction
 %!	prm.deltaNormMax = 0.3;
 %!	prm.deltaNormMaxRelTol = 0.01;
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm )
 
 
 %!test
@@ -382,7 +383,7 @@ endfunction
 %!	prm.deltaNormMax = 0.3;
 %!	prm.deltaNormMaxRelTol = 0.01;
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm )
 
 
 %!test
@@ -395,7 +396,7 @@ endfunction
 %!	prm.deltaNormMax = 0.5;
 %!	prm.deltaNormMaxRelTol = 0.01;
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm )
 
 
 %!test
@@ -409,7 +410,7 @@ endfunction
 %!	prm.deltaNormMax = 0.5;
 %!	prm.deltaNormMaxRelTol = 0.01;
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm )
 
 
 %!test
@@ -419,7 +420,7 @@ endfunction
 %!	matH = zeros(2,2)
 %!	prm = [];
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm )
 
 
 %!test
@@ -430,7 +431,7 @@ endfunction
 %!	prm = [];
 %!	prm.deltaNormMax = 0.2;
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm )
 
 
 %!test
@@ -442,4 +443,4 @@ endfunction
 %!	prm.deltaNormMax = 0.2;
 %!	prm.omegaModelMin = [];
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm )
