@@ -1,9 +1,9 @@
 % Function...
-%  [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
+%  [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[] )
 % Returns vecDelta corresponding to the local min of the omega model,
 %  possibly subject to a trust region and a "reasonableness" constraint (such as omega >= 0).
 
-function [ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm=[] )
+function [ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm=[] )
 	%
 	%
 	% Parse input.
@@ -335,7 +335,7 @@ endfunction
 %!	matH = eye(2,2)
 %!	prm = [];
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
 
 
 %!test
@@ -346,7 +346,7 @@ endfunction
 %!	prm = [];
 %!	prm.omegaModelMinRelTol = 0.01;
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
 
 
 %!test
@@ -357,7 +357,7 @@ endfunction
 %!	prm = [];
 %!	prm.omegaModelMin = [];
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
 
 
 %!test
@@ -369,7 +369,7 @@ endfunction
 %!	prm.deltaNormMax = 0.3;
 %!	prm.deltaNormMaxRelTol = 0.01;
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
 
 
 %!test
@@ -382,7 +382,7 @@ endfunction
 %!	prm.deltaNormMax = 0.3;
 %!	prm.deltaNormMaxRelTol = 0.01;
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
 
 
 %!test
@@ -395,7 +395,7 @@ endfunction
 %!	prm.deltaNormMax = 0.5;
 %!	prm.deltaNormMaxRelTol = 0.01;
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
 
 
 %!test
@@ -409,7 +409,7 @@ endfunction
 %!	prm.deltaNormMax = 0.5;
 %!	prm.deltaNormMaxRelTol = 0.01;
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
 
 
 %!test
@@ -419,7 +419,7 @@ endfunction
 %!	matH = zeros(2,2)
 %!	prm = [];
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
 
 
 %!test
@@ -430,7 +430,7 @@ endfunction
 %!	prm = [];
 %!	prm.deltaNormMax = 0.2;
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )
 
 
 %!test
@@ -442,4 +442,4 @@ endfunction
 %!	prm.deltaNormMax = 0.2;
 %!	prm.omegaModelMin = [];
 %!	echo__prm = prm
-%!	[ vecDelta, datOut ] = calcDelta_cnstH( omega0, vecG, matH, prm )
+%!	[ vecDelta, datOut ] = findLocMin_cnstH( omega0, vecG, matH, prm )

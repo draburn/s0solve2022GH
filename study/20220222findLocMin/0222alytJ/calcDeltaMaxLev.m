@@ -21,14 +21,22 @@ function [ vecDelta, datOut ] = calcDeltaMaxLev( vecG, matH, prm=[] )
 		muReguCoeff = mygetfield( prm, "muReguCoeff", muReguCoeff );
 	endif
 	if ( debugMode )
-		assert( 0~=hNorm );
 		assert( isrealscalar(muReguCoeff) );
 		assert( 0.0 < muReguCoeff );
 	endif
+	%
+	% Default return values.
+	vecDelta = zeros(sizeX,1);
 	if ( nargout >= 2 )
 		datOut = [];
 	endif
+	%
 	% Not bothering to check if vecG = 0; also, user could possibly want mu and matR.
+	if ( 0.0 == hNorm )
+		msg( __FILE__, __LINE__, "WARNING: Hessian is zero." );
+		return;
+	end
+	%
 	%
 	%
 	mu = 0.0;
