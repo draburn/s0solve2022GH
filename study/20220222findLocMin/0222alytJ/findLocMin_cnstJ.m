@@ -248,6 +248,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		datOut.vecF = vecF_best;
 		datOut.omega = omega;
 		datOut.matK = matK;
+		datOut.deltaNormMax = deltaNormMax;
 	endif
 return;
 endfunction

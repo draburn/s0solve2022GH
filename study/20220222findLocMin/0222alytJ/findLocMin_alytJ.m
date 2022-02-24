@@ -21,7 +21,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, funchFJ, prm=[] )
 	omegaFallAbsTol = eps;
 	omegaFallRelTol = sqrt(eps);
 	iterLimit = 100;
-	stepType = 0;
+	stepType = 110;
 	if ( ~isempty(prm) )
 		stepSizeTol = mygetfield( prm, "stepSizeTol", stepSizeTol );
 		omegaTol = mygetfield( prm, "omegaTol", omegaTol );
@@ -78,6 +78,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, funchFJ, prm=[] )
 	omega0 = sumsq(vecF0,1)/2.0;
 	vecG0 = matJ0'*vecF0;
 	matJTJ0 = matJ0'*matJ0;
+	matK0 = zeros(sizeX,sizeX);
 	%
 	%
 	% Handle "zero corner" cases.
@@ -98,6 +99,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, funchFJ, prm=[] )
 	omega = omega0;
 	vecG = vecG0;
 	matJTJ = matJTJ0;
+	matK = matK0;
 	dTreg = [];
 	iterCount = 0;
 	datOut.fevalCountVals(iterCount+1) = fevalCount;
@@ -161,6 +163,15 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, funchFJ, prm=[] )
 			flmcjPrm = [];
 			[ vecX_next, flmcjDatOut ] = findLocMin_cnstJ( vecX, vecF, matJ, funchFJ, flmcjPrm );
 			fevalCount += flmcjDatOut.fevalCount;
+		case 110
+			% flmcj with K and dTreg passing.
+			flmcjPrm = [];
+			flmcjPrm.matK = matK;
+			flmcjPrm.deltaNormMax = dTreg; % Could be empgy;
+			[ vecX_next, flmcjDatOut ] = findLocMin_cnstJ( vecX, vecF, matJ, funchFJ, flmcjPrm );
+			dTreg = flmcjDatOut.deltaNormMax;
+			matK = flmcjDatOut.matK;
+			fevalCount += flmcjDatOut.fevalCount;
 		otherwise
 			error( "Invalid stepType." );
 		endswitch		
@@ -173,12 +184,16 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, funchFJ, prm=[] )
 		elseif ( norm(vecX_next-vecX) > dTreg )
 			msg( __FILE__, __LINE__, "Step moves outside trust region!" );
 		endif
+		echo__vecX_next = vecX_next
+		datOut.deltaNormVals(iterCount) = norm( vecX_next - vecX );
 		[ vecF_next, matJ_next ] = funchFJ( vecX_next );
 		fevalCount++;
 		jevalCount++;
 		omega_next = sumsq(vecF_next)/2.0;
 		if ( omega_next >= omega )
 			msg( __FILE__, __LINE__, "Omega did not decrease." );
+			datOut.fevalCountVals(iterCount+1) = fevalCount;
+			datOut.omegaVals(iterCount+1) = omega_next;
 			return;
 		endif
 		vecG_next = matJ_next'*vecF_next;
@@ -248,7 +263,9 @@ endfunction
 %!	omegaF = sumsq(funchFJ(vecXF),1)/2.0
 %!	%
 %!	figure();
-%!	plot( datOut.fevalCountVals, datOut.omegaVals, 'o-' );
+%!	semilogy( ...
+%!	  datOut.fevalCountVals, datOut.omegaVals, 'o-', ...
+%!	  datOut.fevalCountVals(2:end), datOut.deltaNormVals, 'x-' );
 %!	grid on;
 %!	xlabel( "feval count" );
-%!	ylabel( "omega" );
+%!	legend( "omega", "||delta||", "location", "northeast" );
