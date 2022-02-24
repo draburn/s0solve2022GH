@@ -22,6 +22,7 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 	omegaFallRelTol = sqrt(eps);
 	iterLimit = 100;
 	stepType = 110;
+	wintersKUpdate = true;
 	if ( ~isempty(prm) )
 		stepSizeTol = mygetfield( prm, "stepSizeTol", stepSizeTol );
 		omegaTol = mygetfield( prm, "omegaTol", omegaTol );
@@ -234,6 +235,16 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 		%
 		datOut.fevalCountVals(iterCount+1) = fevalCount;
 		datOut.omegaVals(iterCount+1) = omega;
+		%
+		if ( wintersKUpdate )
+		if ( isrealarray(matK,[sizeX,sizeX]) )
+			% Impose deltaK * deltaX = (deltaJ)'*J*deltaX.
+			fooX = vecX - vecX_prev;
+			fooY = (matJ-matJ_prev)' * (matJ*(fooX));
+			fooS = sumsq(fooX);
+			matK += ( fooY*(fooX') + fooX*(fooY') - (fooX*(fooX'))*(fooX'*fooY)/fooS )/fooS;
+		endif
+		endif
 		%
 		%
 		% Check post-iter imposed limits.
