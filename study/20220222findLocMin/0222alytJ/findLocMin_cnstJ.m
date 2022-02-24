@@ -32,23 +32,27 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		clear vecJF_testB;
 	endif
 	%
+	% Set some stuff...
+	fevalCount = 0;
 	matI = eye(sizeX,sizeX);
 	omega0 = sumsq(vecF0,1)/2.0;
 	vecG = matJ'*vecF0;
 	matJTJ = matJ'*matJ;
-	fevalCount = 0;
+	gNorm = norm(vecG);
 	%
+	% Parse input parameters...
 	matK0 = zeros(sizeX,sizeX);
-	iterLimit = 100;
+	iterLimit = 100; % Param.
 	deltaNormMax = [];
-	deltaNormMaxRelTol = 0.4;
-	fallThresh_success = 0.9;
-	fallThresh_giveup = 1.0e-5;
-	fallThresh_okay = 1.0e-2;
-	coeff_reduceTrustRegionOnFevalFail = 0.1;
-	coeff_declareModelIsRadicallyWrong = 10.0;
-	coeff_reduceTrustRegionOnRadicallyWrong = 0.2;
+	deltaNormMaxRelTol = 0.4; % Param.
+	fallThresh_success = 0.9; % Param.
+	fallThresh_giveup = 1.0e-5; % Param.
+	fallThresh_okay = 1.0e-2; % Param.
+	coeff_reduceTrustRegionOnFevalFail = 0.1; % Param.
+	coeff_declareModelIsRadicallyWrong = 10.0; % Param.
+	coeff_reduceTrustRegionOnRadicallyWrong = 0.2; % Param.
 	doKUpdating = true;
+	btForceFactor = 0.9; % Param.
 	if ( ~isempty(prm) )
 		matK0 = mygetfield( prm, "matK0", matK0 );
 		deltaNormMax = mygetfield( prm, "deltaNormMax", deltaNormMax );
@@ -65,11 +69,6 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		assert( isscalar(doKUpdating) );
 		assert( isbool(doKUpdating) );
 	endif
-	%
-	%
-	% Set some stuff...
-	gNorm = norm(vecG);
-	matI = eye(sizeX,sizeX);
 	%
 	% Set default return values.
 	vecDelta = zeros(sizeX,1);
@@ -88,6 +87,11 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 	%
 	%
 	%
+	% Pre for main loop.
+	iterCount = 0;
+	vecX = vecX0;
+	matK = matK0;
+	%
 	vecX_best = vecX0;
 	vecF_best = vecF0;
 	omega_best = omega0;
@@ -100,12 +104,16 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 	vecF_prevPrev = [];
 	omega_prevPrev = [];
 	%
-	vecX = vecX0;
-	matK = matK0;
-	iterCount = 0;
 	haveNotedSepx = false;
 	while ( 1 )
+		% Check pre-iter success...
+		if ( omega0 - omega_best > (1.0-fallThresh_success)*(omega0-0.0) )
+			% Since omegaModel can't be less than 0, we can check this before calculating the model.
+			msgif( debugMode, __FILE__, __LINE__, "Success: omega_best is very good." );
+			break;
+		endif
 		%
+		% Check pre-iter fail...
 		iterCount++;
 		if ( iterCount > iterLimit )
 			msg( __FILE__, __LINE__, "Imposed Stop: Reached iterLimit." );
@@ -113,12 +121,6 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		end
 		%
 		%
-		% Check short-circuit success criteria.
-		if ( omega0 - omega_best > (1.0-fallThresh_success)*(omega0-0.0) )
-			% Since omegaModel can't be less than 0, we can check this before calculating the model.
-			msgif( debugMode, __FILE__, __LINE__, "Success: omega_best is very good." );
-			break;
-		endif
 		%
 		% Calculate trial step.
 		matH = matJTJ + matK;
@@ -130,7 +132,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		omegaModel = cdlDatOut.omegaModel;
 		%
 		%
-		% Decide whether or not to do a feval.
+		% Decide whether or not to do a feval or bail.
 		if ( omega0 - omega_best > (1.0-fallThresh_success)*(omega0-omegaModel) )
 			% omega_best offers a sufficient percentage of the potential decrease.
 			msgif( debugMode, __FILE__, __LINE__, "Success: omega_best is sufficiently good compared to model." );
@@ -157,6 +159,10 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		vecX = vecX0 + vecDelta;
 		vecF = funch( vecX );
 		fevalCount++;
+		if ( debugMode )
+			msg( __FILE__, __LINE__, sprintf( "  feval: %3d;  %10.3e, %10.3e, %10.3e;  %10.3e.", ...
+			  fevalCount, norm(vecDelta), sumsq(vecFModel,1)/2.0, omegaModel, sumsq(vecF,1)/2.0 ) );
+		endif
 		%
 		% If feval failed, cut trust region size.
 		if ( ~isrealarray(vecF,[sizeF,1]) )
@@ -170,7 +176,6 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 			msgif( debugMode, __FILE__, __LINE__, sprintf( "Set deltaNormMax to %g.", deltaNormMax ) );
 			continue;
 		endif
-		%
 		%
 		% If vecF is radically different from vecFModel, treat like feval fail.
 		% We could check to see how close vecF is to (1-b)*vecF0 + b*vecFModel,
@@ -190,7 +195,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		endif
 		%
 		%
-		%
+		% Look at result.
 		omega = sumsq(vecF,1)/2.0
 		if ( havePrev )
 		if ( omega > omega_prev )
@@ -203,8 +208,6 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 			msgif( debugMode, __FILE__, __LINE__, "Updating K!" );
 			matK += (2.0*(omega-omegaModel)/sumsq(vecDelta)^2)*(vecDelta*(vecDelta'));
 		endif
-		%
-		%
 		%
 		if ( omega < omega_best )
 			vecX_best = vecX;
@@ -222,7 +225,6 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		vecF_prev = vecF;
 		omega_prev = omega;
 		%
-		btForceFactor = 0.9; % Arbitrary
 		deltaNormMax = btForceFactor*norm(vecDelta);
 		msgif( debugMode, __FILE__, __LINE__, sprintf( "Set deltaNormMax to %g.", deltaNormMax ) );
 	endwhile
@@ -233,6 +235,8 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 	if ( nargout >= 2 )
 		datOut.fevalCount = fevalCount;
 		datOut.vecF = vecF_best;
+		datOut.omega = omega;
+		datOut.matK = matK;
 	endif
 return;
 endfunction
