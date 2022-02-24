@@ -7,7 +7,7 @@ function [ vecDelta, datOut ] = calcDeltaLevUnc( vecG, matH, prm=[] )
 	%
 	%
 	sizeX = size(vecG,1);
-	debugMode = mygetfield( prm, "debugMode", true );
+	debugMode = mygetfield( prm, "debugMode", false );
 	if ( debugMode )
 		msg( __FILE__, __LINE__, "Using debugMode." );
 		assert( isrealarray(vecG,[sizeX,1]) );

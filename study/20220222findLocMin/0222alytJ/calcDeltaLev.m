@@ -8,7 +8,7 @@ function [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 	%
 	% Parse input.
 	sizeX = size(vecG,1);
-	debugMode = mygetfield( prm, "debugMode", true );
+	debugMode = mygetfield( prm, "debugMode", false );
 	if ( debugMode )
 		msg( __FILE__, __LINE__, "Using debugMode." );
 		assert( isrealscalar(omega0) );

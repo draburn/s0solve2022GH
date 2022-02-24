@@ -26,6 +26,8 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		vecJF_testB = matJ*vecDelta_test;
 		if ( sumsq(vecJF_testA-vecJF_testB) > sqrt(eps)*(sumsq(vecJF_testA)+sumsq(vecJF_testA)) )
 			msg( __FILE__, __LINE__, "*** WARNING: Jacobian calculated by funchFJ appears to be incorrect. ***" );
+		else
+			msg( __FILE__, __LINE__, "Jacobian calculated by funchFJ appears to be correct." );
 		endif
 		clear vecDelta_test;
 		clear vecJF_testA;
@@ -109,14 +111,15 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		% Check pre-iter success...
 		if ( omega0 - omega_best > (1.0-fallThresh_success)*(omega0-0.0) )
 			% Since omegaModel can't be less than 0, we can check this before calculating the model.
-			msgif( debugMode, __FILE__, __LINE__, "Success: omega_best is very good." );
+			msgif( debugMode, __FILE__, __LINE__, sprintf( "Success: omega_best is very good ( %g - %g > %g ).", ...
+			  omega0, omega_best, (1.0-fallThresh_success)*(omega0-0.0) ) );
 			break;
 		endif
 		%
 		% Check pre-iter fail...
 		iterCount++;
 		if ( iterCount > iterLimit )
-			msg( __FILE__, __LINE__, "Imposed Stop: Reached iterLimit." );
+			msg( __FILE__, __LINE__, sprintf( "Imposed Stop: Reached iterLimit ( %d > %d ).", iterCount, iterLimit ) );
 			break;
 		end
 		%
@@ -135,10 +138,14 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		% Decide whether or not to do a feval or bail.
 		if ( omega0 - omega_best > (1.0-fallThresh_success)*(omega0-omegaModel) )
 			% omega_best offers a sufficient percentage of the potential decrease.
-			msgif( debugMode, __FILE__, __LINE__, "Success: omega_best is sufficiently good compared to model." );
+			msgif( debugMode, __FILE__, __LINE__, sprintf( ...
+			  "Success: omega_best is sufficiently good compared to model ( %g - %g > %g ).", ...
+			  omega0, omega_best, (1.0-fallThresh_success)*(omega0-omegaModel) ) );
 			break;
 		elseif ( omegaModel > (1.0-fallThresh_giveup)*omega0 )
-			msgif ( debugMode, __FILE__, __LINE__, "Imposed stop: omegaModel suggests very little decrease is possible." );
+			msgif ( debugMode, __FILE__, __LINE__, sprintf( ...
+			  "Imposed stop: omegaModel suggests very little decrease is possible ( %g > %g ).", ...
+			  omegaModel, (1.0-fallThresh_giveup)*omega0 ) );
 			break;
 		elseif ( havePrevPrev )
 			assert( havePrev );
@@ -148,7 +155,9 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 					msgif( ~haveNotedSepx, __FILE__, __LINE__, "  omega_prev > omega0; this suggests a sepratrix." );
 					haveNotedSepx = true;
 				elseif ( omega0 - omega_best > (1.0-fallThresh_okay)*(omega0-omegaModel) )
-					msgif( debugMode, __FILE__, __LINE__, "Imposed Stop: omega_best is acceptable and further backtracking may hurt." );
+					msgif( debugMode, __FILE__, __LINE__, sprintf( ...
+					  "Imposed Stop: omega_best is acceptable and further backtracking may hurt ( %g - %g > %g ).", ...
+					  omega0, omega_best, (1.0-fallThresh_okay)*(omega0-omegaModel) ) );
 					break;
 				endif
 			endif
@@ -157,7 +166,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		%
 		% Do the feval.
 		vecX = vecX0 + vecDelta;
-		vecF = funch( vecX );
+		vecF = funchF( vecX );
 		fevalCount++;
 		if ( debugMode )
 			msg( __FILE__, __LINE__, sprintf( "  feval: %3d;  %10.3e, %10.3e, %10.3e;  %10.3e.", ...
@@ -183,7 +192,9 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		%  assuming norm( vecFModel - vecF0 ) <= norm( vecF0 ),
 		%  and coeff_declareModelIsRadicallyWrong is > 2 ish(?), this isn't necessary.
 		if ( norm( vecF - vecFModel ) >= coeff_declareModelIsRadicallyWrong * norm(vecF0) )
-			msgif( debugMode, __FILE__, __LINE__, "Function was radically different at trial point." );
+			msgif( debugMode, __FILE__, __LINE__, sprintf( ...
+			  "Function was radically different at trial point ( %g >= %g ).", ...
+			  norm( vecF - vecFModel ), coeff_declareModelIsRadicallyWrong * norm(vecF0) ) );
 			if ( havePrev )
 				msgif( ~haveNotedSepx, __FILE__, __LINE__, "  Function was radically different even though it was reasonable for an earlier trial step!" );
 				msgif( ~haveNotedSepx, __FILE__, __LINE__, "  This suggests the presence of a sepratrix." );
@@ -240,3 +251,35 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 	endif
 return;
 endfunction
+
+
+%!function [ vecF, matJ ] = funcFJ_easy( vecX )
+%!	sizeX = size(vecX,1);
+%!	matJ = diag((1:sizeX));
+%!	vecF = matJ*( vecX - (1:sizeX)' );
+%!endfunction
+%!function [ vecF, matJ ] = funcFJ_nonlin( vecX )
+%!	sizeX = size(vecX,1);
+%!	vecXE = (1:sizeX)';
+%!	matA = diag((1:sizeX));
+%!	matA(2,1) = (sizeX+1);
+%!	vecF = matA*((vecX-vecXE)).^2;
+%!	matJ = zeros(sizeX,sizeX);
+%!	for n=1:sizeX
+%!	for m=1:sizeX
+%!		matJ(n,m) = 2.0*matA(n,m)*(vecX(m)-vecXE(m));
+%!	end
+%!	end
+%!endfunction
+
+%!test
+%!	funchFJ = @(dummyX) funcFJ_nonlin(dummyX);
+%!	vecX0 = zeros(2,1);
+%!	[ vecF0, matJ ] = funchFJ(vecX0)
+%!	prm = [];
+%!	[ vecXF, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchFJ, prm )
+%!	%[ vecF0, matJ ] = funchFJ(vecXF); [ vecXF, datOut ] = findLocMin_cnstJ( vecXF, vecF0, matJ, funchFJ, prm )
+%!	%[ vecF0, matJ ] = funchFJ(vecXF); [ vecXF, datOut ] = findLocMin_cnstJ( vecXF, vecF0, matJ, funchFJ, prm )
+%!	vecFF = funchFJ( vecXF );
+%!	omega0 = sumsq(vecF0,1)/2.0
+%!	omegaF = sumsq(vecFF,1)/2.0
