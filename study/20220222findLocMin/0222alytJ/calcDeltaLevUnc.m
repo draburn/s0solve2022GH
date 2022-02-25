@@ -6,6 +6,7 @@
 function [ vecDelta, datOut ] = calcDeltaLevUnc( vecG, matH, prm=[] )
 	%
 	%
+	%
 	sizeX = size(vecG,1);
 	debugMode = mygetfield( prm, "debugMode", false );
 	if ( debugMode )
@@ -38,11 +39,13 @@ function [ vecDelta, datOut ] = calcDeltaLevUnc( vecG, matH, prm=[] )
 	%
 	%
 	%
+	%%%safeRelTol = sqrt(eps); % Pre "case 99041968".
+	safeRelTol = eps^0.35;
 	mu = 0.0;
 	matM = matH + mu*matI;
 	[ matR, cholFlag ] = chol( matM );
 	if ( 0 == cholFlag )
-	if ( min(abs(diag(matR))) > sqrt(eps)*max(abs(diag(matR))) )
+	if ( min(abs(diag(matR))) > safeRelTol*max(abs(diag(matR))) )
 		vecDelta = -( matR \ (matR'\vecG) );
 		if ( nargout >= 2 )
 			datOut.mu = mu;
@@ -58,7 +61,7 @@ function [ vecDelta, datOut ] = calcDeltaLevUnc( vecG, matH, prm=[] )
 	matM = matH + mu*matI;
 	[ matR, cholFlag ] = chol( matM );
 	if ( 0 == cholFlag )
-	if ( min(abs(diag(matR))) > sqrt(eps)*max(abs(diag(matR))) )
+	if ( min(abs(diag(matR))) > safeRelTol*max(abs(diag(matR))) )
 		vecDelta = -( matR \ (matR'\vecG) );
 		if ( nargout >= 2 )
 			datOut.mu = mu;
@@ -80,7 +83,7 @@ function [ vecDelta, datOut ] = calcDeltaLevUnc( vecG, matH, prm=[] )
 	matM = matH + mu*matI;
 	[ matR, cholFlag ] = chol( matM );
 	if ( 0 == cholFlag )
-	if ( min(abs(diag(matR))) > sqrt(eps)*max(abs(diag(matR))) )
+	if ( min(abs(diag(matR))) > safeRelTol*max(abs(diag(matR))) )
 		vecDelta = -( matR \ (matR'\vecG) );
 		if ( nargout >= 2 )
 			datOut.mu = mu;

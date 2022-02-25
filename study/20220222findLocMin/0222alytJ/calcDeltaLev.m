@@ -15,11 +15,10 @@ function [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 		assert( isrealarray(vecG,[sizeX,1]) );
 		assert( isrealarray(matH,[sizeX,sizeX]) );
 		assert( issymmetric(matH) );
-		msg( __FILE__, __LINE__, "Input vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" );
+		%msg( __FILE__, __LINE__, "Input vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" );
 		echo__omega0 = omega0
-		echo__vecG = vecG
-		echo__matH = matH
-		msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" );
+		%echo__vecG = vecG
+		%echo__matH = matH
 	endif
 	gNormSq = sumsq(vecG);
 	gNorm = sqrt(gNormSq);
@@ -47,13 +46,16 @@ function [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 			assert( isrealscalar(deltaNormMaxRelTol) );
 			assert( 0.0 < deltaNormMaxRelTol );
 			assert( deltaNormMaxRelTol < 1.0 );
+			%echo__deltaNormMax = deltaNormMax
 		endif
 		if ( useOmegaModelMin )
 			assert( isrealscalar(omegaModelMin) );
 			assert( isrealscalar(omegaModelMinRelTol) );
 			assert( 0.0 < omegaModelMinRelTol );
 			assert( omegaModelMinRelTol < 1.0 );
+			%echo__omegaModelMin = omegaModelMin
 		endif
+		%msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" );
 	endif
 	%
 	% Set default return values.
@@ -125,8 +127,11 @@ function [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 	haveBTedForDeltaNormMax = false;
 	if ( isrealscalar(deltaNormMax) )
 	if ( norm(vecDelta) > deltaNormMax )
+		%msg( __FILE__, __LINE__, "Start bt..." );
 		deltaNormMin = (1.0-deltaNormMaxRelTol)*deltaNormMax;
 		deltaNormTrgt = ( deltaNormMax + deltaNormMin ) / 2.0; % For first iteration.
+		%echo__deltaNormMax = deltaNormMax
+		%echo__deltaNorm = norm(vecDelta)
 		iterLimit = 10; % Arbitrary.
 		iterCount = 0;
 		while ( norm(vecDelta) > deltaNormMax )
@@ -168,6 +173,8 @@ function [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 			clear b;
 			clear a;
 		endif
+		%echo__deltaNorm = norm(vecDelta)
+		%msg( __FILE__, __LINE__, "End bt..." );
 	endif
 	endif
 	%
@@ -275,11 +282,12 @@ function [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 			muHi = mu;
 			matR_muHi = matR;
 			vecDelta_muHi = vecDelta;
+			omegaModel_muHi = omegaModel;
 			%
 			deltaNorm_muHi = norm(vecDelta_muHi);
 			deltaNorm_muLo = norm(vecDelta_muLo);
 			% Use secant method.
-			deltaNormTrgt = ( deltaNormMax + deltaNormMin ) / 2.0
+			deltaNormTrgt = ( deltaNormMax + deltaNormMin ) / 2.0;
 			iterLimit = 10;
 			iterCount = 0;
 			while ( 1 )
