@@ -6,9 +6,10 @@
 	%   kupd with inter and kupd sans inter is okay.
 	%caseNum = 300; % blind Newt regu is best; everything except blind Newt is okay.
 	%caseNum = 38104560; % kupd winter appreciably better than newt with tr.
-	%caseNum = 999;
+	%caseNum = 990;
 	%caseNum = 9392336; % CAUSED AN ERROR.
-	caseNum = 99041968; % Causes chol(matH) okay but chol(matH+mu*matI) (mu~=eps) fails!
+	%caseNum = 99041968; % Causes chol(matH) okay but chol(matH+mu*matI) (mu~=eps) fails!
+	caseNum = 41765088; % Sans TR is better!
 	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 	switch (caseNum)
 	case 0
@@ -118,6 +119,18 @@
 		sizeX = 2;
 		sizeF = 2;
 		testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,0,false,true,true); % Calls setprngstates.
+		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
+		vecX0 = zeros(sizeX,1);
+	case 990
+		sizeX = 20;
+		sizeF = 20;
+		testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,[],false,true,true); % Calls setprngstates.
+		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
+		vecX0 = zeros(sizeX,1);
+	case 41765088
+		sizeX = 20;
+		sizeF = 20;
+		testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,41765088,false,true,true); % Calls setprngstates.
 		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
 		vecX0 = zeros(sizeX,1);
 	case 999
