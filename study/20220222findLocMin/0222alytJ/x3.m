@@ -6,10 +6,10 @@
 	%   kupd with inter and kupd sans inter is okay.
 	%caseNum = 300; % blind Newt regu is best; everything except blind Newt is okay.
 	%caseNum = 38104560; % kupd winter appreciably better than newt with tr.
-	%caseNum = 990;
+	caseNum = 999;
 	%caseNum = 9392336; % CAUSED AN ERROR.
 	%caseNum = 99041968; % Causes chol(matH) okay but chol(matH+mu*matI) (mu~=eps) fails!
-	caseNum = 41765088; % Sans TR is better!
+	%caseNum = 41765088; % Sans TR is better?!?! (Different roots, ja?)
 	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 	switch (caseNum)
 	case 0
