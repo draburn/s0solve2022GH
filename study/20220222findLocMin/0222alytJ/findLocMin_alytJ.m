@@ -6,7 +6,7 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 	%
 	% Parse input.
 	sizeX = size(vecX0,1);
-	debugMode = mygetfield( prm, "debugMode", true );
+	debugMode = mygetfield( prm, "debugMode", false );
 	if (debugMode)
 		msg( __FILE__, __LINE__, "Using debugMode." );
 		assert( isrealarray(vecX0,[sizeX,1]) );
@@ -119,15 +119,16 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 		%
 		% Check pre-iter imposed limits.
 		iterCount++;
-		msg( __FILE__, __LINE__, sprintf( "~~~ ITERATION %d ~~~", iterCount ) );
+		msgif( debugMode, __FILE__, __LINE__, sprintf( "~~~ ITERATION %d ~~~", iterCount ) );
 		if ( iterCount > iterLimit )
-			msgif( debugMode, __FILE__, __LINE__, "Reached iterLimit." );
+			msg( __FILE__, __LINE__, "Reached iterLimit." );
 			return;
 		endif
 		%
 		%
 		% Do work!
 		% Note that dTreg may be change internally.
+		dTreg_prev = dTreg;
 		switch (stepType)
 		case 0
 			% Simple grad.
@@ -214,13 +215,16 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 			msg( __FILE__, __LINE__, "vecX_next is not a valid vector." );
 			return;
 		elseif ( 0.0 == norm(vecX_next-vecX) )
-			msg( __FILE__, __LINE__, "Step size is zero." );
+			msgif( debugMode, __FILE__, __LINE__, "Step size is zero." );
 			return;
 		elseif ( norm(vecX_next-vecX) <= stepSizeTol )
-			msg( __FILE__, __LINE__, "Step is below tol." );
+			msgif( debugMode, __FILE__, __LINE__, "Step is below tol." );
 			return;
-		elseif ( norm(vecX_next-vecX) > dTreg )
+		endif
+		if ( ~isempty(dTreg_prev) )
+		if ( norm(vecX_next-vecX) > dTreg_prev )
 			msg( __FILE__, __LINE__, "Step moves outside trust region!" );
+		endif
 		endif
 		%echo__vecX_next = vecX_next
 		datOut.deltaNormVals(iterCount) = norm( vecX_next - vecX );
@@ -269,10 +273,10 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 		%
 		% Check post-iter imposed limits.
 		if ( abs(omega-omega_prev) <= omegaFallAbsTol )
-			msg( __FILE__, __LINE__, "Reached omegaFallAbsTol." );
+			msgif( debugMode, __FILE__, __LINE__, "Reached omegaFallAbsTol." );
 			return;
 		elseif ( abs(omega-omega_prev) <= omegaFallRelTol*abs(omega) )
-			msg( __FILE__, __LINE__, "Reached omegaFallRelTol." );
+			msgif( debugMode, __FILE__, __LINE__, "Reached omegaFallRelTol." );
 			return;
 		endif
 	endwhile
