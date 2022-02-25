@@ -245,6 +245,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 			msgif( debugMode, __FILE__, __LINE__, "Updating K!" );
 			matK += (2.0*(omega-omegaModel)/sumsq(vecDelta)^2)*(vecDelta*(vecDelta'));
 		else
+			% We're not updating K, so we need to reduce our trust region.
 			trustRegionSize = norm(vecDelta);
 		endif
 		%
@@ -269,6 +270,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 	% Prep proper output.
 	vecX = vecX_best;
 	if ( nargout >= 2 )
+		datOut.iterCount = iterCount;
 		datOut.fevalCount = fevalCount;
 		datOut.vecF = vecF_best;
 		datOut.omega = omega_best;

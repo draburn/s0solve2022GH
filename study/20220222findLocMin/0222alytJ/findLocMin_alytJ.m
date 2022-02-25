@@ -21,8 +21,9 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 	omegaFallAbsTol = eps;
 	omegaFallRelTol = eps;
 	iterLimit = 100;
-	stepType = 110; % << ADJUST ME!
+	stepType = 110;
 	wintersKUpdate = true;
+	cTreg_accel = 2.0;
 	if ( ~isempty(prm) )
 		stepSizeTol = mygetfield( prm, "stepSizeTol", stepSizeTol );
 		omegaTol = mygetfield( prm, "omegaTol", omegaTol );
@@ -173,7 +174,13 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 			[ vecX_next, flmcjDatOut ] = findLocMin_cnstJ( vecX, vecF, matJ, funchFJ, flmcjPrm );
 			fevalCount += flmcjDatOut.fevalCount;
 			if ( flmcjDatOut.trustRegionShouldBeUpdated )
-				dTreg = flmcjDatOut.trustRegionSize
+				dTreg = flmcjDatOut.trustRegionSize;
+			elseif ( 1 == flmcjDatOut.iterCount )
+				if ( ~isempty(dTreg) )
+				if ( dTreg < cTreg_accel*norm(vecX_next-vecX) )
+					dTreg = cTreg_accel*norm(vecX_next-vecX);
+				endif
+				endif
 			endif
 		case 100
 			% Baisc flmcj.
@@ -189,6 +196,12 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 			fevalCount += flmcjDatOut.fevalCount;
 			if ( flmcjDatOut.trustRegionShouldBeUpdated )
 				dTreg = flmcjDatOut.trustRegionSize;
+			elseif ( 1 == flmcjDatOut.iterCount )
+				if ( ~isempty(dTreg) )
+				if ( dTreg < cTreg_accel*norm(vecX_next-vecX) )
+					dTreg = cTreg_accel*norm(vecX_next-vecX);
+				endif
+				endif
 			endif
 			matK = flmcjDatOut.matK;
 		otherwise
