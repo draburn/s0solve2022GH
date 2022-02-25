@@ -207,7 +207,8 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 			matK = flmcjDatOut.matK;
 		otherwise
 			error( "Invalid stepType." );
-		endswitch		
+		endswitch
+		datOut.deltaNormVals(iterCount) = norm( vecX_next - vecX );	
 		%
 		%
 		% Validate step.
@@ -227,15 +228,14 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 		endif
 		endif
 		%echo__vecX_next = vecX_next
-		datOut.deltaNormVals(iterCount) = norm( vecX_next - vecX );
 		[ vecF_next, matJ_next ] = funchFJ( vecX_next );
 		fevalCount++;
 		jevalCount++;
 		omega_next = sumsq(vecF_next)/2.0;
 		if ( omega_next >= omega )
 			msg( __FILE__, __LINE__, "Omega did not decrease." );
-			datOut.fevalCountVals(iterCount+1) = fevalCount;
-			datOut.omegaVals(iterCount+1) = omega_next;
+			%datOut.fevalCountVals(iterCount+1) = fevalCount;
+			%datOut.omegaVals(iterCount+1) = omega_next;
 			return;
 		endif
 		vecG_next = matJ_next'*vecF_next;
