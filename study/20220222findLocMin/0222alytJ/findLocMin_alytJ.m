@@ -19,10 +19,9 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 	omegaTol = 0.0;
 	gNormTol = 0.0;
 	omegaFallAbsTol = eps;
-	omegaFallRelTol = sqrt(eps);
+	omegaFallRelTol = eps;
 	iterLimit = 100;
-	%stepType = 31;
-	stepType = 110;
+	stepType = 110; % << ADJUST ME!
 	wintersKUpdate = true;
 	if ( ~isempty(prm) )
 		stepSizeTol = mygetfield( prm, "stepSizeTol", stepSizeTol );
@@ -200,6 +199,9 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 		% Validate step.
 		if ( ~isrealarray(vecX_next,[sizeX,1]) );
 			msg( __FILE__, __LINE__, "vecX_next is not a valid vector." );
+			return;
+		elseif ( 0.0 == norm(vecX_next-vecX) )
+			msg( __FILE__, __LINE__, "Step size is zero." );
 			return;
 		elseif ( norm(vecX_next-vecX) <= stepSizeTol )
 			msg( __FILE__, __LINE__, "Step is below tol." );

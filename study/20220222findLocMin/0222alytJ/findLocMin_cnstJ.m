@@ -48,7 +48,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 	deltaNormMax = [];
 	deltaNormMaxRelTol = 0.4; % Param.
 	fallThresh_success = 0.9; % Param.
-	fallThresh_giveup = 1.0e-5; % Param.
+	fallThresh_giveup = eps; % Param.
 	fallThresh_okay = 1.0e-2; % Param.
 	coeff_reduceTrustRegionOnFevalFail = 0.1; % Param.
 	coeff_declareModelIsRadicallyWrong = 10.0; % Param.
@@ -97,6 +97,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 	% The idea of a trust region is related to but distinct from the max step size.
 	% The caller should pass in their trust region size as our deltaNormMax.
 	% But, we report a trust region size only if we see a violation.
+	% OR, if we're not updating K!
 	trustRegionSize = [];
 	%
 	vecX_best = vecX0;
@@ -243,6 +244,8 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		if ( doKUpdating )
 			msgif( debugMode, __FILE__, __LINE__, "Updating K!" );
 			matK += (2.0*(omega-omegaModel)/sumsq(vecDelta)^2)*(vecDelta*(vecDelta'));
+		else
+			trustRegionSize = norm(vecDelta);
 		endif
 		%
 		if ( omega < omega_best )
