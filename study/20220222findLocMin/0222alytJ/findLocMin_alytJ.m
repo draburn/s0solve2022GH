@@ -208,7 +208,6 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 		otherwise
 			error( "Invalid stepType." );
 		endswitch
-		datOut.deltaNormVals(iterCount) = norm( vecX_next - vecX );	
 		%
 		%
 		% Validate step.
@@ -222,6 +221,7 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 			msgif( debugMode, __FILE__, __LINE__, "Step is below tol." );
 			return;
 		endif
+		datOut.deltaNormVals(iterCount) = norm( vecX_next - vecX );
 		if ( ~isempty(dTreg_prev) )
 		if ( norm(vecX_next-vecX) > dTreg_prev )
 			msg( __FILE__, __LINE__, "Step moves outside trust region!" );
