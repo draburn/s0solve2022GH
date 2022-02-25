@@ -2,8 +2,9 @@
 	numFigs = 0;
 	%
 	%caseNum = 104; % kupd with inter is best; Newt with TR and kupd sans inter are okay.
-	caseNum = 200; % Newt with TR is best; kupd with inter and kupd sans inter is okay.
-	%caseNum = 300; % blind Newt regu is best; everything except blind Newt is okay.
+	%caseNum = 200; % Newt with TR is best (before), kupd with inter is best-ish (after TR tweak);
+	%   kupd with inter and kupd sans inter is okay.
+	caseNum = 300; % blind Newt regu is best; everything except blind Newt is okay.
 	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 	switch (caseNum)
 	case 0

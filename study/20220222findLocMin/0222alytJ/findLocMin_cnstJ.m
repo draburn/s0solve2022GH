@@ -55,6 +55,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 	coeff_reduceTrustRegionOnRadicallyWrong = 0.2; % Param.
 	doKUpdating = true;
 	btForceFactor = 0.9; % Param.
+	coeff_modelOkayTRFactor = 1.0; % Param
 	if ( ~isempty(prm) )
 		matK0 = mygetfield( prm, "matK0", matK0 );
 		deltaNormMax = mygetfield( prm, "deltaNormMax", deltaNormMax );
@@ -244,6 +245,12 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		if ( doKUpdating )
 			msgif( debugMode, __FILE__, __LINE__, "Updating K!" );
 			matK += (2.0*(omega-omegaModel)/sumsq(vecDelta)^2)*(vecDelta*(vecDelta'));
+			% Even though we're updating K, reducing our trust region may make sense.
+			if ( isempty(trustRegionSize) )
+				trustRegionSize = coeff_modelOkayTRFactor*norm(vecDelta);
+			elseif ( trustRegionSize > coeff_modelOkayTRFactor*norm(vecDelta) )
+				trustRegionSize = coeff_modelOkayTRFactor*norm(vecDelta);
+			endif
 		else
 			% We're not updating K, so we need to reduce our trust region.
 			trustRegionSize = norm(vecDelta);
