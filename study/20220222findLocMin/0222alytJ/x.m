@@ -1,6 +1,6 @@
 	clear;
 	%
-	caseNum = 200;
+	caseNum = 104;
 	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 	switch (caseNum)
 	case 0

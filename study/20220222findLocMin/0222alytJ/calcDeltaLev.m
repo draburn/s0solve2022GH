@@ -15,6 +15,11 @@ function [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 		assert( isrealarray(vecG,[sizeX,1]) );
 		assert( isrealarray(matH,[sizeX,sizeX]) );
 		assert( issymmetric(matH) );
+		msg( __FILE__, __LINE__, "Input vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" );
+		echo__omega0 = omega0
+		echo__vecG = vecG
+		echo__matH = matH
+		msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" );
 	endif
 	gNormSq = sumsq(vecG);
 	gNorm = sqrt(gNormSq);

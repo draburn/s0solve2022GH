@@ -94,6 +94,11 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 	vecX = vecX0;
 	matK = matK0;
 	%
+	% The idea of a trust region is related to but distinct from the max step size.
+	% The caller should pass in their trust region size as our deltaNormMax.
+	% But, we report a trust region size only if we see a violation.
+	trustRegionSize = [];
+	%
 	vecX_best = vecX0;
 	vecF_best = vecF0;
 	omega_best = omega0;
@@ -137,6 +142,12 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		cdlPrm.deltaNormMax = deltaNormMax; % May be empty.
 		cdlPrm.deltaNormMaxRelTol = deltaNormMaxRelTol;
 		[ vecDelta, cdlDatOut ] = calcDeltaLev( omega0, vecG, matH, cdlPrm );
+		if (cdlDatOut.trustRegionShouldBeUpdated)
+			if (~isempty(trustRegionSize))
+				assert( trustRegionSize > norm(vecDelta) );
+			endif
+			trustRegionSize = norm(vecDelta);
+		endif
 		vecFModel = vecF0 + (matJ*vecDelta);
 		omegaModel = cdlDatOut.omegaModel;
 		%
@@ -189,6 +200,10 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 			endif
 			deltaNormMax = coeff_reduceTrustRegionOnFevalFail * norm(vecDelta);
 			msgif( debugMode, __FILE__, __LINE__, sprintf( "Set deltaNormMax to %g.", deltaNormMax ) );
+			if (~isempty(trustRegionSize))
+				assert( trustRegionSize > deltaNormMax );
+			endif
+			trustRegionSize = deltaNormMax;
 			continue;
 		endif
 		%
@@ -208,6 +223,10 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 			endif
 			deltaNormMax = coeff_reduceTrustRegionOnRadicallyWrong * norm(vecDelta);
 			msgif( debugMode, __FILE__, __LINE__, sprintf( "Set deltaNormMax to %g.", deltaNormMax ) );
+			if (~isempty(trustRegionSize))
+				assert( trustRegionSize > deltaNormMax );
+			endif
+			trustRegionSize = deltaNormMax;
 			continue;
 		endif
 		%
@@ -251,7 +270,8 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		datOut.vecF = vecF_best;
 		datOut.omega = omega_best;
 		datOut.matK = matK;
-		datOut.deltaNormMax = deltaNormMax;
+		datOut.trustRegionShouldBeUpdated = ~isempty(trustRegionSize);
+		datOut.trustRegionSize = trustRegionSize;
 	endif
 return;
 endfunction

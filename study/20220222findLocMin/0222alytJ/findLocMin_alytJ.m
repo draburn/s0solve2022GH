@@ -173,7 +173,9 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 			flmcjPrm.deltaNormMax = dTreg; % Could be empty.
 			[ vecX_next, flmcjDatOut ] = findLocMin_cnstJ( vecX, vecF, matJ, funchFJ, flmcjPrm );
 			fevalCount += flmcjDatOut.fevalCount;
-			dTreg = flmcjDatOut.deltaNormMax;
+			if ( flmcjDatOut.trustRegionShouldBeUpdated )
+				dTreg = flmcjDatOut.trustRegionSize
+			endif
 		case 100
 			% Baisc flmcj.
 			flmcjPrm = [];
@@ -185,9 +187,11 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 			flmcjPrm.matK = matK;
 			flmcjPrm.deltaNormMax = dTreg; % Could be empty.
 			[ vecX_next, flmcjDatOut ] = findLocMin_cnstJ( vecX, vecF, matJ, funchFJ, flmcjPrm );
-			dTreg = flmcjDatOut.deltaNormMax;
-			matK = flmcjDatOut.matK;
 			fevalCount += flmcjDatOut.fevalCount;
+			if ( flmcjDatOut.trustRegionShouldBeUpdated )
+				dTreg = flmcjDatOut.trustRegionSize;
+			endif
+			matK = flmcjDatOut.matK;
 		otherwise
 			error( "Invalid stepType." );
 		endswitch		
