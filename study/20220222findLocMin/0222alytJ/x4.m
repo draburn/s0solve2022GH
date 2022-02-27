@@ -11,7 +11,8 @@
 	%caseNum = 99041968; % Causes chol(matH) okay but chol(matH+mu*matI) (mu~=eps) fails!
 	%caseNum = 41765088; % Sans TR is better?!?! (Different roots, ja?)
 	%caseNum = 6295760;
-	caseNum = 72631264; % Something is very wrong here!
+	%caseNum = 72631264; % Something is very wrong here! Multiple extermum?
+	caseNum = 13175504; % Winter K is rather helpful.
 	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 	switch (caseNum)
 	case 0
@@ -145,6 +146,12 @@
 		sizeX = 20;
 		sizeF = 20;
 		testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,[]); % Calls setprngstates.
+		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
+		vecX0 = zeros(sizeX,1);
+	case 13175504 % Winter K is rather helpful.
+		sizeX = 20;
+		sizeF = 20;
+		testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,13175504); % Calls setprngstates.
 		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
 		vecX0 = zeros(sizeX,1);
 	case 6295760
