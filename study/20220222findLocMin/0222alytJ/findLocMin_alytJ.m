@@ -188,10 +188,25 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 			flmcjPrm = [];
 			[ vecX_next, flmcjDatOut ] = findLocMin_cnstJ( vecX, vecF, matJ, funchFJ, flmcjPrm );
 			fevalCount += flmcjDatOut.fevalCount;
+		case 101
+			% flmcj with K dTreg passing.
+			flmcjPrm = [];
+			flmcjPrm.deltaNormMax = dTreg; % Could be empty.
+			[ vecX_next, flmcjDatOut ] = findLocMin_cnstJ( vecX, vecF, matJ, funchFJ, flmcjPrm );
+			fevalCount += flmcjDatOut.fevalCount;
+			if ( flmcjDatOut.trustRegionShouldBeUpdated )
+				dTreg = flmcjDatOut.trustRegionSize;
+			elseif ( 1 == flmcjDatOut.iterCount )
+				if ( ~isempty(dTreg) )
+				if ( dTreg < cTreg_accel*norm(vecX_next-vecX) )
+					dTreg = cTreg_accel*norm(vecX_next-vecX);
+				endif
+				endif
+			endif
 		case 110
 			% flmcj with K and dTreg passing.
 			flmcjPrm = [];
-			flmcjPrm.matK = matK;
+			flmcjPrm.matK0 = matK;
 			flmcjPrm.deltaNormMax = dTreg; % Could be empty.
 			[ vecX_next, flmcjDatOut ] = findLocMin_cnstJ( vecX, vecF, matJ, funchFJ, flmcjPrm );
 			fevalCount += flmcjDatOut.fevalCount;
