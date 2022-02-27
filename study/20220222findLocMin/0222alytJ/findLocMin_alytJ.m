@@ -285,10 +285,10 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 			%matK += ( fooY*(fooX') + fooX*(fooY') - (fooX*(fooX'))*(fooX'*fooY)/fooS )/fooS;
 			%
 			%
-			%matK *= (vecF_next'*vecF_prev)/sumsq(vecF_prev); % Meh.
+			matK *= (vecF_next'*vecF_prev)/sumsq(vecF_prev); % Meh... byitself.
 			%
 			%
-			%matK *= norm(vecF_next)/norm(vecF_prev); % Meh.
+			%matK *= norm(vecF_next)/norm(vecF_prev); % Meh... by itself.
 			%
 			%
 			% Based on deltaH = 0.
