@@ -277,11 +277,58 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 		%
 		if ( wintersKUpdate )
 		if ( isrealarray(matK,[sizeX,sizeX]) )
-			% Impose deltaK * deltaX = (deltaJ)'*J*deltaX.
+			%% This original version actually hurts in caseNum 104 and 300 in x3.
+			%% Impose deltaK * deltaX = (deltaJ)'*J*deltaX.
+			%fooX = vecX - vecX_prev;
+			%fooY = (matJ-matJ_prev)' * (matJ*(fooX));
+			%fooS = sumsq(fooX);
+			%matK += ( fooY*(fooX') + fooX*(fooY') - (fooX*(fooX'))*(fooX'*fooY)/fooS )/fooS;
+			%
+			%
+			%matK *= (vecF_next'*vecF_prev)/sumsq(vecF_prev); % Meh.
+			%
+			%
+			%matK *= norm(vecF_next)/norm(vecF_prev); % Meh.
+			%
+			%
+			% Based on deltaH = 0.
+			%matK += (matJ_prev'*matJ_prev) - (matJ_next'*matJ_next);  % Bad.
+			%
+			%
+			% Based on deltaH * deltaX = deltaG.
+			% Nope. skip.
+			%fooX = vecX - vecX_prev;
+			%fooG = matJ'*vecF - (matJ_prev'*vecF_prev);
+			%fooH = 
+			%fooJ2 = (matJ'*matJ) - (matJ_prev'*matJ_prev);
+			%fooK = fooH - fooJ2;
+			%matK += fooK;
+			%
+			%
+			% Using a quadratic model for funch_vecF(x)...
+			%  funch_matH(x) = funch_matJ(x)' * funch_maJ(x) + funch_matK(x)
+			% where...
+			%  funch_matJ(x) = J_e + sum_n(  vecAHat_n * vecDelta' * matKappa_n ); and,
+			%  funch_matK(x) = sum_n(  funch_vecF(x)' * vecAHat_n * matKappa_n  ).
+			% So, we use...
+			%  vecDeltaX' * matK_next = vecF_next' * matDeltaJ
+			% or, rather...
+			%  matDeltaK * vecDeltaX = matDeltaJ' * vecF_next - matK * vecDelta;
+			% with the requirement that matK_next me sym and ||matDeltaK||_F be minimized.
+			% I believe the solution is...
 			fooX = vecX - vecX_prev;
-			fooY = (matJ-matJ_prev)' * (matJ*(fooX));
+			fooY = ((matJ-matJ_prev)' * vecF) - (matK * fooX);
 			fooS = sumsq(fooX);
-			matK += ( fooY*(fooX') + fooX*(fooY') - (fooX*(fooX'))*(fooX'*fooY)/fooS )/fooS;
+			fooK = ( fooY*(fooX') + fooX*(fooY') - (fooX*(fooX'))*(fooX'*fooY)/fooS )/fooS;
+			%xSq = sumsq(fooX);
+			%a = (fooX'*fooY)/xSq;
+			%fooZ = fooY - (a*fooX);
+			%alpha = a/xSq;
+			%beta = 1.0/xSq;
+			%fooK = alpha*( fooX*(fooX') ) + beta*( fooX*(fooZ') + fooZ*(fooX') );
+			%msgif( debugMode, __FILE__, __LINE__, "Updating K." );
+			%echo__matK_prev = matK
+			matK += fooK;
 		endif
 		endif
 		%
