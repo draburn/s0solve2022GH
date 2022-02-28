@@ -21,9 +21,10 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 	omegaFallAbsTol = eps;
 	omegaFallRelTol = eps;
 	iterLimit = 100;
-	stepType = 110;
+	stepType = 31;
 	wintersKUpdate = true;
 	cTreg_accel = 2.0;
+	useBroydenJ = true;
 	if ( ~isempty(prm) )
 		stepSizeTol = mygetfield( prm, "stepSizeTol", stepSizeTol );
 		omegaTol = mygetfield( prm, "omegaTol", omegaTol );
@@ -32,6 +33,7 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 		omegaFallRelTol = mygetfield( prm, "omegaFallRelTol", omegaFallRelTol );
 		iterLimit = mygetfield( prm, "iterLimit", iterLimit );
 		stepType = mygetfield( prm, "stepType", stepType );
+		useBroydenJ = mygetfield( prm, "useBroydenJ", useBroydenJ );
 	endif
 	if (debugMode)
 		assert( isrealscalar(stepSizeTol) );
@@ -47,6 +49,8 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 		assert( omegaFallRelTol < 1.0 );
 		assert( isrealscalar(iterLimit) );
 		assert( isrealscalar(stepType) );
+		assert( isscalar(useBroydenJ) );
+		assert( isbool(useBroydenJ) );
 	endif
 	%
 	%
@@ -128,6 +132,7 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 		%
 		% Do work!
 		% Note that dTreg may be change internally.
+		vecF_next_passback = [];
 		dTreg_prev = dTreg;
 		switch (stepType)
 		case 0
@@ -167,6 +172,7 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 			flmcjPrm.doKUpdating = false;
 			[ vecX_next, flmcjDatOut ] = findLocMin_cnstJ( vecX, vecF, matJ, funchFJ, flmcjPrm );
 			fevalCount += flmcjDatOut.fevalCount;
+			vecF_next_passback = flmcjDatOut.vecF;
 		case 31
 			% Basic newton with BT and TR.
 			flmcjPrm = [];
@@ -174,6 +180,7 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 			flmcjPrm.deltaNormMax = dTreg; % Could be empty.
 			[ vecX_next, flmcjDatOut ] = findLocMin_cnstJ( vecX, vecF, matJ, funchFJ, flmcjPrm );
 			fevalCount += flmcjDatOut.fevalCount;
+			vecF_next_passback = flmcjDatOut.vecF;
 			if ( flmcjDatOut.trustRegionShouldBeUpdated )
 				dTreg = flmcjDatOut.trustRegionSize;
 			elseif ( 1 == flmcjDatOut.iterCount )
@@ -187,6 +194,7 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 			% Baisc flmcj.
 			flmcjPrm = [];
 			[ vecX_next, flmcjDatOut ] = findLocMin_cnstJ( vecX, vecF, matJ, funchFJ, flmcjPrm );
+			vecF_next_passback = flmcjDatOut.vecF;
 			fevalCount += flmcjDatOut.fevalCount;
 		case 101
 			% flmcj with K dTreg passing.
@@ -194,6 +202,7 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 			flmcjPrm.deltaNormMax = dTreg; % Could be empty.
 			[ vecX_next, flmcjDatOut ] = findLocMin_cnstJ( vecX, vecF, matJ, funchFJ, flmcjPrm );
 			fevalCount += flmcjDatOut.fevalCount;
+			vecF_next_passback = flmcjDatOut.vecF;
 			if ( flmcjDatOut.trustRegionShouldBeUpdated )
 				dTreg = flmcjDatOut.trustRegionSize;
 			elseif ( 1 == flmcjDatOut.iterCount )
@@ -210,6 +219,7 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 			flmcjPrm.deltaNormMax = dTreg; % Could be empty.
 			[ vecX_next, flmcjDatOut ] = findLocMin_cnstJ( vecX, vecF, matJ, funchFJ, flmcjPrm );
 			fevalCount += flmcjDatOut.fevalCount;
+			vecF_next_passback = flmcjDatOut.vecF;
 			if ( flmcjDatOut.trustRegionShouldBeUpdated )
 				dTreg = flmcjDatOut.trustRegionSize;
 			elseif ( 1 == flmcjDatOut.iterCount )
@@ -243,9 +253,24 @@ function [ vecX, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm=[] )
 		endif
 		endif
 		%echo__vecX_next = vecX_next
-		[ vecF_next, matJ_next ] = funchFJ( vecX_next );
-		fevalCount++;
-		jevalCount++;
+		if (useBroydenJ)
+			if (isempty(vecF_next_passback))
+				[ vecF_next ] = funchFJ( vecX_next );
+				fevalCount++;
+			else
+				vecF_next = vecF_next_passback;
+			endif
+			fooX = vecX_next - vecX;
+			fooF = vecF_next - vecF;
+			fooY = fooF - matJ*fooX;
+			fooJ = (fooY*(fooX'))/(fooX'*fooX);
+			matJ_next = matJ + fooJ;
+			assert( reldiff(matJ_next*fooX,fooF) < sqrt(eps) );
+		else
+			[ vecF_next, matJ_next ] = funchFJ( vecX_next );
+			fevalCount++;
+			jevalCount++;
+		endif
 		omega_next = sumsq(vecF_next)/2.0;
 		if ( omega_next >= omega )
 			msg( __FILE__, __LINE__, "Omega did not decrease." );
@@ -370,6 +395,7 @@ endfunction
 %!	vecX0 = zeros(2,1);
 %!	prm = [];
 %!	[ vecXF, datOut ] = findLocMin_alytJ( vecX0, funchFJ, prm );
+%!	echo__vecXF = vecXF
 %!	omega0 = sumsq(funchFJ(vecX0),1)/2.0
 %!	omegaF = sumsq(funchFJ(vecXF),1)/2.0
 %!	%

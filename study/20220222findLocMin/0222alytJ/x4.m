@@ -1,18 +1,19 @@
 	clear;
 	numFigs = 0;
 	%
-	%caseNum = 104; % kupd with inter is best; Newt with TR and kupd sans inter are okay.
+	caseNum = 104; % kupd with inter is best; Newt with TR and kupd sans inter are okay.
 	%caseNum = 200; % Newt with TR is best (before), kupd with inter is best-ish (after TR tweak);
 	%   kupd with inter and kupd sans inter is okay.
 	%caseNum = 300; % blind Newt regu is best; everything except blind Newt is okay.
+	%caseNum = 400;
 	%caseNum = 38104560; % kupd winter appreciably better than newt with tr.
-	caseNum = 999;
+	%caseNum = 999;
 	%caseNum = 9392336; % CAUSED AN ERROR.
 	%caseNum = 99041968; % Causes chol(matH) okay but chol(matH+mu*matI) (mu~=eps) fails!
 	%caseNum = 41765088; % Sans TR is better?!?! (Different roots, ja?)
 	%caseNum = 6295760;
 	%caseNum = 72631264; % Something is very wrong here! Multiple extermum?
-	caseNum = 13175504; % Winter K is rather helpful.
+	%caseNum = 13175504; % Winter K is rather helpful.
 	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 	switch (caseNum)
 	case 0
@@ -124,6 +125,45 @@
 		testFuncPrm = testfunc2021_genPrm(sizeX,sizeF,0,false,true,true); % Calls setprngstates.
 		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
 		vecX0 = zeros(sizeX,1);
+	case 400
+		% Near linear case; kupd bad!
+		sizeX = 2;
+		sizeF = 2;
+		testFuncPrm.sizeX = 2;
+		testFuncPrm.sizeF = 2;
+		testFuncPrm.vecXE = [ 1.0; 1.0 ];
+		testFuncPrm.vecFE = [ 0.0; 0.0 ];
+		testFuncPrm.matJ = [ 1.0, 0.0; 0.0, 1.0 ];
+		testFuncPrm.ary3K(:,:,1) = [ 0.0, 0.0; 0.0, 0.0 ];
+		testFuncPrm.ary3K(:,:,2) = [ 0.1, 0.0; 0.0, 0.0 ];
+		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
+		vecX0 = [ 0.0; 0.0 ];
+	case 401
+		% Near linear case; kupd bad!
+		sizeX = 2;
+		sizeF = 2;
+		testFuncPrm.sizeX = 2;
+		testFuncPrm.sizeF = 2;
+		testFuncPrm.vecXE = [ 1.0; 1.0 ];
+		testFuncPrm.vecFE = [ 0.0; 0.0 ];
+		testFuncPrm.matJ = [ 1.0, 0.0; 0.0, 1.0 ];
+		testFuncPrm.ary3K(:,:,1) = [ 0.1, 0.0; 0.0, 0.2 ];
+		testFuncPrm.ary3K(:,:,2) = [ 0.3, 0.0; 0.0, 0.3 ];
+		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
+		vecX0 = [ 0.0; 0.0 ];
+	case 405
+		% Near linear case; kupd bad!
+		sizeX = 2;
+		sizeF = 2;
+		testFuncPrm.sizeX = 2;
+		testFuncPrm.sizeF = 2;
+		testFuncPrm.vecXE = [ 1.0; 1.0 ];
+		testFuncPrm.vecFE = [ 0.0; 0.0 ];
+		testFuncPrm.matJ = [ 1.0, 0.0; 0.0, 1.0 ];
+		testFuncPrm.ary3K(:,:,1) = [ 0.4, 0.2; 0.2, 0.5 ];
+		testFuncPrm.ary3K(:,:,2) = [ 0.3, 0.1; 0.1, 0.3 ];
+		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
+		vecX0 = [ 0.0; 0.0 ];
 	case 990
 		sizeX = 20;
 		sizeF = 20;
@@ -224,7 +264,7 @@
 	  datOut_newtSansTR.fevalCountVals, datOut_newtSansTR.omegaVals-omegaE, '^-', 'markersize', 15, ...
 	  datOut_newtWithTR.fevalCountVals, datOut_newtWithTR.omegaVals-omegaE, 'v-', 'markersize', 15, ...
 	  datOut_kupdSansInter.fevalCountVals, datOut_kupdSansInter.omegaVals-omegaE, 's-', 'markersize', 15, ...
-	  datOut_kupdWithTRSansKUpD.fevalCountVals, datOut_kupdWithTRSansKUpD.omegaVals-omegaE, 'o-', 'markersize', 15, ...
+	  datOut_kupdWithTRSansKUpD.fevalCountVals, datOut_kupdWithTRSansKUpD.omegaVals-omegaE, 'x-', 'markersize', 15, ...
 	  datOut_kupdWithInter.fevalCountVals, datOut_kupdWithInter.omegaVals-omegaE, '*-', 'markersize', 15 );
 	grid on;
 	xlabel( "feval count" );
@@ -251,7 +291,7 @@
 	  datOut_newtSansTR.deltaNormVals, '^-', 'markersize', 15, ...
 	  datOut_newtWithTR.deltaNormVals, 'v-', 'markersize', 15, ...
 	  datOut_kupdSansInter.deltaNormVals, 's-', 'markersize', 15, ...
-	  datOut_kupdWithTRSansKUpD.deltaNormVals, 'o-', 'markersize', 15, ...
+	  datOut_kupdWithTRSansKUpD.deltaNormVals, 'x-', 'markersize', 15, ...
 	  datOut_kupdWithInter.deltaNormVals, '*-', 'markersize', 15 );
 	grid on;
 	xlabel( "iter count" );

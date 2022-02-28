@@ -15,6 +15,8 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		assert( isrealarray(vecF0,[sizeF,1]) );
 		assert( isrealarray(matJ,[sizeF,sizeX]) );
 		%
+		doJTest = mygetfield( prm, "doJTest", true );
+		if (doJTest)
 		vecF0_test = funchF(vecX0);
 		assert( isrealarray(vecF0_test,[sizeF,1]) );
 		assert( reldiff(vecF0,vecF0_test) < sqrt(eps) );
@@ -32,6 +34,7 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		clear vecDelta_test;
 		clear vecJF_testA;
 		clear vecJF_testB;
+		endif
 	endif
 	%
 	% Set some stuff...
@@ -188,8 +191,8 @@ function [ vecX, datOut ] = findLocMin_cnstJ( vecX0, vecF0, matJ, funchF, prm=[]
 		vecF = funchF( vecX );
 		fevalCount++;
 		if ( debugMode )
-			msg( __FILE__, __LINE__, sprintf( "  feval: %3d;  %10.3e, %10.3e, %10.3e;  %10.3e.", ...
-			  fevalCount, norm(vecDelta), sumsq(vecFModel,1)/2.0, omegaModel, sumsq(vecF,1)/2.0 ) );
+			msg( __FILE__, __LINE__, sprintf( "  feval: %3d;  %10.3e; %10.3e; %10.3e, %10.3e;  %10.3e.", ...
+			  fevalCount, norm(vecDelta), omega0, sumsq(vecFModel,1)/2.0, omegaModel, sumsq(vecF,1)/2.0 ) );
 		endif
 		%
 		% If feval failed, cut trust region size.
