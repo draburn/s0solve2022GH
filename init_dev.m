@@ -23,6 +23,8 @@ case 3
 	msg(__FILE__,__LINE__,"Adding path \"study/20211111hotCurves/0210ThreeDim/\".");
 	addpath( "study/20211111hotCurves/0210ThreeDim/" );
 case 4
+	msg(__FILE__,__LINE__,"Adding path \"study/20220222findLocMin/testfunc2021/\".");
+	addpath("study/20220222findLocMin/testfunc2021/");
 	msg(__FILE__,__LINE__,"Adding path \"study/20220222findLocMin/0222alytJ/\".");
 	addpath("study/20220222findLocMin/0222alytJ/");
 otherwise
