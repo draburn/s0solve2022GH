@@ -72,4 +72,9 @@ legend( ...
 title( "omega vs feval count" );
 %
 %
+msg( __FILE__, __LINE__, "" );
+msg( __FILE__, __LINE__, "DRaburn 2022.03.03..." );
+msg( __FILE__, __LINE__, " IIRC, originally, this test had horrible behavior for blind_with_CDL;" );
+msg( __FILE__, __LINE__, " but, now, that behavior is better than any others." );
+msg( __FILE__, __LINE__, " Conclusion: I don't know how to approach studying the beahvior of BroydenJ methods." );
 toc();

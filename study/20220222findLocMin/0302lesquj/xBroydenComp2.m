@@ -90,6 +90,7 @@ legend( ...
 title( "||detla|| vs feval count" );
 %
 %
+msg( __FILE__, __LINE__, "" );
 msg( __FILE__, __LINE__, "DRaburn 2022.03.03..." );
 msg( __FILE__, __LINE__, " Here, the use of omegaModelMin = 0.0 for calcDeltaLev seems to help." );
 msg( __FILE__, __LINE__, " However, if we use omegaModelMin = -sqrt(eps)*omega, the benefit is gone, even though this is more reasonable." );

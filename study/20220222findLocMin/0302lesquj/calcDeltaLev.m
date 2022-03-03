@@ -113,6 +113,7 @@ function [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 	%
 	%
 	% Find the largest valid step we can (or, at least, something close).
+	% Draburn 2022.03.03: At some point, "calcDeltaLevUnc" was called "calcDeltaMaxLev", hence "cdml".
 	[ vecDelta, cdmlDatOut ] = calcDeltaLevUnc( vecG, matH, cdmlPrm );
 	mu = cdmlDatOut.mu;
 	matR = cdmlDatOut.matR;
