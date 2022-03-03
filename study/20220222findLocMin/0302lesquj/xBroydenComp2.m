@@ -40,13 +40,17 @@ vecX0 = zeros(20,1); % Blind: both fail!
 prm_sansCDL = [];
 prm_sansCDL.useCDL = false;
 %[ vecXF_blind_sansCDL, datOut_blind_sansCDL ] = findLocMin_broydenJ_blind( vecX0, vecF0, matJ0, funchFJ, prm_sansCDL );
+msg( __FILE__, __LINE__, "Calculating datOut_condi_sansCDL..." );
 [ vecXF_condi_sansCDL, datOut_condi_sansCDL ] = findLocMin_broydenJ_condi( vecX0, vecF0, matJ0, funchFJ, prm_sansCDL );
+msg( __FILE__, __LINE__, "Calculating datOut_tr_sansCDL..." );
 [ vecXF_tr_sansCDL, datOut_tr_sansCDL ] = findLocMin_broydenJ_tr( vecX0, vecF0, matJ0, funchFJ, prm_sansCDL );
 %
 prm_withCDL = [];
 prm_withCDL.useCDL = true;
 %[ vecXF_blind_withCDL, datOut_blind_withCDL ] = findLocMin_broydenJ_blind( vecX0, vecF0, matJ0, funchFJ, prm_withCDL );
+msg( __FILE__, __LINE__, "Calculating datOut_condi_withCDL..." );
 [ vecXF_condi_withCDL, datOut_condi_withCDL ] = findLocMin_broydenJ_condi( vecX0, vecF0, matJ0, funchFJ, prm_withCDL );
+msg( __FILE__, __LINE__, "Calculating datOut_tr_withCDL..." );
 [ vecXF_tr_withCDL, datOut_tr_withCDL ] = findLocMin_broydenJ_tr( vecX0, vecF0, matJ0, funchFJ, prm_withCDL );
 %
 %
@@ -68,4 +72,29 @@ legend( ...
 title( "omega vs feval count" );
 %
 %
+numFigs++; figure(numFigs);
+semilogy( ...
+  datOut_condi_sansCDL.fevalCountVals(2:end), eps^2+datOut_condi_sansCDL.deltaNormVals, 's-', ...
+  datOut_tr_sansCDL.fevalCountVals(2:end),    eps^2+datOut_tr_sansCDL.deltaNormVals, 'p-', ...
+  datOut_condi_withCDL.fevalCountVals(2:end), eps^2+datOut_condi_withCDL.deltaNormVals, '+-', ...
+  datOut_tr_withCDL.fevalCountVals(2:end),    eps^2+datOut_tr_withCDL.deltaNormVals, '*-' );
+grid on;
+xlabel( "feval count" );
+ylabel( "||delta||" );
+legend( ...
+  "condi sans CDL", ...
+  "tr sans CDL", ...
+  "condi with CDL", ...
+  "tr with CDL", ...
+  "location", "northeast" );
+title( "||detla|| vs feval count" );
+%
+%
+msg( __FILE__, __LINE__, "DRaburn 2022.03.03..." );
+msg( __FILE__, __LINE__, " Here, the use of omegaModelMin = 0.0 for calcDeltaLev seems to help." );
+msg( __FILE__, __LINE__, " However, if we use omegaModelMin = -sqrt(eps)*omega, the benefit is gone, even though this is more reasonable." );
+msg( __FILE__, __LINE__, " I don't know why." );
+msg( __FILE__, __LINE__, " Perhaps it has to do with how the approximate Jacobian gets updated? " );
+msg( __FILE__, __LINE__, " Perhaps it has to do with repeated taking smaller steps?" );
+msg( __FILE__, __LINE__, " Note: for _condi sans vs with, first change happens because of safeRelTol in calcDeltaLevUnc, but this doesn't seem to have any long-term impact." );
 toc();

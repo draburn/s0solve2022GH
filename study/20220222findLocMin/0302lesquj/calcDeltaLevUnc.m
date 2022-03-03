@@ -53,8 +53,10 @@ function [ vecDelta, datOut ] = calcDeltaLevUnc( vecG, matH, prm=[] )
 		endif
 		return;
 	endif
-	endif
+	msgif( debugMode, __FILE__, __LINE__, "Cholesky factorization with mu = 0.0 was suspect." );
+	else
 	msgif( debugMode, __FILE__, __LINE__, "Cholesky factorization with mu = 0.0 failed." );
+	endif
 	%
 	%
 	mu = muReguCoeff*hNorm;
@@ -69,8 +71,10 @@ function [ vecDelta, datOut ] = calcDeltaLevUnc( vecG, matH, prm=[] )
 		endif
 		return;
 	endif
-	endif
+	msgif( debugMode, __FILE__, __LINE__, "Cholesky factorization with small positive mu was suspect." );
+	else
 	msgif( debugMode, __FILE__, __LINE__, "Cholesky factorization with small positive mu failed." );
+	endif
 	%
 	%
 	msgif( debugMode, __FILE__, __LINE__, "Finding muCrit using eig()." );
@@ -83,14 +87,14 @@ function [ vecDelta, datOut ] = calcDeltaLevUnc( vecG, matH, prm=[] )
 	matM = matH + mu*matI;
 	[ matR, cholFlag ] = chol( matM );
 	if ( 0 == cholFlag )
-	if ( min(abs(diag(matR))) > safeRelTol*max(abs(diag(matR))) )
+	%if ( min(abs(diag(matR))) > safeRelTol*max(abs(diag(matR))) )
 		vecDelta = -( matR \ (matR'\vecG) );
 		if ( nargout >= 2 )
 			datOut.mu = mu;
 			datOut.matR = matR;
 		endif
 		return;
-	endif
+	%endif
 	endif
 	%
 	%

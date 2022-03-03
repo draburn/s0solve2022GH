@@ -113,6 +113,8 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_tr( vecX0, vecF0, matJ0, funchF
 					cdlPrm.deltaNormMax = trustRegionSize;
 				endif
 				if ( useOmegaModelMin )
+					% DRaburn 2022.03.03:
+					%cdlPrm.omegaModelMin = -sqrt(eps)*omega; % This would make sense, but leads to worse behavior in xBroydenComp2.
 					cdlPrm.omegaModelMin = 0.0;
 				else
 					cdlPrm.omegaModelMin = [];

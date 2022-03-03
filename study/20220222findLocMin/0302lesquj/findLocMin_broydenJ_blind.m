@@ -91,6 +91,9 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_blind( vecX0, vecF0, matJ0, fun
 		if (useCDL)
 			cdlPrm = [];
 			if (useOmegaModelMin)
+				% DRaburn 2022.03.03:
+				%cdlPrm.omegaModelMin = -sqrt(eps)*omega; % This would make sense, but leads to worse behavior in xBroydenComp2...
+				%  for _condi and _tr. Fails either way for _blind.
 				cdlPrm.omegaModelMin = 0.0;
 			else
 				cdlPrm.omegaModelMin = [];

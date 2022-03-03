@@ -28,7 +28,7 @@ function [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 	cdmlPrm = [];
 	deltaNormMax = [];
 	deltaNormMaxRelTol = 0.4;
-	omegaModelMin = 0.0;
+	omegaModelMin = [];
 	omegaModelMinRelTol = 0.4;
 	if ( ~isempty(prm) )
 		cdmlPrm = mygetfield( prm, "cdmlPrm", cdmlPrm );
@@ -186,6 +186,9 @@ function [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 	haveBTedForOmegaModelMin = false;
 	if ( useOmegaModelMin )
 	if ( omegaModel < omegaModelMin )
+		%echo__omega0 = omega0
+		%echo__omegaModel = omegaModel
+		%echo__omegaModelMin = omegaModelMin
 		msgif( debugMode, __FILE__, __LINE__, "Applying omegaModelMin..." );
 		omegaModelMax = omegaModelMin + omegaModelMinRelTol*(omega0-omegaModelMin);
 		omegaTrgt = ( omegaModelMax + omegaModelMin ) / 2.0; % For first iteration.
