@@ -236,7 +236,7 @@ function [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 			vecDelta_muHi = vecDelta;
 			omegaModel_muHi = omegaModel;
 			omegaModelTrgt = ( omegaModelMax + omegaModelMin ) / 2.0;
-			iterLimit = 10;
+			iterLimit = 20;
 			iterCount = 0;
 			while ( 1 )
 				iterCount++;
@@ -272,6 +272,32 @@ function [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 					omegaModel_muHi = omegaModel;
 					continue;
 				endif
+				%
+				% Do a pass with bisection.
+				mu = (muLo+muHi)/2.0;
+				assert( muLo < mu );
+				assert( mu < muHi );
+				matM = matH + mu*matI;
+				matR = chol( matM );
+				vecDelta = -( matR \ ( matR' \ vecG ) );
+				omegaModel = omega0 + vecG'*vecDelta + 0.5*(vecDelta'*matH*vecDelta);
+				%
+				if ( omegaModel < omegaModelMin )
+					assert( mu > muLo );
+					muLo = mu;
+					matR_muLo = matR;
+					vecDelta_muLo = vecDelta;
+					omegaModel_muLo = omegaModel;
+					continue;
+				elseif ( omegaModel > omegaModelMax )
+					assert( mu < muHi );
+					muHi = mu;
+					matR_muHi = matR;
+					vecDelta_muHi = vecDelta;
+					omegaModel_muHi = omegaModel;
+					continue;
+				endif
+				%
 				break;
 			endwhile
 		endif
