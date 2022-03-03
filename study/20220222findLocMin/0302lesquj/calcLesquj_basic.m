@@ -49,9 +49,13 @@ function [ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals,
 			vecDeltaX_jeval = minDeltaNormSq*matIX;
 			% Octave doesn't auto-broadcast for a "diagonal" matrix.
 			% The mathematically pointless "+0.0" gets Octave to convert the matrix to a full matrix.
+			% Note that the feval of the jeval is not incorporated here;
+			% it should be incorporated as a  separate feval.
+			% This is because this way is convenient for me at the moment.
 			vecX_jeval = jevalDat(n).vecX + ( vecDeltaX_jeval+0.0 );
-			vecXPts = [ vecXPts, jevalDat(n).vecX, vecX_jeval ];
-			vecFPts = [ vecFPts, jevalDat(n).vecF, jevalDat(n).vecF + jevalDat(n).matJ*vecDeltaX_jeval ];
+			vecF_jeval = jevalDat(n).vecF + ( jevalDat(n).matJ*vecDeltaX_jeval + 0.0 );
+			vecXPts = [ vecXPts, vecX_jeval ];
+			vecFPts = [ vecFPts, vecF_jeval ];
 		endfor
 		vecDeltaPts = vecXPts - vecX0; % sizeX x numPts
 		deltaNormSqPts = sumsq(vecDeltaPts,1);
