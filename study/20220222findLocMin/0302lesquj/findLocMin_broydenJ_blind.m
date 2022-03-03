@@ -38,7 +38,15 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_blind( vecX0, vecF0, matJ0, fun
 	useLevCurve = true;
 	%
 	useCDL = false;
-	useOmegaModelMin = false; % Not sure why, omegaModelMin really hurts in test case.
+	useOmegaModelMin = true; % Not sure why, omegaModelMin really hurts in test case.
+	%
+	if (~isempty(prm))
+		useCDL = mygetfield( prm, "useCDL", useCDL );
+	endif
+	if (debugMode)
+		assert( isscalar(useCDL) );
+		assert( isbool(useCDL) );
+	endif
 	%
 	%
 	fevalCount = 0;
@@ -49,7 +57,10 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_blind( vecX0, vecF0, matJ0, fun
 	iterCount = 0;
 	if ( nargout >= 2 )
 		datOut.fevalCountVals(iterCount+1) = fevalCount;
+		datOut.vecXVals(:,iterCount+1) = vecX;
+		datOut.vecFVals(:,iterCount+1) = vecF;
 		datOut.omegaVals(iterCount+1) = sumsq(vecF0)/2.0;
+		datOut.matJVals(:,:,iterCount+1) = matJ;
 	endif
 	while (1)
 		omega = sumsq(vecF)/2.0;
@@ -101,11 +112,6 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_blind( vecX0, vecF0, matJ0, fun
 		vecDeltaY = vecF_trial - vecF - matJ*vecDeltaX;
 		matDeltaJ = (vecDeltaY*(vecDeltaX'))/(vecDeltaX'*vecDeltaX);
 		matJ_trial = matJ + matDeltaJ;
-		if ( nargout >= 2 )
-			datOut.deltaNormVals(iterCount) = norm(vecDeltaX);
-			datOut.fevalCountVals(iterCount+1) = fevalCount;
-			datOut.omegaVals(iterCount+1) = omega;
-		endif
 		if (debugMode)
 			assert( reldiff(matJ_trial*vecDeltaX,vecF_trial-vecF) < sqrt(eps) );
 		endif
@@ -114,6 +120,13 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_blind( vecX0, vecF0, matJ0, fun
 		vecX = vecX_trial;
 		vecF = vecF_trial;
 		matJ = matJ_trial;
+		if ( nargout >= 2 )
+			datOut.fevalCountVals(iterCount+1) = fevalCount;
+			datOut.vecXVals(:,iterCount+1) = vecX;
+			datOut.vecFVals(:,iterCount+1) = vecF;
+			datOut.omegaVals(iterCount+1) = sumsq(vecF)/2.0;
+			datOut.matJVals(:,:,iterCount+1) = matJ;
+		endif
 		%
 		% Should we stop?
 		if ( abs(omega_trial-omega) <= omegaFallAbsTol )
