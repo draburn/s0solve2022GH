@@ -38,7 +38,7 @@ function [ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals,
 	matJ0T = matR \ ( matR' \ matY );
 	matJ0 = matJ0T';
 	if ( nargout >= 2 )
-		datOut.matRes = ( matY - (matA*matJ0T) )';
+		datOut = [];
 	endif
 return;
 endfunction
@@ -52,9 +52,17 @@ endfunction
 %!	vecF_secret = randn(sizeF,1)
 %!	matJ_secret = randn(sizeF,sizeX)
 %!	funchF = @(dummyX)( vecF_secret + matJ_secret*(dummyX-vecX_secret) );
-%!	numVals = 100;
+%!	numVals = 10;
+%!	noiseLevel = 1e-3;
 %!	vecXVals = randn(sizeX,numVals);
-%!	vecFVals = funchF(vecXVals);
+%!	vecFVals = funchF(vecXVals) + noiseLevel*randn(size(vecXVals));
 %!	%
 %!	prm = [];
 %!	[ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals, prm )
+%!	%
+%!	vecX0_basic = vecX0
+%!	vecXRoot_basic = vecX0 - matJ0 \ vecF0
+%!	vecXRoot_secret = vecX_secret - matJ_secret \ vecF_secret
+%!	vecF0_basic = funchF(vecF0)
+%!	vecFRoot_basic = funchF( vecXRoot_basic )
+%!	vecFRoot_secret = funchF( vecXRoot_secret )
