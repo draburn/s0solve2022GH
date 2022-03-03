@@ -39,18 +39,29 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_condi( vecX0, vecF0, matJ0, fun
 	deltaJRelTol = eps;
 	%
 	useCDL = false;
-	useOmegaModelMin = false; % Not sure why, omegaModelMin really hurts in test case.
+	useOmegaModelMin = true; % Not sure why, omegaModelMin really hurts in test case.
+	%
+	if (~isempty(prm))
+		useCDL = mygetfield( prm, "useCDL", useCDL );
+	endif
+	if (debugMode)
+		assert( isscalar(useCDL) );
+		assert( isbool(useCDL) );
+	endif
 	%
 	fevalCount = 0;
-	if ( nargout >= 2 )
-		datOut.fevalCountVals(1) = fevalCount;
-		datOut.omegaVals(1) = sumsq(vecF0)/2.0;
-	endif
 	%
 	vecX = vecX0;
 	vecF = vecF0;
 	matJ = matJ0;
 	iterCount = 0;
+	if ( nargout >= 2 )
+		datOut.fevalCountVals(iterCount+1) = fevalCount;
+		datOut.vecXVals(:,iterCount+1) = vecX;
+		datOut.vecFVals(:,iterCount+1) = vecF;
+		datOut.omegaVals(iterCount+1) = sumsq(vecF0)/2.0;
+		datOut.matJVals(:,:,iterCount+1) = matJ;
+	endif
 	while (1)
 		omega = sumsq(vecF)/2.0;
 		vecG = matJ'*vecF;
@@ -131,7 +142,13 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_condi( vecX0, vecF0, matJ0, fun
 				msg( __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Trial objective is not better and Jacobian change is small." );
 				break;
 			end
-			
+		endif
+		if ( nargout >= 2 )
+			datOut.fevalCountVals(iterCount+1) = fevalCount;
+			datOut.vecXVals(:,iterCount+1) = vecX;
+			datOut.vecFVals(:,iterCount+1) = vecF;
+			datOut.omegaVals(iterCount+1) = sumsq(vecF)/2.0;
+			datOut.matJVals(:,:,iterCount+1) = matJ;
 		endif
 	endwhile
 	%

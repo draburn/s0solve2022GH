@@ -46,8 +46,16 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_tr( vecX0, vecF0, matJ0, funchF
 	coeff_increaseTrustRegionOnHighlyAccurate = 1.5;
 	trialLimit = 10;
 	useCDL = false;
-	useOmegaModelMin = false; % Not sure why, omegaModelMin really hurts in test case.
+	useOmegaModelMin = true; % Not sure why, omegaModelMin really hurts in test case.
 	updateTRBasedOnCDL = false;
+	%
+	if (~isempty(prm))
+		useCDL = mygetfield( prm, "useCDL", useCDL );
+	endif
+	if (debugMode)
+		assert( isscalar(useCDL) );
+		assert( isbool(useCDL) );
+	endif
 	%
 	%
 	fevalCount = 0;
@@ -59,8 +67,10 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_tr( vecX0, vecF0, matJ0, funchF
 	iterCount = 0;
 	if ( nargout >= 2 )
 		datOut.fevalCountVals(iterCount+1) = fevalCount;
+		datOut.vecXVals(:,iterCount+1) = vecX;
+		datOut.vecFVals(:,iterCount+1) = vecF;
 		datOut.omegaVals(iterCount+1) = sumsq(vecF0)/2.0;
-		datOut.trustRegionSize(iterCount+1) = trustRegionSize0;
+		datOut.matJVals(:,:,iterCount+1) = matJ;
 	endif
 	while (1)
 		omega = sumsq(vecF)/2.0;
@@ -198,7 +208,13 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_tr( vecX0, vecF0, matJ0, funchF
 				msg( __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Trial objective is not better and Jacobian change is small." );
 				break;
 			end
-			
+		endif
+		if ( nargout >= 2 )
+			datOut.fevalCountVals(iterCount+1) = fevalCount;
+			datOut.vecXVals(:,iterCount+1) = vecX;
+			datOut.vecFVals(:,iterCount+1) = vecF;
+			datOut.omegaVals(iterCount+1) = sumsq(vecF)/2.0;
+			datOut.matJVals(:,:,iterCount+1) = matJ;
 		endif
 	endwhile
 	%

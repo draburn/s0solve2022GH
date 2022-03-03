@@ -39,8 +39,8 @@ prm_withCDL.useCDL = true;
 %
 numFigs++; figure(numFigs);
 semilogy( ...
-  datOut_sansCDL.fevalCountVals, datOut_sansCDL.omegaVals, 'o-', ...
-  datOut_withCDL.fevalCountVals, datOut_withCDL.omegaVals, 'x-' );
+  datOut_sansCDL.fevalCountVals, eps^2+datOut_sansCDL.omegaVals, 'o-', ...
+  datOut_withCDL.fevalCountVals, eps^2+datOut_withCDL.omegaVals, 'x-' );
 grid on;
 xlabel( "feval count" );
 ylabel( "omega" );
