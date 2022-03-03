@@ -38,6 +38,9 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_condi( vecX0, vecF0, matJ0, fun
 	omegaFallRelTol = eps^1.5;
 	deltaJRelTol = eps;
 	%
+	useCDL = true;
+	useOmegaModelMin = false; % Not sure why, omegaModelMin really hurts in test case.
+	%
 	fevalCount = 0;
 	if ( nargout >= 2 )
 		datOut.fevalCountVals(1) = fevalCount;
@@ -72,9 +75,6 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_condi( vecX0, vecF0, matJ0, fun
 			break;
 		endif
 		%
-		%
-		useCDL = true;
-		useOmegaModelMin = true; % Not sure why, omegaModelMin really hurts in test case.
 		%
 		%
 		if (useCDL)

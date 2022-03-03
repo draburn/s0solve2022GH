@@ -39,6 +39,16 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_tr( vecX0, vecF0, matJ0, funchF
 	deltaJRelTol = eps;
 	trustRegionSize0 = -1.0;
 	%
+	coeff_reduceTrustRegionOnFevalFail = 0.1;
+	coeff_declareModelIsRadicallyWrong = 3.0;
+	coeff_reduceTrustRegionOnRadicallyWrong = 0.1;
+	coeff_declareModeIsHighlyAccurate = 0.1;
+	coeff_increaseTrustRegionOnHighlyAccurate = 1.5;
+	trialLimit = 10;
+	useCDL = true;
+	useOmegaModelMin = false; % Not sure why, omegaModelMin really hurts in test case.
+	updateTRBasedOnCDL = false;
+	%
 	%
 	fevalCount = 0;
 	%
@@ -77,16 +87,6 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_tr( vecX0, vecF0, matJ0, funchF
 		endif
 		%
 		%
-		coeff_reduceTrustRegionOnFevalFail = 0.1; % Param.
-		coeff_declareModelIsRadicallyWrong = 3.0; % Param.
-		coeff_reduceTrustRegionOnRadicallyWrong = 0.1; % Param.
-		coeff_declareModeIsHighlyAccurate = 0.1; % Param.
-		coeff_increaseTrustRegionOnHighlyAccurate = 1.5; % Param.
-		trialLimit = 10; % Param
-		%
-		useCDL = true;
-		useOmegaModelMin = true; % Not sure why, omegaModelMin really hurts in test case.
-		updateTRBasedOnCDL = false;
 		%
 		trialCount = 0;
 		while ( 1 )

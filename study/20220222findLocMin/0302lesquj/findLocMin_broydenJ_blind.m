@@ -37,6 +37,9 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_blind( vecX0, vecF0, matJ0, fun
 	deltaJRelTol = eps;
 	useLevCurve = true;
 	%
+	useCDL = true;
+	useOmegaModelMin = false; % Not sure why, omegaModelMin really hurts in test case.
+	%
 	%
 	fevalCount = 0;
 	%
@@ -73,8 +76,6 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_blind( vecX0, vecF0, matJ0, fun
 		endif
 		%
 		%
-		useCDL = true;
-		useOmegaModelMin = true; % Not sure why, omegaModelMin really hurts in test case.
 		%
 		if (useCDL)
 			cdlPrm = [];
