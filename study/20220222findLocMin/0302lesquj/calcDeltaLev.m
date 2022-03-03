@@ -49,6 +49,7 @@ function [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 			%echo__deltaNormMax = deltaNormMax
 		endif
 		if ( useOmegaModelMin )
+			msg( __FILE__, __LINE__, "Warning: use of omegaModelMin seems to hurt in Broyden test case." );
 			assert( isrealscalar(omegaModelMin) );
 			assert( isrealscalar(omegaModelMinRelTol) );
 			assert( 0.0 < omegaModelMinRelTol );
@@ -127,6 +128,7 @@ function [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 	haveBTedForDeltaNormMax = false;
 	if ( isrealscalar(deltaNormMax) )
 	if ( norm(vecDelta) > deltaNormMax )
+		msgif( debugMode, __FILE__, __LINE__, "Applying deltaNormMax..." );
 		%msg( __FILE__, __LINE__, "Start bt..." );
 		deltaNormMin = (1.0-deltaNormMaxRelTol)*deltaNormMax;
 		deltaNormTrgt = ( deltaNormMax + deltaNormMin ) / 2.0; % For first iteration.
@@ -184,6 +186,7 @@ function [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 	haveBTedForOmegaModelMin = false;
 	if ( useOmegaModelMin )
 	if ( omegaModel < omegaModelMin )
+		msgif( debugMode, __FILE__, __LINE__, "Applying omegaModelMin..." );
 		omegaModelMax = omegaModelMin + omegaModelMinRelTol*(omega0-omegaModelMin);
 		omegaTrgt = ( omegaModelMax + omegaModelMin ) / 2.0; % For first iteration.
 		iterLimit = 10; % Arbitrary.
@@ -227,6 +230,7 @@ function [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 		% If mu also satisfies omegaModelMax, then we're done.
 		% Otherwise, we'll forward track to get a mu that does satisfy omegaModelMax.
 		if ( omegaModel > omegaModelMax )
+			msgif( debugMode, __FILE__, __LINE__, "Applying omegaModelMinRelTol..." );
 			muHi = mu;
 			matR_muHi = matR;
 			vecDelta_muHi = vecDelta;
@@ -279,6 +283,7 @@ function [ vecDelta, datOut ] = calcDeltaLev( omega0, vecG, matH, prm=[] )
 		% If mu also satisfies deltaNormMin, then we're done.
 		% Otherwise, we'll forward track to get a mu that does satisfy deltaNormMin.
 		if ( norm(vecDelta) < deltaNormMin )
+			msgif( debugMode, __FILE__, __LINE__, "Applying deltaNormMaxRelTol..." );
 			muHi = mu;
 			matR_muHi = matR;
 			vecDelta_muHi = vecDelta;
