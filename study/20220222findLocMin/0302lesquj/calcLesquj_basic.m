@@ -14,6 +14,7 @@ function [ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals,
 	endif
 	%
 	useDistanceWeights = true;
+	useLatestPtAs0 = true;
 	if ( ~isempty(prm) )
 		useDistanceWeights = mygetfield( prm, "useDistanceWeights", useDistanceWeights );
 	endif
@@ -25,7 +26,11 @@ function [ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals,
 	%
 	%
 	%
-	[ foo, indexOfPt0 ] = min( sumsq(vecFVals,1) );
+	if (useLatestPtAs0)
+		indexOfPt0 = numVals;
+	else
+		[ foo, indexOfPt0 ] = min( sumsq(vecFVals,1) );
+	endif
 	vecX0 = vecXVals( :, indexOfPt0 );
 	vecF0 = vecFVals( :, indexOfPt0 );
 	% Trimming off "0", we'll use the term "pts" instead of "vals".

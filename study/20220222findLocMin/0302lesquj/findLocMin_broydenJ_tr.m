@@ -164,15 +164,15 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_tr( vecX0, vecF0, matJ0, funchF
 				continue;
 			endif
 			%
+			if (useLesquj)
+				lesquj_vecXVals = [ lesquj_vecXVals, vecX_trial ];
+				lesquj_vecFVals = [ lesquj_vecFVals, vecF_trial ];
+			endif
+			%
 			if ( norm( vecF_trial - vecFModel ) >= coeff_declareModelIsRadicallyWrong * norm(vecF) )
 				msgif( debugMode, __FILE__, __LINE__, "Model was radically wrong." );
 				trustRegionSize = coeff_reduceTrustRegionOnRadicallyWrong*norm(vecDeltaX);
 				continue;
-			endif
-			%
-			if (useLesquj)
-				lesquj_vecXVals = [ lesquj_vecXVals, vecX_trial ];
-				lesquj_vecFVals = [ lesquj_vecFVals, vecF_trial ];
 			endif
 			%
 			omega_trial = sumsq(vecF_trial)/2.0;
@@ -194,9 +194,14 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_tr( vecX0, vecF0, matJ0, funchF
 		%
 		%
 		if (useLesquj)
-			[ lesquj_vecX0, leqsuj_vecF0, lesquj_matJ0 ] = calcLesquj_basic( lesquj_vecXVals, lesquj_vecFVals, lesquj_prm );
+			[ lesquj_vecX0, lesquj_vecF0, lesquj_matJ0 ] = calcLesquj_basic( lesquj_vecXVals, lesquj_vecFVals, lesquj_prm );
 			matJ_trial = lesquj_matJ0;
 			matDeltaJ = matJ_trial - matJ;
+			%
+			%% HACK... Useless.
+			%vecX = lesquj_vecX0;
+			%vecF = lesquj_vecF0;
+			%omega_trial = sumsq(vecF)/2.0;
 		else
 			vecDeltaY = vecF_trial - vecF - matJ*vecDeltaX;
 			matDeltaJ = (vecDeltaY*(vecDeltaX'))/(vecDeltaX'*vecDeltaX);
