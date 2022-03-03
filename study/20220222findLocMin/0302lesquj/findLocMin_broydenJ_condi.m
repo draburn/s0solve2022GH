@@ -38,7 +38,7 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_condi( vecX0, vecF0, matJ0, fun
 	omegaFallRelTol = eps^1.5;
 	deltaJRelTol = eps;
 	%
-	useCDL = false;
+	useCDL = true;
 	useOmegaModelMin = true; % Not sure why, omegaModelMin really hurts in test case.
 	%
 	if (~isempty(prm))
