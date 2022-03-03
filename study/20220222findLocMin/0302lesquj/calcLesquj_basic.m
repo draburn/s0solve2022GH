@@ -14,6 +14,16 @@ function [ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals,
 	endif
 	%
 	useDistanceWeights = true;
+	if ( ~isempty(prm) )
+		useDistanceWeights = mygetfield( prm, "useDistanceWeights", useDistanceWeights );
+	endif
+	if ( debugMode )
+		assert( isscalar(useDistanceWeights) );
+		assert( isbool(useDistanceWeights) );
+	endif
+	matIX = eye(sizeX,sizeX);
+	%
+	%
 	%
 	[ foo, indexOfPt0 ] = min( sumsq(vecFVals,1) );
 	vecX0 = vecXVals( :, indexOfPt0 );
@@ -21,12 +31,36 @@ function [ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals,
 	% Trimming off "0", we'll use the term "pts" instead of "vals".
 	vecXPts = [ vecXVals(:,1:indexOfPt0-1), vecXVals(:,indexOfPt0+1:end) ];
 	vecFPts = [ vecFVals(:,1:indexOfPt0-1), vecFVals(:,indexOfPt0+1:end) ];
-	numPts = numVals - 1;
+	numPts = size(vecXPts,2);
 	%
-	if (useDistanceWeights)
+	%
+	%
+	vecDeltaPts = vecXPts - vecX0; % sizeX x numPts
+	deltaNormSqPts = sumsq(vecDeltaPts,1);
+	minDeltaNormSq = min(deltaNormSqPts);
+	%
+	% If we have a jeval, we'll hack it it as a cluster of points.
+	% This seems a bit silly, but, it's simple,
+	% And I see no obvious reason why it'd be wrong.
+	jevalDat = mygetfield( prm, "jevalDat", [] );
+	if (~isempty(jevalDat))
+		numJevals = size(jevalDat);
+		for n=1:numJevals
+			vecDeltaX_jeval = minDeltaNormSq*matIX;
+			% Octave doesn't auto-broadcast for a "diagonal" matrix.
+			% The mathematically pointless "+0.0" gets Octave to convert the matrix to a full matrix.
+			vecX_jeval = jevalDat(n).vecX + ( vecDeltaX_jeval+0.0 );
+			vecXPts = [ vecXPts, jevalDat(n).vecX, vecX_jeval ];
+			vecFPts = [ vecFPts, jevalDat(n).vecF, jevalDat(n).vecF + jevalDat(n).matJ*vecDeltaX_jeval ];
+		endfor
 		vecDeltaPts = vecXPts - vecX0; % sizeX x numPts
 		deltaNormSqPts = sumsq(vecDeltaPts,1);
-		minDeltaNormSq = min(deltaNormSqPts);
+		numPts = size(vecXPts,2);
+	endif
+	%
+	%
+	%
+	if (useDistanceWeights)
 		wDistPts = (2.0 * minDeltaNormSq) ./ ( minDeltaNormSq + deltaNormSqPts );
 		wDistPts .^= 4;
 		vecRhoPts = vecFPts - vecF0;      % sizeX x numPts
@@ -34,7 +68,6 @@ function [ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals,
 		matA = foo*(vecDeltaPts');        % sizeX x sizeX
 		matY = foo*(vecRhoPts');          % sizeX x sizeF
 	else
-		vecDeltaPts = vecXPts - vecX0;     % sizeX x numPts
 		vecRhoPts = vecFPts - vecF0;       % sizeX x numPts
 		matA = vecDeltaPts*(vecDeltaPts'); % sizeX x sizeX
 		matY = vecDeltaPts*(vecRhoPts');   % sizeX x sizeF
@@ -44,7 +77,7 @@ function [ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals,
 	[ matR, cholFlag ] = chol( matA );
 	if ( 0~=cholFlag )
 		aScale = max(abs(diag(matA)));
-		matR = chol( matA + aScale*eye(sizeX,sizeX) );
+		matR = chol( matA + aScale*matIX );
 	endif
 	matJ0T = matR \ ( matR' \ matY );
 	matJ0 = matJ0T';
@@ -77,6 +110,9 @@ endfunction
 %!	%plot( sumsq(vecFVals,1), 'o-' );
 %!	%
 %!	prm = [];
+%!	prm.jevalDat(1).vecX = randn(sizeX,1);
+%!	prm.jevalDat(1).vecF = funchF( prm.jevalDat(1).vecX );
+%!	prm.jevalDat(1).matJ = matJ_secret;
 %!	[ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals, prm );
 %!	%
 %!	vecX0_basic = vecX0;
