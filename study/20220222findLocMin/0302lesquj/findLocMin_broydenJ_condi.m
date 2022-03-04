@@ -40,13 +40,17 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_condi( vecX0, vecF0, matJ0, fun
 	%
 	useCDL = true;
 	useOmegaModelMin = true; % Not sure why, omegaModelMin really hurts in test case.
+	useLesquj = false;
 	%
 	if (~isempty(prm))
 		useCDL = mygetfield( prm, "useCDL", useCDL );
+		useLesquj = mygetfield( prm, "useLesquj", useLesquj );
 	endif
 	if (debugMode)
 		assert( isscalar(useCDL) );
 		assert( isbool(useCDL) );
+		assert( isscalar(useLesquj) );
+		assert( isbool(useLesquj) );
 	endif
 	%
 	fevalCount = 0;
@@ -55,6 +59,14 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_condi( vecX0, vecF0, matJ0, fun
 	vecF = vecF0;
 	matJ = matJ0;
 	iterCount = 0;
+	if (useLesquj)
+		lesquj_vecXVals = vecX0;
+		lesquj_vecFVals = vecF0;
+		lesquj_prm = [];
+		lesquj_prm.jevalDat(1).vecX = vecX0;
+		lesquj_prm.jevalDat(1).vecF = vecF0;
+		lesquj_prm.jevalDat(1).matJ = matJ0;
+	endif
 	if ( nargout >= 2 )
 		datOut.fevalCountVals(iterCount+1) = fevalCount;
 		datOut.vecXVals(:,iterCount+1) = vecX;
@@ -109,18 +121,29 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_condi( vecX0, vecF0, matJ0, fun
 		vecX_trial = vecX + vecDeltaX;
 		vecF_trial = funchF( vecX_trial );
 		fevalCount++;
+		%
+		if (useLesquj)
+			lesquj_vecXVals = [ lesquj_vecXVals, vecX_trial ];
+			lesquj_vecFVals = [ lesquj_vecFVals, vecF_trial ];
+		endif
 		omega_trial = sumsq(vecF_trial)/2.0;
 		%
-		vecDeltaY = vecF_trial - vecF - matJ*vecDeltaX;
-		matDeltaJ = (vecDeltaY*(vecDeltaX'))/(vecDeltaX'*vecDeltaX);
-		matJ_trial = matJ + matDeltaJ;
+		if (useLesquj)
+			[ lesquj_vecX0, lesquj_vecF0, lesquj_matJ0 ] = calcLesquj_basic( lesquj_vecXVals, lesquj_vecFVals, lesquj_prm );
+			matJ_trial = lesquj_matJ0;
+			matDeltaJ = matJ_trial - matJ;
+		else
+			vecDeltaY = vecF_trial - vecF - matJ*vecDeltaX;
+			matDeltaJ = (vecDeltaY*(vecDeltaX'))/(vecDeltaX'*vecDeltaX);
+			matJ_trial = matJ + matDeltaJ;
+			if (debugMode)
+				assert( reldiff(matJ_trial*vecDeltaX,vecF_trial-vecF) < sqrt(eps) );
+			endif
+		endif
 		if ( nargout >= 2 )
 			datOut.deltaNormVals(iterCount) = norm(vecDeltaX);
 			datOut.fevalCountVals(iterCount+1) = fevalCount;
 			datOut.omegaVals(iterCount+1) = omega;
-		endif
-		if (debugMode)
-			assert( reldiff(matJ_trial*vecDeltaX,vecF_trial-vecF) < sqrt(eps) );
 		endif
 		%
 		% In this version, always accept matJ.
