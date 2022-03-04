@@ -27,14 +27,23 @@ function [ vecF, matJ ] = funcFJ_cub( vecX )
 	vecF = (vecX-vecXE) + (vecX-vecXE).^3;
 	matJ = eye(sizeX) + 3.0*diag((vecX-vecXE).^2);
 endfunction
+function [ vecF, matJ ] = funcFJ_cub2( vecX )
+	sizeX = size(vecX,1);
+	vecXE = (1:sizeX)';
+	vecF = (vecX-vecXE) + 0.1*(vecX-vecXE).^3;
+	matJ = eye(sizeX) + 0.3*diag((vecX-vecXE).^2);
+endfunction
 %
 %
-%%%funchFJ = @(dummyX) funcFJ_nonlin(dummyX);
-%%%funchFJ = @(dummyX) funcFJ_easy(dummyX);
-funchFJ = @(dummyX) funcFJ_cub(dummyX);
-%vecX0 = zeros(2,1);
-%vecX0 = zeros(10,1); % Blind: CDL helps!
-vecX0 = zeros(20,1); % Blind: both fail!
+switch (0)
+case 0
+	funchFJ = @(dummyX) funcFJ_cub(dummyX);
+	vecX0 = zeros(20,1);
+case 1
+	funchFJ = @(dummyX) funcFJ_cub2(dummyX);
+	vecX0 = zeros(2,1);
+endswitch
+%
 [ vecF0, matJ0 ] = funchFJ( vecX0 );
 %
 prm_sansCDL = [];
@@ -126,8 +135,43 @@ loglog( ...
   datOut_lesquj_tr_withCDL.fevalCountVals(2:end),    eps^2+datOut_lesquj_tr_withCDL.deltaNormVals, 'x-' );
 grid on;
 xlabel( "feval count" );
-ylabel( "||delta||" );
-title( "||detla|| vs feval count" );
+ylabel( "||delta x||" );
+title( "||detla x|| vs feval count" );
+%
+%
+figFunchY = @(dummyMatJVals)( reshape(sqrt(eps^2+sum(sumsq(dummyMatJVals(:,:,2:end) - dummyMatJVals(:,:,1:end-1),1),2)),1,[]) );
+if (0)
+size( datOut_condi_sansCDL.fevalCountVals(2:end))
+size(datOut_tr_sansCDL.fevalCountVals(2:end) )
+size(datOut_lesquj_condi_sansCDL.fevalCountVals(2:end) )
+size( datOut_lesquj_tr_sansCDL.fevalCountVals(2:end) )
+size( datOut_condi_withCDL.fevalCountVals(2:end))
+size( datOut_tr_withCDL.fevalCountVals(2:end))
+size(datOut_lesquj_condi_withCDL.fevalCountVals(2:end) )
+size(datOut_lesquj_tr_withCDL.fevalCountVals(2:end) )
+size(figFunchY(datOut_condi_sansCDL.matJVals))
+size(figFunchY(datOut_tr_sansCDL.matJVals ))
+size(figFunchY(datOut_lesquj_condi_sansCDL.matJVals ))
+size(figFunchY( datOut_lesquj_tr_sansCDL.matJVals))
+size(figFunchY( datOut_condi_withCDL.matJVals))
+size(figFunchY(datOut_tr_withCDL.matJVals ))
+size(figFunchY( datOut_lesquj_condi_withCDL.matJVals))
+size(figFunchY(datOut_lesquj_tr_withCDL.matJVals))
+endif
+numFigs++; figure(numFigs);
+loglog( ...
+  datOut_condi_sansCDL.fevalCountVals(2:end), figFunchY( datOut_condi_sansCDL.matJVals ), 's-', ...
+  datOut_tr_sansCDL.fevalCountVals(2:end),    figFunchY( datOut_tr_sansCDL.matJVals ), 'p-', ...
+  datOut_lesquj_condi_sansCDL.fevalCountVals(2:end),    figFunchY( datOut_lesquj_condi_sansCDL.matJVals ), '^-', ...
+  datOut_lesquj_tr_sansCDL.fevalCountVals(2:end),    figFunchY( datOut_lesquj_tr_sansCDL.matJVals ), 'o-', ...
+  datOut_condi_withCDL.fevalCountVals(2:end), figFunchY( datOut_condi_withCDL.matJVals ), '+-', ...
+  datOut_tr_withCDL.fevalCountVals(2:end),    figFunchY( datOut_tr_withCDL.matJVals ), '*-', ...
+  datOut_lesquj_condi_withCDL.fevalCountVals(2:end),    figFunchY( datOut_lesquj_condi_withCDL.matJVals ), 'v-', ...
+  datOut_lesquj_tr_withCDL.fevalCountVals(2:end),    figFunchY( datOut_lesquj_tr_withCDL.matJVals ), 'x-' );
+grid on;
+xlabel( "feval count" );
+ylabel( "||delta J||F" );
+title( "||detla J||F vs feval count" );
 %
 %
 msg( __FILE__, __LINE__, "" );
@@ -135,6 +179,7 @@ msg( __FILE__, __LINE__, "DRaburn 2022.03.03..." );
 msg( __FILE__, __LINE__, " Added lesquj to findLocMin_broydenJ_tr." );
 msg( __FILE__, __LINE__, " It's great at first, but then stalls." );
 msg( __FILE__, __LINE__, " The steps are not getting small, though. Maybe it's bouncing between two points?" );
+msg( __FILE__, __LINE__, "" );
 msg( __FILE__, __LINE__, "DRaburn 2022.03.03.1800..." );
 msg( __FILE__, __LINE__, " Looking at funcFJ_cub with size 20..." );
 msg( __FILE__, __LINE__, "  broyden sans CDL bad, whether condi or tr;" );
@@ -142,4 +187,8 @@ msg( __FILE__, __LINE__, "  broyden with CDL is great if omegaModelMin = 0.0, ok
 msg( __FILE__, __LINE__, "   which, as previously mentioned, seems like a fluke of some sort;" );
 msg( __FILE__, __LINE__, "  lesquj is okay regardless." );
 msg( __FILE__, __LINE__, " Next up: why does lesquj stall?" );
+msg( __FILE__, __LINE__, "" );
+msg( __FILE__, __LINE__, "DRaburn 2022.03.03.1850..." );
+msg( __FILE__, __LINE__, "  case 0 is as before. case 1 is crashy crashy." );
+
 toc();

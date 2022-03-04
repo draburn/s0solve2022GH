@@ -210,12 +210,6 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_tr( vecX0, vecF0, matJ0, funchF
 				assert( reldiff(matJ_trial*vecDeltaX,vecF_trial-vecF) < sqrt(eps) );
 			endif
 		endif
-		if ( nargout >= 2 )
-			datOut.deltaNormVals(iterCount) = norm(vecDeltaX);
-			datOut.fevalCountVals(iterCount+1) = fevalCount;
-			datOut.omegaVals(iterCount+1) = omega;
-			datOut.trustRegionSize(iterCount+1) = trustRegionSize;
-		endif
 		%
 		% In this version, always accept matJ.
 		% In a future version, use TR; but, still accept and matDeltaJ that is "reasonable".
@@ -240,6 +234,8 @@ function [ vecXF, datOut ] = findLocMin_broydenJ_tr( vecX0, vecF0, matJ0, funchF
 			end
 		endif
 		if ( nargout >= 2 )
+			datOut.deltaNormVals(iterCount) = norm(vecDeltaX);
+			datOut.trustRegionSize(iterCount+1) = trustRegionSize;
 			datOut.fevalCountVals(iterCount+1) = fevalCount;
 			datOut.vecXVals(:,iterCount+1) = vecX;
 			datOut.vecFVals(:,iterCount+1) = vecF;
