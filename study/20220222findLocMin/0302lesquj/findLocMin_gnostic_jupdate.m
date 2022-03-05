@@ -107,6 +107,9 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchF, prm=[] )
 		if ( iterCount > iterMax )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Reached iterMax." );
 			break;
+		elseif ( omega > omega0/(eps^2) )
+			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Reached omega > omega0/(eps^2)." );
+			break;
 		endif
 		%
 		if ( valdLev >= VALDLEV__MEDIUM )
@@ -183,6 +186,11 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchF, prm=[] )
 			leqsuj_prm.useLatestPtAs0 = true;
 			msgif( verbLev >= VERBLEV__UNLIMITED, __FILE__, __LINE__, "Calling calcLesquj_basic()." );
 			[ lesquj_vecX0, lesquj_vecF0, lesquj_matJ0, lesqu_datOut ] = calcLesquj_basic( collected_vecXVals, collected_vecFVals, lesquj_prm );
+			if ( valdLev >= VALDLEV__MEDIUM )
+				assert( isrealarray(lesquj_vecX0,[sizeX,1]) );
+				assert( isrealarray(lesquj_vecF0,[sizeF,1]) );
+				assert( isrealarray(lesquj_matJ0,[sizeF,sizeX]) );
+			endif
 			msgif( verbLev >= VERBLEV__UNLIMITED, __FILE__, __LINE__, "Back from calcLesquj_basic()." );
 			matJ_next = lesquj_matJ0;
 			clear lesquj_vecX0;
@@ -238,7 +246,7 @@ endfunction
 %!	setprngstates(0);
 %!	numFigs = 0;
 %!	%
-%!	caseNum = 40;
+%!	caseNum = 100;
 %!	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 %!	switch (caseNum)
 %!	case 0

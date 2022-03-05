@@ -66,6 +66,8 @@ function [ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals,
 		deltaNormSqPts = sumsq(vecDeltaPts,1);
 		numPts = size(vecXPts,2);
 	endif
+	assert( isrealarray(vecFPts) );
+	assert( isrealarray(vecF0) );
 	%
 	%
 	%
@@ -81,9 +83,21 @@ function [ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals,
 		wPts = wDistPts.*wResPts;
 		assert( isrealarray(wPts) );
 		vecRhoPts = vecFPts - vecF0;
+		assert( isrealarray(vecRhoPts) );
 		foo = vecDeltaPts*diag(wPts);
+		assert( isrealarray(foo) );
 		matA = foo*(vecDeltaPts');
+		assert( isrealarray(matA) );
+		assert( isrealarray(foo) );
+		assert( isrealarray(vecRhoPts') );
 		matY = foo*(vecRhoPts');
+		if (~isrealarray(matY) )
+			echo__vecXVals = vecXVals
+			echo__vecFValsw = vecFVals
+			echo__foo = foo
+			echo__vecRhoPts = vecRhoPts
+		endif
+		assert( isrealarray(matY) );
 	elseif (0)
 		% With ^4, wDistPts may get too small in cases.
 		wDistPts = (2.0 * minDeltaNormSq) ./ ( minDeltaNormSq + deltaNormSqPts );
