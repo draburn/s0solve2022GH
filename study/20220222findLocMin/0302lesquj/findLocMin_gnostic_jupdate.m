@@ -7,6 +7,8 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchF, prm=[] )
 	time0 = time();
 	fevalCount = 0;
 	jevalCount = 0;
+	collected_vecXVals = [];
+	collected_vecFVals = [];
 	%
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__UNLIMITED );
@@ -20,11 +22,15 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchF, prm=[] )
 		assert( isrealarray(vecX0,[sizeX,1]) );
 	endif
 	%
-	vecF0 = funchF( vecX0 ); fevalCount++;
+	vecF0 = funchF( vecX0 );
+	fevalCount++;
+	collected_vecXVals = [ collected_vecXVals, vecX0 ];
+	collected_vecFVals = [ collected_vecFVals, vecF0 ];
 	sizeF = size(vecF0,1);
 	if ( valdLev >= VALLEV__MEDIUM )
 		assert( isrealarray(vecF0,[sizeF,1]) );
 	endif
+	omega0 = sumsq(vecF0)/2.0;
 	%
 	matJ0 = jacobs( vecX0, funchF ); jevalCount++;
 	if ( valdLev >= VALLEV__MEDIUM )
@@ -49,6 +55,12 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchF, prm=[] )
 		assert( isrealscalar(jupdateType) );
 	endif
 	%
+	cholSafeTol = mygetfield( prm, "cholSafeTol", sqrt(eps) );
+	if ( valdLev >= VALLEV__LOW )
+		assert( isrealscalar(cholSafeTol) );
+		assert( 0.0 < cholSafeTol );
+	endif
+	%
 	%
 	%	
 	if ( nargout >= 2 )
@@ -62,7 +74,10 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchF, prm=[] )
 	matJ = matJ0;
 	iterCount = 0;
 	while (1)
+		omega = sumsq(vecF)/2.0;
+		%
 		if ( verbLev >= VERBLEV__PROGRESS )
+		if ( abs( iterCount - round(sqrt(iterCount))^2 ) < 0.001 )
 		if ( 0 == iterCount )
 			msg( __FILE__, __LINE__, sprintf( "  %10.3e, %4d;  %5d,  %3d;  %10.3e, %10.3e.", ...
 			  time()-time0, iterCount, ...
@@ -75,12 +90,15 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchF, prm=[] )
 			  sumsq(vecF)/2.0, (sumsq(vecF_prev)-sumsq(vecF))/2.0 ) );
 		endif
 		endif
+		endif
 		%
 		if ( 0.0 == norm(vecF) )
-				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Reached vecF = 0.0." );
+			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Reached vecF = 0.0." );
 			break;
-		endif
-		if ( 0 < iterCount )
+		elseif ( omega < eps^2*omega0 )
+			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Reached omega < eps^2*omega0." );
+			break;
+		elseif ( 0 < iterCount )
 			if ( reldiff( vecF, vecF_prev ) == 0.0 )
 				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "There was no change in vecF." );
 				break;
@@ -97,9 +115,24 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchF, prm=[] )
 		%
 		switch( stepType )
 		case STEP_TYPE__BLIND_NEWTON
-			vecDelta = - matJ \ vecF;
+			vecG = matJ'*vecF;
+			matJTJ = matJ'*matJ;
+			[ matR, cholFlag ] = chol( matJTJ );
+			if ( 0~=cholFlag || min(diag(matR)) <= cholSafeTol*max(abs(diag(matR))) )
+				hScale = max(abs(diag(matJTJ)));
+				assert( 0.0 ~= hScale );
+				[ matR, cholFlag ] = chol( matJ'*matJ + sqrt(eps)*hScale*eye(sizeX,sizeX) );
+				if ( 0~=cholFlag || min(diag(matR)) <= cholSafeTol*max(abs(diag(matR))) )
+					error( "Bad!" );
+				endif
+			endif
+			vecDelta = matR \ ( matR' \ (-vecG) );
 			vecX_next = vecX + vecDelta;
 			vecF_next = funchF( vecX_next ); fevalCount++;
+		case STEP_TYPE__BLIND_GRAD_MIN
+			error( "STEP_TYPE__BLIND_GRAD_MIN is not implemented yet." );
+		case STEP_TYPE__SCAN_LEV_MIN
+			error( "STEP_TYPE__SCAN_LEV_MIN is not implemented yet." );
 		otherwise
 			error( "Invalid value of stepType." );
 		endswitch
@@ -124,6 +157,23 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchF, prm=[] )
 			clear fooX;
 			clear fooY;
 			clear fooJ;
+		case JUPDATE_TYPE__SECANT_REORTHONORM
+			error( "JUPDATE_TYPE__SECANT_REORTHONORM is not implemented yet." );
+		case JUPDATE_TYPE__LESQUJ_PRIMAL
+			collected_vecXVals = [ collected_vecXVals, vecX_next ];
+			collected_vecFVals = [ collected_vecFVals, vecF_next ];
+			lesquj_prm = [];
+			lesquj_prm.jevalDat(1).vecX = vecX0;
+			lesquj_prm.jevalDat(1).vecF = vecF0;
+			lesquj_prm.jevalDat(1).matJ = matJ0;
+			%lesquj_prm.useDistanceWeights = false; % Because caues error.
+			leqsuj_prm.useLatestPtAs0 = true;
+			[ lesquj_vecX0, lesquj_vecF0, lesquj_matJ0, lesqu_datOut ] = calcLesquj_basic( collected_vecXVals, collected_vecFVals, lesquj_prm );
+			matJ_next = lesquj_matJ0;
+			clear lesquj_vecX0;
+			clear lesquj_vecF0;
+			clear lesqu_datOut;
+			clear lesquj_prm;
 		case JUPDATE_TYPE__RECALC
 			matJ_next = jacobs( vecX, funchF ); jevalCount++;
 		otherwise
@@ -140,6 +190,20 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchF, prm=[] )
 		vecF = vecF_next;
 		matJ = matJ_next;
 	endwhile
+	%
+	if ( verbLev >= VERBLEV__MAIN )
+	if ( 0 == iterCount )
+		msg( __FILE__, __LINE__, sprintf( "  %10.3e, %4d;  %5d,  %3d;  %10.3e, %10.3e.", ...
+		  time()-time0, iterCount, ...
+		  fevalCount, jevalCount, ...
+		  sumsq(vecF)/2.0, -1.0 ) );
+	else
+		msg( __FILE__, __LINE__, sprintf( "  %10.3e, %4d;  %5d,  %3d;  %10.3e, %10.3e.", ...
+		  time()-time0, iterCount, ...
+		  fevalCount, jevalCount, ...
+		  sumsq(vecF)/2.0, (sumsq(vecF_prev)-sumsq(vecF))/2.0 ) );
+	endif
+	endif
 endfunction
 
 %!function [ vecF, matJ ] = funcFJ_cubyDiagTest( vecX, c )
@@ -159,7 +223,7 @@ endfunction
 %!	setprngstates(0);
 %!	numFigs = 0;
 %!	%
-%!	caseNum = 30;
+%!	caseNum = 40;
 %!	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 %!	switch (caseNum)
 %!	case 0
@@ -189,18 +253,27 @@ endfunction
 %!	funchFJ = @(dummyX)( funcFJ_cubyDiagTest( dummyX, c_cuby ) );
 %!	vecX0 = zeros(sizeX,1);
 %!	%
+%!	msg( __FILE__, __LINE__, "" );
 %!	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__NONE ~~~ " );
 %!	prm = [];
 %!	prm.jupdateType = JUPDATE_TYPE__NONE;
 %!	[ vecXF, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchFJ, prm );
 %!	vecX0 = zeros(sizeX,1);
 %!	%
+%!	msg( __FILE__, __LINE__, "" );
 %!	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN ~~~ " );
 %!	prm = [];
 %!	prm.jupdateType = JUPDATE_TYPE__BROYDEN;
 %!	[ vecXF, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchFJ, prm );
+%!	%
+%!	msg( __FILE__, __LINE__, "" );
+%!	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__LESQUJ_PRIMAL ~~~ " );
+%!	prm = [];
+%!	prm.jupdateType = JUPDATE_TYPE__LESQUJ_PRIMAL;
+%!	[ vecXF, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchFJ, prm );
 %!	vecX0 = zeros(sizeX,1);
 %!	%
+%!	msg( __FILE__, __LINE__, "" );
 %!	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__RECALC ~~~ " );
 %!	prm = [];
 %!	prm.jupdateType = JUPDATE_TYPE__RECALC;

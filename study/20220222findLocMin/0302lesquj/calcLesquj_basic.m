@@ -42,7 +42,7 @@ function [ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals,
 	%
 	vecDeltaPts = vecXPts - vecX0; % sizeX x numPts
 	deltaNormSqPts = sumsq(vecDeltaPts,1);
-	minDeltaNormSq = min(deltaNormSqPts);
+	minDeltaNormSq = min(deltaNormSqPts) + (eps^2)*max(deltaNormSqPts);
 	%
 	% If we have a jeval, we'll hack it it as a cluster of points.
 	% This seems a bit silly, but, it's simple,
@@ -70,11 +70,16 @@ function [ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals,
 	%
 	%
 	if (useDistanceWeights)
+		assert( isrealscalar(minDeltaNormSq) );
+		assert( 0.0 < minDeltaNormSq );
+		assert( isrealarray(deltaNormSqPts) );
 		wDistPts = (2.0 * minDeltaNormSq) ./ ( minDeltaNormSq + deltaNormSqPts );
+		assert( isrealarray(wDistPts) );
 		wResPts = norm(vecF0)./norm(vecFPts);
 		wResPts .^= 0.5;
 		wDistPts .^= 0.5;
 		wPts = wDistPts.*wResPts;
+		assert( isrealarray(wPts) );
 		vecRhoPts = vecFPts - vecF0;
 		foo = vecDeltaPts*diag(wPts);
 		matA = foo*(vecDeltaPts');
@@ -96,12 +101,15 @@ function [ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals,
 	%
 	safeRelTol = eps^0.35;
 	[ matR, cholFlag ] = chol( matA );
-	if ( 0~=cholFlag || min(abs(diag(matR))) <= safeRelTol*max(abs(diag(matR))) )
+	if ( 0~=cholFlag || min(diag(matR)) <= safeRelTol*max(abs(diag(matR))) )
 		aScale = max(abs(diag(matA)));
 		if ( 0 == aScale )
 			error( "matA is zero." );
 		endif
-		matR = chol( matA + aScale*matIX );
+		[ matR, cholFlag ] = chol( matA + aScale*matIX );
+		if ( 0~=cholFlag || min(diag(matR)) <= safeRelTol*max(abs(diag(matR))) )
+			error( "Failed to regularize matA." );
+		endif
 	endif
 	matJ0T = matR \ ( matR' \ matY );
 	matJ0 = matJ0T';
