@@ -25,6 +25,7 @@ VERBLEV__NOTIFY = 400;
 VERBLEV__MAIN = 500;
 VERBLEV__PROGRESS = 600;
 VERBLEV__COPIOUS = 700;
+VERBLEV__UNLIMITED = 800;
 
 
 % How broadly "success" is defined depends on the program.
@@ -67,21 +68,25 @@ STEPTYPE__SPECIFIED_VECTOR = 800;
 % ValLev: Validation level, qualitative amount of time (and other resources)
 %  to spend on validation checks.
 %  _ZERO: None. (May not be fully supported.)
-%  _LOW: Allow up to +0.1% run time at most.
-%  _MEDIUM: Allow up to +10% run time typically.
-%  _HIGH: Allow up to x2 run time for some cases.
+%  _LOW: Allow up to estimated +3% run time at most.
+%  _MEDIUM: Allow up to estimated +30% run time typically.
+%  _HIGH: Allow up to estimated x3 run time for some cases.
+%  _VERY_HIGH: Allow up to estimated x100 run time for some cases.
 %  _UNLIMITED: Do any and all validations.
+% AKA ValdLev.
 VALLEV__ZERO = 0;
 VALLEV__LOW = 100;
 VALLEV__MEDIUM = 200;
 VALLEV__HIGH = 300;
+VALLEV__VERY_HIGH = 350;
 VALLEV__UNLIMITED = 400;
 VALDLEV__ZERO = 0;
 VALDLEV__LOW = 100;
 VALDLEV__MEDIUM = 200;
 VALDLEV__HIGH = 300;
+VALDLEV__VERY_HIGH = 350;
 VALDLEV__UNLIMITED = 400;
-
+%
 eps025 = eps^0.25;
 eps050 = eps^0.50;
 eps075 = eps^0.75;
