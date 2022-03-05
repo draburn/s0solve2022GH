@@ -24,9 +24,9 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchF, prm=[] )
 	%
 	vecF0 = funchF( vecX0 );
 	fevalCount++;
+	sizeF = size(vecF0,1);
 	collected_vecXVals = [ collected_vecXVals, vecX0 ];
 	collected_vecFVals = [ collected_vecFVals, vecF0 ];
-	sizeF = size(vecF0,1);
 	if ( valdLev >= VALLEV__MEDIUM )
 		assert( isrealarray(vecF0,[sizeF,1]) );
 	endif
@@ -48,8 +48,6 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchF, prm=[] )
 		assert( isrealscalar(stepType) );
 	endif
 	%
-	%jupdateType = mygetfield( prm, "jupdateType", JUPDATE_TYPE__NONE ); % THIS WORKS BETTER???
-	%jupdateType = mygetfield( prm, "jupdateType", JUPDATE_TYPE__BROYDEN );
 	jupdateType = mygetfield( prm, "jupdateType", JUPDATE_TYPE__RECALC );
 	if ( valdLev >= VALLEV__LOW )
 		assert( isrealscalar(jupdateType) );
@@ -111,6 +109,12 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchF, prm=[] )
 			break;
 		endif
 		%
+		if ( valdLev >= VALDLEV__MEDIUM )
+			assert( isrealarray(vecX,[sizeX,1]) );
+			assert( isrealarray(vecF,[sizeF,1]) );
+			assert( isrealarray(matJ,[sizeF,sizeX]) );
+		endif
+		%
 		%
 		%
 		switch( stepType )
@@ -126,9 +130,18 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchF, prm=[] )
 					error( "Bad!" );
 				endif
 			endif
+			msgif( verbLev >= VERBLEV__UNLIMITED, __FILE__, __LINE__, "Evaluating vecDelta = matR \ ( matR' \ (-vecG) )." );
 			vecDelta = matR \ ( matR' \ (-vecG) );
+			if ( valdLev >= VALDLEV__MEDIUM )
+				assert( isrealarray(vecDelta,[sizeX,1]) );
+			endif
+			msgif( verbLev >= VERBLEV__UNLIMITED, __FILE__, __LINE__, "Evaluated vecDelta = matR \ ( matR' \ (-vecG) )." );
 			vecX_next = vecX + vecDelta;
-			vecF_next = funchF( vecX_next ); fevalCount++;
+			vecF_next = funchF( vecX_next );
+			fevalCount++;
+			if ( valdLev >= VALDLEV__MEDIUM )
+				assert( isrealarray(vecF_next,[sizeF,1]) );
+			endif
 		case STEP_TYPE__BLIND_GRAD_MIN
 			error( "STEP_TYPE__BLIND_GRAD_MIN is not implemented yet." );
 		case STEP_TYPE__SCAN_LEV_MIN
@@ -168,7 +181,9 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchF, prm=[] )
 			lesquj_prm.jevalDat(1).matJ = matJ0;
 			%lesquj_prm.useDistanceWeights = false; % Because caues error.
 			leqsuj_prm.useLatestPtAs0 = true;
+			msgif( verbLev >= VERBLEV__UNLIMITED, __FILE__, __LINE__, "Calling calcLesquj_basic()." );
 			[ lesquj_vecX0, lesquj_vecF0, lesquj_matJ0, lesqu_datOut ] = calcLesquj_basic( collected_vecXVals, collected_vecFVals, lesquj_prm );
+			msgif( verbLev >= VERBLEV__UNLIMITED, __FILE__, __LINE__, "Back from calcLesquj_basic()." );
 			matJ_next = lesquj_matJ0;
 			clear lesquj_vecX0;
 			clear lesquj_vecF0;
@@ -243,7 +258,7 @@ endfunction
 %!		c_cuby = 0.1;
 %!	case 100
 %!		sizeX = 15;
-%!		c_cuby = 0.1;
+%!		c_cuby = 1.0;
 %!	case 200
 %!		sizeX = 20;
 %!		c_cuby = 1.0;
