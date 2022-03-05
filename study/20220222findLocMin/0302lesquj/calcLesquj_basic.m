@@ -72,6 +72,8 @@ function [ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals,
 	if (useDistanceWeights)
 		wDistPts = (2.0 * minDeltaNormSq) ./ ( minDeltaNormSq + deltaNormSqPts );
 		wResPts = norm(vecF0)./norm(vecFPts);
+		wResPts .^= 0.5;
+		wDistPts .^= 0.5;
 		wPts = wDistPts.*wResPts;
 		vecRhoPts = vecFPts - vecF0;
 		foo = vecDeltaPts*diag(wPts);

@@ -30,19 +30,29 @@ endfunction
 function [ vecF, matJ ] = funcFJ_cub2( vecX )
 	sizeX = size(vecX,1);
 	vecXE = (1:sizeX)';
-	vecF = (vecX-vecXE) + 0.1*(vecX-vecXE).^3;
-	matJ = eye(sizeX) + 0.3*diag((vecX-vecXE).^2);
+	c = 0.1;
+	vecF = (vecX-vecXE) + c*(vecX-vecXE).^3;
+	matJ = eye(sizeX) + c*3.0*diag((vecX-vecXE).^2);
 endfunction
 %
 %
-switch (1)
+switch (2)
 case 0
+	sizeX = 20;
 	funchFJ = @(dummyX) funcFJ_cub(dummyX);
 	vecX0 = zeros(20,1);
 case 1
+	sizeX = 2;
 	funchFJ = @(dummyX) funcFJ_cub2(dummyX);
 	vecX0 = zeros(2,1);
+case 2
+	sizeX = 15;
+	funchFJ = @(dummyX) funcFJ_cub2(dummyX);
+	vecX0 = zeros(sizeX,1);
 endswitch
+%
+vizMarkerSize = 10;
+vizLineWidth = 1;
 %
 [ vecF0, matJ0 ] = funchFJ( vecX0 );
 %
@@ -79,20 +89,23 @@ msg( __FILE__, __LINE__, "Calculating datOut_lesquj_tr_withCDL..." );
 prm_lesquj_withCDL = prm_withCDL;
 prm_lesquj_withCDL.useLesquj = true;
 [ vecXF_lesquj_tr_withCDL, datOut_lesquj_tr_withCDL ] = findLocMin_broydenJ_tr( vecX0, vecF0, matJ0, funchFJ, prm_lesquj_withCDL );
-%
-vizMarkerSize = 20;
-vizLineWidth = 2;
+
+msg( __FILE__, __LINE__, "Calculating datOut_alytJ_newtTR..." );
+prm_alytJ_newtTR = [];
+prm_alytJ_newtTR.stepType = 31;
+[ vecX_alytJ, datOut_alytJ_newtTR ] = findLocMin_alytJ( vecX0, funchFJ, prm_alytJ_newtTR );
 %
 numFigs++; figure(numFigs);
 semilogy( ...
-  datOut_condi_sansCDL.fevalCountVals, datOut_condi_sansCDL.omegaVals, 's-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
-  datOut_tr_sansCDL.fevalCountVals,    datOut_tr_sansCDL.omegaVals, 'p-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
-  datOut_lesquj_condi_sansCDL.fevalCountVals,    datOut_lesquj_condi_sansCDL.omegaVals, '^-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
-  datOut_lesquj_tr_sansCDL.fevalCountVals,    datOut_lesquj_tr_sansCDL.omegaVals, 'o-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
-  datOut_condi_withCDL.fevalCountVals, datOut_condi_withCDL.omegaVals, '+-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
-  datOut_tr_withCDL.fevalCountVals,    datOut_tr_withCDL.omegaVals, '*-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
-  datOut_lesquj_condi_withCDL.fevalCountVals,    datOut_lesquj_condi_withCDL.omegaVals, 'v-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
-  datOut_lesquj_tr_withCDL.fevalCountVals,    datOut_lesquj_tr_withCDL.omegaVals, 'x-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth );
+  datOut_condi_sansCDL.fevalCountVals, eps^2+datOut_condi_sansCDL.omegaVals, 's-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
+  datOut_tr_sansCDL.fevalCountVals,    eps^2+datOut_tr_sansCDL.omegaVals, 'p-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
+  datOut_lesquj_condi_sansCDL.fevalCountVals,    eps^2+datOut_lesquj_condi_sansCDL.omegaVals, '^-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
+  datOut_lesquj_tr_sansCDL.fevalCountVals,    eps^2+datOut_lesquj_tr_sansCDL.omegaVals, 'o-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
+  datOut_condi_withCDL.fevalCountVals, eps^2+datOut_condi_withCDL.omegaVals, '+-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
+  datOut_tr_withCDL.fevalCountVals,    eps^2+datOut_tr_withCDL.omegaVals, '*-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
+  datOut_lesquj_condi_withCDL.fevalCountVals,    eps^2+datOut_lesquj_condi_withCDL.omegaVals, 'v-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
+  datOut_lesquj_tr_withCDL.fevalCountVals,    eps^2+datOut_lesquj_tr_withCDL.omegaVals, 'x-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
+  datOut_alytJ_newtTR.fevalCountVals,    eps^2+datOut_alytJ_newtTR.omegaVals, 'o-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth  );
 grid on;
 xlabel( "feval count" );
 ylabel( "omega" );
@@ -105,6 +118,7 @@ legend( ...
   "broydenJ tr with CDL", ...
   "lesquj condi with CDL", ...
   "lesquj tr with CDL", ...
+  "alytJ newtTR", ...
   "location", "northeast" );
 title( "legend" );
 %
@@ -118,7 +132,8 @@ loglog( ...
   1+datOut_condi_withCDL.fevalCountVals, eps^2+datOut_condi_withCDL.omegaVals, '+-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
   1+datOut_tr_withCDL.fevalCountVals,    eps^2+datOut_tr_withCDL.omegaVals, '*-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
   1+datOut_lesquj_condi_withCDL.fevalCountVals,    eps^2+datOut_lesquj_condi_withCDL.omegaVals, 'v-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
-  1+datOut_lesquj_tr_withCDL.fevalCountVals,    eps^2+datOut_lesquj_tr_withCDL.omegaVals, 'x-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth );
+  1+datOut_lesquj_tr_withCDL.fevalCountVals,    eps^2+datOut_lesquj_tr_withCDL.omegaVals, 'x-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
+  1+datOut_alytJ_newtTR.fevalCountVals,    eps^2+datOut_alytJ_newtTR.omegaVals, 'o-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth );
 grid on;
 xlabel( "1 + feval count" );
 ylabel( "omega" );
@@ -176,6 +191,28 @@ ylabel( "||delta J||F" );
 title( "||detla J||F vs feval count" );
 %
 %
+vecXE = (1:sizeX)';
+[ vecFE, matJE ] = funchFJ( vecXE );
+%figFunchY = @(dummyMatJVals)( reshape(sqrt(eps^2+sum(sumsq(dummyMatJVals(:,:,:) - matJE,1),2)),1,[]) );
+figFunchY = @(dummyMatJVals)( reshape(sqrt(eps^2+sum(sumsq( ...
+  dummyMatJVals - repmat(matJE,[1,1,size(dummyMatJVals,3)]) ...
+  ,1),2)),1,[]) );
+numFigs++; figure(numFigs);
+loglog( ...
+  datOut_condi_sansCDL.fevalCountVals, figFunchY( datOut_condi_sansCDL.matJVals ), 's-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
+  datOut_tr_sansCDL.fevalCountVals,    figFunchY( datOut_tr_sansCDL.matJVals ), 'p-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
+  datOut_lesquj_condi_sansCDL.fevalCountVals,    figFunchY( datOut_lesquj_condi_sansCDL.matJVals ), '^-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
+  datOut_lesquj_tr_sansCDL.fevalCountVals,    figFunchY( datOut_lesquj_tr_sansCDL.matJVals ), 'o-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
+  datOut_condi_withCDL.fevalCountVals, figFunchY( datOut_condi_withCDL.matJVals ), '+-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
+  datOut_tr_withCDL.fevalCountVals,    figFunchY( datOut_tr_withCDL.matJVals ), '*-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
+  datOut_lesquj_condi_withCDL.fevalCountVals,    figFunchY( datOut_lesquj_condi_withCDL.matJVals ), 'v-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth, ...
+  datOut_lesquj_tr_withCDL.fevalCountVals,    figFunchY( datOut_lesquj_tr_withCDL.matJVals ), 'x-', 'markersize', vizMarkerSize, 'linewidth',vizLineWidth );
+grid on;
+xlabel( "feval count" );
+ylabel( "||J - JE||F" );
+title( "||J - JE||F vs feval count" );
+%
+%
 msg( __FILE__, __LINE__, "" );
 msg( __FILE__, __LINE__, "DRaburn 2022.03.03..." );
 msg( __FILE__, __LINE__, " Added lesquj to findLocMin_broydenJ_tr." );
@@ -192,5 +229,8 @@ msg( __FILE__, __LINE__, " Next up: why does lesquj stall?" );
 msg( __FILE__, __LINE__, "" );
 msg( __FILE__, __LINE__, "DRaburn 2022.03.03.1850..." );
 msg( __FILE__, __LINE__, "  case 0 is as before. case 1 is crashy crashy." );
+msg( __FILE__, __LINE__, "" );
+msg( __FILE__, __LINE__, "DRaburn 2022.03.04.1130..." );
+msg( __FILE__, __LINE__, "  crashy was due to wDistPts being too small for all but one point. Revised w." );
 
 toc();
