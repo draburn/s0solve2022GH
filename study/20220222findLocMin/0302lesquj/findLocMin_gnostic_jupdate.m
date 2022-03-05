@@ -50,8 +50,9 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchF, prm=[] )
 	JUPDATE_TYPE__REORTHONORM = 20;
 	JUPDATE_TYPE__LESQUJ_PRIMAL = 30;
 	JUPDATE_TYPE__RECALC = 100;
-	jupdateType = mygetfield( prm, "jupdateType", JUPDATE_TYPE__NONE ); % THIS WORKS BETTER???
-	jupdateType = mygetfield( prm, "jupdateType", JUPDATE_TYPE__BROYDEN );
+	%jupdateType = mygetfield( prm, "jupdateType", JUPDATE_TYPE__NONE ); % THIS WORKS BETTER???
+	%jupdateType = mygetfield( prm, "jupdateType", JUPDATE_TYPE__BROYDEN );
+	jupdateType = mygetfield( prm, "jupdateType", JUPDATE_TYPE__RECALC );
 	if ( valdLev >= VALLEV__LOW )
 		assert( isrealscalar(jupdateType) );
 	endif
@@ -109,6 +110,8 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate( vecX0, funchF, prm=[] )
 			clear fooX;
 			clear fooY;
 			clear fooJ;
+		case JUPDATE_TYPE__RECALC
+			matJ_next = jacobs( vecX, funchF ); jevalCount++;
 		otherwise
 			error( "Invalid value of jupdateType." );
 		endswitch
