@@ -117,7 +117,7 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 		%
 		% Log progress.
 		if ( verbLev >= VERBLEV__PROGRESS )
-		if ( abs( iterCount - round(sqrt(iterCount))^2 ) < 0.001 )
+		%if ( abs( iterCount - round(sqrt(iterCount))^2 ) < 0.001 )
 		if ( 0 == iterCount )
 			msg( __FILE__, __LINE__, sprintf( "  %10.3e, %4d;  %5d,  %3d;  %10.3e, %10.3e.", ...
 			  time()-time0, iterCount, ...
@@ -129,7 +129,7 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			  fevalCount, jevalCount, ...
 			  sumsq(vecF)/2.0, (sumsq(vecF_prev)-sumsq(vecF))/2.0 ) );
 		endif
-		endif
+		%endif
 		endif
 		%
 		%
@@ -179,7 +179,11 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 		case STEP_TYPE__BLIND_GRAD_MIN
 			error( "STEP_TYPE__BLIND_GRAD_MIN is not implemented yet." );
 		case STEP_TYPE__SCAN_LEV_MIN
-			error( "STEP_TYPE__SCAN_LEV_MIN is not implemented yet." );
+			funchDeltaOfS = @(s)( ( s*matH + (1.0-s)*hNorm*eye(sizeX,sizeX) ) \ ( -s*vecG ) );
+			funchLevOmegaOfS = @(s)(0.5*sumsq(funchF( vecX + funchDeltaOfS(s) )));
+			sOfMin = fminbnd( funchLevOmegaOfS, 0.0001, 0.9999 );
+			vecDelta = funchDeltaOfS(sOfMin);
+			% This needs validation.
 		otherwise
 			error( "Invalid value of stepType." );
 		endswitch
@@ -344,13 +348,14 @@ endfunction
 %!	vecX0 = zeros(sizeX,1);
 %!	%
 %!	msg( __FILE__, __LINE__, "" );
-%!	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN ~~~ " );
+%!	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN + default ~~~ " );
 %!	prm = [];
 %!	prm.jupdateType = JUPDATE_TYPE__BROYDEN;
 %!	[ vecXF, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm );
 %!	%
 %!	msg( __FILE__, __LINE__, "" );
-%!	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN_ALT ~~~ " );
+%!	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN + STEP_TYPE__SCAN_LEV_MIN ~~~ " );
 %!	prm = [];
-%!	prm.jupdateType = JUPDATE_TYPE__BROYDEN_ALT;
+%!	prm.jupdateType = JUPDATE_TYPE__BROYDEN;
+%!	prm.stepType = STEP_TYPE__SCAN_LEV_MIN;
 %!	[ vecXF, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm );
