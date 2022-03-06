@@ -15,21 +15,28 @@ function [ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals,
 	%
 	useDistanceWeights = true;
 	useLatestPtAs0 = true;
+	indexOfPt0 = [];
 	if ( ~isempty(prm) )
 		useDistanceWeights = mygetfield( prm, "useDistanceWeights", useDistanceWeights );
+		useLatestPtAs0 = mygetfield( prm, "useLatestPtAs0", useLatestPtAs0 );
+		indexOfPt0 = mygetfield( prm, "indexOfPt0", indexOfPt0 );
 	endif
 	if ( debugMode )
 		assert( isscalar(useDistanceWeights) );
 		assert( isbool(useDistanceWeights) );
+		assert( isscalar(useLatestPtAs0) );
+		assert( isbool(useLatestPtAs0) );
 	endif
 	matIX = eye(sizeX,sizeX);
 	%
 	%
 	%
+	if (isempty(indexOfPt0))
 	if (useLatestPtAs0)
 		indexOfPt0 = numVals;
 	else
 		[ foo, indexOfPt0 ] = min( sumsq(vecFVals,1) );
+	endif
 	endif
 	vecX0 = vecXVals( :, indexOfPt0 );
 	vecF0 = vecFVals( :, indexOfPt0 );

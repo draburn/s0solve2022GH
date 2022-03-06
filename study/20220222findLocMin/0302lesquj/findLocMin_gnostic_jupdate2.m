@@ -12,27 +12,28 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 	%
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__UNLIMITED );
-	if ( valdLev >= VALLEV__LOW )
+	if ( valdLev >= VALDLEV__LOW )
 		assert( isrealscalar(verbLev) );
 		assert( isrealscalar(valdLev) );
 	endif
 	%
 	sizeX = size(vecX0,1);
-	if ( valdLev >= VALLEV__MEDIUM )
+	if ( valdLev >= VALDLEV__MEDIUM )
 		assert( isrealarray(vecX0,[sizeX,1]) );
 	endif
 	%
 	vecF0 = funchF( vecX0 );
 	fevalCount++;
 	sizeF = size(vecF0,1);
-	if ( valdLev >= VALLEV__MEDIUM )
+	if ( valdLev >= VALDLEV__MEDIUM )
 		assert( isrealarray(vecF0,[sizeF,1]) );
 	endif
 	collected_vecXVals = [ collected_vecXVals, vecX0 ];
 	collected_vecFVals = [ collected_vecFVals, vecF0 ];
+	collected_indexCurrent = size(collected_vecXVals,2);
 	%
 	matJ0 = jacobs( vecX0, funchF ); jevalCount++;
-	if ( valdLev >= VALLEV__MEDIUM )
+	if ( valdLev >= VALDLEV__MEDIUM )
 		assert( isrealarray(matJ0,[sizeF,sizeX]) );
 	endif
 	%
@@ -54,7 +55,7 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 	iterMax = mygetfield( prm, "iterMax", 300 );
 	omegaMax = mygetfield( prm, "omegaMax", omega0/eps );
 	distMax = mygetfield( prm, "distMax", fNorm0/(eps*jNorm0) );
-	if ( valdLev >= VALLEV__LOW )
+	if ( valdLev >= VALDLEV__LOW )
 		assert( isrealscalar(distMax) );
 		assert( isrealscalar(omegaMin) );
 		assert( isrealscalar(omegaMax) );
@@ -66,21 +67,24 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 	jupdateType = mygetfield( prm, "jupdateType", JUPDATE_TYPE__RECALC );
 	cholSafeTol = mygetfield( prm, "cholSafeTol", sqrt(eps) );
 	muRegu = mygetfield( prm, "muRegu", sqrt(eps) );
+	sMin = mygetfield( prm, "sMin", 0.0001 );
 	allowUphillSteps = mygetfield( prm, "allowUphillSteps", false );
-	if ( valdLev >= VALLEV__LOW )
+	if ( valdLev >= VALDLEV__LOW )
 		assert( isrealscalar(stepType) );
 		assert( isrealscalar(jupdateType) );
 		assert( isrealscalar(cholSafeTol) );
 		assert( 0.0 < cholSafeTol );
 		assert( isrealscalar(muRegu) );
 		assert( 0.0 < muRegu );
+		assert( isrealscalar(sMin) );
+		assert( 0.0 <= sMin );
 		assert( isscalar(allowUphillSteps) );
 		assert( isbool(allowUphillSteps) );
 	endif
 	%
 	omegaFallTol = mygetfield( prm, "omegaFallTol", omega0*(eps^2) );
 	deltaJNormTol = mygetfield( prm, "deltaJNormTol", jNorm0*eps );
-	if ( valdLev >= VALLEV__LOW )
+	if ( valdLev >= VALDLEV__LOW )
 		assert( isrealscalar(omegaFallTol) );
 		assert( isrealscalar(deltaJNormTol) );
 	endif
@@ -181,7 +185,12 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 		case STEP_TYPE__SCAN_LEV_MIN
 			funchDeltaOfS = @(s)( ( s*matH + (1.0-s)*hNorm*eye(sizeX,sizeX) ) \ ( -s*vecG ) );
 			funchLevOmegaOfS = @(s)(0.5*sumsq(funchF( vecX + funchDeltaOfS(s) )));
-			sOfMin = fminbnd( funchLevOmegaOfS, 0.0001, 0.9999 );
+			[ matR, cholFlag ] = chol( matH );
+			if ( 0~=cholFlag || min(diag(matR)) <= cholSafeTol*max(abs(diag(matR))) )
+				sOfMin = fminbnd( funchLevOmegaOfS, sMin, 0.9999 );
+			else
+				sOfMin = fminbnd( funchLevOmegaOfS, sMin, 1.0 );
+			endif
 			vecDelta = funchDeltaOfS(sOfMin);
 			% This needs validation.
 		otherwise
@@ -230,10 +239,15 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			vecX_next = vecX_trial;
 			vecF_next = vecF_trial;
 			omegaFall = omega - omega_trial; % Negative if uphill.
+			collected_vecXVals = [ collected_vecXVals, vecX_trial ];
+			collected_vecFVals = [ collected_vecFVals, vecF_trial ];
+			collected_indexOfNext = size(collected_vecXVals,2);
 		else
 			vecX_next = vecX;
 			vecF_next = vecF;
 			omegaFall = 0.0;
+			collected_vecXVals = [ collected_vecXVals, vecX_trial ];
+			collected_vecFVals = [ collected_vecFVals, vecF_trial ];
 		endif
 		%
 		%
@@ -248,7 +262,7 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			assert( 0.0 ~= fooXSq );
 			fooJ = (fooY*(fooX'))/fooXSq;
 			matJ_next = matJ + fooJ;
-			if ( valdLev >= VALLEV__HIGH )
+			if ( valdLev >= VALDLEV__HIGH )
 				assert( reldiff( matJ_next*(vecX_trial-vecX), vecF_trial-vecF ) <= sqrt(eps) );
 			endif
 		case JUPDATE_TYPE__BROYDEN_ALT
@@ -256,13 +270,26 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			matJ_next = matJ + ( vecF_trial - (vecF+matJ*vecDelta) )*(vecDelta'/deltaNormSq);
 			% Instead dividing the full matrix by the scalar works better in one test case.
 			%matJ_next = matJ + ((( vecF_trial - (vecF+matJ*vecDelta) )*(vecDelta'))/deltaNormSq);
-			if ( valdLev >= VALLEV__HIGH )
+			if ( valdLev >= VALDLEV__HIGH )
 				assert( reldiff( matJ_next*(vecX_trial-vecX), vecF_trial-vecF ) <= sqrt(eps) );
 			endif
 		case JUPDATE_TYPE__SECANT_REORTHONORM
 			error( "JUPDATE_TYPE__SECANT_REORTHONORM is not implemented yet." );
 		case JUPDATE_TYPE__LESQUJ_PRIMAL
-			error( "JUPDATE_TYPE__LESQUJ_PRIMAL is not implemented here yet." );
+			assert( reldiff(vecX_next,collected_vecXVals(:,collected_indexOfNext)) <= eps );
+			assert( reldiff(vecF_next,collected_vecFVals(:,collected_indexOfNext)) <= eps );
+			lesquj_prm = [];
+			lesquj_prm.indexOfPt0 = collected_indexOfNext;
+			lesquj_prm.jevalDat(1).vecX = vecX0;
+			lesquj_prm.jevalDat(1).vecF = vecF0;
+			lesquj_prm.jevalDat(1).matJ = matJ0;
+			[ lesquj_vecX0, lesquj_vecF0, lesquj_matJ0, lesquj_datOut ] = calcLesquj_basic( collected_vecXVals, collected_vecFVals, lesquj_prm );
+			assert( reldiff(lesquj_vecX0,vecX_next) <= eps );
+			assert( reldiff(lesquj_vecF0,vecF_next) <= eps );
+			matJ_next = lesquj_matJ0;
+			if ( valdLev >= VALDLEV__HIGH )
+				assert( isrealarray(matJ_next,[sizeF,sizeX]) );
+			endif
 		case JUPDATE_TYPE__RECALC
 			matJ_next = jacobs( vecX_next, funchF ); jevalCount++;
 		otherwise
@@ -357,5 +384,20 @@ endfunction
 %!	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN + STEP_TYPE__SCAN_LEV_MIN ~~~ " );
 %!	prm = [];
 %!	prm.jupdateType = JUPDATE_TYPE__BROYDEN;
+%!	prm.stepType = STEP_TYPE__SCAN_LEV_MIN;
+%!	[ vecXF, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm );
+%!	%
+%!	msg( __FILE__, __LINE__, "" );
+%!	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__LESQUJ_PRIMAL + STEP_TYPE__SCAN_LEV_MIN ~~~ " );
+%!	prm = [];
+%!	prm.jupdateType = JUPDATE_TYPE__LESQUJ_PRIMAL;
+%!	prm.stepType = STEP_TYPE__SCAN_LEV_MIN;
+%!	[ vecXF, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm );
+%!	%
+%!	%
+%!	msg( __FILE__, __LINE__, "" );
+%!	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__RECALC + STEP_TYPE__SCAN_LEV_MIN ~~~ " );
+%!	prm = [];
+%!	prm.jupdateType = JUPDATE_TYPE__RECALC;
 %!	prm.stepType = STEP_TYPE__SCAN_LEV_MIN;
 %!	[ vecXF, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm );
