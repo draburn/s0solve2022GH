@@ -121,7 +121,7 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 		%
 		% Log progress.
 		if ( verbLev >= VERBLEV__PROGRESS )
-		%if ( abs( iterCount - round(sqrt(iterCount))^2 ) < 0.001 )
+		if ( abs( iterCount - round(sqrt(iterCount))^2 ) < 0.001 )
 		if ( 0 == iterCount )
 			msg( __FILE__, __LINE__, sprintf( "  %10.3e, %4d;  %5d,  %3d;  %10.3e, %10.3e.", ...
 			  time()-time0, iterCount, ...
@@ -133,7 +133,7 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			  fevalCount, jevalCount, ...
 			  sumsq(vecF)/2.0, (sumsq(vecF_prev)-sumsq(vecF))/2.0 ) );
 		endif
-		%endif
+		endif
 		endif
 		%
 		%
@@ -344,7 +344,7 @@ endfunction
 %!	setprngstates(0);
 %!	numFigs = 0;
 %!	%
-%!	caseNum = 30;
+%!	caseNum = 40;
 %!	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 %!	switch (caseNum)
 %!	case 0
