@@ -344,7 +344,7 @@ endfunction
 %!	setprngstates(0);
 %!	numFigs = 0;
 %!	%
-%!	caseNum = 40;
+%!	caseNum = 30;
 %!	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 %!	switch (caseNum)
 %!	case 0

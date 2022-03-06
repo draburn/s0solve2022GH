@@ -85,8 +85,9 @@ function [ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals,
 		wDistPts = (2.0 * minDeltaNormSq) ./ ( minDeltaNormSq + deltaNormSqPts );
 		assert( isrealarray(wDistPts) );
 		wResPts = norm(vecF0)./norm(vecFPts);
-		wResPts .^= 0.5;
-		wDistPts .^= 0.5;
+		% DRaburn 2022.03.05: Turning these ".^=0.5"s off helps hugelly in a case.
+		%wResPts .^= 0.5;
+		%wDistPts .^= 0.5;
 		wPts = wDistPts.*wResPts;
 		assert( isrealarray(wPts) );
 		vecRhoPts = vecFPts - vecF0;
