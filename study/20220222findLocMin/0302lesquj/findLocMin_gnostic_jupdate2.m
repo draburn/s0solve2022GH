@@ -66,7 +66,7 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 	jupdateType = mygetfield( prm, "jupdateType", JUPDATE_TYPE__RECALC );
 	cholSafeTol = mygetfield( prm, "cholSafeTol", sqrt(eps) );
 	muRegu = mygetfield( prm, "muRegu", sqrt(eps) );
-	allowUphillSteps = mygetfield( prm, "allowUphillSteps", true );
+	allowUphillSteps = mygetfield( prm, "allowUphillSteps", false );
 	if ( valdLev >= VALLEV__LOW )
 		assert( isrealscalar(stepType) );
 		assert( isrealscalar(jupdateType) );
@@ -237,8 +237,7 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 		switch( jupdateType )
 		case JUPDATE_TYPE__NONE
 			matJ_next = matJ;
-		case JUPDATE_TYPE__BROYDEN_FOO
-			% The way broyden behaves depends on this one huge spike...
+		case JUPDATE_TYPE__BROYDEN
 			fooX = vecX_trial - vecX;
 			fooY = vecF_trial - ( vecF + matJ*fooX );
 			fooXSq = fooX'*fooX;
@@ -248,9 +247,10 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			if ( valdLev >= VALLEV__HIGH )
 				assert( reldiff( matJ_next*(vecX_trial-vecX), vecF_trial-vecF ) <= sqrt(eps) );
 			endif
-		case JUPDATE_TYPE__BROYDEN_CURT
+		case JUPDATE_TYPE__BROYDEN_ALT
+			% This could behave differently due to finite precision effects.
 			matJ_next = matJ + ( vecF_trial - (vecF+matJ*vecDelta) )*(vecDelta'/deltaNormSq);
-			% This alternative, however, does work:
+			% Instead dividing the full matrix by the scalar works better in one test case.
 			%matJ_next = matJ + ((( vecF_trial - (vecF+matJ*vecDelta) )*(vecDelta'))/deltaNormSq);
 			if ( valdLev >= VALLEV__HIGH )
 				assert( reldiff( matJ_next*(vecX_trial-vecX), vecF_trial-vecF ) <= sqrt(eps) );
@@ -344,13 +344,13 @@ endfunction
 %!	vecX0 = zeros(sizeX,1);
 %!	%
 %!	msg( __FILE__, __LINE__, "" );
-%!	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN_CURT ~~~ " );
+%!	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN ~~~ " );
 %!	prm = [];
-%!	prm.jupdateType = JUPDATE_TYPE__BROYDEN_CURT;
+%!	prm.jupdateType = JUPDATE_TYPE__BROYDEN;
 %!	[ vecXF, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm );
 %!	%
 %!	msg( __FILE__, __LINE__, "" );
-%!	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN_FOO ~~~ " );
+%!	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN_ALT ~~~ " );
 %!	prm = [];
-%!	prm.jupdateType = JUPDATE_TYPE__BROYDEN_FOO;
+%!	prm.jupdateType = JUPDATE_TYPE__BROYDEN_ALT;
 %!	[ vecXF, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm );
