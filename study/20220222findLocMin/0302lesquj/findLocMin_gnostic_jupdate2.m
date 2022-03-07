@@ -68,7 +68,7 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 	cholSafeTol = mygetfield( prm, "cholSafeTol", sqrt(eps) );
 	muRegu = mygetfield( prm, "muRegu", sqrt(eps) );
 	sMin = mygetfield( prm, "sMin", 0.0001 );
-	%sMin = mygetfield( prm, "sMin", 0.01 );
+	%sMin = mygetfield( prm, "sMin", 0.1 );
 	allowUphillSteps = mygetfield( prm, "allowUphillSteps", false );
 	if ( valdLev >= VALDLEV__LOW )
 		assert( isrealscalar(stepType) );
