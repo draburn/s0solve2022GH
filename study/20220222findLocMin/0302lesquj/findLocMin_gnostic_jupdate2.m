@@ -32,7 +32,9 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 	collected_vecFVals = [ collected_vecFVals, vecF0 ];
 	collected_indexCurrent = size(collected_vecXVals,2);
 	%
-	matJ0 = jacobs( vecX0, funchF ); jevalCount++;
+	% The "complex step method" used by jacos() is, apparently, literal complex numbers.
+	%%%matJ0 = jacobs( vecX0, funchF ); jevalCount++;
+	matJ0 = fdjaco( funchF, vecX0 ); jevalCount++;
 	if ( valdLev >= VALDLEV__MEDIUM )
 		assert( isrealarray(matJ0,[sizeF,sizeX]) );
 	endif
