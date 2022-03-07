@@ -104,6 +104,15 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 	vecF = vecF0;
 	matJ = matJ0;
 	iterCount = 0;
+	if ( nargout >= 2 )
+		datOut.fevalCountVals(iterCount+1) = fevalCount;
+		datOut.jevalCountVals(iterCount+1) = jevalCount;
+		datOut.vecXVals(:,iterCount+1) = vecX;
+		datOut.vecFVals(:,iterCount+1) = vecF;
+		datOut.matJVals(:,:,iterCount+1) = matJ;
+		datOut.iterDat(iterCount+1).collected_vecXVals = collected_vecXVals;
+		datOut.iterDat(iterCount+1).collected_vecFVals = collected_vecFVals;
+	endif
 	doMainLoop = true;
 	while (1)
 		% Set quantities.
@@ -191,6 +200,9 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			else
 				sOfMin = fminbnd( funchLevOmegaOfS, sMin, 1.0 );
 			endif
+			if ( nargout >= 2 )
+				datOut.sVals(:,iterCount) = sOfMin;
+			endif
 			vecDelta = funchDeltaOfS(sOfMin);
 			% This needs validation.
 		otherwise
@@ -208,6 +220,9 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 		deltaNormSq = vecDelta'*vecDelta; % This can be important too???
 		deltaNorm = sqrt(deltaNormSq);
 		assert( 0.0 < deltaNorm );
+		if ( nargout >= 2 )
+			datOut.vecDeltaVals(:,iterCount) = vecDelta;
+		endif
 		%
 		vecF_trial = funchF( vecX_trial );
 		fevalCount++;
@@ -284,6 +299,9 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			lesquj_prm.jevalDat(1).vecF = vecF0;
 			lesquj_prm.jevalDat(1).matJ = matJ0;
 			[ lesquj_vecX0, lesquj_vecF0, lesquj_matJ0, lesquj_datOut ] = calcLesquj_basic( collected_vecXVals, collected_vecFVals, lesquj_prm );
+			if ( nargout >= 2 )
+				datOut.iterDat(iterCount).lesquj_datOut = lesquj_datOut;
+			endif
 			assert( reldiff(lesquj_vecX0,vecX_next) <= eps );
 			assert( reldiff(lesquj_vecF0,vecF_next) <= eps );
 			matJ_next = lesquj_matJ0;
@@ -304,6 +322,15 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 		vecX = vecX_next;
 		vecF = vecF_next;
 		matJ = matJ_next;
+		if ( nargout >= 2 )
+			datOut.fevalCountVals(iterCount+1) = fevalCount;
+			datOut.jevalCountVals(iterCount+1) = jevalCount;
+			datOut.vecXVals(:,iterCount+1) = vecX;
+			datOut.vecFVals(:,iterCount+1) = vecF;
+			datOut.matJVals(:,:,iterCount+1) = matJ;
+			datOut.iterDat(iterCount+1).collected_vecXVals = collected_vecXVals;
+			datOut.iterDat(iterCount+1).collected_vecFVals = collected_vecFVals;
+		endif
 		%
 		%
 		if ( (omegaFall < omegaFallTol) && (deltaJNorm < deltaJNormTol) )

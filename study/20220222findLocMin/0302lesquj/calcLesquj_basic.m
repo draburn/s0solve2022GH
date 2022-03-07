@@ -144,6 +144,14 @@ function [ vecX0, vecF0, matJ0, datOut ] = calcLesquj_basic( vecXVals, vecFVals,
 	if ( nargout >= 2 )
 		%vecResPts = vecRhoPts - matJ0*vecDeltaPts;
 		datOut = [];
+		datOut.vecX0 = vecX0;
+		datOut.vecF0 = vecF0;
+		datOut.vecXPts = vecXPts;
+		datOut.vecFPts = vecFPts;
+		datOut.wDistPts = wDistPts;
+		datOut.wResPts = wResPts;
+		datOut.wPts = wPts;
+		datOut.matJ0 = matJ0;
 	endif
 return;
 endfunction
