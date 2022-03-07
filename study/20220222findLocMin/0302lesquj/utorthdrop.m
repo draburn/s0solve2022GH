@@ -13,7 +13,7 @@ function [ matV, rvecDrop ] = utorthdrop( matU, tol=0.9999, prm=[] )
 	assert( 1 <= numPasses );
 	
 	
-	rvecDrop = zeros(1,sizeU);
+	rvecDrop = logical(zeros(1,sizeU));
 	matV = matU;
 	sizeV = sizeU;
 	for n=1:numPasses

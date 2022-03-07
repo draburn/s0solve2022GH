@@ -328,28 +328,43 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			pool_vecDeltaX = [ vecDelta, pool_vecDeltaX ];
 			pool_vecDeltaF = [ vecF_trial-vecF, pool_vecDeltaF ];
 			poolSize = size( pool_vecDeltaX, 2 );
-			poolTol = 0.9;
-			[ matV, rvecDrop ] = utorthdrop( pool_vecDeltaX, poolTol );
+			poolTol = 0.5;
+			[ matQ, rvecDrop ] = utorthdrop( pool_vecDeltaX, poolTol );
 			% Can we compound in the drop-vectors orthogonally???
-			%drop_vecDeltaX = pool_vecDeltaX(:,rvecDrop);
-			%drop_vecDeltaF = pool_vecDeltaF(:,rvecDrop);
-			%[ drop_matV, drop_rvecDrop ] = utorthdrop( drop_vecDeltaX, sqrt(poolTol) );
-			if ( sum(rvecDrop) > 1 )
-				msg( __FILE__, __LINE__, "When dropping multiple vectors at a time, mightn't it be better to apply them simultaneously?" );
-			endif
-			for n=poolSize:-1:1
-			if (rvecDrop(n))
-				fooX = pool_vecDeltaX(:,n);
-				fooF = pool_vecDeltaF(:,n);
-				fooJ = ( fooF - matJBase*fooX ) * (fooX') / (fooX'*fooX);
-				matJBase += fooJ;
-				pool_vecDeltaX = [ pool_vecDeltaX(:,1:n-1), pool_vecDeltaX(:,n+1:end) ];
-				pool_vecDeltaF = [ pool_vecDeltaF(:,1:n-1), pool_vecDeltaF(:,n+1:end) ];
-			endif
-			endfor
-			matT = matV'*pool_vecDeltaX;
-			matW = pool_vecDeltaF / matT; %Ja?
-			matJ_next = matJBase*( eye(sizeX,sizeX) - matV*(matV') ) + matW * (matV'); %Ja?
+			%%
+			doReorthnormDrop = false;
+			if ( sum(double(rvecDrop)) > 0 )
+			if (doReorthnormDrop)
+				% This works poorly in some cases.
+				drop_vecDeltaX = pool_vecDeltaX(:,rvecDrop);
+				drop_vecDeltaF = pool_vecDeltaF(:,rvecDrop);
+				[ drop_matQ, drop_rvecDrop ] = utorthdrop( drop_vecDeltaX, sqrt(poolTol) );
+				assert( 0 == sum(double(drop_rvecDrop)) );
+				%
+				drop_matR = drop_matQ' * drop_vecDeltaX;
+				drop_matY = drop_vecDeltaF - matJBase*drop_vecDeltaX;
+				drop_matW = drop_matY / drop_matR;
+				matJBase += drop_matW * (drop_matQ');
+				%
+				pool_vecDeltaX = pool_vecDeltaX(:,~rvecDrop);
+				pool_vecDeltaF = pool_vecDeltaF(:,~rvecDrop);
+			else % not (doReorthnormDrop)
+				for n=poolSize:-1:1
+				if (rvecDrop(n))
+					fooX = pool_vecDeltaX(:,n);
+					fooF = pool_vecDeltaF(:,n);
+					fooJ = ( fooF - matJBase*fooX ) * (fooX') / (fooX'*fooX);
+					matJBase += fooJ;
+					pool_vecDeltaX = [ pool_vecDeltaX(:,1:n-1), pool_vecDeltaX(:,n+1:end) ];
+					pool_vecDeltaF = [ pool_vecDeltaF(:,1:n-1), pool_vecDeltaF(:,n+1:end) ];
+				endif
+				endfor
+			endif % not (doReorthnormDrop)
+			endif % (sum(rvecDrop) > 0 )
+			%%
+			matR = matQ'*pool_vecDeltaX;
+			matW = pool_vecDeltaF / matR;
+			matJ_next = matJBase*( eye(sizeX,sizeX) - matQ*(matQ') ) + matW * (matQ');
 		case JUPDATE_TYPE__RECALC
 			matJ_next = jacobs( vecX_next, funchF ); jevalCount++;
 		otherwise
