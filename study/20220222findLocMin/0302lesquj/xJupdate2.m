@@ -47,6 +47,7 @@
 	vecX0 = zeros(sizeX,1);
 	sizeF = sizeX;
 	%
+	if (0)
 	msg( __FILE__, __LINE__, "" );
 	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__LESQUJ_PRIMAL + STEP_TYPE__SCAN_LEV_MIN ~~~ " );
 	prm_lesquj_scan = [];
@@ -54,6 +55,14 @@
 	prm_lesquj_scan.stepType = STEP_TYPE__SCAN_LEV_MIN;
 	[ vecXF_lesquj_scan, datOut_lesquj_scan ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_lesquj_scan );
 	return
+	end
+	%
+	msg( __FILE__, __LINE__, "" );
+	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__REORTHONORM_POOL + STEP_TYPE__SCAN_LEV_MIN ~~~ " );
+	prm_rpool_scan = [];
+	prm_rpool_scan.jupdateType = JUPDATE_TYPE__REORTHONORM_POOL;
+	prm_rpool_scan.stepType = STEP_TYPE__SCAN_LEV_MIN;
+	[ vecXF_rpool_scan, datOut_rpool_scan ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_rpool_scan );
 	%
 	msg( __FILE__, __LINE__, "" );
 	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN + default ~~~ " );

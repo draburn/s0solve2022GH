@@ -36,6 +36,9 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 	if ( valdLev >= VALDLEV__MEDIUM )
 		assert( isrealarray(matJ0,[sizeF,sizeX]) );
 	endif
+	pool_vecDeltaX = eye(sizeX,sizeX);
+	pool_vecDeltaF = matJ0;
+	matJBase = matJ0;
 	%
 	omega0 = sumsq(vecF0)/2.0;
 	vecG0 = matJ0'*vecF0;
@@ -320,6 +323,26 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			if ( valdLev >= VALDLEV__HIGH )
 				assert( isrealarray(matJ_next,[sizeF,sizeX]) );
 			endif
+		case JUPDATE_TYPE__REORTHONORM_POOL
+			%error( "JUPDATE_TYPE__REORTHONORM_POOL is not implemented yet; below is pseudo code." );
+			pool_vecDeltaX = [ vecDelta, pool_vecDeltaX ];
+			pool_vecDeltaF = [ vecF_trial-vecF, pool_vecDeltaF ];
+			poolSize = size( pool_vecDeltaX, 2 );
+			poolTol = 0.9;
+			[ matV, rvecDrop ] = utorthdrop( pool_vecDeltaX, poolTol );
+			for n=poolSize:-1:1
+			if (rvecDrop(n))
+				fooX = pool_vecDeltaX(:,n);
+				fooF = pool_vecDeltaF(:,n);
+				fooJ = ( fooF - matJBase*fooX ) * (fooX') / (fooX'*fooX);
+				matJBase += fooJ;
+				pool_vecDeltaX = [ pool_vecDeltaX(:,1:n-1), pool_vecDeltaX(:,n+1:end) ];
+				pool_vecDeltaF = [ pool_vecDeltaF(:,1:n-1), pool_vecDeltaF(:,n+1:end) ];
+			endif
+			endfor
+			matT = matV'*pool_vecDeltaX;
+			matW = pool_vecDeltaF / matT; %Ja?
+			matJ_next = matJBase*( eye(sizeX,sizeX) - matV*(matV') ) + matW * (matV'); %Ja?
 		case JUPDATE_TYPE__RECALC
 			matJ_next = jacobs( vecX_next, funchF ); jevalCount++;
 		otherwise
@@ -329,7 +352,7 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 		%
 		%
 		if (~acceptDeltaAsNext)
-		if ( verbLev >= VERBLEV__PROGRESS+1 )
+		if ( verbLev >= VERBLEV__PROGRESS+10 )
 			msg( __FILE__, __LINE__, sprintf( "Rejection update: %10.3e to %10.3e (%10.3e).",
 			  vecF'*matJ*vecDelta, vecF'*matJ_next*vecDelta, -omegaFall ) );
 		endif
