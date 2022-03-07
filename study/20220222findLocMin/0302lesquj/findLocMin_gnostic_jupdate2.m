@@ -10,7 +10,7 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 	collected_vecXVals = [];
 	collected_vecFVals = [];
 	%
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS+1 );
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__UNLIMITED );
 	if ( valdLev >= VALDLEV__LOW )
 		assert( isrealscalar(verbLev) );
@@ -68,6 +68,7 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 	cholSafeTol = mygetfield( prm, "cholSafeTol", sqrt(eps) );
 	muRegu = mygetfield( prm, "muRegu", sqrt(eps) );
 	sMin = mygetfield( prm, "sMin", 0.0001 );
+	%sMin = mygetfield( prm, "sMin", 0.01 );
 	allowUphillSteps = mygetfield( prm, "allowUphillSteps", false );
 	if ( valdLev >= VALDLEV__LOW )
 		assert( isrealscalar(stepType) );
@@ -215,6 +216,16 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			assert( isrealarray(vecDelta,[sizeX,1]) );
 		endif
 		vecX_trial = vecX + vecDelta;
+		%
+		if (0)
+		%for n=1:size(collected_vecXVals,2)
+		for n=size(collected_vecXVals,2):size(collected_vecXVals,2)
+		if ( reldiff(vecX_trial,collected_vecXVals(:,n)) <= sqrt(eps) && sumsq(collected_vecFVals(:,n))>sqrt(eps) )
+			error( "Trial x is too close to a previous trial." );
+		endif
+		endfor
+		endif
+		%
 		vecDelta = vecX_trial - vecX; % This can be important due to FPfx.
 		%deltaNormSq = sumsq(vecDelta);
 		deltaNormSq = vecDelta'*vecDelta; % This can be important too???
@@ -260,7 +271,8 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 		else
 			vecX_next = vecX;
 			vecF_next = vecF;
-			omegaFall = 0.0;
+			%omegaFall = 0.0;
+			omegaFall = omega - omega_trial; % Negative if uphill.
 			collected_vecXVals = [ collected_vecXVals, vecX_trial ];
 			collected_vecFVals = [ collected_vecFVals, vecF_trial ];
 		endif
@@ -314,6 +326,14 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			error( "Invalid value of jupdateType." );
 		endswitch
 		deltaJNorm = sqrt(sum(sumsq(matJ_next-matJ)));
+		%
+		%
+		if (~acceptDeltaAsNext)
+		if ( verbLev >= VERBLEV__PROGRESS+1 )
+			msg( __FILE__, __LINE__, sprintf( "Rejection update: %10.3e to %10.3e (%10.3e).",
+			  vecF'*matJ*vecDelta, vecF'*matJ_next*vecDelta, -omegaFall ) );
+		endif
+		endif
 		%
 		%
 		vecX_prev = vecX;

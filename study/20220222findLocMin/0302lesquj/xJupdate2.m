@@ -25,6 +25,9 @@
 	case 20
 		sizeX = 2;
 		c_cuby = 0.01;
+	case 25
+		sizeX = 15;
+		c_cuby = 0.001;
 	case 30
 		sizeX = 15;
 		c_cuby = 0.01;
@@ -45,6 +48,14 @@
 	sizeF = sizeX;
 	%
 	msg( __FILE__, __LINE__, "" );
+	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__LESQUJ_PRIMAL + STEP_TYPE__SCAN_LEV_MIN ~~~ " );
+	prm_lesquj_scan = [];
+	prm_lesquj_scan.jupdateType = JUPDATE_TYPE__LESQUJ_PRIMAL;
+	prm_lesquj_scan.stepType = STEP_TYPE__SCAN_LEV_MIN;
+	[ vecXF_lesquj_scan, datOut_lesquj_scan ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_lesquj_scan );
+	return
+	%
+	msg( __FILE__, __LINE__, "" );
 	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN + default ~~~ " );
 	prm_broyd_def = [];
 	prm_broyd_def.jupdateType = JUPDATE_TYPE__BROYDEN;
@@ -56,13 +67,6 @@
 	prm_broyd_scan.jupdateType = JUPDATE_TYPE__BROYDEN;
 	prm_broyd_scan.stepType = STEP_TYPE__SCAN_LEV_MIN;
 	[ vecXF_broyd_scan, datOut_broyd_scan ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_broyd_scan );
-	%
-	msg( __FILE__, __LINE__, "" );
-	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__LESQUJ_PRIMAL + STEP_TYPE__SCAN_LEV_MIN ~~~ " );
-	prm_lesquj_scan = [];
-	prm_lesquj_scan.jupdateType = JUPDATE_TYPE__LESQUJ_PRIMAL;
-	prm_lesquj_scan.stepType = STEP_TYPE__SCAN_LEV_MIN;
-	[ vecXF_lesquj_scan, datOut_lesquj_scan ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_lesquj_scan );
 	%
 	%
 	msg( __FILE__, __LINE__, "" );
