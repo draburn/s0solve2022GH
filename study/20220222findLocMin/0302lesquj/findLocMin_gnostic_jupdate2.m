@@ -330,6 +330,13 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			poolSize = size( pool_vecDeltaX, 2 );
 			poolTol = 0.9;
 			[ matV, rvecDrop ] = utorthdrop( pool_vecDeltaX, poolTol );
+			% Can we compound in the drop-vectors orthogonally???
+			%drop_vecDeltaX = pool_vecDeltaX(:,rvecDrop);
+			%drop_vecDeltaF = pool_vecDeltaF(:,rvecDrop);
+			%[ drop_matV, drop_rvecDrop ] = utorthdrop( drop_vecDeltaX, sqrt(poolTol) );
+			if ( sum(rvecDrop) > 1 )
+				msg( __FILE__, __LINE__, "When dropping multiple vectors at a time, mightn't it be better to apply them simultaneously?" );
+			endif
 			for n=poolSize:-1:1
 			if (rvecDrop(n))
 				fooX = pool_vecDeltaX(:,n);
