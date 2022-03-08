@@ -132,6 +132,7 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 		matH = matJ'*matJ;
 		gNorm = norm(vecG);
 		hNorm = max(abs(diag(matH)));
+		%msgif( verbLev >= VERBLEV__PROGRESS+1, __FILE__, __LINE__, sprintf( "rcond(matH) = %10.3e.", rcond(matH) ) );
 		%
 		%
 		% Log progress.
@@ -211,6 +212,27 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			endif
 			vecDelta = funchDeltaOfS(sOfMin);
 			% This needs validation.
+		case STEP_TYPE__SCAN_LEV_MIN_FORCE_PACH
+			matJTJ = matJ'*matJ;
+			[ matPsi, matLambda ] = eig(matJTJ);
+			[ lambdaAbsMin, nOfAbsMin ] = min(abs(diag(matLambda)));
+			vecPhiHat = matPsi(:,nOfAbsMin);
+			epsX = 1e-5;
+			h = vecF'*( funchF( vecX + epsX*vecPhiHat ) + funchF( vecX - epsX*vecPhiHat ) - 2.0*vecF )/(epsX*epsX);
+			matH_patched = matJTJ + abs(h)*(vecPhiHat*(vecPhiHat'));
+			%
+			funchDeltaOfS = @(s)( ( s*matH_patched + (1.0-s)*hNorm*eye(sizeX,sizeX) ) \ ( -s*vecG ) );
+			funchLevOmegaOfS = @(s)(0.5*sumsq(funchF( vecX + funchDeltaOfS(s) )));
+			[ matR, cholFlag ] = chol( matH_patched );
+			if ( 0~=cholFlag || min(diag(matR)) <= cholSafeTol*max(abs(diag(matR))) )
+				sOfMin = fminbnd( funchLevOmegaOfS, sMin, 0.9999 );
+			else
+				sOfMin = fminbnd( funchLevOmegaOfS, sMin, 1.0 );
+			endif
+			if ( nargout >= 2 )
+				datOut.sVals(:,iterCount) = sOfMin;
+			endif
+			vecDelta = funchDeltaOfS(sOfMin);
 		otherwise
 			error( "Invalid value of stepType." );
 		endswitch
@@ -295,7 +317,7 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			fooJ = (fooY*(fooX'))/fooXSq;
 			matJ_next = matJ + fooJ;
 			if ( valdLev >= VALDLEV__HIGH )
-				assert( reldiff( matJ_next*(vecX_trial-vecX), vecF_trial-vecF ) <= sqrt(eps) );
+				assert( reldiff( matJ_next*(vecX_trial-vecX), vecF_trial-vecF, sqrt(eps)*norm(vecF) ) <= sqrt(eps) );
 			endif
 		case JUPDATE_TYPE__BROYDEN_ALT
 			% This could behave differently due to finite precision effects.
@@ -368,7 +390,8 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			matW = pool_vecDeltaF / matR;
 			matJ_next = matJBase*( eye(sizeX,sizeX) - matQ*(matQ') ) + matW * (matQ');
 		case JUPDATE_TYPE__RECALC
-			matJ_next = jacobs( vecX_next, funchF ); jevalCount++;
+			%%%matJ_next = jacobs( vecX_next, funchF ); jevalCount++;
+			matJ_next = fdjaco( funchF, vecX_next ); jevalCount++;
 		otherwise
 			error( "Invalid value of jupdateType." );
 		endswitch
