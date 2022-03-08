@@ -483,8 +483,9 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			matJ_next = fdjaco( funchF, vecX_next ); jevalCount++;
 			if ( reldiff(matJ_next,matJ) < 0.1 )
 				msg( __FILE__, __LINE__, "Doing the new thing!" );
-				omega_model = omega + vecG'*vecDelta + 0.5*(vecDelta'*kupdate_matH*vecDelta);
-				matK += (2.0*( omega_trial - omega_model ) / deltaNormSq) * vecDelta * (vecDelta');
+				foo_matH = matJ'*matJ + matK;
+				omega_model = omega + vecG'*vecDelta + 0.5*(vecDelta'*foo_matH*vecDelta);
+				matK += (2.0*( omega_trial - omega_model ) / deltaNormSq^2) * vecDelta * (vecDelta');
 			endif
 		otherwise
 			error( "Invalid value of jupdateType." );
