@@ -230,12 +230,13 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 				msg( __FILE__, __LINE__, "Hessian infodump..." );
 				echo__vecG = vecG
 				echo__matH = matH
-				matH_regu = matH + (1.0-sOfMin)*hNorm*eye(sizeX,sizeX)/sOfMin
+				matH_bt = matH + (1.0-sOfMin)*hNorm*eye(sizeX,sizeX)/sOfMin
 				[ foo, vecG_true, matH_true ] = evalFDGH( vecX, @(x)( sumsq(funchF(x),1)/2.0 ) )
 				msg( __FILE__, __LINE__, "End infodump." );
 			endif
 		case STEP_TYPE__SCAN_LEV_MIN_KUPDATE
-			kupdate_matH = matJ'*matJ + matK;
+			matJTJ = matJ'*matJ;
+			kupdate_matH = matJTJ + matK;
 			%assert( reldiff( kupdate_matH, matH ) == 0.0 );
 			funchDeltaOfS = @(s)( ( s*kupdate_matH + (1.0-s)*hNorm*eye(sizeX,sizeX) ) \ ( -s*vecG ) );
 			funchLevOmegaOfS = @(s)(0.5*sumsq(funchF( vecX + funchDeltaOfS(s) )));
@@ -249,6 +250,16 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 				datOut.sVals(:,iterCount) = sOfMin;
 			endif
 			vecDelta = funchDeltaOfS(sOfMin);
+			%
+			if ( verbLev >= VERBLEV__PROGRESS+10 )
+				msg( __FILE__, __LINE__, "Hessian infodump..." );
+				echo__vecG = vecG
+				echo__matJTJ = matJTJ
+				echo__kupdate_matH = kupdate_matH
+				matH_bt = kupdate_matH + (1.0-sOfMin)*hNorm*eye(sizeX,sizeX)/sOfMin
+				[ foo, vecG_true, matH_true ] = evalFDGH( vecX, @(x)( sumsq(funchF(x),1)/2.0 ) )
+				msg( __FILE__, __LINE__, "End infodump." );
+			endif
 		case STEP_TYPE__SCAN_LEV_MIN_FORCE_PATCH
 			msgif ( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "Phi-patch might be helpful if not using full scan." );
 			matJTJ = matJ'*matJ;
@@ -279,7 +290,7 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 				echo__vecG = vecG
 				echo__matJTJ = matJTJ
 				echo__matH_patched = matH_patched
-				matH_regu = matH_patched + (1.0-sOfMin)*hNorm*eye(sizeX,sizeX)/sOfMin
+				matH_bt = matH_patched + (1.0-sOfMin)*hNorm*eye(sizeX,sizeX)/sOfMin
 				[ foo, vecG_true, matH_true ] = evalFDGH( vecX, @(x)( sumsq(funchF(x),1)/2.0 ) )
 				msg( __FILE__, __LINE__, "End infodump." );
 			endif
@@ -481,10 +492,11 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			matJ_next = fdjaco( funchF, vecX_next ); jevalCount++;
 		case JUPDATE_TYPE__RECALC_KUPDATE
 			matJ_next = fdjaco( funchF, vecX_next ); jevalCount++;
-			if ( reldiff(matJ_next,matJ) < 0.1 )
+			foo_matH = matJ'*matJ + matK;
+			omega_model = omega + vecG'*vecDelta + 0.5*(vecDelta'*foo_matH*vecDelta);
+			%if ( reldiff(matJ_next,matJ) < 0.1 )
+			if ( reldiff(matJ_next,matJ) < 0.1 && omega_trial > omega_model )
 				msg( __FILE__, __LINE__, "Doing the new thing!" );
-				foo_matH = matJ'*matJ + matK;
-				omega_model = omega + vecG'*vecDelta + 0.5*(vecDelta'*foo_matH*vecDelta);
 				matK += (2.0*( omega_trial - omega_model ) / deltaNormSq^2) * vecDelta * (vecDelta');
 			endif
 		otherwise
