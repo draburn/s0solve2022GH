@@ -148,15 +148,17 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 		if ( verbLev >= VERBLEV__PROGRESS )
 		if ( abs( iterCount - round(sqrt(iterCount))^2 ) < 0.001 )
 		if ( 0 == iterCount )
-			msg( __FILE__, __LINE__, sprintf( "  %10.3e, %4d;  %5d,  %3d;  %10.3e, %10.3e.", ...
+			msg( __FILE__, __LINE__, sprintf( "  %10.3e, %4d;  %5d,  %3d;  %10.3e, %10.3e;  %10.3e.", ...
 			  time()-time0, iterCount, ...
 			  fevalCount, jevalCount, ...
-			  sumsq(vecF)/2.0, -1.0 ) );
+			  sumsq(vecF)/2.0, -1.0, ...
+			  gNorm ) );
 		else
-			msg( __FILE__, __LINE__, sprintf( "  %10.3e, %4d;  %5d,  %3d;  %10.3e, %10.3e.", ...
+			msg( __FILE__, __LINE__, sprintf( "  %10.3e, %4d;  %5d,  %3d;  %10.3e, %10.3e;  %10.3e.", ...
 			  time()-time0, iterCount, ...
 			  fevalCount, jevalCount, ...
-			  sumsq(vecF)/2.0, (sumsq(vecF_prev)-sumsq(vecF))/2.0 ) );
+			  sumsq(vecF)/2.0, (sumsq(vecF_prev)-sumsq(vecF))/2.0, ...
+			  gNorm ) );
 		endif
 		endif
 		endif
@@ -225,15 +227,18 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 				msg( __FILE__, __LINE__, "Hessian infodump..." );
 				echo__vecG = vecG
 				echo__matH = matH
-				[ foo, vecG_true, matH_true ] = evalFDGH( vecX, @(x)( sumsq(funchF(x),1)/2.0 ) )
 				matH_regu = matH + (1.0-sOfMin)*hNorm*eye(sizeX,sizeX)/sOfMin
+				[ foo, vecG_true, matH_true ] = evalFDGH( vecX, @(x)( sumsq(funchF(x),1)/2.0 ) )
 				msg( __FILE__, __LINE__, "End infodump." );
 			endif
-		case STEP_TYPE__SCAN_LEV_MIN_FORCE_PACH
+		case STEP_TYPE__SCAN_LEV_MIN_FORCE_PATCH
+			msgif ( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "Phi-patch might be helpful if not using full scan." );
 			matJTJ = matJ'*matJ;
 			[ matPsi, matLambda ] = eig(matJTJ);
 			[ lambdaAbsMin, nOfAbsMin ] = min(abs(diag(matLambda)));
 			vecPhiHat = matPsi(:,nOfAbsMin);
+			%%%vecPhiHat = [1.0;3.0]; vecPhiHat/=norm(vecPhiHat);
+			%%%vecPhiHat = [0.0;1.0];
 			epsX = 1e-5;
 			h = vecF'*( funchF( vecX + epsX*vecPhiHat ) + funchF( vecX - epsX*vecPhiHat ) - 2.0*vecF )/(epsX*epsX);
 			matH_patched = matJTJ + abs(h)*(vecPhiHat*(vecPhiHat'));
@@ -256,8 +261,8 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 				echo__vecG = vecG
 				echo__matJTJ = matJTJ
 				echo__matH_patched = matH_patched
-				[ foo, vecG_true, matH_true ] = evalFDGH( vecX, @(x)( sumsq(funchF(x),1)/2.0 ) )
 				matH_regu = matH_patched + (1.0-sOfMin)*hNorm*eye(sizeX,sizeX)/sOfMin
+				[ foo, vecG_true, matH_true ] = evalFDGH( vecX, @(x)( sumsq(funchF(x),1)/2.0 ) )
 				msg( __FILE__, __LINE__, "End infodump." );
 			endif
 		otherwise
@@ -471,15 +476,17 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 	%
 	if ( verbLev >= VERBLEV__MAIN )
 	if ( 0 == iterCount )
-		msg( __FILE__, __LINE__, sprintf( "  %10.3e, %4d;  %5d,  %3d;  %10.3e, %10.3e.", ...
+		msg( __FILE__, __LINE__, sprintf( "  %10.3e, %4d;  %5d,  %3d;  %10.3e, %10.3e;  %10.3e.", ...
 		  time()-time0, iterCount, ...
 		  fevalCount, jevalCount, ...
-		  sumsq(vecF)/2.0, -1.0 ) );
+		  sumsq(vecF)/2.0, -1.0, ...
+		  gNorm ) );
 	else
-		msg( __FILE__, __LINE__, sprintf( "  %10.3e, %4d;  %5d,  %3d;  %10.3e, %10.3e.", ...
+		msg( __FILE__, __LINE__, sprintf( "  %10.3e, %4d;  %5d,  %3d;  %10.3e, %10.3e;  %10.3e.", ...
 		  time()-time0, iterCount, ...
 		  fevalCount, jevalCount, ...
-		  sumsq(vecF)/2.0, (sumsq(vecF_prev)-sumsq(vecF))/2.0 ) );
+		  sumsq(vecF)/2.0, (sumsq(vecF_prev)-sumsq(vecF))/2.0, ...
+		  gNorm ) );
 	endif
 	endif
 endfunction

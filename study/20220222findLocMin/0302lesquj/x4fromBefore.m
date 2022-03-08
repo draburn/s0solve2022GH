@@ -254,12 +254,12 @@
 	%return
 	%
 	%
-	if (1)
+	if (0)
 	msg( __FILE__, __LINE__, "" );
-	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__RECALC + STEP_TYPE__SCAN_LEV_MIN_FORCE_PACH ~~~ " );
+	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__RECALC + STEP_TYPE__SCAN_LEV_MIN_FORCE_PATCH ~~~ " );
 	prm_recalc_scanfp = [];
 	prm_recalc_scanfp.jupdateType = JUPDATE_TYPE__RECALC;
-	prm_recalc_scanfp.stepType = STEP_TYPE__SCAN_LEV_MIN_FORCE_PACH;
+	prm_recalc_scanfp.stepType = STEP_TYPE__SCAN_LEV_MIN_FORCE_PATCH;
 	[ vecXF_recalc_scanfp, datOut_recalc_scanfp ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_recalc_scanfp );
 	endif
 	%return
@@ -273,9 +273,7 @@
 	prm_lesquj_scan.jupdateType = JUPDATE_TYPE__LESQUJ_PRIMAL;
 	prm_lesquj_scan.stepType = STEP_TYPE__SCAN_LEV_MIN;
 	[ vecXF_lesquj_scan, datOut_lesquj_scan ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_lesquj_scan );
-	endif
 	%
-	if (0)
 	msg( __FILE__, __LINE__, "" );
 	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN + default ~~~ " );
 	prm_broyd_def = [];
@@ -283,19 +281,7 @@
 	[ vecXF_broyd_def, datOut_broyd_def ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_broyd_def );
 	endif
 	%
-	msg( __FILE__, __LINE__, "" );
-	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN + STEP_TYPE__SCAN_LEV_MIN ~~~ " );
-	prm_broyd_scan = [];
-	prm_broyd_scan.jupdateType = JUPDATE_TYPE__BROYDEN;
-	prm_broyd_scan.stepType = STEP_TYPE__SCAN_LEV_MIN;
-	[ vecXF_broyd_scan, datOut_broyd_scan ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_broyd_scan );
 	%
-	msg( __FILE__, __LINE__, "" );
-	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN + STEP_TYPE__SCAN_LEV_MIN_FORCE_PACH ~~~ " );
-	prm_broyd_scanfp = [];
-	prm_broyd_scanfp.jupdateType = JUPDATE_TYPE__BROYDEN;
-	prm_broyd_scanfp.stepType = STEP_TYPE__SCAN_LEV_MIN_FORCE_PACH;
-	[ vecXF_broyd_scanfp, datOut_broyd_scanfp ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_broyd_scanfp );
 	%
 	msg( __FILE__, __LINE__, "" );
 	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__REORTHONORM_POOL + STEP_TYPE__SCAN_LEV_MIN ~~~ " );
@@ -304,9 +290,49 @@
 	prm_rpool_scan.stepType = STEP_TYPE__SCAN_LEV_MIN;
 	[ vecXF_rpool_scan, datOut_rpool_scan ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_rpool_scan );
 	%
+	if (0)
 	msg( __FILE__, __LINE__, "" );
-	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__REORTHONORM_POOL + STEP_TYPE__SCAN_LEV_MIN_FORCE_PACH ~~~ " );
+	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__REORTHONORM_POOL + STEP_TYPE__SCAN_LEV_MIN_FORCE_PATCH ~~~ " );
 	prm_rpool_scanfp = [];
 	prm_rpool_scanfp.jupdateType = JUPDATE_TYPE__REORTHONORM_POOL;
-	prm_rpool_scanfp.stepType = STEP_TYPE__SCAN_LEV_MIN_FORCE_PACH;
+	prm_rpool_scanfp.stepType = STEP_TYPE__SCAN_LEV_MIN_FORCE_PATCH;
 	[ vecXF_rpool_scanfp, datOut_rpool_scanfp ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_rpool_scanfp );
+	endif
+	%
+	%
+	%
+	msg( __FILE__, __LINE__, "" );
+	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN + STEP_TYPE__SCAN_LEV_MIN ~~~ " );
+	prm_broyd_scan = [];
+	prm_broyd_scan.jupdateType = JUPDATE_TYPE__BROYDEN;
+	prm_broyd_scan.stepType = STEP_TYPE__SCAN_LEV_MIN;
+	[ vecXF_broyd_scan, datOut_broyd_scan ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_broyd_scan );
+	%
+	if (0)
+	msg( __FILE__, __LINE__, "" );
+	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN + STEP_TYPE__SCAN_LEV_MIN_FORCE_PATCH ~~~ " );
+	prm_broyd_scanfp = [];
+	prm_broyd_scanfp.jupdateType = JUPDATE_TYPE__BROYDEN;
+	prm_broyd_scanfp.stepType = STEP_TYPE__SCAN_LEV_MIN_FORCE_PATCH;
+	[ vecXF_broyd_scanfp, datOut_broyd_scanfp ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_broyd_scanfp );
+	endif
+	%
+	%
+	%
+	if (1)
+	msg( __FILE__, __LINE__, "" );
+	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__NONE + STEP_TYPE__SCAN_LEV_MIN ~~~ " );
+	prm_none_scan = [];
+	prm_none_scan.jupdateType = JUPDATE_TYPE__NONE;
+	prm_none_scan.stepType = STEP_TYPE__SCAN_LEV_MIN;
+	[ vecXF_none_scan, datOut_none_scan ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_none_scan );
+	endif
+	%
+	if (0)
+	msg( __FILE__, __LINE__, "" );
+	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__NONE + STEP_TYPE__SCAN_LEV_MIN_FORCE_PATCH ~~~ " );
+	prm_none_scanfp = [];
+	prm_none_scanfp.jupdateType = JUPDATE_TYPE__NONE;
+	prm_none_scanfp.stepType = STEP_TYPE__SCAN_LEV_MIN_FORCE_PATCH;
+	[ vecXF_none_scanfp, datOut_none_scanfp ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_none_scanfp );
+	endif
