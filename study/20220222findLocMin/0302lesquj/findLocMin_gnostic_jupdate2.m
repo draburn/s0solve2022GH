@@ -236,7 +236,7 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			endif
 		case STEP_TYPE__SCAN_LEV_MIN_KUPDATE
 			kupdate_matH = matJ'*matJ + matK;
-			assert( reldiff( kupdate_matH, matH ) == 0.0 );
+			%assert( reldiff( kupdate_matH, matH ) == 0.0 );
 			funchDeltaOfS = @(s)( ( s*kupdate_matH + (1.0-s)*hNorm*eye(sizeX,sizeX) ) \ ( -s*vecG ) );
 			funchLevOmegaOfS = @(s)(0.5*sumsq(funchF( vecX + funchDeltaOfS(s) )));
 			[ matR, cholFlag ] = chol( kupdate_matH );
@@ -479,6 +479,13 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 		case JUPDATE_TYPE__RECALC
 			%%%matJ_next = jacobs( vecX_next, funchF ); jevalCount++;
 			matJ_next = fdjaco( funchF, vecX_next ); jevalCount++;
+		case JUPDATE_TYPE__RECALC_KUPDATE
+			matJ_next = fdjaco( funchF, vecX_next ); jevalCount++;
+			if ( reldiff(matJ_next,matJ) < 0.1 )
+				msg( __FILE__, __LINE__, "Doing the new thing!" );
+				omega_model = omega + vecG'*vecDelta + 0.5*(vecDelta'*kupdate_matH*vecDelta);
+				matK += (2.0*( omega_trial - omega_model ) / deltaNormSq) * vecDelta * (vecDelta');
+			endif
 		otherwise
 			error( "Invalid value of jupdateType." );
 		endswitch
@@ -513,10 +520,10 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 		endif
 		%
 		%
-		if ( (omegaFall < omegaFallTol) && (deltaJNorm < deltaJNormTol) )
-			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: (omegaFall < omegaFallTol) && (deltaJNorm < deltaJNormTol)." );
-			doMainLoop = false;
-		endif
+		%if ( (omegaFall < omegaFallTol) && (deltaJNorm < deltaJNormTol) )
+		%	msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: (omegaFall < omegaFallTol) && (deltaJNorm < deltaJNormTol)." );
+		%	doMainLoop = false;
+		%endif
 	endwhile
 	%
 	if ( verbLev >= VERBLEV__MAIN )

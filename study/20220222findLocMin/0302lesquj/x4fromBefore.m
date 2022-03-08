@@ -257,7 +257,6 @@
 	prm_broyd_scank.jupdateType = JUPDATE_TYPE__BROYDEN;
 	prm_broyd_scank.stepType = STEP_TYPE__SCAN_LEV_MIN_KUPDATE;
 	[ vecXF_broyd_scank, datOut_broyd_scank ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_broyd_scank );
-	return
 	%
 	%
 	msg( __FILE__, __LINE__, "" );
@@ -266,7 +265,16 @@
 	prm_recalc_scan.jupdateType = JUPDATE_TYPE__RECALC;
 	prm_recalc_scan.stepType = STEP_TYPE__SCAN_LEV_MIN;
 	[ vecXF_recalc_scan, datOut_recalc_scan ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_recalc_scan );
-	%return
+	%
+	%
+	msg( __FILE__, __LINE__, "" );
+	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__RECALC_KUPDATE + STEP_TYPE__SCAN_LEV_MIN_KUPDATE  ~~~ " );
+	prm_recalck_scank = [];
+	prm_recalck_scank.jupdateType = JUPDATE_TYPE__RECALC_KUPDATE ;
+	prm_recalck_scank.stepType = STEP_TYPE__SCAN_LEV_MIN_KUPDATE ;
+	[ vecXF_recalck_scank, datOut_recalck_scank ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_recalck_scank );
+	%
+	return
 	%
 	%
 	if (0)
