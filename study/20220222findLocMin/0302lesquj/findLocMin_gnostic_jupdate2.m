@@ -60,12 +60,14 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 	iterMax = mygetfield( prm, "iterMax", 300 );
 	omegaMax = mygetfield( prm, "omegaMax", omega0/eps );
 	distMax = mygetfield( prm, "distMax", fNorm0/(eps*jNorm0) );
+	deltaStallRelTol = mygetfield( prm, "deltaStallRelTol", sqrt(eps) );
 	if ( valdLev >= VALDLEV__LOW )
 		assert( isrealscalar(distMax) );
 		assert( isrealscalar(omegaMin) );
 		assert( isrealscalar(omegaMax) );
 		assert( isrealscalar(gNormMin) );
 		assert( isrealscalar(iterMax) );
+		assert( isrealscalar(deltaStallRelTol) );
 	endif
 	%
 	stepType = mygetfield( prm, "stepType", STEP_TYPE__BLIND_NEWTON );
@@ -105,6 +107,13 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 	endif
 	%
 	%
+	%
+	vecX_prev = [];
+	vecF_prev = [];
+	matJ_prev = [];
+	vecDelta_prev = [];
+	vecX_trial_prev = [];
+	vecF_trial_prev = [];
 	%
 	vecX = vecX0;
 	vecF = vecF0;
@@ -243,6 +252,16 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			assert( isrealarray(vecDelta,[sizeX,1]) );
 		endif
 		vecX_trial = vecX + vecDelta;
+		if ( ~isempty(vecDelta_prev) )
+		if ( reldiff( vecDelta, vecDelta_prev ) <= deltaStallRelTol )
+		assert( ~isempty(vecX_prev) );
+		if ( reldiff( vecX, vecX_prev ) < eps )
+			msg( __FILE__, __LINE__, "IMPOSED STOP: reldiff( vecDelta, vecDelta_prev ) <= deltaStallRelTol." );
+			doMainLoop = false;
+			break;
+		endif
+		endif
+		endif
 		%
 		if (0)
 		%for n=1:size(collected_vecXVals,2)
@@ -409,6 +428,9 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 		vecX_prev = vecX;
 		vecF_prev = vecF;
 		matJ_prev = matJ;
+		vecDelta_prev = vecDelta;
+		vecX_trial_prev = vecX_trial;
+		vecF_trial_prev = vecF_trial;
 		vecX = vecX_next;
 		vecF = vecF_next;
 		matJ = matJ_next;
