@@ -5,7 +5,8 @@
 	numFigs = 0;
 	%
 	%caseNum = 104; % Happens to allow matH = matJ'*matJ + mu*matI!
-	caseNum = 110;
+	%caseNum = 110;
+	caseNum = 115;
 	%caseNum = 200; % Newt with TR is best (before), kupd with inter is best-ish (after TR tweak);
 	%   kupd with inter and kupd sans inter is okay.
 	%caseNum = 300; % blind Newt regu is best; everything except blind Newt is okay.
@@ -127,6 +128,18 @@
 		testFuncPrm.matJ = [ 1.0, 1.0; 0.0, 0.0 ];
 		testFuncPrm.ary3K(:,:,1) = [ 0.0, 0.0; 0.0, 0.0 ];
 		testFuncPrm.ary3K(:,:,2) = [ 1.0, 0.0; 0.0, 3.0 ];
+		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
+		vecX0 = [ 1.0; 2.0 ];
+	case 115
+		sizeX = 2;
+		sizeF = 2;
+		testFuncPrm.sizeX = 2;
+		testFuncPrm.sizeF = 2;
+		testFuncPrm.vecXE = [ 0.0; 0.0 ];
+		testFuncPrm.vecFE = [ 0.0; 1.0 ];
+		testFuncPrm.matJ = [ 1.0, 1.0; 0.0, 0.0 ];
+		testFuncPrm.ary3K(:,:,1) = [ 0.0, 0.0; 0.0, 0.0 ];
+		testFuncPrm.ary3K(:,:,2) = [ 10.0, 0.0; 0.0, 30.0 ];
 		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
 		vecX0 = [ 1.0; 2.0 ];
 	case 200
