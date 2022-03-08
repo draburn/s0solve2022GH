@@ -40,6 +40,8 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 	endif
 	pool_vecDeltaX = eye(sizeX,sizeX);
 	pool_vecDeltaF = matJ0;
+	pool_vecX = repmat(vecX0,[1,sizeX]);
+	pool_vecF = repmat(vecF0,[1,sizeX]);
 	matJBase = matJ0;
 	%
 	omega0 = sumsq(vecF0)/2.0;
@@ -391,8 +393,19 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			endif
 		case JUPDATE_TYPE__REORTHONORM_POOL
 			%error( "JUPDATE_TYPE__REORTHONORM_POOL is not implemented yet; below is pseudo code." );
+			if ( verbLev >= VERBLEV__PROGRESS+5 )
+				msg( __FILE__, __LINE__, "Start RPool infodump..." );
+				echo__gNorm = gNorm
+				msg( __FILE__, __LINE__, " Adding..." );
+				echo__vecDeltaX = vecDelta
+				echo__vecDeltaF = vecF_trial - vecF
+				echo__vecXCent = ( vecX + vecX_trial ) / 2.0
+				echo__vecFCent = ( vecF + vecF_trial ) / 2.0
+			endif
 			pool_vecDeltaX = [ vecDelta, pool_vecDeltaX ];
 			pool_vecDeltaF = [ vecF_trial-vecF, pool_vecDeltaF ];
+			pool_vecX = [ (vecX + vecX_trial)/2.0, pool_vecX ];
+			pool_vecF = [ (vecF + vecF_trial)/2.0, pool_vecF ];
 			poolSize = size( pool_vecDeltaX, 2 );
 			poolTol = 0.5;
 			[ matQ, rvecDrop ] = utorthdrop( pool_vecDeltaX, poolTol );
@@ -414,6 +427,8 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 				%
 				pool_vecDeltaX = pool_vecDeltaX(:,~rvecDrop);
 				pool_vecDeltaF = pool_vecDeltaF(:,~rvecDrop);
+				pool_vecX = pool_vecX(:,~rvecDrop);
+				pool_vecF = pool_vecF(:,~rvecDrop);
 			else % not (doReorthnormDrop)
 				for n=poolSize:-1:1
 				if (rvecDrop(n))
@@ -421,8 +436,17 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 					fooF = pool_vecDeltaF(:,n);
 					fooJ = ( fooF - matJBase*fooX ) * (fooX') / (fooX'*fooX);
 					matJBase += fooJ;
+					if ( verbLev >= VERBLEV__PROGRESS+5 )
+						msg( __FILE__, __LINE__, " Dropping..." );
+						dropping__vecDeltaX = pool_vecDeltaX(:,n)
+						dropping__vecDeltaF = pool_vecDeltaF(:,n)
+						dropping__vecXCent = pool_vecX(:,n)
+						dropping__vecFCent = pool_vecF(:,n)
+					endif
 					pool_vecDeltaX = [ pool_vecDeltaX(:,1:n-1), pool_vecDeltaX(:,n+1:end) ];
 					pool_vecDeltaF = [ pool_vecDeltaF(:,1:n-1), pool_vecDeltaF(:,n+1:end) ];
+					pool_vecX = [ pool_vecX(:,1:n-1), pool_vecX(:,n+1:end) ];
+					pool_vecF = [ pool_vecF(:,1:n-1), pool_vecF(:,n+1:end) ];
 				endif
 				endfor
 			endif % not (doReorthnormDrop)
@@ -431,6 +455,9 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			matR = matQ'*pool_vecDeltaX;
 			matW = pool_vecDeltaF / matR;
 			matJ_next = matJBase*( eye(sizeX,sizeX) - matQ*(matQ') ) + matW * (matQ');
+			if ( verbLev >= VERBLEV__PROGRESS+5 )
+				msg( __FILE__, __LINE__, " End RPool infodump." );
+			endif
 		case JUPDATE_TYPE__RECALC
 			%%%matJ_next = jacobs( vecX_next, funchF ); jevalCount++;
 			matJ_next = fdjaco( funchF, vecX_next ); jevalCount++;
