@@ -38,6 +38,7 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 	if ( valdLev >= VALDLEV__MEDIUM )
 		assert( isrealarray(matJ0,[sizeF,sizeX]) );
 	endif
+	matK = zeros(sizeX,sizeX);
 	pool_vecDeltaX = eye(sizeX,sizeX);
 	pool_vecDeltaF = matJ0;
 	pool_vecX = repmat(vecX0,[1,sizeX]);
@@ -233,6 +234,21 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 				[ foo, vecG_true, matH_true ] = evalFDGH( vecX, @(x)( sumsq(funchF(x),1)/2.0 ) )
 				msg( __FILE__, __LINE__, "End infodump." );
 			endif
+		case STEP_TYPE__SCAN_LEV_MIN_KUPDATE
+			kupdate_matH = matJ'*matJ + matK;
+			assert( reldiff( kupdate_matH, matH ) == 0.0 );
+			funchDeltaOfS = @(s)( ( s*kupdate_matH + (1.0-s)*hNorm*eye(sizeX,sizeX) ) \ ( -s*vecG ) );
+			funchLevOmegaOfS = @(s)(0.5*sumsq(funchF( vecX + funchDeltaOfS(s) )));
+			[ matR, cholFlag ] = chol( kupdate_matH );
+			if ( 0~=cholFlag || min(diag(matR)) <= cholSafeTol*max(abs(diag(matR))) )
+				sOfMin = fminbnd( funchLevOmegaOfS, sMin, 0.9999 );
+			else
+				sOfMin = fminbnd( funchLevOmegaOfS, sMin, 1.0 );
+			endif
+			if ( nargout >= 2 )
+				datOut.sVals(:,iterCount) = sOfMin;
+			endif
+			vecDelta = funchDeltaOfS(sOfMin);
 		case STEP_TYPE__SCAN_LEV_MIN_FORCE_PATCH
 			msgif ( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "Phi-patch might be helpful if not using full scan." );
 			matJTJ = matJ'*matJ;
@@ -458,6 +474,8 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 			if ( verbLev >= VERBLEV__PROGRESS+5 )
 				msg( __FILE__, __LINE__, " End RPool infodump." );
 			endif
+		case JUPDATE_TYPE__REORTHONORM_POOL_KUPDATE
+			error( "NOT IMPLEMENTED." );
 		case JUPDATE_TYPE__RECALC
 			%%%matJ_next = jacobs( vecX_next, funchF ); jevalCount++;
 			matJ_next = fdjaco( funchF, vecX_next ); jevalCount++;

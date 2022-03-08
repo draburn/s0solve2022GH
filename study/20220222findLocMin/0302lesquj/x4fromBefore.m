@@ -244,6 +244,21 @@
 	vecF0 = funchFJ(vecX0);
 	%omegaE = sumsq(testFuncPrm.vecFE)/2.0 - eps*sumsq(vecF0)/2.0;
 	%
+	msg( __FILE__, __LINE__, "" );
+	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN + STEP_TYPE__SCAN_LEV_MIN ~~~ " );
+	prm_broyd_scan = [];
+	prm_broyd_scan.jupdateType = JUPDATE_TYPE__BROYDEN;
+	prm_broyd_scan.stepType = STEP_TYPE__SCAN_LEV_MIN;
+	[ vecXF_broyd_scan, datOut_broyd_scan ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_broyd_scan );
+	%
+	msg( __FILE__, __LINE__, "" );
+	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN + STEP_TYPE__SCAN_LEV_MIN_KUPDATE ~~~ " );
+	prm_broyd_scank = [];
+	prm_broyd_scank.jupdateType = JUPDATE_TYPE__BROYDEN;
+	prm_broyd_scank.stepType = STEP_TYPE__SCAN_LEV_MIN_KUPDATE;
+	[ vecXF_broyd_scank, datOut_broyd_scank ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_broyd_scank );
+	return
+	%
 	%
 	msg( __FILE__, __LINE__, "" );
 	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__RECALC + STEP_TYPE__SCAN_LEV_MIN ~~~ " );
@@ -300,13 +315,6 @@
 	endif
 	%
 	%
-	%
-	msg( __FILE__, __LINE__, "" );
-	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN + STEP_TYPE__SCAN_LEV_MIN ~~~ " );
-	prm_broyd_scan = [];
-	prm_broyd_scan.jupdateType = JUPDATE_TYPE__BROYDEN;
-	prm_broyd_scan.stepType = STEP_TYPE__SCAN_LEV_MIN;
-	[ vecXF_broyd_scan, datOut_broyd_scan ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_broyd_scan );
 	%
 	if (0)
 	msg( __FILE__, __LINE__, "" );
