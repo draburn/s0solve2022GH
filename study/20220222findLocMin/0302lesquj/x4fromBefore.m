@@ -4,7 +4,8 @@
 	setprngstates(0);
 	numFigs = 0;
 	%
-	caseNum = 104; % kupd with inter is best; Newt with TR and kupd sans inter are okay.
+	%caseNum = 104; % Happens to allow matH = matJ'*matJ + mu*matI!
+	caseNum = 110;
 	%caseNum = 200; % Newt with TR is best (before), kupd with inter is best-ish (after TR tweak);
 	%   kupd with inter and kupd sans inter is okay.
 	%caseNum = 300; % blind Newt regu is best; everything except blind Newt is okay.
@@ -113,6 +114,19 @@
 		testFuncPrm.matJ = [ 1.0, 1.0; 0.0, 0.0 ];
 		testFuncPrm.ary3K(:,:,1) = [ 0.0, 0.0; 0.0, 0.0 ];
 		testFuncPrm.ary3K(:,:,2) = [ 2.0, 0.0; 0.0, 2.0 ];
+		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
+		vecX0 = [ 1.0; 2.0 ];
+	case 110
+		% Like case 104, but, make it so that J'*J + mu*I does NOT happen to be the actual Hessian!
+		sizeX = 2;
+		sizeF = 2;
+		testFuncPrm.sizeX = 2;
+		testFuncPrm.sizeF = 2;
+		testFuncPrm.vecXE = [ 0.0; 0.0 ];
+		testFuncPrm.vecFE = [ 0.0; 1.0 ];
+		testFuncPrm.matJ = [ 1.0, 1.0; 0.0, 0.0 ];
+		testFuncPrm.ary3K(:,:,1) = [ 0.0, 0.0; 0.0, 0.0 ];
+		testFuncPrm.ary3K(:,:,2) = [ 1.0, 0.0; 0.0, 3.0 ];
 		funchFJ = @(dummyX)( testfunc2021_funcF(dummyX,testFuncPrm) );
 		vecX0 = [ 1.0; 2.0 ];
 	case 200
@@ -237,9 +251,10 @@
 	prm_recalc_scan.jupdateType = JUPDATE_TYPE__RECALC;
 	prm_recalc_scan.stepType = STEP_TYPE__SCAN_LEV_MIN;
 	[ vecXF_recalc_scan, datOut_recalc_scan ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_recalc_scan );
+	%return
 	%
 	%
-	if (0)
+	if (1)
 	msg( __FILE__, __LINE__, "" );
 	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__RECALC + STEP_TYPE__SCAN_LEV_MIN_FORCE_PACH ~~~ " );
 	prm_recalc_scanfp = [];
@@ -247,6 +262,7 @@
 	prm_recalc_scanfp.stepType = STEP_TYPE__SCAN_LEV_MIN_FORCE_PACH;
 	[ vecXF_recalc_scanfp, datOut_recalc_scanfp ] = findLocMin_gnostic_jupdate2( vecX0, funchFJ, prm_recalc_scanfp );
 	endif
+	%return
 	%
 	%
 	%

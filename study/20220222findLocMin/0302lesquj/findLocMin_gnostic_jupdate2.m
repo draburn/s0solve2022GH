@@ -220,7 +220,15 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 				datOut.sVals(:,iterCount) = sOfMin;
 			endif
 			vecDelta = funchDeltaOfS(sOfMin);
-			% This needs validation.
+			%
+			if ( verbLev >= VERBLEV__PROGRESS+10 )
+				msg( __FILE__, __LINE__, "Hessian infodump..." );
+				echo__vecG = vecG
+				echo__matH = matH
+				[ foo, vecG_true, matH_true ] = evalFDGH( vecX, @(x)( sumsq(funchF(x),1)/2.0 ) )
+				matH_regu = matH + (1.0-sOfMin)*hNorm*eye(sizeX,sizeX)/sOfMin
+				msg( __FILE__, __LINE__, "End infodump." );
+			endif
 		case STEP_TYPE__SCAN_LEV_MIN_FORCE_PACH
 			matJTJ = matJ'*matJ;
 			[ matPsi, matLambda ] = eig(matJTJ);
@@ -242,6 +250,16 @@ function [ vecX, datOut ] = findLocMin_gnostic_jupdate2( vecX0, funchF, prm=[] )
 				datOut.sVals(:,iterCount) = sOfMin;
 			endif
 			vecDelta = funchDeltaOfS(sOfMin);
+			%
+			if ( verbLev >= VERBLEV__PROGRESS+10 )
+				msg( __FILE__, __LINE__, "Hessian infodump..." );
+				echo__vecG = vecG
+				echo__matJTJ = matJTJ
+				echo__matH_patched = matH_patched
+				[ foo, vecG_true, matH_true ] = evalFDGH( vecX, @(x)( sumsq(funchF(x),1)/2.0 ) )
+				matH_regu = matH_patched + (1.0-sOfMin)*hNorm*eye(sizeX,sizeX)/sOfMin
+				msg( __FILE__, __LINE__, "End infodump." );
+			endif
 		otherwise
 			error( "Invalid value of stepType." );
 		endswitch
