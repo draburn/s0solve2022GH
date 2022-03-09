@@ -255,7 +255,24 @@
 	endswitch
 	%
 	vecF0 = funchFJ(vecX0);
+	omega0 = sumsq(vecF0)/2.0;
 	%omegaE = sumsq(testFuncPrm.vecFE)/2.0 - eps*sumsq(vecF0)/2.0;
+	%
+	doFSolveGnostic = true;
+	if (doFSolveGnostic)
+		for n = 1 : 16
+			tolFun = omega0*10.0^(1-n);
+			options_fsolve = optimset( 'Updating', 'on', 'Jacobian', 'off', 'GradObj', 'off', 'TolFun', tolFun );
+			[  vecXF_fsolve, vecFF_fsolve, info_fsolve, output_fsolve, matJF_fsolve ] = fsolve( funchFJ, vecX0, options_fsolve );
+			%output_fsolve
+			omegaVals_fsolve(n) = sumsq(vecFF_fsolve,1)/2.0;
+		fevalCountVals_fsolve(n) = output_fsolve.funcCount;
+		endfor
+		semilogy( fevalCountVals_fsolve, omegaVals_fsolve, 'o-' );
+		grid on;
+		[  vecXF_fsolve, vecFF_fsolve, info_fsolve, output_fsolve, matJF_fsolve ] = fsolve( funchFJ, vecX0, options_fsolve )
+		return
+	endif
 	%
 	msg( __FILE__, __LINE__, "" );
 	msg( __FILE__, __LINE__, "~~~ JUPDATE_TYPE__BROYDEN + STEP_TYPE__SCAN_LEV_MIN ~~~ " );
