@@ -1,7 +1,7 @@
 % Function...
 %  Calculates the Jacobian of a function via finite-differencing.
  
-function [ matJ, fevalCount ] = calcFDJ( vecX0, funchF, prm=[] )
+function [ matJ, datOut ] = calcFDJ( vecX0, funchF, prm=[] )
 	fevalCount = 0;
 	%
 	sizeX = size( vecX0, 1 );
@@ -59,6 +59,12 @@ function [ matJ, fevalCount ] = calcFDJ( vecX0, funchF, prm=[] )
 	otherwise
 		error( "Invalid value of fdOrder." );
 	endswitch
+	%
+	if ( nargout >= 2 )
+		datOut.fevalCount = fevalCount;
+		datOut.fdOrder = fdOrder;
+		datOut.vecEpsFD = vecEpsFD;
+	endif
 return;
 end
 
@@ -73,16 +79,22 @@ end
 %!	funchF = @(x)( vecF_secret + matJ_secret*(x-vecX_secret) );
 %!	vecX0 = randn(sizeX,1);
 %!	%
-%!	[ matJ, fevalCount ] = calcFDJ( vecX0, funchF );
+%!	[ matJ, datOut ] = calcFDJ( vecX0, funchF );
+%!	fevalCount = datOut.fevalCount
 %!	assert( reldiff(matJ,matJ_secret) < sqrt(eps) );
+%!	assert( fevalCount == 1+sizeX );
 %!	%
 %!	prm = [];
-%!	[ matJ, fevalCount ] = calcFDJ( vecX0, funchF, prm );
+%!	[ matJ, datOut ] = calcFDJ( vecX0, funchF, prm );
+%!	fevalCount = datOut.fevalCount
 %!	assert( reldiff(matJ,matJ_secret) < sqrt(eps) );
+%!	assert( fevalCount == 1+sizeX );
 %!	%
 %!	prm = [];
 %!	prm.vecF0 = funchF( vecX0 );
 %!	prm.fdOrder = 2;
 %!	prm.vecEpsFD = sqrt(eps)*ones(sizeX,1);
-%!	[ matJ, fevalCount ] = calcFDJ( vecX0, funchF, prm );
+%!	[ matJ, datOut ] = calcFDJ( vecX0, funchF, prm );
+%!	fevalCount = datOut.fevalCount
 %!	assert( reldiff(matJ,matJ_secret) < sqrt(eps) );
+%!	assert( fevalCount == 2*sizeX );
