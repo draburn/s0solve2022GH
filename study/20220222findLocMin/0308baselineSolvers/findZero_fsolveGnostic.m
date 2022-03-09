@@ -1,7 +1,7 @@
 % Function...
 %  A 'gnostic for studying the behavior of the built-in fsolve().
 
-function [ vecXF, datOut ] = findLocMin_fsolveGnostic( vecX0, funchF, prm=[] )
+function [ vecXF, datOut ] = findZero_fsolveGnostic( vecX0, funchF, prm=[] )
 	sizeX = size(vecX0,1);
 	assert( isrealarray(vecX0,[sizeX,1]) );
 	%
@@ -69,7 +69,7 @@ endfunction
 %!	%
 %!	vecX0 = zeros(sizeX,1);
 %!	%
-%!	[ vecXF, datOut ] = findLocMin_fsolveGnostic( vecX0, funchF );
+%!	[ vecXF, datOut ] = findZero_fsolveGnostic( vecX0, funchF );
 %!	%
 %!	numFigs++; figure( numFigs );
 %!	semilogy( datOut.fevalCountVals, datOut.omegaVals, 'o-', 'markersize', 20, 'linewidth', 2 );
