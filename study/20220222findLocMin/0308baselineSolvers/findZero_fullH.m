@@ -2,7 +2,10 @@
 
 function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 	% Look at basics.
+	setCommon;
 	fevalCount = 0;
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__UNLIMITED );
+	%
 	sizeX = size(vecX0,1);
 	assert( isrealarray(vecX0,[sizeX,1]) );
 	%
@@ -42,6 +45,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 	matH = matH0;
 	iterCount = 0;
 	while (1)
+		norm(vecG)
 		%
 		% Check pre-iter stop crit here.
 		omegaMin = mygetfield( prm, "omegaMin", eps*omega0 );
@@ -109,7 +113,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		stepLengthType = mygetfield( prm, "stepLengthType", "" );
 		switch ( tolower(stepLengthType) )
 		case { "", "fminbnd", "min", "min scan" }
-			pOfMin = fminbnd( funchOmegaOfP, 0.0, 1.0 );
+			pOfMin = fminbnd( funchOmegaOfP, 0.0, 1.0 )
 			vecDelta = funchDeltaOfP( pOfMin );
 		otherwise
 			error( "Invalid case." );
@@ -118,40 +122,69 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		vecX_trial = vecX + vecDelta;
 		vecDelta = vecX_trial - vecX;
 		assert( 0.0 ~= norm(vecDelta) );
+		omegaModel_trial = funchOmegaOfP( pOfMin )
 		%
-		error( "END OF VALID CODE, AS EXPECTED." );
+		vecF_trial = funchF( vecX_trial ); fevalCount++;
+		omega_trial = sumsq(vecF_trial,1)/2.0;
+		if ( omega_trial >= omega )
+			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Failed to decrease omega." );
+			break;
+		endif
+		%
+		%
+		vecX = vecX_trial;
+		vecF = vecF_trial;
+		[ ary3Kappa, cfdjk_datOut ] = calcFDJKappa( vecX, funchF, cfdjk_prm );
+		omega = omega_trial;
+		cfdjk_prm = mygetfield( prm, "cfdjk_prm", [] );
+		cfdjk_prm.vecF0 = vecF;
+		matJ = cfdjk_datOut.matJ0;
+		vecG = cfdjk_datOut.vecG0;
+		matH = cfdjk_datOut.matH0;
 	endwhile
-	error( "END OF VALID CODE, SURPRISINGLY." );
 	%
-	vecXF = vecXBest;
+	vecXF = vecX;
+	if ( nargout >= 2 )
+		datOut = [];
+	endif
 return;
 endfunction
 
 
+%!function vecF = funcFQuad( vecX, vecX0, vecF0, matJ0, ary3Kappa0 )
+%!	sizeX = size(vecX0,1);
+%!	assert( isrealarray(vecX0,[sizeX,1]) );
+%!	assert( isrealarray(vecX,[sizeX,1]) );
+%!	sizeF = size(vecF0,1);
+%!	assert( isrealarray(vecF0,[sizeF,1]) );
+%!	assert( isrealarray(matJ0,[sizeF,sizeX]) );
+%!	assert( isrealarray(ary3Kappa0,[sizeF,sizeX,sizeX]) );
+%!	%
+%!	vecD = vecX - vecX0;
+%!	vecF = vecF0 + matJ0*vecD;
+%!	for n=1:sizeF
+%!		vecF(n) += 0.5*( vecD' * reshape( ary3Kappa0(n,:,:), [ sizeX, sizeX ] ) * vecD );
+%!	endfor
+%!endfunction
+
 
 %!test
-%!	tic();
-%!	numFigs = 0;
 %!	setprngstates(0);
 %!	sizeX = 2;
 %!	sizeF = 2;
-%!	vecXE = randn(sizeX,1);
-%!	matJE = randn(sizeF,sizeX);
-%!	matA0 = 0.1*randn(sizeF,sizeX);
-%!	matA1 = randn(sizeX,sizeX);
-%!	matA2 = randn(sizeX,sizeX);
-%!	matB0 = 0.01*randn(sizeF,sizeX);
-%!	matB1 = randn(sizeX,sizeX);
-%!	matB2 = randn(sizeX,sizeX);
-%!	matB3 = randn(sizeX,sizeX);
+%!	vecX_secret = (1:sizeX)';%randn(sizeX,1);
+%!	vecF_secret = zeros(sizeF,1);
+%!	matJ_secret = eye(sizeF,sizeX);%randn(sizeF,sizeX);
 %!	%
-%!	y = @(x)( x - vecXE );
-%!	funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
-%!	%funchF = @(x)( matJE * ( x - vecXE ) );
+%!	sizeA = 2;
+%!	for nf=1:sizeF
+%!		matA = 0*randn(sizeA,sizeX);
+%!		matKappa = matA'*matA;
+%!		ary3Kappa_secret(nf,:,:) = matKappa;
+%!	endfor
 %!	%
-%!	vecX0 = zeros(sizeX,1);
+%!	funchF = @(x) funcFQuad( x, vecX_secret, vecF_secret, matJ_secret, ary3Kappa_secret );
+%!	vecX0 = randn(sizeX,1);
 %!	%
-%!	[ vecXF, datOut ] = findZero_fullH( vecX0, funchF );
-%!	%
-%!	toc();
-
+%!	[ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
+%!	rd = reldiff( vecXF, vecX_secret )
