@@ -151,10 +151,10 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		%
 		vecX = vecX_trial;
 		vecF = vecF_trial;
-		[ ary3Kappa, cfdjk_datOut ] = calcFDJKappa( vecX, funchF, cfdjk_prm );
-		omega = omega_trial;
 		cfdjk_prm = mygetfield( prm, "cfdjk_prm", [] );
 		cfdjk_prm.vecF0 = vecF;
+		[ ary3Kappa, cfdjk_datOut ] = calcFDJKappa( vecX, funchF, cfdjk_prm );
+		omega = omega_trial;
 		matJ = cfdjk_datOut.matJ0;
 		vecG = cfdjk_datOut.vecG0;
 		matH = cfdjk_datOut.matH0;
