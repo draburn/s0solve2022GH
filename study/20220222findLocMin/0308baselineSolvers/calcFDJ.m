@@ -64,6 +64,7 @@ function [ matJ, datOut ] = calcFDJ( vecX0, funchF, prm=[] )
 		datOut.fevalCount = fevalCount;
 		datOut.fdOrder = fdOrder;
 		datOut.vecEpsFD = vecEpsFD;
+		datOut.vecF0 = vecF0;
 	endif
 return;
 end
