@@ -44,8 +44,8 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 	vecG = vecG0;
 	matH = matH0;
 	iterCount = 0;
+	echo__normG0 = norm(vecG0)
 	while (1)
-		norm(vecG)
 		%
 		% Check pre-iter stop crit here.
 		omegaMin = mygetfield( prm, "omegaMin", eps*omega0 );
@@ -105,7 +105,8 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		otherwise
 			error( "Invalid case." );
 		endswitch
-		funchOmegaOfDelta = @(delta)( omega + vecG'*delta + 0.5*delta'*matH*delta );
+		funchOmegaModelOfDelta = @(delta)( omega + vecG'*delta + 0.5*delta'*matH*delta );
+		funchOmegaOfDelta = @(delta)( sumsq(funchF(vecX+delta),1)/2.0 );
 		funchOmegaOfP = @(p) funchOmegaOfDelta( funchDeltaOfP(p) );
 		%
 		%
@@ -125,7 +126,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		omegaModel_trial = funchOmegaOfP( pOfMin )
 		%
 		vecF_trial = funchF( vecX_trial ); fevalCount++;
-		omega_trial = sumsq(vecF_trial,1)/2.0;
+		omega_trial = sumsq(vecF_trial,1)/2.0
 		if ( omega_trial >= omega )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Failed to decrease omega." );
 			break;
@@ -141,6 +142,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		matJ = cfdjk_datOut.matJ0;
 		vecG = cfdjk_datOut.vecG0;
 		matH = cfdjk_datOut.matH0;
+		echo__normG = norm(vecG)
 	endwhile
 	%
 	vecXF = vecX;
@@ -188,3 +190,31 @@ endfunction
 %!	%
 %!	[ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 %!	rd = reldiff( vecXF, vecX_secret )
+
+
+%!test
+%!	tic();
+%!	numFigs = 0;
+%!	setprngstates(0);
+%!	sizeX = 20;
+%!	sizeF = 20;
+%!	vecXE = randn(sizeX,1);
+%!	matJE = randn(sizeF,sizeX);
+%!	matA0 = 0.1*randn(sizeF,sizeX);
+%!	matA1 = randn(sizeX,sizeX);
+%!	matA2 = randn(sizeX,sizeX);
+%!	matB0 = 0.01*randn(sizeF,sizeX);
+%!	matB1 = randn(sizeX,sizeX);
+%!	matB2 = randn(sizeX,sizeX);
+%!	matB3 = randn(sizeX,sizeX);
+%!	%
+%!	y = @(x)( x - vecXE );
+%!	funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
+%!	%funchF = @(x)( matJE * ( x - vecXE ) );
+%!	%
+%!	%vecX0 = zeros(sizeX,1);
+%!	vecX0 = vecXE + 0.001*randn(sizeX,1)
+%!	%
+%!	[ vecXF, datOut ] = findZero_fullH( vecX0, funchF );
+%!	%
+%!	toc();
