@@ -18,17 +18,29 @@
 		endfor
 	endfunction
 	%
-	sizeX = 2;
-	sizeF = 2;
+	sizeX = 5;
+	sizeF = 5;
 	vecX_secret = randn(sizeX,1);
-	vecF_secret = zeros(sizeF,1);
+	vecF_secret = randn(sizeF,1);
 	matJ_secret = randn(sizeF,sizeX);
 	%
-	sizeA = 2;
+	addNullSpace = true;
+	if ( addNullSpace )
+		vecPhi_secret = randn(sizeX,1);
+		vecPhi_secret /= norm(vecPhi_secret);
+		matJ_secret = matJ_secret*( eye(sizeX,sizeX) - vecPhi_secret*(vecPhi_secret') );
+	endif
+	%
+	sizeA = 5;
 	for nf=1:sizeF
 		matA = randn(sizeA,sizeX);
 		matKappa = matA'*matA;
-		ary3Kappa_secret(nf,:,:) = matKappa;
+		makeKPositive = true;
+		if (~makeKPositive)
+			ary3Kappa_secret(nf,:,:) = matKappa;
+		else
+			ary3Kappa_secret(nf,:,:) = vecF_secret(nf)*matKappa;
+		endif
 	endfor
 	%
 	funchF = @(x) funcFQuad( x, vecX_secret, vecF_secret, matJ_secret, ary3Kappa_secret );
@@ -48,21 +60,22 @@
 	msg( __FILE__, __LINE__, "Finished findZero_fsolveGnostic()." );
 	%
 	%
+	omegaViz = min([ min(fsolveGnostic_datOut.omegaVals), min(datOut.omegaVals) ]) -eps;
 	%
 	numFigs++; figure( numFigs );
 	semilogy( ...
-	  fsolveGnostic_datOut.fevalCountVals, fsolveGnostic_datOut.omegaVals, 'o-', 'markersize', 20, 'linewidth', 2, ...
-	  datOut.fevalCountVals, datOut.omegaVals, 'x-', 'markersize', 20, 'linewidth', 2 );
+	  fsolveGnostic_datOut.fevalCountVals, fsolveGnostic_datOut.omegaVals-omegaViz, 'o-', 'markersize', 20, 'linewidth', 2, ...
+	  datOut.fevalCountVals, datOut.omegaVals-omegaViz, 'x-', 'markersize', 20, 'linewidth', 2 );
 	grid on;
-	ylabel( "omega" );
+	ylabel( "omega-omegaViz" );
 	xlabel( "feval count" );
 	%
 	numFigs++; figure( numFigs );
 	semilogy( ...
-	  fsolveGnostic_datOut.fevalCountVals, fsolveGnostic_datOut.omegaVals, 'o-', 'markersize', 20, 'linewidth', 2, ...
-	  datOut.omegaVals, 'x-', 'markersize', 20, 'linewidth', 2 );
+	  fsolveGnostic_datOut.fevalCountVals, fsolveGnostic_datOut.omegaVals-omegaViz, 'o-', 'markersize', 20, 'linewidth', 2, ...
+	  datOut.omegaVals-omegaViz, 'x-', 'markersize', 20, 'linewidth', 2 );
 	grid on;
-	ylabel( "omega" );
+	ylabel( "omega-omegaViz" );
 	xlabel( "iter count or feval count" );
 	%
 	msg( __FILE__, __LINE__, "Please see figure(s)." );

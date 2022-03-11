@@ -110,7 +110,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		case { "cauchy", "gradient descent segment" }
 			error( "Not implemented." );
 		otherwise
-			error( "Invalid case." );
+			error( "Invalid value of stepCurveType." );
 		endswitch
 		funchOmegaModelOfDelta = @(delta)( omega + vecG'*delta + 0.5*delta'*matH*delta );
 		funchOmegaOfDelta = @(delta)( sumsq(funchF(vecX+delta),1)/2.0 );
@@ -120,24 +120,29 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		%
 		stepLengthType = mygetfield( prm, "stepLengthType", "" );
 		switch ( tolower(stepLengthType) )
+		case { "tr", "trust region" }
+			error( "Not implemented." );
 		case { "", "fminbnd", "min", "min scan" }
 			fminbnd_prm = optimset( "TolX", eps^2, "TolFun", eps^2 );
 			[ pOfMin, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchOmegaOfP, 0.0, 1.0, fminbnd_prm );
 			fevalCount += fminbnd_output.funcCount;
 			vecDelta = funchDeltaOfP( pOfMin );
 		otherwise
-			error( "Invalid case." );
+			error( "Invalid value of stepLengthType." );
 		endswitch
 		assert( isrealarray(vecDelta,[sizeX,1]) );
 		vecX_trial = vecX + vecDelta;
 		vecDelta = vecX_trial - vecX;
-		assert( 0.0 ~= norm(vecDelta) );
-		omegaModel_trial = funchOmegaOfP( pOfMin );
+		if ( 0.0 == norm(vecDelta) )
+			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: 0.0 == norm(vecDelta)." );
+			break;
+		endif
+		omegaModel_trial = funchOmegaModelOfDelta( vecDelta );
 		%
 		vecF_trial = funchF( vecX_trial ); fevalCount++;
 		omega_trial = sumsq(vecF_trial,1)/2.0;
 		if ( omega_trial >= omega )
-			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Failed to decrease omega." );
+			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: omega_trial >= omega." );
 			break;
 		endif
 		if ( omega_trial < omega_best )
