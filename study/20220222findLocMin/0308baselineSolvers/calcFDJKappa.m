@@ -74,8 +74,8 @@ end
 
 %!test
 %!	setprngstates(0);
-%!	sizeX = 5;
-%!	sizeF = 4;
+%!	sizeX = 50;
+%!	sizeF = 40;
 %!	vecX_secret = randn(sizeX,1);
 %!	vecF_secret = randn(sizeF,1);
 %!	matJ_secret = randn(sizeF,sizeX);
@@ -85,13 +85,13 @@ end
 %!	[ matJ0, ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF );
 %!	assert( isrealarray(matJ0,[sizeF,sizeX]) );
 %!	assert( isrealarray(ary3Kappa0,[sizeF,sizeX,sizeX]) );
-%!	assert( reldiff(matJ0,matJ_secret) < sqrt(eps) );
+%!	assert( reldiff(matJ0,matJ_secret) < eps^0.33 );
 %!	%
 %!	prm = [];
 %!	[ matJ0, ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF, prm );
 %!	assert( isrealarray(matJ0,[sizeF,sizeX]) );
 %!	assert( isrealarray(ary3Kappa0,[sizeF,sizeX,sizeX]) );
-%!	assert( reldiff(matJ0,matJ_secret) < sqrt(eps) );
+%!	assert( reldiff(matJ0,matJ_secret) < eps^0.33 );
 %!	%
 %!	prm = [];
 %!	prm.vecF0 = funchF( vecX0 );
@@ -99,7 +99,7 @@ end
 %!	[ matJ0, ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF, prm );
 %!	assert( isrealarray(matJ0,[sizeF,sizeX]) );
 %!	assert( isrealarray(ary3Kappa0,[sizeF,sizeX,sizeX]) );
-%!	assert( reldiff(matJ0,matJ_secret) < sqrt(eps) );
+%!	assert( reldiff(matJ0,matJ_secret) < eps^0.33 );
 
 
 %!function vecF = funcFQuad( vecX, vecX0, vecF0, matJ0, ary3Kappa0 )
@@ -120,8 +120,8 @@ end
 
 %!test
 %!	setprngstates(0);
-%!	sizeX = 2;
-%!	sizeF = 2;
+%!	sizeX = 20;
+%!	sizeF = 20;
 %!	vecX_secret = randn(sizeX,1);
 %!	vecF_secret = randn(sizeF,1);
 %!	matJ_secret = randn(sizeF,sizeX);
@@ -163,8 +163,8 @@ end
 
 %!test
 %!	setprngstates(0);
-%!	sizeX = 2;
-%!	sizeF = 2;
+%!	sizeX = 20;
+%!	sizeF = 20;
 %!	vecX_secret = randn(sizeX,1);
 %!	vecF_secret = randn(sizeF,1);
 %!	matJ_secret = randn(sizeF,sizeX);
