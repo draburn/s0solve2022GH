@@ -26,12 +26,14 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 	matIX = eye(sizeX,sizeX);
 	%
 	%
-	% Do other prep.
-	% ?
+	% Any other prep?
+	if ( nargout >= 2 )
+		datOut = [];
+	endif
 	%
 	%
 	% Set initial iterates here.
-	bestIsBetterThan0 = false;
+	bestIsNot0 = false;
 	vecX_best = vecX0;
 	vecF_best = vecF0;
 	omega_best = omega0;
@@ -46,10 +48,15 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 	iterCount = 0;
 	%echo__normG0 = norm(vecG0)
 	while (1)
+		if ( nargout >= 2 )
+			datOut.fevalCountVals(iterCount+1) = fevalCount;
+			datOut.omegaVals(iterCount+1) = omega;
+			datOut.gNormVals(iterCount+1) = norm(vecG);
+		endif
 		%
-		% Check pre-iter stop crit here.
-		omegaMin = mygetfield( prm, "omegaMin", eps*omega0 );
-		gNormMin = mygetfield( prm, "gNormMin", eps*norm(vecG0) );
+		% Check pre-iter stop crit.
+		omegaMin = mygetfield( prm, "omegaMin", eps^2*omega0 );
+		gNormMin = mygetfield( prm, "gNormMin", eps^2*norm(vecG0) );
 		iterMax = mygetfield( prm, "iterMax", 1000 );
 		if ( omega <= omegaMin )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "STRONG SUCCESS: omega <= omegaMin." );
@@ -133,6 +140,13 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Failed to decrease omega." );
 			break;
 		endif
+		if ( omega_trial < omega_best )
+			assert( 0.0 < norm(vecX_trial-vecX_best) );
+			omega_best = omega_trial;
+			vecX_best = vecX_trial;
+			vecF_best = vecF_trial;
+			bestIsNot0 = true;
+		endif
 		%
 		%
 		vecX = vecX_trial;
@@ -147,9 +161,10 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		%echo__normG = norm(vecG)
 	endwhile
 	%
-	vecXF = vecX;
+	vecXF = vecX_best;
 	if ( nargout >= 2 )
-		datOut = [];
+		datOut.fevalCount = fevalCount;
+		datOut.iterCount = iterCount;
 	endif
 return;
 endfunction
@@ -219,4 +234,5 @@ endfunction
 %!	%
 %!	[ vecXF, datOut ] = findZero_fullH( vecX0, funchF );
 %!	%
+%!	msg( __FILE__, __LINE__, "*** PLEASE USE findZero_fullH__test INSTEAD! ***" );
 %!	toc();

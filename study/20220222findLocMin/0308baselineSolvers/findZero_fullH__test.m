@@ -1,4 +1,5 @@
 	clear
+	numFigs = 0;
 	setprngstates(0);
 	%
 	function vecF = funcFQuad( vecX, vecX0, vecF0, matJ0, ary3Kappa0 )
@@ -54,3 +55,24 @@
 	echo__vecX_secret = vecX_secret
 	echo__vecXF = vecXF
 	rd = reldiff( vecXF, vecX_secret )
+	%
+	fsolveGnostic_prm = [];
+	[ fsolveGnostic_vecXF, fsolveGnostic_datOut ] = findZero_fsolveGnostic( vecX0, funchF, fsolveGnostic_prm );
+	%
+	numFigs++; figure( numFigs );
+	semilogy( ...
+	  fsolveGnostic_datOut.fevalCountVals, fsolveGnostic_datOut.omegaVals, 'o-', 'markersize', 20, 'linewidth', 2, ...
+	  datOut.fevalCountVals, datOut.omegaVals, 'x-', 'markersize', 20, 'linewidth', 2 );
+	grid on;
+	ylabel( "omega" );
+	xlabel( "feval count" );
+	%
+	numFigs++; figure( numFigs );
+	semilogy( ...
+	  fsolveGnostic_datOut.fevalCountVals, fsolveGnostic_datOut.omegaVals, 'o-', 'markersize', 20, 'linewidth', 2, ...
+	  datOut.omegaVals, 'x-', 'markersize', 20, 'linewidth', 2 );
+	grid on;
+	ylabel( "omega" );
+	xlabel( "iter count or feval count" );
+	%
+	msg( __FILE__, __LINE__, "Please see figure(s)." );
