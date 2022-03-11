@@ -21,10 +21,10 @@
 	endif
 	endif
 	%
-	msg( __FILE__, __LINE__, "Hessian appears to have a negative eigenvalue." );
-	msg( __FILE__, __LINE__, " Performing full eigendecomposition." );
-	msg( __FILE__, __LINE__, " This may be slow;" );
-	msg( __FILE__, __LINE__, "  future optimization may be possible." );
+	msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "Hessian appears to have a negative eigenvalue." );
+	msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, " Performing full eigendecomposition." );
+	msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, " This may be slow;" );
+	msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "  future optimization may be possible." );
 	%
 	[ matPsi_eig, matLambda_eig ] = eig( matH );
 	muCrit = -min(diag(matLambda_eig));
