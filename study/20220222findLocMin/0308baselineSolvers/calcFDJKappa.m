@@ -1,7 +1,7 @@
 % Function...
 %  Calculates the "Kappa array" (quadratic term) of a function via second-order finite-differencing.
  
-function [ matJ0, ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF, prm=[] )
+function [ ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF, prm=[] )
 	fevalCount = 0;
 	%
 	sizeX = size( vecX0, 1 );
@@ -62,7 +62,9 @@ function [ matJ0, ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF, prm=[] )
 		datOut.fevalCount = fevalCount;
 		datOut.vecEpsFD = vecEpsFD;
 		datOut.vecF0 = vecF0;
+		datOut.matJ0 = matJ0;
 		datOut.vecG0 = matJ0'*vecF0;
+		%
 		datOut.matH0 = matJ0'*matJ0;
 		for nf=1:sizeF
 			datOut.matH0 += reshape( vecF0(nf)'*ary3Kappa0(nf,:,:), [sizeX,sizeX] );
@@ -82,24 +84,24 @@ end
 %!	funchF = @(x)( vecF_secret + matJ_secret*(x-vecX_secret) );
 %!	vecX0 = randn(sizeX,1);
 %!	%
-%!	[ matJ0, ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF );
-%!	assert( isrealarray(matJ0,[sizeF,sizeX]) );
+%!	[ ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF );
+%!	assert( isrealarray(datOut.matJ0,[sizeF,sizeX]) );
 %!	assert( isrealarray(ary3Kappa0,[sizeF,sizeX,sizeX]) );
-%!	assert( reldiff(matJ0,matJ_secret) < eps^0.33 );
+%!	assert( reldiff(datOut.matJ0,matJ_secret) < eps^0.33 );
 %!	%
 %!	prm = [];
-%!	[ matJ0, ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF, prm );
-%!	assert( isrealarray(matJ0,[sizeF,sizeX]) );
+%!	[ ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF, prm );
+%!	assert( isrealarray(datOut.matJ0,[sizeF,sizeX]) );
 %!	assert( isrealarray(ary3Kappa0,[sizeF,sizeX,sizeX]) );
-%!	assert( reldiff(matJ0,matJ_secret) < eps^0.33 );
+%!	assert( reldiff(datOut.matJ0,matJ_secret) < eps^0.33 );
 %!	%
 %!	prm = [];
 %!	prm.vecF0 = funchF( vecX0 );
 %!	prm.vecEpsFD = sqrt(eps)*ones(sizeX,1);
-%!	[ matJ0, ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF, prm );
-%!	assert( isrealarray(matJ0,[sizeF,sizeX]) );
+%!	[ ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF, prm );
+%!	assert( isrealarray(datOut.matJ0,[sizeF,sizeX]) );
 %!	assert( isrealarray(ary3Kappa0,[sizeF,sizeX,sizeX]) );
-%!	assert( reldiff(matJ0,matJ_secret) < eps^0.33 );
+%!	assert( reldiff(datOut.matJ0,matJ_secret) < eps^0.33 );
 
 
 %!function vecF = funcFQuad( vecX, vecX0, vecF0, matJ0, ary3Kappa0 )
@@ -141,22 +143,22 @@ end
 %!	funchF = @(x) funcFQuad( x, vecX_secret, vecF_secret, matJ_secret, ary3Kappa_secret );
 %!	vecX0 = randn(sizeX,1);
 %!	%
-%!	[ matJ0, ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF );
-%!	assert( isrealarray(matJ0,[sizeF,sizeX]) );
+%!	[ ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF );
+%!	assert( isrealarray(datOut.matJ0,[sizeF,sizeX]) );
 %!	assert( isrealarray(ary3Kappa0,[sizeF,sizeX,sizeX]) );
 %!	assert( reldiff(ary3Kappa0,ary3Kappa_secret) < eps^0.33 );
 %!	%
 %!	prm = [];
-%!	[ matJ0, ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF, prm );
-%!	assert( isrealarray(matJ0,[sizeF,sizeX]) );
+%!	[ ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF, prm );
+%!	assert( isrealarray(datOut.matJ0,[sizeF,sizeX]) );
 %!	assert( isrealarray(ary3Kappa0,[sizeF,sizeX,sizeX]) );
 %!	assert( reldiff(ary3Kappa0,ary3Kappa_secret) < eps^0.33 );
 %!	%
 %!	prm = [];
 %!	prm.vecF0 = funchF( vecX0 );
 %!	prm.vecEpsFD = sqrt(sqrt(eps))*ones(sizeX,1);
-%!	[ matJ0, ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF, prm );
-%!	assert( isrealarray(matJ0,[sizeF,sizeX]) );
+%!	[ ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF, prm );
+%!	assert( isrealarray(datOut.matJ0,[sizeF,sizeX]) );
 %!	assert( isrealarray(ary3Kappa0,[sizeF,sizeX,sizeX]) );
 %!	assert( reldiff(ary3Kappa0,ary3Kappa_secret) < eps^0.33 );
 
@@ -185,8 +187,8 @@ end
 %!	funchOmega = @(x) sumsq(funchF(x))/2.0;
 %!	vecX0 = randn(sizeX,1);
 %!	%
-%!	[ matJ0, ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF );
-%!	assert( isrealarray(matJ0,[sizeF,sizeX]) );
+%!	[ ary3Kappa0, datOut ] = calcFDJKappa( vecX0, funchF );
+%!	assert( isrealarray(datOut.matJ0,[sizeF,sizeX]) );
 %!	assert( isrealarray(ary3Kappa0,[sizeF,sizeX,sizeX]) );
 %!	assert( reldiff(ary3Kappa0,ary3Kappa_secret) < eps^0.33 );
 %!	%
