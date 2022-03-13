@@ -70,9 +70,9 @@
 	%
 	powell_prm = [];
 	powell_prm.stepCurveType = "powell";
-	msg( __FILE__, __LINE__, "Calling findZero_fullH() powell..." );
+	msg( __FILE__, __LINE__, "Calling findZero_fullH() POWELL..." );
 	[ powell_vecXF, powell_datOut ] = findZero_fullH( vecX0, funchF, powell_prm );
-	msg( __FILE__, __LINE__, "Finished findZero_fullH() powell." );
+	msg( __FILE__, __LINE__, "Finished findZero_fullH() POWELl." );
 	%
 	%
 	msg( __FILE__, __LINE__, "Calling findZero_fsolveGnostic()..." );

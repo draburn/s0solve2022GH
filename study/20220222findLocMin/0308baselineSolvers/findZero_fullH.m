@@ -107,15 +107,8 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		case { "", "levenberg" }
 			funchDeltaOfP = @(p) ( p*matHRegu + (1.0-p)*matS_curve ) \ (-p*vecG);
 		case { "powell", "dog leg" }
-			%function vecDelta = funcDeltaPowell( p, vecDeltaCauchy, vecDeltaNewton )
-			%	if ( p < 0.5 )
-			%		vecDelta = 2.0*p*vecDeltaCauchy;
-			%	else
-			%		vecDelta = vecDeltaCauchy + (2.0*p-1.0)*(vecDeltaNewton-vecDeltaCauchy);
-			%	endif
-			%endfunction
-			%funchDeltaOfP = @(p) funcDeltaPowell( p, vecDeltaCauchy, vecDeltaNewton );
-			error( "Not implemented. " );
+			funchDeltaOfP = @(p) ( 2.0*p*vecDeltaCauchy + ...
+			  (p>0.5) * ( (2.0*p-1.0)*vecDeltaNewton + 4.0*(0.5-p)*vecDeltaCauchy ) );
 		case { "gradesc", "gradient descent curve" }
 			error( "Not implemented." );
 		case { "cauchy", "gradient descent segment" }
