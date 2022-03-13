@@ -57,7 +57,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		% Check pre-iter stop crit.
 		omegaMin = mygetfield( prm, "omegaMin", eps^2*omega0 );
 		gNormMin = mygetfield( prm, "gNormMin", eps^2*norm(vecG0) );
-		iterMax = mygetfield( prm, "iterMax", 1000 );
+		iterMax = mygetfield( prm, "iterMax", 20 );
 		if ( omega <= omegaMin )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "STRONG SUCCESS: omega <= omegaMin." );
 			break;
@@ -88,7 +88,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 			switch ( tolower(stepScalingType) )
 			case { "", "none", "identity" }
 				matS_curve = matIX;
-			case { "marquard" }
+			case { "marquardt" }
 				matS_curve = diag(abs(matHRegu));
 			otherwise
 				error( "Invalid value of stepScalingType." );
@@ -97,18 +97,29 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		assert( isrealarray(matS_curve,[sizeX,sizeX]) );
 		%
 		% Set funchDeltaOfS here.
+		vecDeltaNewton = matR \ ( matR' \ (-vecG) );
+		pCauchy = calcLinishRootOfQuad( omega, -sumsq(vecG), 0.5*(vecG'*matH*vecG) );
+		vecDeltaCauchy = pCauchy*(-vecG);
 		stepCurveType = mygetfield( prm, "stepCurveType", "" );
 		switch ( tolower(stepCurveType) )
 		case { "newton" }
-			error( "Not implemented." );
+			funchDeltaOfP = @(p) ( p * vecDeltaNewton );
 		case { "", "levenberg" }
 			funchDeltaOfP = @(p) ( p*matHRegu + (1.0-p)*matS_curve ) \ (-p*vecG);
 		case { "powell", "dog leg" }
-			error( "Not implemented." );
+			%function vecDelta = funcDeltaPowell( p, vecDeltaCauchy, vecDeltaNewton )
+			%	if ( p < 0.5 )
+			%		vecDelta = 2.0*p*vecDeltaCauchy;
+			%	else
+			%		vecDelta = vecDeltaCauchy + (2.0*p-1.0)*(vecDeltaNewton-vecDeltaCauchy);
+			%	endif
+			%endfunction
+			%funchDeltaOfP = @(p) funcDeltaPowell( p, vecDeltaCauchy, vecDeltaNewton );
+			error( "Not implemented. " );
 		case { "gradesc", "gradient descent curve" }
 			error( "Not implemented." );
 		case { "cauchy", "gradient descent segment" }
-			error( "Not implemented." );
+			funchDeltaOfP = @(p) ( p * vecDeltaCauchy );
 		otherwise
 			error( "Invalid value of stepCurveType." );
 		endswitch
