@@ -12,6 +12,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 	%
 	cfdjk_prm = mygetfield( prm, "cfdjk_prm", [] );
 	[ ary3Kappa0, cfdjk_datOut ] = calcFDJKappa( vecX0, funchF, cfdjk_prm );
+	fevalCount += cfdjk_datOut.fevalCount;
 	vecF0 = cfdjk_datOut.vecF0;
 	matJ0 = cfdjk_datOut.matJ0;
 	omega0 = sumsq(vecF0,1)/2.0;
@@ -152,9 +153,6 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		funchOmegaModelOfDelta = @(delta)( omega + vecG'*delta + 0.5*delta'*matH*delta );
 		funchOmegaModelOfP = @(p)( funchOmegaModelOfDelta(funchDeltaOfP(p)) );
 		%
-		funchOmegaOfDelta = @(delta)( sumsq(funchF(vecX+delta),1)/2.0 );
-		funchOmegaOfP = @(p) funchOmegaOfDelta( funchDeltaOfP(p) );
-		%
 		testPCauchy = true;
 		if ( testPCauchy )
 			omLo = funchOmegaModelOfDelta( 0.999 * vecDeltaCauchy );
@@ -180,6 +178,12 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		endif
 		%
 		%
+		if ( omega - funchOmegaModelOfP(1.0) < omegaMin )
+			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: omega - funchOmegaModelOfP(1.0) < omegaMin." );
+			break;
+		endif
+		%
+		%
 		%
 		stepLengthType = mygetfield( prm, "stepLengthType", "" );
 		switch ( tolower(stepLengthType) )
@@ -190,12 +194,12 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 			p = 1.0;
 			btCount = 0;
 			btLimit = mygetfield( prm, "btLimit", 20 );
-			stepSizeMin = mygetfield( prm, "stepSizeMin", eps );
+			stepSizeMin = mygetfield( prm, "stepSizeMin", eps*(1.0+norm(vecX0)) );
 			trThresh = mygetfield( prm, "trThresh", 1.1 );
 			omThresh = mygetfield( prm, "omThresh", 1.1 );
 			%
 			failBTCoeff = mygetfield( prm, "failBTCoeff", 0.1 );
-			uphillBTCoeff = mygetfield( prm, "uphillBTCoeff", 0.5 );
+			uphillBTCoeff = mygetfield( prm, "uphillBTCoeff", 0.2 );
 			accelTol = mygetfield( prm, "accelTol", 0.1 );
 			accelCoeff = mygetfield( prm, "accelCoeff", 2.0 );
 			while (1)
@@ -237,6 +241,12 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 				vecDelta = vecX_trial - vecX;
 				omegaModel_trial = funchOmegaModelOfDelta(vecDelta);
 				%
+				%
+				if ( omega - omegaModel_trial < omegaMin )
+					msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: omega - omegaModel_trial < omegaMin." );
+					break;
+				endif
+				%
 				vecF_trial = funchF( vecX_trial ); fevalCount++;
 				if ( ~isrealarray(vecF_trial,[sizeF,1]) )
 					msg( __FILE__, __LINE__, "feval failed." );
@@ -258,12 +268,13 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 			endwhile
 		case { "", "fminbnd", "min", "min scan" }
 			fminbnd_prm = optimset( "TolX", eps^2, "TolFun", eps^2 );
+			funchOmegaOfP = @(p)( sumsq(funchF(vecX+funchDeltaOfP(p)),1)/2.0 );
 			[ pOfMin, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchOmegaOfP, 0.0, 1.0, fminbnd_prm );
 			fevalCount += fminbnd_output.funcCount;
 			vecDelta = funchDeltaOfP( pOfMin );
 			vecX_trial = vecX + vecDelta;
 			vecDelta = vecX_trial - vecX;
-		vecF_trial = funchF( vecX_trial ); fevalCount++;
+			vecF_trial = funchF( vecX_trial ); fevalCount++;
 		otherwise
 			error( "Invalid value of stepLengthType." );
 		endswitch
@@ -293,6 +304,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		cfdjk_prm = mygetfield( prm, "cfdjk_prm", [] );
 		cfdjk_prm.vecF0 = vecF;
 		[ ary3Kappa, cfdjk_datOut ] = calcFDJKappa( vecX, funchF, cfdjk_prm );
+		fevalCount += cfdjk_datOut.fevalCount;
 		omega = omega_trial;
 		matJ = cfdjk_datOut.matJ0;
 		vecG = cfdjk_datOut.vecG0;
