@@ -103,8 +103,8 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		%
 		% Set funchDeltaOfS here.
 		vecDeltaNewton = matS_curve * ( matR_hScaled \ ( matR_hScaled'\(-vecGScaled) ) );
-		pCauchy = calcLinishRootOfQuad( omega, -sumsq(vecGScaled), 0.5*(vecGScaled'*matHScaled*vecGScaled) );
-		vecDeltaCauchy = pCauchy*(-vecGScaled);
+		pCauchy = calcLinishRootOfQuad( 0.5*(vecGScaled'*matHScaled*vecGScaled), -sumsq(vecGScaled), omega );
+		vecDeltaCauchy = pCauchy*matS_curve*(-vecGScaled);
 		stepCurveType = mygetfield( prm, "stepCurveType", "" );
 		switch ( tolower(stepCurveType) )
 		case { "newton" }
@@ -130,6 +130,31 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		funchOmegaModelOfDelta = @(delta)( omega + vecG'*delta + 0.5*delta'*matH*delta );
 		funchOmegaOfDelta = @(delta)( sumsq(funchF(vecX+delta),1)/2.0 );
 		funchOmegaOfP = @(p) funchOmegaOfDelta( funchDeltaOfP(p) );
+		%
+		testPCauchy = true;
+		if ( testPCauchy )
+			omLo = funchOmegaModelOfDelta( (pCauchy*0.999)*(-vecGScaled) );
+			omAt = funchOmegaModelOfDelta( (pCauchy*1.000)*(-vecGScaled) );
+			omHi = funchOmegaModelOfDelta( (pCauchy*1.001)*(-vecGScaled) );
+			assert( omAt <= omLo );
+			assert( omAt <= omHi );
+		endif
+		%
+		%
+		doCurveViz = true;
+		if (doCurveViz)
+			msg( __FILE__, __LINE__, "Doing curve viz hack." );
+			numPts = 101;
+			pPts = linspace(0.0,1.0,numPts);
+			for n=1:numPts
+				vecDeltaPts(:,n) = funchDeltaOfP( pPts(n) );
+			endfor
+			vecXPts = vecX + vecDeltaPts;
+			figure(10);
+			plot( vecXPts(1,:), vecXPts(2,:), 'o-' );
+			grid on;
+		break;
+		endif
 		%
 		%
 		%
