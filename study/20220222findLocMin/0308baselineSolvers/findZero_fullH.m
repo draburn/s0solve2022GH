@@ -78,7 +78,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		hNorm = sqrt( sum(sumsq(matH))/sizeX );
 		assert( 0.0 < hNorm );
 		findZero_fullH__regularize;
-		% matHRegu is positive-definite and matR = chol(matHRegu).
+		% matHRegu is positive-definite and matR_hRegu = chol(matHRegu).
 		%
 		%
 		% Get scaling.
@@ -97,7 +97,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		assert( isrealarray(matS_curve,[sizeX,sizeX]) );
 		%
 		% Set funchDeltaOfS here.
-		vecDeltaNewton = matR \ ( matR' \ (-vecG) );
+		vecDeltaNewton = matR_hRegu \ ( matR_hRegu' \ (-vecG) );
 		pCauchy = calcLinishRootOfQuad( omega, -sumsq(vecG), 0.5*(vecG'*matH*vecG) );
 		vecDeltaCauchy = pCauchy*(-vecG);
 		stepCurveType = mygetfield( prm, "stepCurveType", "" );

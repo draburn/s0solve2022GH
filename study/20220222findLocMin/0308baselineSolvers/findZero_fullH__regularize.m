@@ -1,11 +1,11 @@
 	matHRegu = matH;
-	[ matR, cholFlag ] = chol( matHRegu );
+	[ matR_hRegu, cholFlag ] = chol( matHRegu );
 	%
 	cholSafeTol = mygetfield( prm, "cholSafeTol", sqrt(eps) );
 	assert( isrealscalar(cholSafeTol) );
 	assert( 0.0 < cholSafeTol  );
 	if ( 0 == cholFlag )
-	if ( min(diag(matR)) > cholSafeTol*max(abs(diag(matR))) )
+	if ( min(diag(matR_hRegu)) > cholSafeTol*max(abs(diag(matR_hRegu))) )
 		return;
 	endif
 	endif
@@ -14,9 +14,9 @@
 	assert( isrealscalar(epsRelRegu) );
 	assert( 0.0 < epsRelRegu  );
 	matHRegu = matH + ( epsRelRegu * hNorm * matIX );
-	[ matR, cholFlag ] = chol( matHRegu );
+	[ matR_hRegu, cholFlag ] = chol( matHRegu );
 	if ( 0 == cholFlag )
-	if ( min(diag(matR)) > cholSafeTol*max(abs(diag(matR))) )
+	if ( min(diag(matR_hRegu)) > cholSafeTol*max(abs(diag(matR_hRegu))) )
 		return;
 	endif
 	endif
@@ -30,9 +30,9 @@
 	muCrit = -min(diag(matLambda_eig));
 	mu = muCrit + epsRelRegu * ( muCrit + hNorm );
 	matHRegu = matH + ( mu * matIX );
-	[ matR, cholFlag ] = chol( matHRegu );
+	[ matR_hRegu, cholFlag ] = chol( matHRegu );
 	if ( 0 == cholFlag )
-	if ( min(diag(matR)) > cholSafeTol*max(abs(diag(matR))) )
+	if ( min(diag(matR_hRegu)) > cholSafeTol*max(abs(diag(matR_hRegu))) )
 		return;
 	endif
 	endif
