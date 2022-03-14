@@ -115,7 +115,13 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 			funchDeltaOfP = @(p) ( 2.0*p*vecDeltaCauchy + ...
 			  (p>0.5) * ( (2.0*p-1.0)*vecDeltaNewton + 4.0*(0.5-p)*vecDeltaCauchy ) );
 		case { "gradesc", "gradient descent curve" }
-			error( "Not implemented." );
+			% I suspect we could get a faster run time by doing an ODE solve then interpolating,
+			% but, this is easier to code...
+			[ matPsi_hScaled, matLambda_hScaled ] = eig( matHScaled );
+			vecLambda_hScaled = diag(matLambda_hScaled);
+			vecLIPNG = matLambda_hScaled \ ( matPsi_hScaled * (-vecGScaled) );
+			matSP = matS_curve * matPsi_hScaled;
+			funchDeltaOfP = @(p) ( matSP * (diag( 1.0 - (1.0-p).^vecLambda_hScaled ) * vecLIPNG) );
 		case { "cauchy", "gradient descent segment" }
 			funchDeltaOfP = @(p) ( p * vecDeltaCauchy );
 		otherwise
