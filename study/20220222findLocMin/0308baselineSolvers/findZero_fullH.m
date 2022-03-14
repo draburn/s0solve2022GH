@@ -81,7 +81,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		% matHRegu is positive-definite and matR_hRegu = chol(matHRegu).
 		%
 		%
-		% Get scaling.
+		% Get curve scaling.
 		matS_curve = mygetfield( prm, "matS_curve", [] );
 		if ( isempty(matS_curve) )
 			stepScalingType = mygetfield( prm, "stepScalingType", "" );
@@ -89,23 +89,28 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 			case { "", "none", "identity" }
 				matS_curve = matIX;
 			case { "marquardt" }
-				matS_curve = diag(abs(matHRegu));
+				foo = diag(abs(matHRegu));
+				assert(min(foo)>0.0);
+				matS_curve = diag(1.0./foo);
 			otherwise
 				error( "Invalid value of stepScalingType." );
 			endswitch
 		endif
 		assert( isrealarray(matS_curve,[sizeX,sizeX]) );
+		vecGScaled = matS_curve'*vecG;
+		matHScaled = matS_curve'*matHRegu*matS_curve;
+		matR_hScaled = chol( matHScaled );
 		%
 		% Set funchDeltaOfS here.
-		vecDeltaNewton = matR_hRegu \ ( matR_hRegu' \ (-vecG) );
-		pCauchy = calcLinishRootOfQuad( omega, -sumsq(vecG), 0.5*(vecG'*matH*vecG) );
-		vecDeltaCauchy = pCauchy*(-vecG);
+		vecDeltaNewton = matS_curve * ( matR_hScaled \ ( matR_hScaled'\(-vecGScaled) ) );
+		pCauchy = calcLinishRootOfQuad( omega, -sumsq(vecGScaled), 0.5*(vecGScaled'*matHScaled*vecGScaled) );
+		vecDeltaCauchy = pCauchy*(-vecGScaled);
 		stepCurveType = mygetfield( prm, "stepCurveType", "" );
 		switch ( tolower(stepCurveType) )
 		case { "newton" }
 			funchDeltaOfP = @(p) ( p * vecDeltaNewton );
 		case { "", "levenberg" }
-			funchDeltaOfP = @(p) ( p*matHRegu + (1.0-p)*matS_curve ) \ (-p*vecG);
+			funchDeltaOfP = @(p) matS_curve * (( p * matHScaled + (1.0-p)*eye(sizeX,sizeX) ) \ (-p*vecGScaled));
 		case { "powell", "dog leg" }
 			funchDeltaOfP = @(p) ( 2.0*p*vecDeltaCauchy + ...
 			  (p>0.5) * ( (2.0*p-1.0)*vecDeltaNewton + 4.0*(0.5-p)*vecDeltaCauchy ) );
