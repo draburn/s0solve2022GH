@@ -201,7 +201,12 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 			omega_trial = sumsq(vecF_trial,1)/2.0;
 			%
 			%
-		case { "", "tr", "trust region" }
+		case { "", "tr", "trust region", "bt", "backtracking" }
+			switch (tolower(stepLengthType) )
+			case { "bt", "backtracking" }
+				% This is the only difference from trust region.
+				trustRegionSize = [];
+			endswitch
 			matS_trustRegion = mygetfield( prm, "matS_trustRegion", eye(sizeX,sizeX) );
 			funchStepSizeOfP = @(p)( norm(matS_trustRegion*funchDeltaOfP(p)) );
 			%
