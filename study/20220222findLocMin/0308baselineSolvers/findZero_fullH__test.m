@@ -49,6 +49,7 @@
 	%
 	%
 	lev_prm = [];
+	%lev_prm.stepLengthType = "trust region";
 	msg( __FILE__, __LINE__, "Calling findZero_fullH() LEVENBERG..." );
 	[ lev_vecXF, lev_datOut ] = findZero_fullH( vecX0, funchF, lev_prm );
 	msg( __FILE__, __LINE__, "Finished findZero_fullH() LEVENBERG." );

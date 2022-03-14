@@ -4,6 +4,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 	% Look at basics.
 	setCommon;
 	fevalCount = 0;
+	time0 = time();
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
 	%
 	sizeX = size(vecX0,1);
@@ -37,6 +38,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 	vecX_best = vecX0;
 	vecF_best = vecF0;
 	omega_best = omega0;
+	trustRegionSize = [];
 	%
 	vecX = vecX0;
 	vecF = vecF0;
@@ -52,6 +54,26 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 			datOut.fevalCountVals(iterCount+1) = fevalCount;
 			datOut.omegaVals(iterCount+1) = omega;
 			datOut.gNormVals(iterCount+1) = norm(vecG);
+		endif
+		%
+		%
+		% Log progress.
+		if ( verbLev >= VERBLEV__PROGRESS )
+		%if ( abs( iterCount - round(sqrt(iterCount))^2 ) < 0.001 )
+		if ( 0 == iterCount )
+			msg( __FILE__, __LINE__, sprintf( "  %10.3e, %4d;  %5d;  %10.3e, %10.3e;  %10.3e.", ...
+			  time()-time0, iterCount, ...
+			  fevalCount, ...
+			  sumsq(vecF)/2.0, -1.0, ...
+			  norm(vecG) ) );
+		else
+			msg( __FILE__, __LINE__, sprintf( "  %10.3e, %4d;  %5d;  %10.3e, %10.3e;  %10.3e.", ...
+			  time()-time0, iterCount, ...
+			  fevalCount, ...
+			  sumsq(vecF)/2.0, (sumsq(vecF_prev)-sumsq(vecF))/2.0, ...
+			  norm(vecG) ) );
+		endif
+		%endif
 		endif
 		%
 		% Check pre-iter stop crit.
@@ -128,6 +150,8 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 			error( "Invalid value of stepCurveType." );
 		endswitch
 		funchOmegaModelOfDelta = @(delta)( omega + vecG'*delta + 0.5*delta'*matH*delta );
+		funchOmegaModelOfP = @(p)( funchOmegaModelOfDelta(funchDeltaOfP(p)) );
+		%
 		funchOmegaOfDelta = @(delta)( sumsq(funchF(vecX+delta),1)/2.0 );
 		funchOmegaOfP = @(p) funchOmegaOfDelta( funchDeltaOfP(p) );
 		%
@@ -160,25 +184,94 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		stepLengthType = mygetfield( prm, "stepLengthType", "" );
 		switch ( tolower(stepLengthType) )
 		case { "tr", "trust region" }
-			error( "Not implemented." );
+			matS_trustRegion = mygetfield( prm, "matS_trustRegion", eye(sizeX,sizeX) );
+			funchStepSizeOfP = @(p)( norm(matS_trustRegion*funchDeltaOfP(p)) );
+			%
+			p = 1.0;
+			btCount = 0;
+			btLimit = mygetfield( prm, "btLimit", 20 );
+			stepSizeMin = mygetfield( prm, "stepSizeMin", eps );
+			trThresh = mygetfield( prm, "trThresh", 1.1 );
+			omThresh = mygetfield( prm, "omThresh", 1.1 );
+			%
+			failBTCoeff = mygetfield( prm, "failBTCoeff", 0.1 );
+			uphillBTCoeff = mygetfield( prm, "uphillBTCoeff", 0.5 );
+			accelTol = mygetfield( prm, "accelTol", 0.1 );
+			accelCoeff = mygetfield( prm, "accelCoeff", 2.0 );
+			while (1)
+				%
+				if ( ~isempty(trustRegionSize) )
+				if ( trustRegionSize < stepSizeMin )
+					msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: trustRegionSize < stepSizeMin." );
+					break;
+				endif
+				endif
+				%
+				vecDelta = funchDeltaOfP(p);
+				stepSize = funchStepSizeOfP(p);
+				%
+				if ( ~isempty(trustRegionSize) )
+				if ( stepSize > trThresh*trustRegionSize )
+					funchOverstepOfP = @(p)( funchStepSizeOfP(p) - trustRegionSize );
+					p_next = fzero( funchOverstepOfP, [ 0.0, p ] );
+					assert( p_next < p );
+					p = p_next;
+					continue;
+				endif
+				endif
+				%
+				if ( funchOmegaModelOfP(p) < (1.0-omThresh)*omega );
+					msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "funchOmegaModelOfP is negative." );
+					p_next = fzero( funchOmegaModelOfP, [ 0.0, p ] );
+					assert( p_next < p );
+					p = p_next;
+					if (isempty(trustRegionSize))
+						trustRegionSize = funchStepSizeOfP(p);
+					elseif ( stepSizeOfP(p) < trustRegionSize )
+						trustRegionSize = funchStepSizeOfP(p);
+					endif
+					continue;
+				endif
+				%
+				vecX_trial = vecX + vecDelta;
+				vecDelta = vecX_trial - vecX;
+				omegaModel_trial = funchOmegaModelOfDelta(vecDelta);
+				%
+				vecF_trial = funchF( vecX_trial ); fevalCount++;
+				if ( ~isrealarray(vecF_trial,[sizeF,1]) )
+					msg( __FILE__, __LINE__, "feval failed." );
+					trustRegionSize = stepSize * failBTCoeff;
+					continue;
+				endif
+				%
+				omega_trial = sumsq(vecF_trial,1)/2.0;
+				if ( omega_trial >= omega )
+					trustRegionSize = stepSize * uphillBTCoeff;
+					continue;
+				endif
+				%
+				if ( ~isempty(trustRegionSize) && reldiff(omega_trial,omegaModel_trial) < accelTol && 1 >= btCount )
+					msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "Increasing trust region size." );
+					trustRegionSize = stepSize * accelCoeff;
+				endif
+				break;
+			endwhile
 		case { "", "fminbnd", "min", "min scan" }
 			fminbnd_prm = optimset( "TolX", eps^2, "TolFun", eps^2 );
 			[ pOfMin, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchOmegaOfP, 0.0, 1.0, fminbnd_prm );
 			fevalCount += fminbnd_output.funcCount;
 			vecDelta = funchDeltaOfP( pOfMin );
+			vecX_trial = vecX + vecDelta;
+			vecDelta = vecX_trial - vecX;
+		vecF_trial = funchF( vecX_trial ); fevalCount++;
 		otherwise
 			error( "Invalid value of stepLengthType." );
 		endswitch
-		assert( isrealarray(vecDelta,[sizeX,1]) );
-		vecX_trial = vecX + vecDelta;
-		vecDelta = vecX_trial - vecX;
 		if ( 0.0 == norm(vecDelta) )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: 0.0 == norm(vecDelta)." );
 			break;
 		endif
 		omegaModel_trial = funchOmegaModelOfDelta( vecDelta );
-		%
-		vecF_trial = funchF( vecX_trial ); fevalCount++;
 		omega_trial = sumsq(vecF_trial,1)/2.0;
 		if ( omega_trial >= omega )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: omega_trial >= omega." );
@@ -192,6 +285,8 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 			bestIsNot0 = true;
 		endif
 		%
+		vecX_prev = vecX;
+		vecF_prev = vecF;
 		%
 		vecX = vecX_trial;
 		vecF = vecF_trial;
