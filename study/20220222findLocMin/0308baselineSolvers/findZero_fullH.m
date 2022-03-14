@@ -5,6 +5,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 	setCommon;
 	fevalCount = 0;
 	time0 = time();
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
 	%
 	sizeX = size(vecX0,1);
@@ -97,14 +98,10 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		iterCount++;
 		%
 		%
-		%
 		hNorm = sqrt( sum(sumsq(matH))/sizeX );
 		assert( 0.0 < hNorm );
-		findZero_fullH__regularize;
-		% matHRegu is positive-definite and matR_hRegu = chol(matHRegu).
 		%
-		%
-		% Get curve scaling.
+		% Scale.
 		matS_curve = mygetfield( prm, "matS_curve", [] );
 		if ( isempty(matS_curve) )
 			stepScalingType = mygetfield( prm, "stepScalingType", "" );
@@ -112,39 +109,42 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 			case { "", "none", "identity" }
 				matS_curve = matIX;
 			case { "marquardt" }
-				foo = diag(abs(matHRegu));
-				assert(min(foo)>0.0);
-				matS_curve = diag(1.0./foo);
+				matS_curve = diag( 1.0./( abs(diag(matH)) + eps*hNorm ) );
 			otherwise
 				error( "Invalid value of stepScalingType." );
 			endswitch
 		endif
 		assert( isrealarray(matS_curve,[sizeX,sizeX]) );
 		vecGScaled = matS_curve'*vecG;
-		matHScaled = matS_curve'*matHRegu*matS_curve;
-		matR_hScaled = chol( matHScaled );
+		matHScaled = matS_curve'*matH*matS_curve;
+		%
+		%
+		%
+		findZero_fullH__regularize;
+		% matHRegu is positive-definite and matR_hRegu = chol(matHRegu).
 		%
 		% Set funchDeltaOfS here.
-		vecDeltaNewton = matS_curve * ( matR_hScaled \ ( matR_hScaled'\(-vecGScaled) ) );
+		vecDeltaNewton = matS_curve * ( matR_hRegu \ ( matR_hRegu'\(-vecGScaled) ) );
 		pCauchy = calcLinishRootOfQuad( 0.5*(vecGScaled'*matHScaled*vecGScaled), -sumsq(vecGScaled), omega );
+		assert( pCauchy > 0.0 );
 		vecDeltaCauchy = pCauchy*matS_curve*(-vecGScaled);
 		stepCurveType = mygetfield( prm, "stepCurveType", "" );
 		switch ( tolower(stepCurveType) )
 		case { "newton" }
 			funchDeltaOfP = @(p) ( p * vecDeltaNewton );
 		case { "", "levenberg" }
-			funchDeltaOfP = @(p) matS_curve * (( p * matHScaled + (1.0-p)*eye(sizeX,sizeX) ) \ (-p*vecGScaled));
+			funchDeltaOfP = @(p) matS_curve * (( p * matHRegu + (1.0-p)*eye(sizeX,sizeX) ) \ (-p*vecGScaled));
 		case { "powell", "dog leg" }
 			funchDeltaOfP = @(p) ( 2.0*p*vecDeltaCauchy + ...
 			  (p>0.5) * ( (2.0*p-1.0)*vecDeltaNewton + 4.0*(0.5-p)*vecDeltaCauchy ) );
 		case { "gradesc", "gradient descent curve" }
 			% I suspect we could get a faster run time by doing an ODE solve then interpolating,
 			% but, this is easier to code...
-			[ matPsi_hScaled, matLambda_hScaled ] = eig( matHScaled );
-			vecLambda_hScaled = diag(matLambda_hScaled);
-			vecLIPNG = matLambda_hScaled \ ( matPsi_hScaled' * (-vecGScaled) );
-			matSP = matS_curve * matPsi_hScaled;
-			funchDeltaOfP = @(p) ( matSP * (diag( 1.0 - (1.0-p).^vecLambda_hScaled ) * vecLIPNG) );
+			[ matPsi_hRegu, matLambda_hRegu ] = eig( matHRegu );
+			vecLambda_hRegu = diag(matLambda_hRegu);
+			vecLIPNG = matLambda_hRegu \ ( matPsi_hRegu' * (-vecGScaled) );
+			matSP = matS_curve * matPsi_hRegu;
+			funchDeltaOfP = @(p) ( matSP * (diag( 1.0 - (1.0-p).^vecLambda_hRegu ) * vecLIPNG) );
 		case { "cauchy", "gradient descent segment" }
 			funchDeltaOfP = @(p) ( p * vecDeltaCauchy );
 		otherwise
@@ -158,8 +158,11 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 			omLo = funchOmegaModelOfDelta( 0.999 * vecDeltaCauchy );
 			omAt = funchOmegaModelOfDelta( 1.000 * vecDeltaCauchy );
 			omHi = funchOmegaModelOfDelta( 1.001 * vecDeltaCauchy );
-			assert( omAt <= omLo );
-			assert( omAt <= omHi );
+			if ( abs(omAt) > eps*omega )
+				%[ omLo, omAt, omHi ]
+				assert( omAt <= omLo );
+				assert( omAt <= omHi );
+			endif
 		endif
 		doCurveViz = false;
 		if (doCurveViz)
@@ -240,7 +243,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 					p = p_next;
 					if (isempty(trustRegionSize))
 						trustRegionSize = funchStepSizeOfP(p);
-					elseif ( stepSizeOfP(p) < trustRegionSize )
+					elseif ( funchStepSizeOfP(p) < trustRegionSize )
 						trustRegionSize = funchStepSizeOfP(p);
 					endif
 					continue;
