@@ -18,7 +18,7 @@
 		endfor
 	endfunction
 	%
-	caseNum = 100;
+	caseNum = 200;
 	msg( __FILE__, __LINE__, sprintf( "caseNum = %d.", caseNum ) );
 	switch (caseNum)
 	case 100
@@ -32,12 +32,27 @@
 			matKappa = ( matKappa' + matKappa ) / 2.0;
 			ary3Kappa_secret(nf,:,:) = matKappa;
 		endfor
+		funchF = @(x) funcFQuad( x, vecX_secret, vecF_secret, matJ_secret, ary3Kappa_secret );
+		vecX0 = randn(sizeX,1);
+	case 200
+		sizeX = 5;
+		sizeF = sizeX;
+		vecX_secret = randn(sizeX,1);
+		matJ_secret = randn(sizeF,sizeX);
+		matA0 = randn(sizeF,sizeX);
+		matA1 = randn(sizeX,sizeX);
+		matA2 = randn(sizeX,sizeX);
+		matB0 = randn(sizeF,sizeX);
+		matB1 = randn(sizeX,sizeX);
+		matB2 = randn(sizeX,sizeX);
+		matB3 = randn(sizeX,sizeX);
+		y = @(x)( x - vecX_secret );
+		funchF = @(x)( matJ_secret*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
+		vecX0 = randn(sizeX,1);
 	otherwise
 		error( "Invalid case." );
 	endswitch
 	%
-	funchF = @(x) funcFQuad( x, vecX_secret, vecF_secret, matJ_secret, ary3Kappa_secret );
-	vecX0 = randn(sizeX,1);
 	%
 	%
 	%

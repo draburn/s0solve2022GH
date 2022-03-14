@@ -81,7 +81,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		% Check pre-iter stop crit.
 		omegaTol = mygetfield( prm, "omegaTol", eps^2*omega0 );
 		gNormMin = mygetfield( prm, "gNormMin", eps^2*norm(vecG0) );
-		iterMax = mygetfield( prm, "iterMax", 20 );
+		iterMax = mygetfield( prm, "iterMax", 50 );
 		if ( omega <= omegaTol )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "STRONG SUCCESS: omega <= omegaTol." );
 			break;
