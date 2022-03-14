@@ -84,7 +84,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		% Get curve scaling.
 		matS_curve = mygetfield( prm, "matS_curve", [] );
 		if ( isempty(matS_curve) )
-			stepScalingType = mygetfield( prm, "stepScalingType", "" );
+			stepScalingType = mygetfield( prm, "stepScalingType", "marquardt" );
 			switch ( tolower(stepScalingType) )
 			case { "", "none", "identity" }
 				matS_curve = matIX;
@@ -119,7 +119,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 			% but, this is easier to code...
 			[ matPsi_hScaled, matLambda_hScaled ] = eig( matHScaled );
 			vecLambda_hScaled = diag(matLambda_hScaled);
-			vecLIPNG = matLambda_hScaled \ ( matPsi_hScaled * (-vecGScaled) );
+			vecLIPNG = matLambda_hScaled \ ( matPsi_hScaled' * (-vecGScaled) );
 			matSP = matS_curve * matPsi_hScaled;
 			funchDeltaOfP = @(p) ( matSP * (diag( 1.0 - (1.0-p).^vecLambda_hScaled ) * vecLIPNG) );
 		case { "cauchy", "gradient descent segment" }
@@ -133,15 +133,13 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		%
 		testPCauchy = true;
 		if ( testPCauchy )
-			omLo = funchOmegaModelOfDelta( (pCauchy*0.999)*(-vecGScaled) );
-			omAt = funchOmegaModelOfDelta( (pCauchy*1.000)*(-vecGScaled) );
-			omHi = funchOmegaModelOfDelta( (pCauchy*1.001)*(-vecGScaled) );
+			omLo = funchOmegaModelOfDelta( 0.999 * vecDeltaCauchy );
+			omAt = funchOmegaModelOfDelta( 1.000 * vecDeltaCauchy );
+			omHi = funchOmegaModelOfDelta( 1.001 * vecDeltaCauchy );
 			assert( omAt <= omLo );
 			assert( omAt <= omHi );
 		endif
-		%
-		%
-		doCurveViz = true;
+		doCurveViz = false;
 		if (doCurveViz)
 			msg( __FILE__, __LINE__, "Doing curve viz hack." );
 			numPts = 101;
@@ -153,6 +151,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 			figure(10);
 			plot( vecXPts(1,:), vecXPts(2,:), 'o-' );
 			grid on;
+			hold on;
 		break;
 		endif
 		%
