@@ -5,8 +5,8 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 	setCommon;
 	fevalCount = 0;
 	time0 = time();
-	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
 	%
 	sizeX = size(vecX0,1);
 	assert( isrealarray(vecX0,[sizeX,1]) );
@@ -53,6 +53,8 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 	%echo__normG0 = norm(vecG0)
 	while (1)
 		if ( nargout >= 2 )
+			% The fact that this does not generate a point with fevalCount = 1 is irksome.
+			% The real problem is how I constructed my loop.
 			datOut.fevalCountVals(iterCount+1) = fevalCount;
 			datOut.omegaVals(iterCount+1) = omega;
 			datOut.gNormVals(iterCount+1) = norm(vecG);
@@ -158,7 +160,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 			omLo = funchOmegaModelOfDelta( 0.999 * vecDeltaCauchy );
 			omAt = funchOmegaModelOfDelta( 1.000 * vecDeltaCauchy );
 			omHi = funchOmegaModelOfDelta( 1.001 * vecDeltaCauchy );
-			if ( abs(omAt) > eps*omega )
+			if ( abs(omAt) > eps*omega0  && omLo >= 0.0 && omAt >= 0.0  && omHi >= 0.0 )
 				%[ omLo, omAt, omHi ]
 				assert( omAt <= omLo );
 				assert( omAt <= omHi );
@@ -281,14 +283,38 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 			%
 			%
 		case { "fminbnd", "min", "minscan", "min scan" }
+			% Specifically checking p=1.0 seems important for gradesc. Not sure fhat fminbnd() is doing.
+			vecDelta_full = funchDeltaOfP(1.0);
+			vecX_full = vecX + vecDelta_full;
+			vecDelta_full = vecX_full - vecX;
+			omegaModel_full = funchOmegaModelOfDelta(vecDelta_full);
+			vecF_full = funchF( vecX_full ); fevalCount++;
+			omega_full = sumsq(vecF_full,1)/2.0;
+			%
 			fminbnd_prm = optimset( "TolX", eps^2, "TolFun", eps^2 );
 			funchOmegaOfP = @(p)( sumsq(funchF(vecX+funchDeltaOfP(p)),1)/2.0 );
-			[ pOfMin, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchOmegaOfP, 0.0, 1.0, fminbnd_prm );
+			[ p_scan, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchOmegaOfP, 0.0, 1.0, fminbnd_prm );
 			fevalCount += fminbnd_output.funcCount;
-			vecDelta = funchDeltaOfP( pOfMin );
-			vecX_trial = vecX + vecDelta;
-			vecDelta = vecX_trial - vecX;
-			vecF_trial = funchF( vecX_trial ); fevalCount++;
+			vecDelta_scan = funchDeltaOfP( p_scan );
+			vecX_scan = vecX + vecDelta_scan;
+			vecDelta_scan = vecX_scan - vecX;
+			vecF_scan = funchF( vecX_scan ); fevalCount++;
+			omega_scan = sumsq(vecF_scan,1)/2.0;
+			%
+			%
+			if ( omega_scan < omega_full )
+				vecDelta = vecDelta_scan;
+				vecX_trial = vecX_scan;
+				vecF_trial = vecF_scan;
+			else
+				vecDelta = vecDelta_full;
+				vecX_trial = vecX_full;
+				vecF_trial = vecF_full;
+			endif
+			omegaModel_trial = funchOmegaModelOfDelta( vecDelta );
+			omega_trial = sumsq(vecF_trial)/2.0;
+			%
+			%
 		otherwise
 			error( "Invalid value of stepLengthType." );
 		endswitch
