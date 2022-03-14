@@ -18,13 +18,14 @@
 		endfor
 	endfunction
 	%
-	sizeX = 2;
+	sizeX = 5;
 	sizeF = sizeX;
 	vecX_secret = randn(sizeX,1);
 	vecF_secret = randn(sizeF,1);
 	matJ_secret = randn(sizeF,sizeX);
 	%
-	addNullSpace = false;
+	%%%addNullSpace = false;
+	addNullSpace = true;
 	if ( addNullSpace )
 		vecPhi_secret = randn(sizeX,1);
 		vecPhi_secret /= norm(vecPhi_secret);
@@ -33,7 +34,8 @@
 	%
 	sizeA = sizeX;
 	for nf=1:sizeF
-		matA = 0.1*randn(sizeA,sizeX);
+		%matA = 0.1*randn(sizeA,sizeX);
+		matA = randn(sizeA,sizeX);
 		matKappa = matA'*matA;
 		makeKPositive = true;
 		if (~makeKPositive)
@@ -50,7 +52,6 @@
 	%
 	%
 	lev_prm = [];
-	lev_prm.stepLengthType = "trust region";
 	msg( __FILE__, __LINE__, "Calling findZero_fullH() LEVENBERG..." );
 	[ lev_vecXF, lev_datOut ] = findZero_fullH( vecX0, funchF, lev_prm );
 	msg( __FILE__, __LINE__, "Finished findZero_fullH() LEVENBERG." );
@@ -58,7 +59,6 @@
 	%
 	gradesc_prm = [];
 	gradesc_prm.stepCurveType = "gradient descent curve";
-	gradesc_prm.stepLengthType = "trust region";
 	msg( __FILE__, __LINE__, "Calling findZero_fullH() GRADIENT DESCENT CURVE..." );
 	[ gradesc_vecXF, gradesc_datOut ] = findZero_fullH( vecX0, funchF, gradesc_prm );
 	msg( __FILE__, __LINE__, "Finished findZero_fullH() GRADIENT DESCENT CURVE." );
@@ -66,7 +66,6 @@
 	%
 	powell_prm = [];
 	powell_prm.stepCurveType = "powell";
-	powell_prm.stepLengthType = "trust region";
 	msg( __FILE__, __LINE__, "Calling findZero_fullH() POWELL..." );
 	[ powell_vecXF, powell_datOut ] = findZero_fullH( vecX0, funchF, powell_prm );
 	msg( __FILE__, __LINE__, "Finished findZero_fullH() POWELl." );
@@ -74,7 +73,6 @@
 	%
 	newt_prm = [];
 	newt_prm.stepCurveType = "newton";
-	newt_prm.stepLengthType = "trust region";
 	msg( __FILE__, __LINE__, "Calling findZero_fullH() NEWTON..." );
 	[ newt_vecXF, newt_datOut ] = findZero_fullH( vecX0, funchF, newt_prm );
 	msg( __FILE__, __LINE__, "Finished findZero_fullH() NEWTON." );
@@ -82,7 +80,6 @@
 	%
 	cauchy_prm = [];
 	cauchy_prm.stepCurveType = "cauchy";
-	cauchy_prm.stepLengthType = "trust region";
 	msg( __FILE__, __LINE__, "Calling findZero_fullH() CAUCHY..." );
 	[ cauchy_vecXF, cauchy_datOut ] = findZero_fullH( vecX0, funchF, cauchy_prm );
 	msg( __FILE__, __LINE__, "Finished findZero_fullH() CAUCHY." );
@@ -100,7 +97,7 @@
 	  min(powell_datOut.omegaVals), ...
 	  min(newt_datOut.omegaVals), ...
 	  min(cauchy_datOut.omegaVals), ...
-	  min(fsolveGnostic_datOut.omegaVals) ]) - eps^2;
+	  min(fsolveGnostic_datOut.omegaVals) ]) - eps;
 	%
 	numFigs++; figure( numFigs );
 	semilogy( ...

@@ -78,11 +78,11 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		endif
 		%
 		% Check pre-iter stop crit.
-		omegaMin = mygetfield( prm, "omegaMin", eps^2*omega0 );
+		omegaTol = mygetfield( prm, "omegaTol", eps^2*omega0 );
 		gNormMin = mygetfield( prm, "gNormMin", eps^2*norm(vecG0) );
 		iterMax = mygetfield( prm, "iterMax", 20 );
-		if ( omega <= omegaMin )
-			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "STRONG SUCCESS: omega <= omegaMin." );
+		if ( omega <= omegaTol )
+			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "STRONG SUCCESS: omega <= omegaTol." );
 			break;
 		elseif ( norm(vecG) <= gNormMin )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "WEAK SUCCESS: gNorm <= gNormMin." );
@@ -178,8 +178,8 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		endif
 		%
 		%
-		if ( omega - funchOmegaModelOfP(1.0) < omegaMin )
-			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: omega - funchOmegaModelOfP(1.0) < omegaMin." );
+		if ( omega - funchOmegaModelOfP(1.0) < omegaTol )
+			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: omega - funchOmegaModelOfP(1.0) < omegaTol." );
 			break;
 		endif
 		%
@@ -187,7 +187,16 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		%
 		stepLengthType = mygetfield( prm, "stepLengthType", "" );
 		switch ( tolower(stepLengthType) )
-		case { "tr", "trust region" }
+		case { "blind", "full" }
+			vecDelta = funchDeltaOfP(1.0);
+			vecX_trial = vecX + vecDelta;
+			vecDelta = vecX_trial - vecX;
+			omegaModel_trial = funchOmegaModelOfDelta(vecDelta);
+			vecF_trial = funchF( vecX_trial ); fevalCount++;
+			omega_trial = sumsq(vecF_trial,1)/2.0;
+			%
+			%
+		case { "", "tr", "trust region" }
 			matS_trustRegion = mygetfield( prm, "matS_trustRegion", eye(sizeX,sizeX) );
 			funchStepSizeOfP = @(p)( norm(matS_trustRegion*funchDeltaOfP(p)) );
 			%
@@ -242,8 +251,8 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 				omegaModel_trial = funchOmegaModelOfDelta(vecDelta);
 				%
 				%
-				if ( omega - omegaModel_trial < omegaMin )
-					msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: omega - omegaModel_trial < omegaMin." );
+				if ( omega - omegaModel_trial < omegaTol )
+					msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: omega - omegaModel_trial < omegaTol." );
 					break;
 				endif
 				%
@@ -266,7 +275,9 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 				endif
 				break;
 			endwhile
-		case { "", "fminbnd", "min", "min scan" }
+			%
+			%
+		case { "fminbnd", "min", "minscan", "min scan" }
 			fminbnd_prm = optimset( "TolX", eps^2, "TolFun", eps^2 );
 			funchOmegaOfP = @(p)( sumsq(funchF(vecX+funchDeltaOfP(p)),1)/2.0 );
 			[ pOfMin, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchOmegaOfP, 0.0, 1.0, fminbnd_prm );
