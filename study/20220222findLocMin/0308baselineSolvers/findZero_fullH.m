@@ -84,7 +84,7 @@ function [ vecXF, datOut ] = findZero_fullH( vecX0, funchF, prm=[] )
 		% Get curve scaling.
 		matS_curve = mygetfield( prm, "matS_curve", [] );
 		if ( isempty(matS_curve) )
-			stepScalingType = mygetfield( prm, "stepScalingType", "marquardt" );
+			stepScalingType = mygetfield( prm, "stepScalingType", "" );
 			switch ( tolower(stepScalingType) )
 			case { "", "none", "identity" }
 				matS_curve = matIX;
