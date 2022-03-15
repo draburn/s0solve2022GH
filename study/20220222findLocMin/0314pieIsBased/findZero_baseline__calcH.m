@@ -6,7 +6,7 @@ function [ matH, datOut ] = findZero_baseline__calcH( vecX, vecF, matJ, funchF, 
 	sizeF = size(vecF,1);
 	fevalCount = 0;
 	cvtkv_prm = mygetfield( prm, "cvtkv_prm", [] );
-	kMode = mygetfield( prm, "kMode", "" );
+	kMode = mygetfield( prm, "kMode", "none" );
 	switch ( tolower(kMode) )
 	case { "", "none", "jtj" }
 		matV = [];
@@ -17,10 +17,10 @@ function [ matH, datOut ] = findZero_baseline__calcH( vecX, vecF, matJ, funchF, 
 		vecLambda_jtj = diag(matLambda_jtj);
 		m = ( vecLambda_jtj < patchTol*max(abs(vecLambda_jtj)) );
 		matV = matPsi_jtj(:,m);
-	case { "diagonal standard basis" }
+	case { "dsb", "diagonal standard basis" }
 		cvtkv_prm.includeOffDiagonalTerms = false;
 		matV = eye(sizeX,sizeX);
-	case { "diagonal eigenbasis" }
+	case { "deb", "diagonal eigenbasis" }
 		cvtkv_prm.includeOffDiagonalTerms = false;
 		[ matPsi_jtj, matLambda_jtj ] = eig( matJTJ );
 		matV = matPsi_jtj;

@@ -2,14 +2,14 @@
 	tic();
 	numFigs = 0;
 	setprngstates(0);
-	sizeX = 5;
-	sizeF = 5;
+	sizeX = 3;
+	sizeF = 3;
 	vecXE = randn(sizeX,1);
 	matJE = randn(sizeF,sizeX);
 	matA0 = 0.1*randn(sizeF,sizeX);
 	matA1 = randn(sizeX,sizeX);
 	matA2 = randn(sizeX,sizeX);
-	matB0 = 0.01*randn(sizeF,sizeX);
+	matB0 = 0.1*randn(sizeF,sizeX);
 	matB1 = randn(sizeX,sizeX);
 	matB2 = randn(sizeX,sizeX);
 	matB3 = randn(sizeX,sizeX);

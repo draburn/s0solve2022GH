@@ -44,7 +44,7 @@ function [ vecXF, datOut ] = findZero_baseline( vecX0, funchF, prm=[] )
 		calcH_prm = mygetfield( prm, "calcH_prm", [] );
 		[ matH, ch_datOut ] = findZero_baseline__calcH( vecX, vecF, matJ, funchF, calcH_prm );
 		fevalCount += ch_datOut.fevalCount;
-		funchFModelOfDelta = @(delta)( funcVecQuad( vecX+delta, vecX, vecF, matJ, ch_datOut.ary3KappaA ) );
+		funchFModelOfDelta = @(delta)( funcVecQuad( vecX+delta, vecX, vecF, matJ, 0.5*ch_datOut.ary3KappaA ) );
 		%
 		%
 		%
