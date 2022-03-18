@@ -14,8 +14,17 @@
 	matB2 = randn(sizeX,sizeX);
 	matB3 = randn(sizeX,sizeX);
 	%
-	y = @(x)( x - vecXE );
-	funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
+	if (1)
+		vecPhi = randn(sizeX,1);
+		vecFE = matJE*vecPhi;
+		vecPhi = vecPhi/norm(vecPhi);
+		matJE = matJE - matJE*vecPhi*(vecPhi');
+		y = @(x)( x - vecXE );
+		funchF = @(x)( vecFE + matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
+	else
+		y = @(x)( x - vecXE );
+		funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
+	endif
 	%
 	vecX0 = zeros(sizeX,1);
 	%
@@ -23,6 +32,7 @@
 	%
 	prm_broyd = [];
 	prm_broyd.modelGen_prm.useInexactJ = "true";
+	%prm_broyd.modelGen_prm.inexactJType = "none";
 	[ vecXF_broyd, vecFF_broyd, datOut_broyd ] = findZero_baseline( vecX0, funchF, prm_broyd );
 	%
 	[ vecXF, vecFF, datOut ] = findZero_baseline( vecX0, funchF );
