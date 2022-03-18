@@ -91,7 +91,7 @@ function [ matJ, ary3Kappa, modelGen_datOut ] = findZero_baseline__modelGen( vec
 	% Note: if matJ is inexact, these priority vectors will be inexact too.
 	%
 	cfdk_prm = mygetfield( modelGen_prm, "cfdk_prm", [] );
-	switch (tolower(mygetfield( modelGen_prm, "kappaType", "full" )))
+	switch (tolower(mygetfield( modelGen_prm, "kappaType", "none" )))
 	case { "none" }
 		matV = [];
 		matC = [];
@@ -118,7 +118,7 @@ function [ matJ, ary3Kappa, modelGen_datOut ] = findZero_baseline__modelGen( vec
 		[ ary3Kappa, cfdk_datOut ] = calcFDKappa( vecX, vecF, funchF, matV, matC, cfdk_prm );
 		modelGen_datOut.fevalCount += cfdk_datOut.fevalCount;
 	else
-		ary3Kapp = zeros( sizeX, sizeX, sizeF );
+		ary3Kappa = zeros( sizeX, sizeX, sizeF );
 	endif
 return;
 endfunction

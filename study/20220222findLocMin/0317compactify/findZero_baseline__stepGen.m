@@ -13,6 +13,7 @@ function [ vecX_next, vecF_next, stepGen_datOut ] = findZero_baseline__stepGen( 
 		xTol = mygetfield( stepGen_prm, "xTol", eps );
 		btFactor = mygetfield( stepGen_prm, "btFactor", 3.0 );
 		for emergencyBreak=1:1E8
+			assert( emergencyBreak < 1000 );
 			vecX_next = funchXTrialOfP(p);
 			vecF_next = funchF(vecX_next); stepGen_datOut.fevalCount++;
 			if ( norm(vecF_next) < norm(vecF) - fTol )
