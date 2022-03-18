@@ -6,14 +6,7 @@ function [ matJ, ary3Kappa, modelGen_datOut ] = findZero_baseline__modelGen( vec
 	%
 	%
 	% Update Jacobian.
-	if ( isempty(matJ_prev) )
-		calculateFullJacobian = true;
-	elseif ( ~mygetfield( modelGen_prm, "useInexactJ", false  ) )
-		calculateFullJacobian = true;
-	else
-		calculateFullJacobian = false;
-	endif
-	if (calculateFullJacobian)
+	if ( isempty(matJ_prev) || ~mygetfield( modelGen_prm, "useInexactJ", false  ) )
 		epsFD = mygetfield( modelGen_prm, "epsFD", eps^0.25 );
 		for n = 1 : sizeX
 			vecXP = vecX; vecXP(n) += epsFD;
