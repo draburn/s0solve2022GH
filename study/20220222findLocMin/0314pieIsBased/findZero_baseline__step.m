@@ -1,4 +1,10 @@
 function [ vecX_step, vecF_step, datOut ] = findZero_baseline__step( vecX, funchDeltaOfP, funchF, prm );
+	doCurveViz = false;
+	if (doCurveViz)
+		findZero_baseline__curveViz;
+		error( "Finizhed viz." );
+	endif
+	%
 	pLo = mygetfield( prm, "pLo", 0.0 );
 	pHi = mygetfield( prm, "pHi", 1.0 );
 	%
