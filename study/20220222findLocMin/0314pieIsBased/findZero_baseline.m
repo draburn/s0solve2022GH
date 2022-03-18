@@ -44,6 +44,7 @@ function [ vecXF, datOut ] = findZero_baseline( vecX0, funchF, prm=[] )
 		calcH_prm = mygetfield( prm, "calcH_prm", [] );
 		[ matH, ch_datOut ] = findZero_baseline__calcH( vecX, vecF, matJ, funchF, calcH_prm );
 		fevalCount += ch_datOut.fevalCount;
+		funchFModel = @(x)( funcVecQuad( x, vecX, vecF, matJ, ch_datOut.ary3KappaA ) );
 		funchFModelOfDelta = @(delta)( funcVecQuad( vecX+delta, vecX, vecF, matJ, ch_datOut.ary3KappaA ) );
 		%
 		%
@@ -64,34 +65,22 @@ function [ vecXF, datOut ] = findZero_baseline( vecX0, funchF, prm=[] )
 		%
 		%
 		%
-		doCurveViz = true;
+		doCurveViz = false;
 		if (doCurveViz)
 			findZero_baseline__curveViz;
-			break;
+			error( "Finizhed viz." );
 		endif
-		msg( __FILE__, __LINE__, "HALT." ); error("HALT.");
 		%
 		%
 		%
-		error( "HERE: Set maximum step size bases on funcFModel, not mere omega-Hessian model (which goes to Newton point, modulo regularization)." );
 		%
+		step_prm = mygetfield( prm, "step_prm" );
+		step_prm.trustRegionSize = trustRegionSize;
+		step_prm.funchFModel = funchFModel;
+		[ vecX_step, vecF_step, step_datOut ] = findZero_baseline__step( vecX, funchDeltaOfP, funchF, step_prm )
+		sumsq(vecF)/2.0
+		sumsq(vecF_step)/2.0
 		%
-		%
-		stepSizeMode = mygetfield( prm, "stepSizeMode", "tr" );
-		switch ( tolower(stepSizeMode) )
-		case { "tr", "trust region" }
-			error( "Not implemented." );
-		case { "bt", "backtracking" }
-			error( "Not implemented." );
-		case { "scan" }
-			error( "Not implemented." );
-		otherwise
-			error( "Invalid value of stepSizeMode." );
-		endswitch
-		
-		
-		
-	
 		msg( __FILE__, __LINE__, "HALT." ); error("HALT.");
 		%
 		%
