@@ -1,3 +1,6 @@
+% This "_baseline" is targetting the full Jacobian being re-calculated every iteration;
+% other cases may not be fully functional.
+
 function [ vecXF, vecFF, datOut ] = findZero_baseline( vecX0, funchF, prm=[] )
 	time0 = time();
 	fevalCount = 0;
