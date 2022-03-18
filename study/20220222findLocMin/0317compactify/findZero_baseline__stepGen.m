@@ -9,10 +9,10 @@ function [ vecX_next, vecF_next, stepGen_datOut ] = findZero_baseline__stepGen( 
 		vecF_next = funchF(vecX_next); stepGen_datOut.fevalCount++;
 	case { "geombt" }
 		p = 1.0;
-		fTol = mygetfield( stepGen_prm, "fTol", eps^0.7 );
-		xTol = mygetfield( stepGen_prm, "xTol", eps^0.7 );
-		emergencyBreak = 0;
-		while (1)
+		fTol = mygetfield( stepGen_prm, "fTol", eps );
+		xTol = mygetfield( stepGen_prm, "xTol", eps );
+		btFactor = mygetfield( stepGen_prm, "btFactor", 3.0 );
+		for emergencyBreak=1:1E8
 			vecX_next = funchXTrialOfP(p);
 			vecF_next = funchF(vecX_next); stepGen_datOut.fevalCount++;
 			if ( norm(vecF_next) < norm(vecF) - fTol )
@@ -21,10 +21,8 @@ function [ vecX_next, vecF_next, stepGen_datOut ] = findZero_baseline__stepGen( 
 				msg( __FILE__, __LINE__, "Reached backtracking limit." );
 				break;
 			endif
-			p /= 3.0;
-			emergencyBreak++;
-			assert( emergencyBreak < 10000 );
-		endwhile
+			p /= btFactor;
+		endfor
 	otherwise
 		error( "Invalid value of stepType." );
 	endswitch
