@@ -18,7 +18,7 @@ function [ matJ, ary3Kappa, modelGen_datOut ] = findZero_baseline__modelGen( vec
 		endfor
 	else
 		assert( issize(matJ_prev,[sizeF,sizeX]) );
-		switch ( mygetfield( modelGen_prm, "jUpdate", "full"  ) )
+		switch (tolower(mygetfield( modelGen_prm, "jUpdate", "broyden"  )))
 		case { "full" }
 			% I expect this code is duplicated. Maybe de-duplicate later.
 			epsFD = mygetfield( modelGen_prm, "epsFD", eps^0.25 );
