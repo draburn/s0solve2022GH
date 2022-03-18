@@ -26,7 +26,10 @@ function [ vecXF, vecFF, datOut ] = findZero_baseline( vecX0, funchF, prm=[] )
 	vecX = vecX0;
 	vecF = vecF0;
 	iterCount = 0;
+	datOut.fevalCountVals(iterCount+1) = fevalCount;
+	datOut.fNormVals(iterCount+1) = norm(vecF);
 	for emergencyBreak=1:1E8
+		%
 		iterCount++;
 		fTol = mygetfield( prm, "fTol", eps );
 		iterMax = mygetfield( prm, "iterMax", 50 );
@@ -83,7 +86,9 @@ function [ vecXF, vecFF, datOut ] = findZero_baseline( vecX0, funchF, prm=[] )
 		  time()-time0, iterCount, fevalCount, ...
 		  norm(matJ_prev'*vecF_prev), ...
 		  norm(vecX-vecX0), norm(vecX-vecX0)-norm(vecX_prev-vecX0), norm(vecX-vecX_prev), ...
-		  norm(vecF), norm(vecF_prev)-norm(vecF), norm(vecF_prev-vecF) ) );	
+		  norm(vecF), norm(vecF_prev)-norm(vecF), norm(vecF_prev-vecF) ) );
+		datOut.fevalCountVals(iterCount+1) = fevalCount;
+		datOut.fNormVals(iterCount+1) = norm(vecF);
 	endfor
 	vecXF = vecX_best;
 	vecFF = vecF_best;
