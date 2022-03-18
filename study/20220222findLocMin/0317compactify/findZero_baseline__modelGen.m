@@ -28,7 +28,7 @@ function [ matJ, ary3Kappa, modelGen_datOut ] = findZero_baseline__modelGen( vec
 		case { "none" }
 			matJ = matJ_prev;
 		otherwise
-			error( "Unsupported case." );
+			error( "Invalid case." );
 		endswitch
 		%
 		if (mygetfield( modelGen_prm, "applyGradientUpdate", true ))
@@ -49,7 +49,7 @@ function [ matJ, ary3Kappa, modelGen_datOut ] = findZero_baseline__modelGen( vec
 		endif
 	endif
 	%
-	ary3Kappa = zeros( sizeX, sizeX, sizeF );
+	% Now look at Kappa...
 	% *** NOTE THAT ARY3KAPPA IS NOW XXF, NOT FXX! ***
 	%
 	% DRaburn 2022.03.18...
@@ -64,5 +64,61 @@ function [ matJ, ary3Kappa, modelGen_datOut ] = findZero_baseline__modelGen( vec
 	% These include the steepest-descent direction, the step to the local minimum of the linear model (if it exists),
 	%  and any directions for which matJ'*matJ has a non-positive eigenvaule (if they exist).
 	% We can also consider scaling, such as Marquardt ( diag(sqrt(1.0./diag(matJ'*matJ))) ) scaling.
+	%
+	% The work here is not needed for all modes; later, we can limit the calculations to when needed.
+	vecG = matJ'*vecF;
+	matJTJ = matJ'*matJ;
+	[ matPsi, matLambda ] = eig( matJTJ );
+	vecLambda = diag(matLambda);
+	lambdaAbsMax = max(abs(vecLambda));
+	%
+	% Set our "priority" vector space.
+	% This could be done in a number of ways, but
+	%  here's what I think makes the most sense.
+	matU = -vecG;
+	if ( min(vecLambda) > (eps^0.75)*lambdaAbsMax )
+		matR = chol( matJTJ );
+		vecDeltaNewton = -( matR \ (matR'\vecG) );
+		matU = [ matU, vecDeltaNewton ];
+	else
+		for n=1:sizeX
+		if ( vecLambda(n) < (eps^0.75)*lambdaAbsMax )
+			matU = [ matU, matPsi(:,n) ];
+		endif
+		endfor
+	endif
+	matU = utorthdrop( matU );
+	% Note: if matJ is inexact, these priority vectors will be inexact too.
+	%
+	cfdk_prm = mygetfield( modelGen_prm, "cfdk_prm", [] );
+	switch (tolower(mygetfield( modelGen_prm, "kappaType", "full" )))
+	case { "none" }
+		matV = [];
+		matC = [];
+	case { "full" }
+		matV = eye(sizeX,sizeX);
+		matC = ones(size(matV,2),size(matV,2));
+	case { "sbd", "standard basis diagonal" }
+		matV = eye(sizeX,sizeX);
+		matC = eye(size(matV,2),size(matV,2));
+	case { "ebd", "eigen basis diagonal" }
+		matV = matPsi;
+		matC = eye(size(matV,2),size(matV,2));
+	case { "prif", "priority full" }
+		matV = matU;
+		matC = ones(size(matV,2),size(matV,2));
+	case { "prid", "priority diagonal" }
+		matV = matU;
+		matC = eye(size(matV,2),size(matV,2));
+	otherwise
+		error( "Invalid case." );
+	endswitch
+	%
+	if ( size(matV,2) > 0 )
+		[ ary3Kappa, cfdk_datOut ] = calcFDKappa( vecX, vecF, funchF, matV, matC, cfdk_prm );
+		modelGen_datOut.fevalCount += cfdk_datOut.fevalCount;
+	else
+		ary3Kapp = zeros( sizeX, sizeX, sizeF );
+	endif
 return;
 endfunction
