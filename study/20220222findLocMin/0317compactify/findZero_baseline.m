@@ -37,9 +37,11 @@ function [ vecXF, vecFF, datOut ] = findZero_baseline( vecX0, funchF, prm=[] )
 		%
 		%
 		%
+		% DRaburn 2022.03.17: Switched ary3Kappa to (sizeX,sizeX,sizeF)!
 		modelGen_prm = mygetfield( prm, "modelGen_prm", [] );
-		[ matJ, ary3Kappa, funchFModel, modelGen_datOut ] = findZero_baseline__modelGen( vecX, vecF, vecX_prev, vecF_prev, matJ_prev, funchF, modelGen_prm );
+		[ matJ, ary3Kappa, modelGen_datOut ] = findZero_baseline__modelGen( vecX, vecF, vecX_prev, vecF_prev, matJ_prev, funchF, modelGen_prm );
 		fevalCount += modelGen_datOut.fevalCount;
+		funchFModel = @(x) funcVecQuad( x, vecX, vecF, matJ, ary3Kappa );
 		%
 		%
 		%
