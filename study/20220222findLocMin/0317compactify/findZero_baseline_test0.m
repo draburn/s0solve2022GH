@@ -15,10 +15,18 @@
 	matB3 = randn(sizeX,sizeX);
 	%
 	if (1)
+		% Whoops. Not bad loc min. But interesting.
 		vecPhi = randn(sizeX,1);
 		vecFE = matJE*vecPhi;
 		vecPhi = vecPhi/norm(vecPhi);
 		matJE = matJE - matJE*vecPhi*(vecPhi');
+		y = @(x)( x - vecXE );
+		funchF = @(x)( vecFE + matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
+	elseif (1)
+		% Here we go. Bad loc min.
+		vecFE = randn(sizeF,1);
+		vecFEHat = vecFE/norm(vecFE);
+		matJE = matJE - vecFEHat*(vecFEHat'*matJE);
 		y = @(x)( x - vecXE );
 		funchF = @(x)( vecFE + matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
 	else
