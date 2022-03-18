@@ -33,6 +33,22 @@ function [ matJ, ary3Kappa, modelGen_datOut ] = findZero_baseline__modelGen( vec
 			fooX = vecX - vecX_prev;
 			fooF = vecF - (vecF_prev+matJ_prev*fooX);
 			matJ = matJ_prev + fooF*(fooX')/(fooX'*fooX);
+			if (mygetfield( modelGen_prm, "doUphillCheck", true ))
+				vecG = matJ'*vecF;
+				if ( norm(vecG) > 0.0 )
+					vecX_trial = vecX - (eps^0.25)*vecG/norm(vecG);
+					vecF_trial = funchF( vecX_trial ); modelGen_datOut.fevalCount++;
+					if ( norm(vecF_trial) > norm(vecF) )
+						msg( __FILE__, __LINE__, "Oh, snap! The 'gradient' was going uphill!" );
+						% Do *another* Broyden update, to make "gradient" at least be downhill.
+						fooX = vecX_trial - vecX;
+						fooF = vecF_trial - (vecF+matJ_prev*fooX);
+						matJ = matJ + fooF*(fooX')/(fooX'*fooX);
+					endif
+				else
+					msg( __FILE__, __LINE__, "Gradient is apparently zero. What should I do?" );
+				endif
+			endif
 		case { "pool" }
 			error( "To-do: Implement pool update; this requires much data passing." );
 		case { "none" }
