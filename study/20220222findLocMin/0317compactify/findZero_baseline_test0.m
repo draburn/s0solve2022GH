@@ -15,6 +15,21 @@
 	matB3 = randn(sizeX,sizeX);
 	%
 	if (1)
+		% 0302lesquj/xjupdate2.m case 100, where pool reqd 1/2 fevals of Broyden.
+		function [ vecF, matJ ] = funcFJ_cubyDiagTest( vecX, c )
+			sizeX = size(vecX,1);
+			vecXE = (1:sizeX)';
+			vecF = (vecX-vecXE) + c*(vecX-vecXE).^3;
+				if ( nargout >= 2 )
+				matJ = eye(sizeX) + c*3.0*diag((vecX-vecXE).^2);
+			endif
+		endfunction
+		sizeX = 15;
+		c_cuby = 1.0;
+		funchF = @(dummyX)( funcFJ_cubyDiagTest( dummyX, c_cuby ) );
+		vecX0 = zeros(sizeX,1);
+		sizeF = sizeX;
+	elseif (1)
 		% Whoops. Not bad loc min. But interesting.
 		vecPhi = randn(sizeX,1);
 		vecFE = matJE*vecPhi;

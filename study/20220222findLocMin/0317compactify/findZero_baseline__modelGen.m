@@ -17,6 +17,9 @@ function [ matJ, ary3Kappa, modelGen_datOut ] = findZero_baseline__modelGen( vec
 			vecFM = funchF(vecXM); modelGen_datOut.fevalCount++;
 			matJ(:,n) = (vecFP-vecFM)/(2.0*epsFD);
 		endfor
+		poolDat.matJSettled = matJ;
+		poolDat.vecDeltaXPool = eye(sizeX,sizeX);
+		poolDat.vecDeltaFPool = matJ;
 	else
 		% Note: These cases may not be full supported in "_baseline".
 		assert( issize(matJ_prev,[sizeF,sizeX]) );
@@ -26,9 +29,6 @@ function [ matJ, ary3Kappa, modelGen_datOut ] = findZero_baseline__modelGen( vec
 			fooF = vecF - (vecF_prev+matJ_prev*fooX);
 			matJ = matJ_prev + fooF*(fooX')/(fooX'*fooX);
 		case { "pool" }
-			if ( isempty(poolDat.matJSettled) )
-				poolDat.matJSettled = matJ_prev;
-			endif
 			poolTol = mygetfield( modelGen_prm, "poolTol", 0.5 );
 			[ matQ, rvecDrop ] = utorthdrop( poolDat.vecDeltaXPool, poolTol );
 			%

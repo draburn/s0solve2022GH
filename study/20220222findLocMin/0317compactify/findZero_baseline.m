@@ -28,9 +28,7 @@ function [ vecXF, vecFF, datOut ] = findZero_baseline( vecX0, funchF, prm=[] )
 	iterCount = 0;
 	datOut.fevalCountVals(iterCount+1) = fevalCount;
 	datOut.fNormVals(iterCount+1) = norm(vecF);
-	poolDat.matJSettled = [];
-	poolDat.vecDeltaXPool = [];
-	poolDat.vecDeltaFPool = [];
+	poolDat = [];
 	for emergencyBreak=1:1E8
 		%
 		iterCount++;
