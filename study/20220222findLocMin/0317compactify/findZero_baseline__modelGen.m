@@ -4,6 +4,8 @@ function [ matJ, ary3Kappa, modelGen_datOut ] = findZero_baseline__modelGen( vec
 	sizeX = size(vecX,1);
 	sizeF = size(vecF,1);
 	%
+	poolDat = mygetfield( modelGen_prm, "poolDat", [] );
+	%
 	%
 	% Update Jacobian.
 	if ( isempty(matJ_prev) || ~mygetfield( modelGen_prm, "useInexactJ", false  ) )
@@ -24,7 +26,32 @@ function [ matJ, ary3Kappa, modelGen_datOut ] = findZero_baseline__modelGen( vec
 			fooF = vecF - (vecF_prev+matJ_prev*fooX);
 			matJ = matJ_prev + fooF*(fooX')/(fooX'*fooX);
 		case { "pool" }
-			error( "To-do: Implement pool update; this requires much data passing." );
+			if ( isempty(poolDat.matJSettled) )
+				poolDat.matJSettled = matJ_prev;
+			endif
+			poolTol = mygetfield( modelGen_prm, "poolTol", 0.5 );
+			[ matQ, rvecDrop ] = utorthdrop( poolDat.vecDeltaXPool, poolTol );
+			%
+			% Apply drop vecs to matJSettled.
+			for n=1:size( poolDat.vecDeltaXPool, 2 )
+			if ( rvecDrop(n) )
+				fooX = poolDat.vecDeltaXPool(:,n);
+				fooF = poolDat.vecDeltaFPool(:,n) - poolDat.matJSettled*fooX;
+				fooJ = fooF*(fooX')/(fooX'*fooX);
+				poolDat.matJSettled += fooJ;
+			endif
+			endfor
+			poolDat.vecDeltaXPool = poolDat.vecDeltaXPool(:,~rvecDrop);
+			poolDat.vecDeltaFPool = poolDat.vecDeltaFPool(:,~rvecDrop);
+			%
+			% Apply remaining vectors as a multi-rank orthonormal update.
+			if ( size( poolDat.vecDeltaXPool, 2 ) > 0 )
+				matR = matQ'*poolDat.vecDeltaXPool;
+				matW = poolDat.vecDeltaFPool / matR;
+				matJ = poolDat.matJSettled*( eye(sizeX,sizeX) - matQ*(matQ') ) + matW * (matQ');
+			else
+				matJ = poolDat.matJSettled;
+			endif
 		case { "none" }
 			matJ = matJ_prev;
 		otherwise
@@ -120,5 +147,6 @@ function [ matJ, ary3Kappa, modelGen_datOut ] = findZero_baseline__modelGen( vec
 	else
 		ary3Kappa = zeros( sizeX, sizeX, sizeF );
 	endif
+	modelGen_datOut.poolDat = poolDat;
 return;
 endfunction

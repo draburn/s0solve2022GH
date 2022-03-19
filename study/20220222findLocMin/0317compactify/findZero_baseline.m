@@ -28,6 +28,9 @@ function [ vecXF, vecFF, datOut ] = findZero_baseline( vecX0, funchF, prm=[] )
 	iterCount = 0;
 	datOut.fevalCountVals(iterCount+1) = fevalCount;
 	datOut.fNormVals(iterCount+1) = norm(vecF);
+	poolDat.matJSettled = [];
+	poolDat.vecDeltaXPool = [];
+	poolDat.vecDeltaFPool = [];
 	for emergencyBreak=1:1E8
 		%
 		iterCount++;
@@ -45,9 +48,11 @@ function [ vecXF, vecFF, datOut ] = findZero_baseline( vecX0, funchF, prm=[] )
 		%
 		% DRaburn 2022.03.17: Changed ary3Kappa to (sizeX,sizeX,sizeF)!
 		modelGen_prm = mygetfield( prm, "modelGen_prm", [] );
+		modelGen_prm.poolDat = poolDat;
 		[ matJ, ary3Kappa, modelGen_datOut ] = findZero_baseline__modelGen( vecX, vecF, vecX_prev, vecF_prev, matJ_prev, funchF, modelGen_prm );
 		fevalCount += modelGen_datOut.fevalCount;
 		funchFModel = @(x) funcVecQuad( x, vecX, vecF, matJ, ary3Kappa );
+		poolDat = modelGen_datOut.poolDat;
 		%
 		%
 		%
@@ -81,6 +86,8 @@ function [ vecXF, vecFF, datOut ] = findZero_baseline( vecX0, funchF, prm=[] )
 		matJ_prev = matJ;
 		vecX = vecX_next;
 		vecF = vecF_next;
+		poolDat.vecDeltaXPool = [ poolDat.vecDeltaXPool, vecX-vecX_prev ];
+		poolDat.vecDeltaFPool = [ poolDat.vecDeltaFPool, vecF-vecF_prev ];
 		%
 		msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( "  %10.3e, %4d, %5d;  %10.3e;  %10.3e, %10.3e, %10.3e;  %10.3e, %10.3e, %10.3e.", ...
 		  time()-time0, iterCount, fevalCount, ...

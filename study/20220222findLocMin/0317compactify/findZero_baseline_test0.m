@@ -36,18 +36,24 @@
 	%
 	vecX0 = zeros(sizeX,1);
 	%
+	prm_pool = [];
+	prm_pool.modelGen_prm.useInexactJ = "true";
+	prm_pool.modelGen_prm.inexactJType = "pool";
+	[ vecXF_pool, vecFFpool, datOut_pool ] = findZero_baseline( vecX0, funchF, prm_pool );
+	%
 	[ vecXF_fg, vecFF_fg, datOut_fg ] = findZero_fsolveGnostic( vecX0, funchF );
+	%
+	[ vecXF_default, vecFF_default, datOut_default ] = findZero_baseline( vecX0, funchF );
 	%
 	prm_broyd = [];
 	prm_broyd.modelGen_prm.useInexactJ = "true";
 	%prm_broyd.modelGen_prm.inexactJType = "none";
 	[ vecXF_broyd, vecFF_broyd, datOut_broyd ] = findZero_baseline( vecX0, funchF, prm_broyd );
 	%
-	[ vecXF, vecFF, datOut ] = findZero_baseline( vecX0, funchF );
-	%
 	numFigs++; figure( numFigs );
 	semilogy( ...
 	  datOut_fg.fevalCountVals, datOut_fg.fNormVals+eps, 'o-', 'markersize', 20, 'linewidth', 2, ...
+	  datOut_default.fevalCountVals, datOut_default.fNormVals+eps, 'p-', 'markersize', 20, 'linewidth', 2, ...
 	  datOut_broyd.fevalCountVals, datOut_broyd.fNormVals+eps, 'x-', 'markersize', 20, 'linewidth', 2, ...
-	  datOut.fevalCountVals, datOut.fNormVals+eps, 'p-', 'markersize', 20, 'linewidth', 2 );
+	  datOut_pool.fevalCountVals, datOut_pool.fNormVals+eps, '^-', 'markersize', 20, 'linewidth', 2);
 	grid on;
