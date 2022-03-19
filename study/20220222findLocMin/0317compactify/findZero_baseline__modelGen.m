@@ -73,6 +73,9 @@ function [ matJ, ary3Kappa, modelGen_datOut ] = findZero_baseline__modelGen( vec
 			fooX = vecX_trial - vecX;
 			fooF = vecF_trial - (vecF+matJ*fooX);
 			matJ = matJ + fooF*(fooX')/(fooX'*fooX);
+			%
+			poolDat.vecDeltaXPool = [ vecX_trial - vecX, poolDat.vecDeltaXPool ];
+			poolDat.vecDeltaFPool = [ vecF_trial - vecF, poolDat.vecDeltaFPool ];
 		endif
 	endif
 	%

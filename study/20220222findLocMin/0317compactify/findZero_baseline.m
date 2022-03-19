@@ -86,8 +86,8 @@ function [ vecXF, vecFF, datOut ] = findZero_baseline( vecX0, funchF, prm=[] )
 		matJ_prev = matJ;
 		vecX = vecX_next;
 		vecF = vecF_next;
-		poolDat.vecDeltaXPool = [ poolDat.vecDeltaXPool, vecX-vecX_prev ];
-		poolDat.vecDeltaFPool = [ poolDat.vecDeltaFPool, vecF-vecF_prev ];
+		poolDat.vecDeltaXPool = [ vecX-vecX_prev, poolDat.vecDeltaXPool ];
+		poolDat.vecDeltaFPool = [ vecF-vecF_prev, poolDat.vecDeltaFPool ];
 		%
 		msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( "  %10.3e, %4d, %5d;  %10.3e;  %10.3e, %10.3e, %10.3e;  %10.3e, %10.3e, %10.3e.", ...
 		  time()-time0, iterCount, fevalCount, ...
