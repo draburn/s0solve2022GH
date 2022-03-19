@@ -29,11 +29,16 @@ function [ vecXF, vecFF, datOut ] = findZero_fsolveGnostic( vecX0, funchF, prm=[
 	datOut.fNormVals(1) = fNorm0;
 	for n = 1 : valCount
 		% We could try to be smarter, and terminate the loop if we can't get any more precise.
+		if (0)
+		% Use these options for 0302lesquj comparison.
+		fsolve_options = optimset( 'Updating', 'on', 'Jacobian', 'off', 'GradObj', 'off', 'TolFun', tolFunVals(n) );
+		else
 		fsolve_options = optimset( ...
 		  "TolX", tolX, ...
 		  "TolFun", tolFunVals(n), ...
 		  "Updating", useBroyden_str, ...
 		  "FinDiffType", fdOrder );
+		endif
 		[  fsolve_x, fsolve_fvec, fsolve_info, fsolve_output, fsolve_fjac ] = fsolve( funchF, vecX0, fsolve_options );
 		fNorm = norm(fsolve_fvec);
 		if ( fNorm < fNormBest )

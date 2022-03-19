@@ -54,6 +54,8 @@
 	prm_pool = [];
 	prm_pool.modelGen_prm.useInexactJ = "true";
 	prm_pool.modelGen_prm.inexactJType = "pool";
+	%prm_pool.modelGen_prm.applyGradientUpdate = false;
+	prm_pool.stepGen_prm.stepType = "minscan";
 	[ vecXF_pool, vecFFpool, datOut_pool ] = findZero_baseline( vecX0, funchF, prm_pool );
 	%
 	[ vecXF_fg, vecFF_fg, datOut_fg ] = findZero_fsolveGnostic( vecX0, funchF );
@@ -62,7 +64,9 @@
 	%
 	prm_broyd = [];
 	prm_broyd.modelGen_prm.useInexactJ = "true";
-	%prm_broyd.modelGen_prm.inexactJType = "none";
+	%prm_broyd.modelGen_prm.inexactJType = "broyden";
+	%prm_broyd.modelGen_prm.applyGradientUpdate = false;
+	prm_broyd.stepGen_prm.stepType = "minscan";
 	[ vecXF_broyd, vecFF_broyd, datOut_broyd ] = findZero_baseline( vecX0, funchF, prm_broyd );
 	%
 	numFigs++; figure( numFigs );
@@ -72,3 +76,18 @@
 	  datOut_broyd.fevalCountVals, datOut_broyd.fNormVals+eps, 'x-', 'markersize', 20, 'linewidth', 2, ...
 	  datOut_pool.fevalCountVals, datOut_pool.fNormVals+eps, '^-', 'markersize', 20, 'linewidth', 2);
 	grid on;
+	%
+	numFigs++; figure( numFigs );
+	semilogy( ...
+	  datOut_fg.fNormVals+eps, 'o-', 'markersize', 20, 'linewidth', 2, ...
+	  datOut_default.fNormVals+eps, 'p-', 'markersize', 20, 'linewidth', 2, ...
+	  datOut_broyd.fNormVals+eps, 'x-', 'markersize', 20, 'linewidth', 2, ...
+	  datOut_pool.fNormVals+eps, '^-', 'markersize', 20, 'linewidth', 2);
+	grid on;
+	%
+	numFigs++; figure( numFigs );
+	semilogy( ...
+	  datOut_fg.fevalCountVals, sumsq(datOut_fg.fNormVals+eps,1)/2.0, 'o-', 'markersize', 20, 'linewidth', 2, ...
+	  sumsq(datOut_pool.fNormVals+eps,1)/2.0, 'x-', 'markersize', 20, 'linewidth', 2);
+	grid on;
+	title( "BAD GRAPH: 0302lesquj/xJupdate2?wfsolve (but w gradupd)" );
