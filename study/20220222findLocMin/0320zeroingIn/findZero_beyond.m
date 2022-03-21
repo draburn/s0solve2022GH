@@ -175,6 +175,8 @@ function [ vecXF, vecFF, datOut ] = findZero_beyond( vecX0, funchF, prm=[] )
 		if ( usePool )
 			poolDeltaX = matIX;
 			poolDeltaF = matJ;
+			%poolDeltaX = [];
+			%poolDeltaF = [];
 			poolJacobi = matJ;
 		endif
 		%
