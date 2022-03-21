@@ -1,9 +1,10 @@
 	clear;
+	setVerbLevs;
 	setprngstates(0);
 	numFigs = 0;
 	%
-	sizeX = 10;
-	sizeF = 10;
+	sizeX = 50;
+	sizeF = 50;
 	vecXE = randn(sizeX,1);
 	matJE = randn(sizeF,sizeX);
 	matA0 = 0.1*randn(sizeF,sizeX);
@@ -18,6 +19,9 @@
 	funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
 	%
 	vecX0 = zeros(sizeX,1);
+	prm.verbLev = VERBLEV__MAIN;
+	[ vecXF_mimic, vecFF_mimic, datOut_mimic ] = findZero_mimic( vecX0, funchF, prm );
+	vecX0 = vecXF_mimic;
 	%
 	[ vecXF_fg, vecFF_fg, datOut_fg ] = findZero_fsolveGnostic( vecX0, funchF );
 	[ vecXF_basic, vecFF_basic, datOut_basic ] = findZero_basic( vecX0, funchF );

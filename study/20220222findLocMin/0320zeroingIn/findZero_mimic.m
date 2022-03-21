@@ -118,16 +118,28 @@ function [ vecXF, vecFF, datOut ] = findZero_mimic( vecX0, funchF, prm=[] )
 		%
 		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "Trial with approximate Jacobian was unsuccessful; recalculating full local Jacobiain." );
 		matJ = zeros( sizeF, sizeX );
-		epsFD = mygetfield( prm, "epsFD", eps^0.4 );
-		for n=1:sizeX
-			vecXP = vecX + epsFD*matIX(:,n);
-			vecFP = funchF( vecXP ); fevalCount++;
-			matJ(:,n) = (vecFP-vecF)/epsFD;
-		endfor
+		fdOrder = mygetfield( prm, "fdOrder", 1 );
+		switch (fdOrder)
+		case 1
+			epsFD = mygetfield( prm, "epsFD", eps^0.4 );
+			for n=1:sizeX
+				vecFP = funchF( vecX + epsFD*matIX(:,n) ); fevalCount++;
+				matJ(:,n) = (vecFP-vecF)/epsFD;
+			endfor
+		case 2
+			epsFD = mygetfield( prm, "epsFD", eps^0.25 );
+			for n=1:sizeX
+				vecFP = funchF( vecX + epsFD*matIX(:,n) ); fevalCount++;
+				vecFM = funchF( vecX - epsFD*matIX(:,n) ); fevalCount++;
+				matJ(:,n) = (vecFP-vecFM)/(2.0*epsFD);
+			endfor
+		otherwise
+			error( "Invalid case." );
+		endswitch
 		%
 		%
 		%
-		% Try to find a good next guess using approximate Jacobian.
+		% Try to find a good next guess using actual local Jacobian.
 		vecG = matJ'*vecF;
 		matH = matJ'*matJ;
 		vecDeltaC = (-vecG) * (vecG'*vecG) / (vecG'*matH*vecG);
