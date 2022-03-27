@@ -18,9 +18,13 @@ function [ vecXF, vecFF, datOut ] = findZero_shouldIterMin( vecX0, funchF, prm=[
 	%
 	%
 	% Everything past here is iterated on.
+	iterCount = 0;
 	bestIsNot0 = false;
 	vecX_best = vecX0;
 	vecF_best = vecF0;
+	datOut.fNormVals(iterCount+1) = norm(vecF_best);
+	datOut.fevalCountVals(iterCount+1) = fevalCount;
+	datOut.iterCountVals(iterCount+1) = iterCount;
 	%
 	vecX = vecX0;
 	vecF = vecF0;
@@ -32,7 +36,7 @@ function [ vecXF, vecFF, datOut ] = findZero_shouldIterMin( vecX0, funchF, prm=[
 		vecXM = vecX - epsFD*matIX(:,n);
 		vecFP = funchF( vecXP ); fevalCount++;
 		vecFM = funchF( vecXM ); fevalCount++;
-		matJ(:,n) = (vecFP-vecFM)/epsFD;
+		matJ(:,n) = (vecFP-vecFM)/(2.0*epsFD);
 	endfor
 	%
 	matH = matJ'*matJ;
@@ -58,15 +62,16 @@ function [ vecXF, vecFF, datOut ] = findZero_shouldIterMin( vecX0, funchF, prm=[
 	%
 	%
 	%
-	iterCount = 1;
 	while (1)
+		iterCount++;
 		if ( norm(vecF_next) < norm(vecF_best) )
 			vecX_best = vecX_next;
 			vecF_best = vecF_next;
 		endif
-		datOut.fNormVals(iterCount) = norm(vecF_best);
-		datOut.fevalCountVals(iterCount) = fevalCount;
-		datOut.iterCountVals(iterCount) = iterCount;
+		datOut.fNormVals(iterCount+1) = norm(vecF_best);
+		datOut.fevalCountVals(iterCount+1) = fevalCount;
+		datOut.iterCountVals(iterCount+1) = iterCount;
+		%
 		msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( "  %10.3e, %4d, %5d;  %10.3e;  %10.3e, %10.3e, %10.3e;  %10.3e, %10.3e, %10.3e.", ...
 		  time()-time0, iterCount, fevalCount, ...
 		  norm(matJ'*vecF), ...
@@ -87,7 +92,6 @@ function [ vecXF, vecFF, datOut ] = findZero_shouldIterMin( vecX0, funchF, prm=[
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: iterCount >= iterMax." );
 			break;
 		endif
-		iterCount++;
 		vecX = vecX_next;
 		vecF = vecF_next;
 		%
@@ -100,7 +104,7 @@ function [ vecXF, vecFF, datOut ] = findZero_shouldIterMin( vecX0, funchF, prm=[
 			vecXM = vecX - epsFD*matIX(:,n);
 			vecFP = funchF( vecXP ); fevalCount++;
 			vecFM = funchF( vecXM ); fevalCount++;
-			matJ(:,n) = (vecFP-vecFM)/epsFD;
+			matJ(:,n) = (vecFP-vecFM)/(2.0*epsFD);
 		endfor
 		%
 		matH = matJ'*matJ;
@@ -123,7 +127,6 @@ function [ vecXF, vecFF, datOut ] = findZero_shouldIterMin( vecX0, funchF, prm=[
 		fevalCount += fminbnd_output.funcCount;
 		p = fminbnd_x;
 		vecDelta = funchDeltaOfP(p);
-		%%%vecDelta = matH \ (-vecG);
 		%
 		vecX_next = vecX + vecDelta;
 		vecF_next = funchF(vecX_next); fevalCount++;

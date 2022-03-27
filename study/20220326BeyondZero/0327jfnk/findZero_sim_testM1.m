@@ -5,15 +5,15 @@ setVerbLevs;
 setprngstates();
 numFigs = 0;
 %
-sizeX = 100;
-sizeF = 100;
+sizeX = 20;
+sizeF = 20;
 %
 vecXE = randn(sizeX,1);
-matJE = diag(1.0+abs(randn(min([sizeF,sizeX]),1))) + 0.01*randn(sizeF,sizeX);
-matA0 = 0.0001*randn(sizeF,sizeX);
+matJE = diag(1.0+abs(randn(min([sizeF,sizeX]),1))) + 0.00*randn(sizeF,sizeX);
+matA0 = 0.0000*randn(sizeF,sizeX);
 matA1 = randn(sizeX,sizeX);
 matA2 = randn(sizeX,sizeX);
-matB0 = 0.0001*randn(sizeF,sizeX);
+matB0 = 0.0000*randn(sizeF,sizeX);
 matB1 = randn(sizeX,sizeX);
 matB2 = randn(sizeX,sizeX);
 matB3 = randn(sizeX,sizeX);
