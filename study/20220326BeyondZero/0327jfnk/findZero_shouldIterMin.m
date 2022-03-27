@@ -126,24 +126,10 @@ function [ vecXF, vecFF, datOut ] = findZero_shouldIterMin( vecX0, funchF, prm=[
 		[ fminbnd_x, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchFNormOfP, 0.0, 1.0, fminbnd_options );
 		fevalCount += fminbnd_output.funcCount;
 		p = fminbnd_x;
-		vecDelta = funchDeltaOfP(p);
 		%
+		vecDelta = funchDeltaOfP(p);
 		vecX_next = vecX + vecDelta;
 		vecF_next = funchF(vecX_next); fevalCount++;
-		%
-		doFullNewtCheck = true;
-		if (doFullNewtCheck)
-		if ( abs(p-1.0) > 100*eps )
-			vecDeltaN = funchDeltaOfP(1.0);
-			vecXN = vecX + vecDeltaN;
-			vecFN = funchF(vecXN); fevalCount++;
-			if ( norm(vecFN) < 1.001*norm(vecF_next) )
-				p = 1.0;
-				vecX_next = vecXN;
-				vecF_next = vecFN;
-			endif
-		endif
-		endif
 	endwhile
 	vecXF = vecX_best;
 	vecFF = vecF_best;
