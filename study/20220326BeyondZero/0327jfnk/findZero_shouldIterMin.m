@@ -58,12 +58,15 @@ function [ vecXF, vecFF, datOut ] = findZero_shouldIterMin( vecX0, funchF, prm=[
 	%
 	%
 	%
-	iterCount =1;
+	iterCount = 1;
 	while (1)
 		if ( norm(vecF_next) < norm(vecF_best) )
 			vecX_best = vecX_next;
 			vecF_best = vecF_next;
 		endif
+		datOut.fNormVals(iterCount) = norm(vecF_best);
+		datOut.fevalCountVals(iterCount) = fevalCount;
+		datOut.iterCountVals(iterCount) = iterCount;
 		msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( "  %10.3e, %4d, %5d;  %10.3e;  %10.3e, %10.3e, %10.3e;  %10.3e, %10.3e, %10.3e.", ...
 		  time()-time0, iterCount, fevalCount, ...
 		  norm(matJ'*vecF), ...
@@ -102,12 +105,13 @@ function [ vecXF, vecFF, datOut ] = findZero_shouldIterMin( vecX0, funchF, prm=[
 		%
 		matH = matJ'*matJ;
 		vecG = matJ'*vecF;
-		hNorm = sqrt(sum(sumsq(matH))/sizeX);
 		assert( 0 ~= hNorm );
 		[ matR, cholFlag ] = chol(matH);
 		if ( 0==cholFlag )
 			matHRegu = matH;
 		else
+			msg( __FILE__, __LINE__, "Need regu!" );
+			hNorm = sqrt(sum(sumsq(matH))/sizeX);
 			matHRegu = matH + hNorm*sqrt(eps)*matIX;
 			matR = chol(matHRegu); % Ensure it's pos-def.
 		endif
@@ -118,9 +122,25 @@ function [ vecXF, vecFF, datOut ] = findZero_shouldIterMin( vecX0, funchF, prm=[
 		[ fminbnd_x, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchFNormOfP, 0.0, 1.0, fminbnd_options );
 		fevalCount += fminbnd_output.funcCount;
 		p = fminbnd_x;
+		vecDelta = funchDeltaOfP(p);
+		%%%vecDelta = matH \ (-vecG);
 		%
-		vecX_next = vecX + funchDeltaOfP(p);
+		vecX_next = vecX + vecDelta;
 		vecF_next = funchF(vecX_next); fevalCount++;
+		%
+		doFullNewtCheck = true;
+		if (doFullNewtCheck)
+		if ( abs(p-1.0) > 100*eps )
+			vecDeltaN = funchDeltaOfP(1.0);
+			vecXN = vecX + vecDeltaN;
+			vecFN = funchF(vecXN); fevalCount++;
+			if ( norm(vecFN) < 1.001*norm(vecF_next) )
+				p = 1.0;
+				vecX_next = vecXN;
+				vecF_next = vecFN;
+			endif
+		endif
+		endif
 	endwhile
 	vecXF = vecX_best;
 	vecFF = vecF_best;
