@@ -4,10 +4,12 @@ clear;
 setprngstates();
 numFigs = 0;
 %
-sizeX = 2; sizeF = 2;
+%sizeX = 2; sizeF = 2;
+%sizeX = 20; sizeF = 20;
+sizeX = 100; sizeF = 100;
 vecF = randn(sizeF,1);
 matJ0 = randn(sizeF,sizeX);
-matJ1 = 0.1*abs(randn(sizeF,sizeX));
+matJ1 = 0.01*abs(randn(sizeF,sizeX));
 % matJ = matJ0 + matJ1.*(randn(sizeF,sizeX));
 % This "should" have the property that < matJ' * matJ > = matJ0' * matJ0 + diag(daig( matJ1' * matJ1 )), I think?
 %
@@ -37,8 +39,8 @@ vecF1NormSqAvg = sum(vecF1SqAvg);
 vecF2NormSqAvg = sum(vecF2SqAvg);
 %
 msg( __FILE__, __LINE__, "Results..." );
-msg( __FILE__, __LINE__, sprintf( " Option 1:  %10.3e, %10.3e.", vecF1AvgNormSq, vecF1NormSqAvg ) );
-msg( __FILE__, __LINE__, sprintf( " Option 2:  %10.3e, %10.3e.", vecF2AvgNormSq, vecF2NormSqAvg ) );
+msg( __FILE__, __LINE__, sprintf( " Option 1:  %10.3e, %10.3e.", sqrt(vecF1AvgNormSq), sqrt(vecF1NormSqAvg) ) );
+msg( __FILE__, __LINE__, sprintf( " Option 2:  %10.3e, %10.3e.", sqrt(vecF2AvgNormSq), sqrt(vecF2NormSqAvg) ) );
 %
 f1NormTrials = sqrt(sum(vecF1Trials.^2,1));
 f2NormTrials = sqrt(sum(vecF2Trials.^2,1));
@@ -55,5 +57,5 @@ grid on;
 title( "f2 norm histogram" );
 ax2 = axis();
 %
-%axis([ ax1(1) ax1(2) ax2(3) ax2(4) ]);
-%figure(1); axis([ ax2(1) ax2(2) ax1(3) ax1(4) ]);
+%figure(1); axis([ 0.0, min([ ax1(2) ax2(2) ]), ax1(3), ax1(4) ]);
+%figure(2); axis([ 0.0, min([ ax1(2) ax2(2) ]), ax1(3), ax1(4) ]);
