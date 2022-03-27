@@ -1,6 +1,7 @@
 clear;
 setVerbLevs;
-setprngstates(39901520); % 39901520 oldCrude is particularly bad relative to fsovle.
+%setprngstates(39901520); % 39901520 oldCrude is particularly bad relative to fsovle.
+setprngstates(0);
 numFigs = 0;
 %
 sizeX = 100;
@@ -30,8 +31,13 @@ timeSS = time();
 [ vecXF_oldCrude, vecFF_oldCrude, datOut_oldCrude ] = findZero_oldCrude( vecX0, funchF );
 time_oldCrude = time()-timeSS;
 %
+timeSS = time();
+[ vecXF_shouldIterMin, vecFF_shouldIterMin, datOut_shouldIterMin ] = findZero_shouldIterMin( vecX0, funchF );
+time_shouldIterMin = time()-timeSS;
+%
 msg( __FILE__, __LINE__, sprintf( "norm(vecF0) = %g.", norm(vecF0) ) );
 msg( __FILE__, __LINE__, "Solver results..." );
-msg( __FILE__, __LINE__, sprintf( "  %15s:  %11s;  %11s;  %11s.", "solver name", "||vecFF||", "fevalCount", "time(s)" ) );
-msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11.3e;  %11.3e.", "fsolve", norm(vecFF_fsolve), datOut_fsolve.fevalCount, time_fsolve ) );
-msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11.3e;  %11.3e.", "oldCrude", norm(vecFF_oldCrude), datOut_oldCrude.fevalCount, time_oldCrude ) );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11s;  %11s;  %11s;  %11s.", "solver name", "||vecFF||", "iterCount", "fevalCount", "time(s)" ) );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "fsolve", norm(vecFF_fsolve), datOut_fsolve.iterCount, datOut_fsolve.fevalCount, time_fsolve ) );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "oldCrude", norm(vecFF_oldCrude), datOut_oldCrude.iterCount, datOut_oldCrude.fevalCount, time_oldCrude ) );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "shouldIterMin", norm(vecFF_shouldIterMin), datOut_shouldIterMin.iterCount, datOut_shouldIterMin.fevalCount, time_shouldIterMin ) );

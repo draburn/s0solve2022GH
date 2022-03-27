@@ -141,5 +141,6 @@ function [ vecXF, vecFF, datOut ] = findZero_oldCrude( vecX0, funchF, prm=[] )
 	vecXF = vecX_best;
 	vecFF = vecF_best;
 	datOut.fevalCount = fevalCount;
+	datOut.iterCount = iterCount;
 return;
 endfunction
