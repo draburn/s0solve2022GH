@@ -27,6 +27,11 @@ vecX0 = zeros(sizeX,1);
 vecF0 = funchF(vecX0);
 %
 timeSS = time();
+[ vecXF_125, vecFF_125, datOut_125 ] = findZero_125( vecX0, funchF );
+time_125 = time()-timeSS;
+return
+%
+timeSS = time();
 [ vecXF_fsolve, vecFF_fsolve, datOut_fsolve, ] = findZero_fsolve( vecX0, funchF );
 time_fsolve = time()-timeSS;
 [ vecXF_fg, vecFF_fg, datOut_fg ] = findZero_fsolveGnostic( vecX0, funchF );
