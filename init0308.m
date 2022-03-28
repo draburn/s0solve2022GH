@@ -6,7 +6,7 @@ addpath( "myutil" );
 my_editor = "/usr/bin/mousepad";
 EDITOR( [my_editor ' %s'] ); % Moot if not USING_GUI; see options within GUI.
 %
-switch 110
+switch 120
 case 10
 	msg(__FILE__,__LINE__,"Adding path \"study/20220222findLocMin/testfunc2021/\".");
 	addpath("study/20220222findLocMin/testfunc2021/");
@@ -27,6 +27,9 @@ case 100
 case 110
 	msg(__FILE__,__LINE__,"Adding path \"study/20220326BeyondZero/0327jfnk/\".");
 	addpath("study/20220326BeyondZero/0327jfnk/");
+case 120
+	msg(__FILE__,__LINE__,"Adding path \"study/20220326BeyondZero/0328ReturnToZero/\".");
+	addpath("study/20220326BeyondZero/0328ReturnToZero/");
 otherwise
 	error( "Invalid case." );
 end
