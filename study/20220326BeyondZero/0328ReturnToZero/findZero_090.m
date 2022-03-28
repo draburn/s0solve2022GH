@@ -1,7 +1,7 @@
 % Dev
-%  000 + basic speed-ups.
+%  050 + some coasting.
 
-function [ vecXF, vecFF, datOut ] = findZero_050( vecX0, funchF, prm=[] )
+function [ vecXF, vecFF, datOut ] = findZero_090( vecX0, funchF, prm=[] )
 	time0 = time();
 	fevalCount = 0;
 	setVerbLevs;
@@ -52,10 +52,8 @@ function [ vecXF, vecFF, datOut ] = findZero_050( vecX0, funchF, prm=[] )
 	%
 	funchDeltaOfP = @(p) ( p*matHRegu + (1.0-p)*matIX ) \ (-p*vecG);
 	funchFNormOfP = @(p) norm(funchF(vecX+funchDeltaOfP(p)));
-	%fminbnd_options = optimset( "TolX", eps^2, "TolFun", eps^2 );
 	fminbnd_options = optimset( "TolX", 1.0E-3, "TolFun", norm(vecF)*1.0E-4 );
 	[ fminbnd_x, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchFNormOfP, 0.0, 1.0, fminbnd_options );
-	%dfc = fminbnd_output.funcCount
 	fevalCount += fminbnd_output.funcCount;
 	p = fminbnd_x;
 	vecX_next = vecX + funchDeltaOfP(p);
@@ -98,6 +96,43 @@ function [ vecXF, vecFF, datOut ] = findZero_050( vecX0, funchF, prm=[] )
 		%
 		%
 		%
+		% Try with JA.
+		matH = matJ'*matJ;
+		vecG = matJ'*vecF;
+		assert( 0 ~= hNorm );
+		[ matR, cholFlag ] = chol(matH);
+		if ( 0==cholFlag )
+			matHRegu = matH;
+		else
+			msg( __FILE__, __LINE__, "Need regu!" );
+			hNorm = sqrt(sum(sumsq(matH))/sizeX);
+			matHRegu = matH + hNorm*sqrt(eps)*matIX;
+			matR = chol(matHRegu); % Ensure it's pos-def.
+		endif
+		%
+		funchDeltaOfP = @(p) ( p*matHRegu + (1.0-p)*matIX ) \ (-p*vecG);
+		funchFNormOfP = @(p) norm(funchF(vecX+funchDeltaOfP(p)));
+		fminbnd_options = optimset( "TolX", 1.0E-3, "TolFun", norm(vecF)*1.0E-4 );
+		[ fminbnd_x, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchFNormOfP, 0.0, 1.0, fminbnd_options );
+		fevalCount += fminbnd_output.funcCount;
+		p = fminbnd_x;
+		%
+		vecDelta = funchDeltaOfP(p);
+		vecFM_next = vecF + matJ*vecDelta;
+		vecX_next = vecX + vecDelta;
+		vecF_next = funchF(vecX_next); fevalCount++;
+		% This criteria crude, but okay for now.
+		if ( norm(vecF_next) < 0.5*norm(vecF) + 0.5*norm(vecFM_next) )
+			% Apply Broyden update.
+			fooX = vecX_next - vecX;
+			fooF = vecF_next - ( vecF + matJ*vecDelta );
+			fooJ = fooF*(fooX')/(fooX'*fooX);
+			matJ += fooJ;
+			continue;
+		endif
+		%
+		%
+		%
 		matJ = zeros( sizeF, sizeX );
 		epsFD = mygetfield( prm, "epsFD", eps^0.4 );
 		for n=1:sizeX
@@ -121,16 +156,20 @@ function [ vecXF, vecFF, datOut ] = findZero_050( vecX0, funchF, prm=[] )
 		%
 		funchDeltaOfP = @(p) ( p*matHRegu + (1.0-p)*matIX ) \ (-p*vecG);
 		funchFNormOfP = @(p) norm(funchF(vecX+funchDeltaOfP(p)));
-		%fminbnd_options = optimset( "TolX", eps^2, "TolFun", eps^2 );
 		fminbnd_options = optimset( "TolX", 1.0E-3, "TolFun", norm(vecF)*1.0E-4 );
 		[ fminbnd_x, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchFNormOfP, 0.0, 1.0, fminbnd_options );
-		%dfc = fminbnd_output.funcCount
 		fevalCount += fminbnd_output.funcCount;
 		p = fminbnd_x;
 		%
 		vecDelta = funchDeltaOfP(p);
 		vecX_next = vecX + vecDelta;
 		vecF_next = funchF(vecX_next); fevalCount++;
+		%
+		% Apply Broyden update.
+		fooX = vecX_next - vecX;
+		fooF = vecF_next - ( vecF + matJ*vecDelta );
+		fooJ = fooF*(fooX')/(fooX'*fooX);
+		matJ += fooJ;
 	endwhile
 	vecXF = vecX_best;
 	vecFF = vecF_best;

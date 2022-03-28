@@ -37,12 +37,17 @@ timeSS = time();
 [ vecXF_050, vecFF_050, datOut_050 ] = findZero_050( vecX0, funchF );
 time_050 = time()-timeSS;
 %
+timeSS = time();
+[ vecXF_090, vecFF_090, datOut_090 ] = findZero_090( vecX0, funchF );
+time_090 = time()-timeSS;
+%
 msg( __FILE__, __LINE__, sprintf( "norm(vecF0) = %g.", norm(vecF0) ) );
 msg( __FILE__, __LINE__, "Solver results..." );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11s;  %11s;  %11s;  %11s.", "solver name", "||vecFF||", "iterCount", "fevalCount", "time(s)" ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "fsolve", norm(vecFF_fsolve), datOut_fsolve.iterCount, datOut_fsolve.fevalCount, time_fsolve ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "000", norm(vecFF_000), datOut_000.iterCount, datOut_000.fevalCount, time_000 ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "050", norm(vecFF_050), datOut_050.iterCount, datOut_050.fevalCount, time_050 ) );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "090", norm(vecFF_090), datOut_090.iterCount, datOut_090.fevalCount, time_090 ) );
 %
 %
 %
@@ -50,7 +55,8 @@ numFigs++; figure( numFigs );
 semilogy( ...
   datOut_fg.fevalCountVals, datOut_fg.fNormVals+eps, 'o-', 'markersize', 20, 'linewidth', 2, ...
   datOut_000.fevalCountVals, datOut_000.fNormVals+eps, '+-', 'markersize', 20, 'linewidth', 2, ...
-  datOut_050.fevalCountVals, datOut_050.fNormVals+eps, 'x-', 'markersize', 20, 'linewidth', 2 );
+  datOut_050.fevalCountVals, datOut_050.fNormVals+eps, 'x-', 'markersize', 20, 'linewidth', 2, ...
+  datOut_090.fevalCountVals, datOut_090.fNormVals+eps, 'x-', 'markersize', 20, 'linewidth', 2  );
 grid on;
 ylabel( "||f||" );
 xlabel( "feval count" );
@@ -59,7 +65,8 @@ numFigs++; figure( numFigs );
 semilogy( ...
   datOut_fg.iterCountVals, datOut_fg.fNormVals+eps, 'o-', 'markersize', 20, 'linewidth', 2, ...
   datOut_000.iterCountVals, datOut_000.fNormVals+eps, '+-', 'markersize', 20, 'linewidth', 2, ...
-  datOut_050.iterCountVals, datOut_050.fNormVals+eps, 'x-', 'markersize', 20, 'linewidth', 2 );
+  datOut_050.iterCountVals, datOut_050.fNormVals+eps, 'x-', 'markersize', 20, 'linewidth', 2, ...
+  datOut_090.iterCountVals, datOut_090.fNormVals+eps, 'x-', 'markersize', 20, 'linewidth', 2 );
 grid on;
 ylabel( "||f||" );
 xlabel( "iteration count" );
