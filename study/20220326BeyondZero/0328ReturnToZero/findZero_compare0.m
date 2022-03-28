@@ -3,6 +3,7 @@ setVerbLevs;
 %setprngstates(39901520); % 39901520 oldCrude is particularly bad relative to fsovle.
 %setprngstates(91565536); % 91565536 fsolve fails and is slow.
 %setprngstates(0);
+%setprngstates(95116336); %95116336 "advancing" is worse; probably a fluke.
 setprngstates();
 numFigs = 0;
 %
@@ -39,6 +40,10 @@ timeSS = time();
 time_050 = time()-timeSS;
 %
 timeSS = time();
+[ vecXF_090, vecFF_090, datOut_090 ] = findZero_090( vecX0, funchF );
+time_090 = time()-timeSS;
+%
+timeSS = time();
 [ vecXF_100, vecFF_100, datOut_100 ] = findZero_100( vecX0, funchF );
 time_100 = time()-timeSS;
 %
@@ -48,6 +53,7 @@ msg( __FILE__, __LINE__, sprintf( "  %15s:  %11s;  %11s;  %11s;  %11s.", "solver
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "fsolve", norm(vecFF_fsolve), datOut_fsolve.iterCount, datOut_fsolve.fevalCount, time_fsolve ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "000", norm(vecFF_000), datOut_000.iterCount, datOut_000.fevalCount, time_000 ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "050", norm(vecFF_050), datOut_050.iterCount, datOut_050.fevalCount, time_050 ) );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "090", norm(vecFF_090), datOut_090.iterCount, datOut_090.fevalCount, time_090 ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "100", norm(vecFF_100), datOut_100.iterCount, datOut_100.fevalCount, time_100 ) );
 %
 %
@@ -57,7 +63,8 @@ semilogy( ...
   datOut_fg.fevalCountVals, datOut_fg.fNormVals+eps, 'o-', 'markersize', 20, 'linewidth', 2, ...
   datOut_000.fevalCountVals, datOut_000.fNormVals+eps, '+-', 'markersize', 20, 'linewidth', 2, ...
   datOut_050.fevalCountVals, datOut_050.fNormVals+eps, 'x-', 'markersize', 20, 'linewidth', 2, ...
-  datOut_100.fevalCountVals, datOut_100.fNormVals+eps, 'x-', 'markersize', 20, 'linewidth', 2  );
+  datOut_090.fevalCountVals, datOut_090.fNormVals+eps, 's-', 'markersize', 20, 'linewidth', 2, ...
+  datOut_100.fevalCountVals, datOut_100.fNormVals+eps, '^-', 'markersize', 20, 'linewidth', 2  );
 grid on;
 ylabel( "||f||" );
 xlabel( "feval count" );
@@ -67,7 +74,8 @@ semilogy( ...
   datOut_fg.iterCountVals, datOut_fg.fNormVals+eps, 'o-', 'markersize', 20, 'linewidth', 2, ...
   datOut_000.iterCountVals, datOut_000.fNormVals+eps, '+-', 'markersize', 20, 'linewidth', 2, ...
   datOut_050.iterCountVals, datOut_050.fNormVals+eps, 'x-', 'markersize', 20, 'linewidth', 2, ...
-  datOut_100.iterCountVals, datOut_100.fNormVals+eps, 'x-', 'markersize', 20, 'linewidth', 2 );
+  datOut_090.iterCountVals, datOut_090.fNormVals+eps, 's-', 'markersize', 20, 'linewidth', 2, ...
+  datOut_100.iterCountVals, datOut_100.fNormVals+eps, '^-', 'markersize', 20, 'linewidth', 2 );
 grid on;
 ylabel( "||f||" );
 xlabel( "iteration count" );

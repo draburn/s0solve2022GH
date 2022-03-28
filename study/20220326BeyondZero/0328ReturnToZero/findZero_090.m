@@ -1,7 +1,7 @@
 % Dev
 %  050 + some coasting.
 
-function [ vecXF, vecFF, datOut ] = findZero_100( vecX0, funchF, prm=[] )
+function [ vecXF, vecFF, datOut ] = findZero_090( vecX0, funchF, prm=[] )
 	time0 = time();
 	fevalCount = 0;
 	setVerbLevs;
@@ -119,7 +119,6 @@ function [ vecXF, vecFF, datOut ] = findZero_100( vecX0, funchF, prm=[] )
 		%
 		vecDelta = funchDeltaOfP(p);
 		vecFM_next = vecF + matJ*funchDeltaOfP(1.0);
-		assert( norm(vecFM_next) < norm(vecF) );
 		vecX_next = vecX + vecDelta;
 		vecF_next = funchF(vecX_next); fevalCount++;
 		% This criteria crude, but okay for now.
@@ -129,11 +128,7 @@ function [ vecXF, vecFF, datOut ] = findZero_100( vecX0, funchF, prm=[] )
 			fooF = vecF_next - ( vecF + matJ*vecDelta );
 			fooJ = fooF*(fooX')/(fooX'*fooX);
 			matJ += fooJ;
-			continue
-		elseif ( norm(vecF_next) < norm(vecF) )
-			vecX = vecX_next;
-			vecF = vecF_next;
-			% But, re-calculate Jacobian, below.
+			continue;
 		endif
 		%
 		%
