@@ -1,7 +1,7 @@
 % Dev
 %  050 + some coasting.
 
-function [ vecXF, vecFF, datOut ] = findZero_090( vecX0, funchF, prm=[] )
+function [ vecXF, vecFF, datOut ] = findZero_100( vecX0, funchF, prm=[] )
 	time0 = time();
 	fevalCount = 0;
 	setVerbLevs;
