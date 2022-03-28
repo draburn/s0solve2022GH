@@ -118,7 +118,7 @@ function [ vecXF, vecFF, datOut ] = findZero_090( vecX0, funchF, prm=[] )
 		p = fminbnd_x;
 		%
 		vecDelta = funchDeltaOfP(p);
-		vecFM_next = vecF + matJ*vecDelta;
+		vecFM_next = vecF + matJ*funchDeltaOfP(1.0);
 		vecX_next = vecX + vecDelta;
 		vecF_next = funchF(vecX_next); fevalCount++;
 		% This criteria crude, but okay for now.
