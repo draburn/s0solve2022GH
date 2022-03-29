@@ -133,3 +133,11 @@ function p = __findPOfDeltaNorm( deltaNormMax, funchDeltaOfP )
 	p = fzero( fzero_fun, [0.0, 1.0 ] );
 return;
 endfunction
+
+
+function vecDelta = __funcDeltaOfP( p, matH, vecG )
+	[ matR, cholFlag ] = chol( p*matH + (1.0-p)*eye(size(matH)) );
+	assert( 0 == cholFlag );
+	vecDelta = matR \ ( matR' \ (-p*vecG) );
+return;
+endfunction

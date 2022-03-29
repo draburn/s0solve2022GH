@@ -26,17 +26,18 @@ msg( __FILE__, __LINE__, sprintf( "rcond(matJE'*matJE) = %f.", rcond(matJE'*matJ
 %
 vecX0 = zeros(sizeX,1);
 vecF0 = funchF(vecX0);
+prm.iterMax = 400;
 %
 timeSS = time();
-[ vecXF_200, vecFF_200, datOut_200 ] = findZero_200( vecX0, funchF );
+[ vecXF_200, vecFF_200, datOut_200 ] = findZero_200( vecX0, funchF, prm );
 time_200 = time()-timeSS;
 %
 timeSS = time();
-[ vecXF_100, vecFF_100, datOut_100 ] = findZero_100( vecX0, funchF );
+[ vecXF_100, vecFF_100, datOut_100 ] = findZero_100( vecX0, funchF, prm );
 time_100 = time()-timeSS;
 %
 timeSS = time();
-[ vecXF_050, vecFF_050, datOut_050 ] = findZero_050( vecX0, funchF );
+[ vecXF_050, vecFF_050, datOut_050 ] = findZero_050( vecX0, funchF, prm );
 time_050 = time()-timeSS;
 %
 timeSS = time();

@@ -2,15 +2,19 @@
 	vecG = matJ'*vecF;
 	hNorm = sqrt(sum(sumsq(matH))/sizeX);
 	assert( 0 ~= hNorm );
+	cholTol = mygetfield( prm, "cholTol", 1e-6 );
 	[ matR, cholFlag ] = chol(matH);
-	if ( 0==cholFlag )
+	if ( 0==cholFlag && min(diag(matR)) > cholTol*max(abs(diag(matR))) )
 		matHRegu = matH;
 	else
 		matHRegu = matH + hNorm*sqrt(eps)*matIX;
-		matR = chol(matHRegu); % Ensure it's pos-def.
+		[ matR, cholFlag ] = chol(matHRegu);
+		assert( 0 == cholFlag );
+		assert( min(diag(matR)) > max(abs(diag(matR)))*cholTol );
 	endif
 	%
-	funchDeltaOfP = @(p) ( p*matHRegu + (1.0-p)*matIX ) \ (-p*vecG);
+	%%%funchDeltaOfP = @(p) ( p*matHRegu + (1.0-p)*matIX ) \ (-p*vecG);
+	funchDeltaOfP = @(p) __funcDeltaOfP( p, matHRegu, vecG );
 	%
 	pMax = __findPOfDeltaNorm( dTreg, funchDeltaOfP );
 	vecDelta_pMax = funchDeltaOfP(pMax);
