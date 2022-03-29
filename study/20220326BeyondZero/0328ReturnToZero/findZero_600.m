@@ -33,7 +33,7 @@ function [ vecXF, vecFF, datOut ] = findZero_600( vecX0, funchF, prm=[] )
 	epsFD = mygetfield( prm, "epsFD", eps^0.3 );
 	funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
 	linsolf_prm = [];
-	linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1 );
+	linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1*sqrt(norm(vecF)/norm(vecF0)) );
 	linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
 	[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
 	fevalCount += linsolf_datOut.fevalCount;
@@ -155,7 +155,7 @@ function [ vecXF, vecFF, datOut ] = findZero_600( vecX0, funchF, prm=[] )
 		epsFD = mygetfield( prm, "epsFD", eps^0.3 );
 		funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
 		linsolf_prm = [];
-		linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1 );
+		linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1*sqrt(norm(vecF)/norm(vecF0)) );
 		linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
 		[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
 		fevalCount += linsolf_datOut.fevalCount;
