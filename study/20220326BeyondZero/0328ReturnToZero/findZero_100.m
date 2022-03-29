@@ -42,12 +42,14 @@ function [ vecXF, vecFF, datOut ] = findZero_100( vecX0, funchF, prm=[] )
 	vecG = matJ'*vecF;
 	hNorm = sqrt(sum(sumsq(matH))/sizeX);
 	assert( 0 ~= hNorm );
+	cholTol = mygetfield( prm, "cholTol", 1e-6 );
 	[ matR, cholFlag ] = chol(matH);
-	if ( 0==cholFlag )
+	if ( 0==cholFlag && min(diag(matR)) > cholTol*max(abs(diag(matR))) )
 		matHRegu = matH;
 	else
 		matHRegu = matH + hNorm*sqrt(eps)*matIX;
 		matR = chol(matHRegu); % Ensure it's pos-def.
+		assert( min(diag(matR)) > max(abs(diag(matR)))*cholTol );
 	endif
 	%
 	funchDeltaOfP = @(p) ( p*matHRegu + (1.0-p)*matIX ) \ (-p*vecG);
@@ -99,16 +101,23 @@ function [ vecXF, vecFF, datOut ] = findZero_100( vecX0, funchF, prm=[] )
 		% Try with JA.
 		matH = matJ'*matJ;
 		vecG = matJ'*vecF;
+		hNorm = sqrt(sum(sumsq(matH))/sizeX);
 		assert( 0 ~= hNorm );
 		[ matR, cholFlag ] = chol(matH);
-		if ( 0==cholFlag )
+		if ( 0==cholFlag && min(diag(matR)) > cholTol*max(abs(diag(matR))) )
 			matHRegu = matH;
 		else
 			msg( __FILE__, __LINE__, "Need regu!" );
-			hNorm = sqrt(sum(sumsq(matH))/sizeX);
 			matHRegu = matH + hNorm*sqrt(eps)*matIX;
 			matR = chol(matHRegu); % Ensure it's pos-def.
+			assert( min(diag(matR)) > max(abs(diag(matR)))*cholTol );
 		endif
+		%
+		if ( rcond(matHRegu) <= 2.0E-16 )
+			min(diag(matR))
+			max(abs(diag(matR)))
+		endif
+		assert( rcond(matHRegu) > 2.0E-16 );
 		%
 		funchDeltaOfP = @(p) ( p*matHRegu + (1.0-p)*matIX ) \ (-p*vecG);
 		funchFNormOfP = @(p) norm(funchF(vecX+funchDeltaOfP(p)));
@@ -148,15 +157,16 @@ function [ vecXF, vecFF, datOut ] = findZero_100( vecX0, funchF, prm=[] )
 		%
 		matH = matJ'*matJ;
 		vecG = matJ'*vecF;
+		hNorm = sqrt(sum(sumsq(matH))/sizeX);
 		assert( 0 ~= hNorm );
 		[ matR, cholFlag ] = chol(matH);
-		if ( 0==cholFlag )
+		if ( 0==cholFlag && min(diag(matR)) > cholTol*max(abs(diag(matR))) )
 			matHRegu = matH;
 		else
 			msg( __FILE__, __LINE__, "Need regu!" );
-			hNorm = sqrt(sum(sumsq(matH))/sizeX);
 			matHRegu = matH + hNorm*sqrt(eps)*matIX;
 			matR = chol(matHRegu); % Ensure it's pos-def.
+			assert( min(diag(matR)) > max(abs(diag(matR)))*cholTol );
 		endif
 		%
 		funchDeltaOfP = @(p) ( p*matHRegu + (1.0-p)*matIX ) \ (-p*vecG);
