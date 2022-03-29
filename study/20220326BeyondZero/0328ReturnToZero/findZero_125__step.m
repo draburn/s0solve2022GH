@@ -28,15 +28,15 @@
 	vecX_next = vecX + vecDelta;
 	vecF_next = funchF(vecX_next); fevalCount++;
 	%
-	rhoThresh0 = mygetfield( prm, "rhoThresh0", 0.1 );
-	rhoThresh1 = mygetfield( prm, "rhoThresh1", 0.3 );
+	rhoThresh0 = mygetfield( prm, "rhoThresh0", 0.05 );
+	rhoThresh1 = mygetfield( prm, "rhoThresh1", 0.30 );
 	rho = norm(vecF_next-vecFModel_next)/norm(vecF);
 	%
-	%if ( p + sqrt(eps) < pMax );
-	%	% We know the full step was rejected.
-	%	dTreg = min([ dTreg, norm(vecDelta_pMax) ]);
-	%	msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "pMax was rejected. Set dTreg = %0.3e.", dTreg ) )
-	%endif
+	if ( p + sqrt(eps) < pMax );
+		% We know the full step was rejected.
+		dTreg = min([ dTreg, norm(vecDelta_pMax) ]);
+		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "pMax was rejected. Set dTreg = %0.3e.", dTreg ) )
+	endif
 	if ( rho < rhoThresh0 )
 		% Model is very accurate at the point.
 		dTreg = max([ dTreg, 2.0*norm(vecDelta) ]);

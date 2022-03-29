@@ -1,8 +1,9 @@
 % Dev
 %  100 + hackish curtailed minscan, likely a bit worse than 100.
+%  I want to see how much I can cut the trust region size without hurting the convergence much.
+%  As long as dTreg is reset when recalculating matJ, it doesn't seem to matter.
 
 function [ vecXF, vecFF, datOut ] = findZero_125( vecX0, funchF, prm=[] )
-	msg( __FILE__, __LINE__, "TODO: Make dTreg updating more reasonable." );
 	time0 = time();
 	fevalCount = 0;
 	setVerbLevs;
