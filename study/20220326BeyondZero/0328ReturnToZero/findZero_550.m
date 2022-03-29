@@ -1,7 +1,8 @@
 % Dev
 % The quintessential JFNK solver using second order FD, plus minscan of Levenberg curve.
 
-function [ vecXF, vecFF, datOut ] = findZero_500( vecX0, funchF, prm=[] )
+function [ vecXF, vecFF, datOut ] = findZero_550( vecX0, funchF, prm=[] )
+	error( "NOT IMPLEMENTED; THIS IS _500!" );
 	time0 = time();
 	fevalCount = 0;
 	setVerbLevs;
