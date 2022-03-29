@@ -8,7 +8,8 @@ function [ vecX, datOut ] = linsolf( funchMatAProd, vecB, vecX0, prm = [] )
 	time0 = time();
 	fevalCount = 0;
 	setVerbLevs;
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__NOTIFY );
+	fevalCount = 0;
 	%
 	sizeX = size(vecX0,1);
 	assert( isrealarray(vecX0,[sizeX,1]) );
@@ -31,7 +32,7 @@ function [ vecX, datOut ] = linsolf( funchMatAProd, vecB, vecX0, prm = [] )
 	% Everything past here is iterated upon.
 	vecV = __orth( vecB, [], prm );
 	assert( isrealarray(vecV,[sizeX,1]) );
-	vecW = funchMatAProd( vecV );
+	vecW = funchMatAProd( vecV ); fevalCount++;
 	assert( isrealarray(vecW,[sizeF,1]) );
 	matV = vecV;
 	matW = vecW;
@@ -58,13 +59,14 @@ function [ vecX, datOut ] = linsolf( funchMatAProd, vecB, vecX0, prm = [] )
 			break;
 		endif
 		assert( isrealarray(vecV,[sizeX,1]) );
-		vecW = funchMatAProd( vecV );
+		vecW = funchMatAProd( vecV ); fevalCount++;
 		assert( isrealarray(vecW,[sizeF,1]) );
 		matV = [ matV, vecV ];
 		matW = [ matW, vecW ];
 	endwhile
 	vecX = matV*vecY;
 	if ( 2 <= nargout )
+		datOut.fevalCount = fevalCount;
 		datOut.vecY = vecY;
 		datOut.matV = matV;
 		datOut.matW = matW;

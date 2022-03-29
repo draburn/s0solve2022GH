@@ -2,7 +2,7 @@
 % The quintessential JFNK solver... but, with a random basis... after fully calculating the Jacobian.
 %  Use second order, plus minscan of Levenberg curve.
 
-function [ vecXF, vecFF, datOut ] = findZero_475( vecX0, funchF, prm=[] )
+function [ vecXF, vecFF, datOut ] = findZero_500( vecX0, funchF, prm=[] )
 	time0 = time();
 	fevalCount = 0;
 	setVerbLevs;
@@ -29,20 +29,16 @@ function [ vecXF, vecFF, datOut ] = findZero_475( vecX0, funchF, prm=[] )
 	%
 	vecX = vecX0;
 	vecF = vecF0;
-	%
-	matJ = zeros( sizeF, sizeX );
 	epsFD = mygetfield( prm, "epsFD", eps^0.3 );
-	for n=1:sizeX
-		vecXP = vecX + epsFD*matIX(:,n);
-		vecXM = vecX - epsFD*matIX(:,n);
-		vecFP = funchF( vecXP ); fevalCount++;
-		vecFM = funchF( vecXM ); fevalCount++;
-		matJ(:,n) = (vecFP-vecFM)/(2.0*epsFD);
-	endfor
-	sizeV = round(sizeX-1); %HACKHACKHACKHACK
-	matV = orth(randn(sizeX,sizeV));
-	matW = matJ*matV;
-	clear matJ;
+	funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - funchF(vecX-epsFD*v) ) / (2.0*epsFD) );
+	linsolf_prm = [];
+	linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1 );
+	linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
+	[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
+	fevalCount += 2*linsolf_datOut.fevalCount;
+	sizeV = size(linsolf_datOut.matV,2);
+	matV = linsolf_datOut.matV;
+	matW = linsolf_datOut.matW;
 	%
 	matH = matW'*matW;
 	vecG = matW'*vecF;
@@ -104,19 +100,16 @@ function [ vecXF, vecFF, datOut ] = findZero_475( vecX0, funchF, prm=[] )
 		%
 		%
 		%
-		matJ = zeros( sizeF, sizeX );
 		epsFD = mygetfield( prm, "epsFD", eps^0.3 );
-		for n=1:sizeX
-			vecXP = vecX + epsFD*matIX(:,n);
-			vecXM = vecX - epsFD*matIX(:,n);
-			vecFP = funchF( vecXP ); fevalCount++;
-			vecFM = funchF( vecXM ); fevalCount++;
-			matJ(:,n) = (vecFP-vecFM)/(2.0*epsFD);
-		endfor
-		sizeV = round(sizeX-1); %HACKHACKHACKHACK
-		matV = orth(randn(sizeX,sizeV));
-		matW = matJ*matV;
-		clear matJ;
+		funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - funchF(vecX-epsFD*v) ) / (2.0*epsFD) );
+		linsolf_prm = [];
+		linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1 );
+		linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
+			[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
+		fevalCount += 2*linsolf_datOut.fevalCount;
+		sizeV = size(linsolf_datOut.matV,2);
+		matV = linsolf_datOut.matV;
+		matW = linsolf_datOut.matW;
 		%
 		matH = matW'*matW;
 		vecG = matW'*vecF;
