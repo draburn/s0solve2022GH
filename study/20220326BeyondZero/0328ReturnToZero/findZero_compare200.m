@@ -13,10 +13,10 @@ sizeF = 100;
 %
 vecXE = randn(sizeX,1);
 matJE = diag(1.0+abs(randn(min([sizeF,sizeX]),1))) + 0.01*randn(sizeF,sizeX);
-matA0 = 0.001*randn(sizeF,sizeX);
+matA0 = 0.0001*randn(sizeF,sizeX);
 matA1 = randn(sizeX,sizeX);
 matA2 = randn(sizeX,sizeX);
-matB0 = 0.001*randn(sizeF,sizeX);
+matB0 = 0.0001*randn(sizeF,sizeX);
 matB1 = randn(sizeX,sizeX);
 matB2 = randn(sizeX,sizeX);
 matB3 = randn(sizeX,sizeX);
@@ -26,7 +26,7 @@ msg( __FILE__, __LINE__, sprintf( "rcond(matJE'*matJE) = %f.", rcond(matJE'*matJ
 %
 vecX0 = zeros(sizeX,1);
 vecF0 = funchF(vecX0);
-prm.iterMax = 400;
+prm.iterMax = 200;
 %
 timeSS = time();
 [ vecXF_200, vecFF_200, datOut_200 ] = findZero_200( vecX0, funchF, prm );
