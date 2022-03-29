@@ -17,11 +17,39 @@
 	vecFModel_pMax = vecF + matJ*vecDelta_pMax;
 	assert( norm(vecFModel_pMax) < norm(vecF) );
 	%
-	funchFNormOfP = @(p) norm(funchF(vecX+funchDeltaOfP(p)));
-	fminbnd_options = optimset( "TolX", 1.0E-3, "TolFun", norm(vecF)*1.0E-4 );
-	[ fminbnd_x, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchFNormOfP, 0.0, pMax, fminbnd_options );
-	fevalCount += fminbnd_output.funcCount;
-	p = fminbnd_x;
+	%
+	%%%funchFNormOfP = @(p) norm(funchF(vecX+funchDeltaOfP(p)));
+	%%%fminbnd_options = optimset( "TolX", 1.0E-3, "TolFun", norm(vecF)*1.0E-4 );
+	%%%[ fminbnd_x, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchFNormOfP, 0.0, pMax, fminbnd_options );
+	%%%fevalCount += fminbnd_output.funcCount;
+	%%%p = fminbnd_x;
+	%
+	deltaNormTol = mygetfield( prm, "deltaNormTol", sizeX*100.0*eps );
+	btMax = mygetfield( prm, "btMax", 3 );
+	btCount = 0;
+	vecDelta_rejected = [];
+	p = pMax;
+	while (1)
+		vecDelta = funchDeltaOfP(p);
+		vecX_next = vecX + vecDelta;
+		vecF_next = funchF(vecX_next); fevalCount++;
+		if ( norm(vecF_next) < 0.5*norm(vecF) + 0.5*norm(vecFModel_pMax) )
+			break;
+		endif
+		if ( norm(vecDelta) < deltaNormTol )
+			msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, "  step: IMPOSED STOP: norm(vecDelta) < deltaNormTol." );
+			break;
+		endif
+		btCount++;
+		if ( btCount > btMax )
+			msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, "  step: IMPOSED STOP: btCount > btMax." );
+			break;
+		endif
+		p /= 2.0;
+		vecDelta_rejected = vecDelta;
+		continue;
+	endwhile
+	%
 	%
 	vecDelta = funchDeltaOfP(p);
 	vecFModel_next = vecF + matJ*vecDelta;
@@ -32,17 +60,16 @@
 	rhoThresh1 = mygetfield( prm, "rhoThresh1", 0.30 );
 	rho = norm(vecF_next-vecFModel_next)/norm(vecF);
 	%
-	if ( p + sqrt(eps) < pMax );
-		% We know the full step was rejected.
-		dTreg = min([ dTreg, norm(vecDelta_pMax) ]);
-		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "pMax was rejected. Set dTreg = %0.3e.", dTreg ) )
+	if ( ~isempty(vecDelta_rejected) )
+		dTreg = min([ dTreg, norm(vecDelta_rejected) ]);
+		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "  step: Have a rejected step. Set dTreg = %0.3e.", dTreg ) )
 	endif
 	if ( rho < rhoThresh0 )
 		% Model is very accurate at the point.
 		dTreg = max([ dTreg, 2.0*norm(vecDelta) ]);
-		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "Model was very accurate. Set dTreg = %0.3e.", dTreg ) )
+		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "  step: Model was very accurate. Set dTreg = %0.3e.", dTreg ) )
 	elseif ( rho > rhoThresh1 )
 		% Model was inaccurate at the point.
-		dTreg = min([ dTreg, norm(vecDelta) ]);
-		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "Model was very inaccurate. Set dTreg = %0.3e.", dTreg ) )
+		dTreg = min([ dTreg, norm(vecDelta) ]); % "min([ dTreg," should be superfluous.
+		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "  step: Model was very inaccurate. Set dTreg = %0.3e.", dTreg ) )
 	endif

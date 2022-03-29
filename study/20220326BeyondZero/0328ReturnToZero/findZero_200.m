@@ -75,7 +75,6 @@ function [ vecXF, vecFF, datOut ] = findZero_200( vecX0, funchF, prm=[] )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: iterCount >= iterMax." );
 			break;
 		endif
-		vecDelta_prev = vecX_next-vecX;
 		vecX = vecX_next;
 		vecF = vecF_next;
 		%
