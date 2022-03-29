@@ -1,8 +1,10 @@
 % Dev
-%  200 + first stab at TR.
-%  Also see 125.
+%  600 + first stab at TR.
+%  Eqiv: 200 + JFNK.
 
-function [ vecXF, vecFF, datOut ] = findZero_200( vecX0, funchF, prm=[] )
+function [ vecXF, vecFF, datOut ] = findZero_700( vecX0, funchF, prm=[] )
+	msg( __FILE__, __LINE__, "THIS, _700, DOES NOT WORK PROPERLY!" );
+	msg( __FILE__, __LINE__, "  But, from what I can see, Broyden/coasting is ineffctive with JFNK." );
 	time0 = time();
 	fevalCount = 0;
 	setVerbLevs;
@@ -31,17 +33,21 @@ function [ vecXF, vecFF, datOut ] = findZero_200( vecX0, funchF, prm=[] )
 	vecX = vecX0;
 	vecF = vecF0;
 	%
-	matJ = zeros( sizeF, sizeX );
-	epsFD = mygetfield( prm, "epsFD", eps^0.4 );
-	for n=1:sizeX
-		vecXP = vecX + epsFD*matIX(:,n);
-		vecFP = funchF( vecXP ); fevalCount++;
-		matJ(:,n) = (vecFP-vecF)/(epsFD);
-	endfor
+	%
+	epsFD = mygetfield( prm, "epsFD", eps^0.3 );
+	funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
+	linsolf_prm = [];
+	linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1*sqrt(norm(vecF)/norm(vecF0)) );
+	linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
+	[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
+	fevalCount += linsolf_datOut.fevalCount;
+	sizeV = size(linsolf_datOut.matV,2);
+	matV = linsolf_datOut.matV;
+	matW = linsolf_datOut.matW;
 	%
 	dTreg = Inf; % Trust region size.
 	msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "Initial dTreg = %f.", dTreg ) )
-	findZero_200__step;
+	findZero_700__step;
 	%
 	%
 	%
@@ -55,9 +61,9 @@ function [ vecXF, vecFF, datOut ] = findZero_200( vecX0, funchF, prm=[] )
 		datOut.fevalCountVals(iterCount+1) = fevalCount;
 		datOut.iterCountVals(iterCount+1) = iterCount;
 		%
-		msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( "  %10.3e, %4d, %5d;  %10.3e;  %10.3e, %10.3e, %10.3e;  %10.3e, %10.3e, %10.3e.", ...
+		msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( "  %10.3e, %4d, %5d;  %4d, %10.3e;  %10.3e, %10.3e, %10.3e;  %10.3e, %10.3e, %10.3e.", ...
 		  time()-time0, iterCount, fevalCount, ...
-		  norm(matJ'*vecF), ...
+		  sizeV, norm(matW'*vecF), ...
 		  norm(vecX_next-vecX0), norm(vecX_next-vecX0)-norm(vecX-vecX0), norm(vecX_next-vecX), ...
 		  norm(vecF_next), norm(vecF)-norm(vecF_next), norm(vecF-vecF_next) ) );
 		%
@@ -80,15 +86,15 @@ function [ vecXF, vecFF, datOut ] = findZero_200( vecX0, funchF, prm=[] )
 		%
 		%
 		%
-		findZero_200__step;
+		findZero_700__step;
 		%
 		% This criteria crude, but okay for now.
 		if ( norm(vecF_next) < 0.5*norm(vecF) + 0.5*norm(vecFModel_pMax) )
 			% Apply Broyden update.
-			fooX = vecX_next - vecX;
-			fooF = vecF_next - ( vecF + matJ*vecDelta );
-			fooJ = fooF*(fooX')/(fooX'*fooX);
-			matJ += fooJ;
+			fooY = matV'*vecDelta;
+			fooF = vecF_next - ( vecF + matW*fooY );
+			fooW = fooF*(fooY')/(fooY'*fooY);
+			matW += fooW;
 			continue
 		elseif ( norm(vecF_next) < norm(vecF) )
 			vecX = vecX_next;
@@ -98,23 +104,26 @@ function [ vecXF, vecFF, datOut ] = findZero_200( vecX0, funchF, prm=[] )
 		%
 		%
 		%
-		matJ = zeros( sizeF, sizeX );
-		epsFD = mygetfield( prm, "epsFD", eps^0.4 );
-		for n=1:sizeX
-			vecXP = vecX + epsFD*matIX(:,n);
-			vecFP = funchF( vecXP ); fevalCount++;
-			matJ(:,n) = (vecFP-vecF)/(epsFD);
-		endfor
+		epsFD = mygetfield( prm, "epsFD", eps^0.3 );
+		funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
+		linsolf_prm = [];
+		linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1*sqrt(norm(vecF)/norm(vecF0)) );
+		linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
+		[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
+		fevalCount += linsolf_datOut.fevalCount;
+		sizeV = size(linsolf_datOut.matV,2);
+		matV = linsolf_datOut.matV;
+		matW = linsolf_datOut.matW;
 		%
 		dTreg = Inf;
 		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "Reset dTreg = %f.", dTreg ) )
-		findZero_200__step;
+		findZero_700__step;
 		%
 		% Apply Broyden update.
-		fooX = vecX_next - vecX;
-		fooF = vecF_next - ( vecF + matJ*vecDelta );
-		fooJ = fooF*(fooX')/(fooX'*fooX);
-		matJ += fooJ;
+		fooY = matV'*vecDelta;
+		fooF = vecF_next - ( vecF + matW*fooY );
+		fooW = fooF*(fooY')/(fooY'*fooY);
+		matW += fooW;
 	endwhile
 	vecXF = vecX_best;
 	vecFF = vecF_best;
@@ -130,6 +139,7 @@ function p = __findPOfDeltaNorm( deltaNormMax, funchDeltaOfP )
 		p = 1.0;
 		return;
 	endif
+	[ norm(funchDeltaOfP(0.0)), fzero_fun(0.0), fzero_fun(1.0), deltaNormMax ]
 	p = fzero( fzero_fun, [0.0, 1.0] );
 return;
 endfunction
@@ -139,5 +149,20 @@ function vecDelta = __funcDeltaOfP( p, matH, vecG )
 	[ matR, cholFlag ] = chol( p*matH + (1.0-p)*eye(size(matH)) );
 	assert( 0 == cholFlag );
 	vecDelta = matR \ ( matR' \ (-p*vecG) );
+return;
+endfunction
+
+
+function vecSSDelta = __funcSSDeltaOfP( p, matH, vecG )
+	[ matR, cholFlag ] = chol( p*matH + (1.0-p)*eye(size(matH)) );
+	assert( 0 == cholFlag );
+	vecSSDelta = matR \ ( matR' \ (-p*vecG) );
+return;
+endfunction
+
+
+function gw()
+	msg( __FILE__, __LINE__, "Goodbye, world!" );
+	error( "Goodbye kitty." );
 return;
 endfunction
