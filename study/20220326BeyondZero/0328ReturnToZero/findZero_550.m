@@ -2,7 +2,6 @@
 % The quintessential JFNK solver using second order FD, plus minscan of Levenberg curve.
 
 function [ vecXF, vecFF, datOut ] = findZero_550( vecX0, funchF, prm=[] )
-	error( "NOT IMPLEMENTED; THIS IS _500!" );
 	time0 = time();
 	fevalCount = 0;
 	setVerbLevs;
@@ -30,12 +29,12 @@ function [ vecXF, vecFF, datOut ] = findZero_550( vecX0, funchF, prm=[] )
 	vecX = vecX0;
 	vecF = vecF0;
 	epsFD = mygetfield( prm, "epsFD", eps^0.3 );
-	funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - funchF(vecX-epsFD*v) ) / (2.0*epsFD) );
+	funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
 	linsolf_prm = [];
 	linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1 );
 	linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
 	[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
-	fevalCount += 2*linsolf_datOut.fevalCount;
+	fevalCount += linsolf_datOut.fevalCount;
 	sizeV = size(linsolf_datOut.matV,2);
 	matV = linsolf_datOut.matV;
 	matW = linsolf_datOut.matW;
@@ -55,7 +54,7 @@ function [ vecXF, vecFF, datOut ] = findZero_550( vecX0, funchF, prm=[] )
 	funchDeltaOfP = @(p) matV * __funcSSDeltaOfP( p, matHRegu, vecG );
 	%
 	funchFNormOfP = @(p) norm(funchF(vecX+funchDeltaOfP(p)));
-	fminbnd_options = optimset( "TolX", eps^2, "TolFun", eps^2 );
+	fminbnd_options = optimset( "TolX", 1.0E-3, "TolFun", norm(vecF)*1.0E-4 );
 	[ fminbnd_x, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchFNormOfP, 0.0, 1.0, fminbnd_options );
 	fevalCount += fminbnd_output.funcCount;
 	p = fminbnd_x;
@@ -101,12 +100,12 @@ function [ vecXF, vecFF, datOut ] = findZero_550( vecX0, funchF, prm=[] )
 		%
 		%
 		epsFD = mygetfield( prm, "epsFD", eps^0.3 );
-		funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - funchF(vecX-epsFD*v) ) / (2.0*epsFD) );
+		funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
 		linsolf_prm = [];
 		linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1 );
 		linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
 			[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
-		fevalCount += 2*linsolf_datOut.fevalCount;
+		fevalCount += linsolf_datOut.fevalCount;
 		sizeV = size(linsolf_datOut.matV,2);
 		matV = linsolf_datOut.matV;
 		matW = linsolf_datOut.matW;
@@ -127,7 +126,7 @@ function [ vecXF, vecFF, datOut ] = findZero_550( vecX0, funchF, prm=[] )
 		funchDeltaOfP = @(p) matV * __funcSSDeltaOfP( p, matHRegu, vecG );
 		%
 		funchFNormOfP = @(p) norm(funchF(vecX+funchDeltaOfP(p)));
-		fminbnd_options = optimset( "TolX", eps^2, "TolFun", eps^2 );
+		fminbnd_options = optimset( "TolX", 1.0E-3, "TolFun", norm(vecF)*1.0E-4 );
 		[ fminbnd_x, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchFNormOfP, 0.0, 1.0, fminbnd_options );
 		fevalCount += fminbnd_output.funcCount;
 		p = fminbnd_x;
