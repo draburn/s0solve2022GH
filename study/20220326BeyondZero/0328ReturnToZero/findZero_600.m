@@ -2,7 +2,6 @@
 %  100 (+some Coasting) but JFNK: JFNK + coasting but Lev Minscan.
 
 function [ vecXF, vecFF, datOut ] = findZero_600( vecX0, funchF, prm=[] )
-	error( "THIS IS MERELY 050!" );
 	time0 = time();
 	fevalCount = 0;
 	setVerbLevs;
@@ -31,16 +30,19 @@ function [ vecXF, vecFF, datOut ] = findZero_600( vecX0, funchF, prm=[] )
 	vecX = vecX0;
 	vecF = vecF0;
 	%
-	matJ = zeros( sizeF, sizeX );
-	epsFD = mygetfield( prm, "epsFD", eps^0.4 );
-	for n=1:sizeX
-		vecXP = vecX + epsFD*matIX(:,n);
-		vecFP = funchF( vecXP ); fevalCount++;
-		matJ(:,n) = (vecFP-vecF)/(epsFD);
-	endfor
+	epsFD = mygetfield( prm, "epsFD", eps^0.3 );
+	funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
+	linsolf_prm = [];
+	linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1 );
+	linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
+	[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
+	fevalCount += linsolf_datOut.fevalCount;
+	sizeV = size(linsolf_datOut.matV,2);
+	matV = linsolf_datOut.matV;
+	matW = linsolf_datOut.matW;
 	%
-	matH = matJ'*matJ;
-	vecG = matJ'*vecF;
+	matH = matW'*matW;
+	vecG = matW'*vecF;
 	hNorm = sqrt(sum(sumsq(matH))/sizeX);
 	assert( 0 ~= hNorm );
 	cholTol = mygetfield( prm, "cholTol", 1e-6 );
@@ -53,7 +55,8 @@ function [ vecXF, vecFF, datOut ] = findZero_600( vecX0, funchF, prm=[] )
 		assert( min(diag(matR)) > max(abs(diag(matR)))*cholTol );
 	endif
 	%
-	funchDeltaOfP = @(p) ( p*matHRegu + (1.0-p)*matIX ) \ (-p*vecG);
+	funchDeltaOfP = @(p) matV * __funcSSDeltaOfP( p, matHRegu, vecG );
+	%
 	funchFNormOfP = @(p) norm(funchF(vecX+funchDeltaOfP(p)));
 	fminbnd_options = optimset( "TolX", 1.0E-3, "TolFun", norm(vecF)*1.0E-4 );
 	[ fminbnd_x, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchFNormOfP, 0.0, 1.0, fminbnd_options );
@@ -74,9 +77,9 @@ function [ vecXF, vecFF, datOut ] = findZero_600( vecX0, funchF, prm=[] )
 		datOut.fevalCountVals(iterCount+1) = fevalCount;
 		datOut.iterCountVals(iterCount+1) = iterCount;
 		%
-		msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( "  %10.3e, %4d, %5d;  %10.3e;  %10.3e, %10.3e, %10.3e;  %10.3e, %10.3e, %10.3e.", ...
+		msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( "  %10.3e, %4d, %5d;  %4d, %10.3e;  %10.3e, %10.3e, %10.3e;  %10.3e, %10.3e, %10.3e.", ...
 		  time()-time0, iterCount, fevalCount, ...
-		  norm(matJ'*vecF), ...
+		  sizeV, norm(matW'*vecF), ...
 		  norm(vecX_next-vecX0), norm(vecX_next-vecX0)-norm(vecX-vecX0), norm(vecX_next-vecX), ...
 		  norm(vecF_next), norm(vecF)-norm(vecF_next), norm(vecF-vecF_next) ) );
 		%
@@ -100,8 +103,8 @@ function [ vecXF, vecFF, datOut ] = findZero_600( vecX0, funchF, prm=[] )
 		%
 		%
 		% Try with JA.
-		matH = matJ'*matJ;
-		vecG = matJ'*vecF;
+		matH = matW'*matW;
+		vecG = matW'*vecF;
 		hNorm = sqrt(sum(sumsq(matH))/sizeX);
 		assert( 0 ~= hNorm );
 		[ matR, cholFlag ] = chol(matH);
@@ -114,50 +117,54 @@ function [ vecXF, vecFF, datOut ] = findZero_600( vecX0, funchF, prm=[] )
 			assert( min(diag(matR)) > max(abs(diag(matR)))*cholTol );
 		endif
 		%
-		if ( rcond(matHRegu) <= 2.0E-16 )
-			min(diag(matR))
-			max(abs(diag(matR)))
-		endif
-		assert( rcond(matHRegu) > 2.0E-16 );
+		funchDeltaOfP = @(p) matV * __funcSSDeltaOfP( p, matHRegu, vecG );
 		%
-		funchDeltaOfP = @(p) ( p*matHRegu + (1.0-p)*matIX ) \ (-p*vecG);
+		%%%norm(vecF + matW*__funcSSDeltaOfP(1.0,matHRegu,vecG)) / norm(vecF)
+		%
+		if ( norm(vecF + matW*__funcSSDeltaOfP(1.0,matHRegu,vecG)) < 0.9 * norm(vecF) )
 		funchFNormOfP = @(p) norm(funchF(vecX+funchDeltaOfP(p)));
 		fminbnd_options = optimset( "TolX", 1.0E-3, "TolFun", norm(vecF)*1.0E-4 );
 		[ fminbnd_x, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchFNormOfP, 0.0, 1.0, fminbnd_options );
 		fevalCount += fminbnd_output.funcCount;
 		p = fminbnd_x;
 		%
-		vecDelta = funchDeltaOfP(p);
-		vecFM_next = vecF + matJ*funchDeltaOfP(1.0);
-		assert( norm(vecFM_next) < norm(vecF) );
+		vecY = __funcSSDeltaOfP( p, matHRegu, vecG );
+		vecDelta = matV*vecY;
+		vecFM_next = vecF + matW*vecY;
+		assert( norm(vecFM_next) <= norm(vecF) );
+		%
 		vecX_next = vecX + vecDelta;
 		vecF_next = funchF(vecX_next); fevalCount++;
 		% This criteria crude, but okay for now.
 		if ( norm(vecF_next) < 0.5*norm(vecF) + 0.5*norm(vecFM_next) )
 			% Apply Broyden update.
-			fooX = vecX_next - vecX;
-			fooF = vecF_next - ( vecF + matJ*vecDelta );
-			fooJ = fooF*(fooX')/(fooX'*fooX);
-			matJ += fooJ;
+			fooY = vecY;
+			fooF = vecF_next - ( vecF + matW*fooY );
+			fooW = fooF*(fooY')/(fooY'*fooY);
+			matW += fooW;
 			continue
 		elseif ( norm(vecF_next) < norm(vecF) )
 			vecX = vecX_next;
 			vecF = vecF_next;
 			% But, re-calculate Jacobian, below.
 		endif
+		endif
 		%
 		%
 		%
-		matJ = zeros( sizeF, sizeX );
-		epsFD = mygetfield( prm, "epsFD", eps^0.4 );
-		for n=1:sizeX
-			vecXP = vecX + epsFD*matIX(:,n);
-			vecFP = funchF( vecXP ); fevalCount++;
-			matJ(:,n) = (vecFP-vecF)/(epsFD);
-		endfor
+		epsFD = mygetfield( prm, "epsFD", eps^0.3 );
+		funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
+		linsolf_prm = [];
+		linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1 );
+		linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
+		[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
+		fevalCount += linsolf_datOut.fevalCount;
+		sizeV = size(linsolf_datOut.matV,2);
+		matV = linsolf_datOut.matV;
+		matW = linsolf_datOut.matW;
 		%
-		matH = matJ'*matJ;
-		vecG = matJ'*vecF;
+		matH = matW'*matW;
+		vecG = matW'*vecF;
 		hNorm = sqrt(sum(sumsq(matH))/sizeX);
 		assert( 0 ~= hNorm );
 		[ matR, cholFlag ] = chol(matH);
@@ -170,26 +177,40 @@ function [ vecXF, vecFF, datOut ] = findZero_600( vecX0, funchF, prm=[] )
 			assert( min(diag(matR)) > max(abs(diag(matR)))*cholTol );
 		endif
 		%
-		funchDeltaOfP = @(p) ( p*matHRegu + (1.0-p)*matIX ) \ (-p*vecG);
+		funchDeltaOfP = @(p) matV * __funcSSDeltaOfP( p, matHRegu, vecG );
+		%
 		funchFNormOfP = @(p) norm(funchF(vecX+funchDeltaOfP(p)));
 		fminbnd_options = optimset( "TolX", 1.0E-3, "TolFun", norm(vecF)*1.0E-4 );
 		[ fminbnd_x, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchFNormOfP, 0.0, 1.0, fminbnd_options );
 		fevalCount += fminbnd_output.funcCount;
 		p = fminbnd_x;
 		%
-		vecDelta = funchDeltaOfP(p);
+		vecY = __funcSSDeltaOfP( p, matHRegu, vecG );
+		vecDelta = matV*vecY;
+		vecFM_next = vecF + matW*vecY;
+		%%%[ p, norm(vecFM_next), norm(vecF) ]
+		assert( norm(vecFM_next) <= norm(vecF) );
+		%
 		vecX_next = vecX + vecDelta;
 		vecF_next = funchF(vecX_next); fevalCount++;
 		%
 		% Apply Broyden update.
-		fooX = vecX_next - vecX;
-		fooF = vecF_next - ( vecF + matJ*vecDelta );
-		fooJ = fooF*(fooX')/(fooX'*fooX);
-		matJ += fooJ;
+		fooY = vecY;
+		fooF = vecF_next - ( vecF + matW*fooY );
+		fooW = fooF*(fooY')/(fooY'*fooY);
+		matW += fooW;
 	endwhile
 	vecXF = vecX_best;
 	vecFF = vecF_best;
 	datOut.fevalCount = fevalCount;
 	datOut.iterCount = iterCount;
+return;
+endfunction
+
+
+function vecSSDelta = __funcSSDeltaOfP( p, matH, vecG )
+	[ matR, cholFlag ] = chol( p*matH + (1.0-p)*eye(size(matH)) );
+	assert( 0 == cholFlag );
+	vecSSDelta = matR \ ( matR' \ (-p*vecG) );
 return;
 endfunction
