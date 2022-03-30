@@ -3,7 +3,6 @@
 %  Re-using _800__step.
 
 function [ vecXF, vecFF, datOut ] = findZero_825( vecX0, funchF, prm=[] )
-	%error( "THIS IS JUST A COPY OF _800." );
 	time0 = time();
 	fevalCount = 0;
 	setVerbLevs;
@@ -15,8 +14,6 @@ function [ vecXF, vecFF, datOut ] = findZero_825( vecX0, funchF, prm=[] )
 	sizeF = size(vecF0,1);
 	assert( isrealarray(vecF0,[sizeF,1]) );
 	assert( 0~=norm(vecF0) );
-	matA0 = mygetfield( prm, "matA0", eye(sizeF,sizeX) ); % Our approximate Jacobian.
-	assert( isrealarray(matA0,[sizeF,sizeX]) );
 	%
 	%
 	%
@@ -33,16 +30,14 @@ function [ vecXF, vecFF, datOut ] = findZero_825( vecX0, funchF, prm=[] )
 	%
 	vecX = vecX0;
 	vecF = vecF0;
-	matA = matA0;
 	%
 	%
 	epsFD = mygetfield( prm, "epsFD", eps^0.3 );
 	funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
 	linsolf_prm = [];
 	linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1*sqrt(norm(vecF)/norm(vecF0)) );
-	linsolf_prm.matP = pinv(matA);
 	linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
-	[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
+	[ vecSSDeltaN, linsolf_datOut ] = linsolf_directed( funchMatJProd, -vecF, linsolf_prm );
 	fevalCount += linsolf_datOut.fevalCount;
 	sizeV = size(linsolf_datOut.matV,2);
 	matV = linsolf_datOut.matV;
@@ -109,21 +104,22 @@ function [ vecXF, vecFF, datOut ] = findZero_825( vecX0, funchF, prm=[] )
 		%
 		%
 		%
-		matA = matA*( matIX - matV*(matV') ) + matW*(matV');
 		epsFD = mygetfield( prm, "epsFD", eps^0.3 );
 		funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
 		linsolf_prm = [];
 		linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1*sqrt(norm(vecF)/norm(vecF0)) );
-		linsolf_prm.matP = pinv(matA);
 		linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
-		[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
+		%
+		vecDeltaNGuess_linsolf = matV * ( __funcSSDeltaOfP( 1.0, matHRegu, vecG ) );
+		vecDFGuess_linsolf = -matW * ( __funcSSDeltaOfP( 1.0, matHRegu, vecG ) );
+		msg( __FILE__, __LINE__, sprintf( "Here's how much of F makes it through: %0.3e.", norm(vecDFGuess_linsolf-vecF)/norm(vecF) ) );
+		linsolf_prm.vecU0 = vecDeltaNGuess_linsolf;
+		%
+		[ vecSSDeltaN, linsolf_datOut ] = linsolf_directed( funchMatJProd, -vecF, linsolf_prm );
 		fevalCount += linsolf_datOut.fevalCount;
 		sizeV = size(linsolf_datOut.matV,2);
 		matV = linsolf_datOut.matV;
 		matW = linsolf_datOut.matW;
-		if ( verbLev >= VERBLEV__NOTIFY )
-			msg( __FILE__, __LINE__, sprintf( "  [ frob(W-V), frob(W-A*V) ] = [ %f, %f ].", sum(sumsq(matW-matV)), sum(sumsq(matW-matA*matV)) ) );
-		endif
 		%
 		dTreg = Inf;
 		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "Reset dTreg = %f.", dTreg ) )

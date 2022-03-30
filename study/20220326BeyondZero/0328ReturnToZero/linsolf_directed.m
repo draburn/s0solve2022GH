@@ -5,21 +5,16 @@
 %   and matW = matA*matV;
 %  This code is simple but slow.
 
-function [ vecX, datOut ] = linsolf( funchMatAProd, vecB, vecX0, prm = [] )
+function [ vecX, datOut ] = linsolf_directed( funchMatAProd, vecB, prm = [] )
 	time0 = time();
 	fevalCount = 0;
 	setVerbLevs;
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__NOTIFY );
 	fevalCount = 0;
 	%
-	sizeX = size(vecX0,1);
-	assert( isrealarray(vecX0,[sizeX,1]) );
-	if ( 0.0 ~= norm(vecX0) )
-		warning( "vecX0 does nothing." );
-	endif
 	sizeF = size(vecB,1);
 	assert( isrealarray(vecB,[sizeF,1]) );
-	assert( sizeX == sizeF );
+	sizeX = sizeF;
 	%
 	if ( 0.0 == norm(vecB) )
 		vecX = zeros(sizeX,1);
@@ -31,12 +26,18 @@ function [ vecX, datOut ] = linsolf( funchMatAProd, vecB, vecX0, prm = [] )
 		return;
 	endif
 	%
+	vecU0 = mygetfield( prm, "vecU0", vecB );
 	matP = mygetfield(prm,"matP",[]);
 	%
 	%
 	%
+	msg( __FILE__, __LINE__, "..." );
+	foo0 = funchMatAProd(vecB);
+	foo1 = funchMatAProd(vecU0);
+	[ foo0'*vecB/(norm(foo0)*norm(vecB)), foo1'*vecB/(norm(foo1)'*norm(vecB)) ]
+	
 	% Everything past here is iterated upon.
-	vecU = vecB;
+	vecU = vecU0;
 	if ( ~isempty(matP) )
 		vecU = matP*vecU;
 	endif
