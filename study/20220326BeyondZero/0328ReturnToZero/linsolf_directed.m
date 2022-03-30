@@ -31,10 +31,12 @@ function [ vecX, datOut ] = linsolf_directed( funchMatAProd, vecB, prm = [] )
 	%
 	%
 	%
-	msg( __FILE__, __LINE__, "..." );
-	foo0 = funchMatAProd(vecB);
-	foo1 = funchMatAProd(vecU0);
-	[ foo0'*vecB/(norm(foo0)*norm(vecB)), foo1'*vecB/(norm(foo1)'*norm(vecB)) ]
+	if ( verbLev >= VERBLEV__NOTIFY )
+		foo0 = funchMatAProd(vecB);
+		foo1 = funchMatAProd(vecU0);
+		msg( __FILE__, __LINE__, sprintf( "  Initial guess dot products [ default, given ] = [ %0.3e, %0.3e ].", ...
+		  foo0'*vecB/(eps^2+norm(foo0)*norm(vecB)), foo1'*vecB/(eps^2+norm(foo1)'*norm(vecB)) ) );
+	endif
 	
 	% Everything past here is iterated upon.
 	vecU = vecU0;

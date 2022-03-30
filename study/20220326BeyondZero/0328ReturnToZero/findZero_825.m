@@ -6,7 +6,7 @@ function [ vecXF, vecFF, datOut ] = findZero_825( vecX0, funchF, prm=[] )
 	time0 = time();
 	fevalCount = 0;
 	setVerbLevs;
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	%
 	sizeX = size(vecX0,1);
 	assert( isrealarray(vecX0,[sizeX,1]) );
@@ -112,8 +112,11 @@ function [ vecXF, vecFF, datOut ] = findZero_825( vecX0, funchF, prm=[] )
 		%
 		vecDeltaNGuess_linsolf = matV * ( __funcSSDeltaOfP( 1.0, matHRegu, vecG ) );
 		vecDFGuess_linsolf = -matW * ( __funcSSDeltaOfP( 1.0, matHRegu, vecG ) );
-		msg( __FILE__, __LINE__, sprintf( "Here's how much of F makes it through: %0.3e.", norm(vecDFGuess_linsolf-vecF)/norm(vecF) ) );
-		linsolf_prm.vecU0 = vecDeltaNGuess_linsolf;
+		fooMakeItThrough = 1.0 - norm(vecDFGuess_linsolf-vecF)/norm(vecF);
+		msgif( verbLev >= VERBLEV__NOTIFY, __FILE__, __LINE__, sprintf( "Here's how much of F makes it through according to the old model: %0.3e.", fooMakeItThrough ) );
+		if ( fooMakeItThrough > 0.5 )
+			linsolf_prm.vecU0 = vecDeltaNGuess_linsolf;
+		endif
 		%
 		[ vecSSDeltaN, linsolf_datOut ] = linsolf_directed( funchMatJProd, -vecF, linsolf_prm );
 		fevalCount += linsolf_datOut.fevalCount;

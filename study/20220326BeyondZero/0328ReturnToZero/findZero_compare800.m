@@ -1,8 +1,8 @@
 clear;
 setVerbLevs;
-setprngstates(0);
+%setprngstates(0);
 %setprngstates(90186240); %90186240 for 150x150. Some stall.
-%setprngstates();
+setprngstates(76252688); %76252688 for 150x150 causes div 0 in hack code in lisolf_directed.
 numFigs = 0;
 %
 sizeX = 150; sizeF = 150;
@@ -10,11 +10,11 @@ sizeX = 150; sizeF = 150;
 %sizeX = 5; sizeF = 5;
 %
 vecXE = randn(sizeX,1);
-matJE = diag(1.0+abs(randn(min([sizeF,sizeX]),1))) + 0.001*randn(sizeF,sizeX);
-matA0 = 0.00001*randn(sizeF,sizeX);
+matJE = diag(1.0+abs(randn(min([sizeF,sizeX]),1))) + 0.01*randn(sizeF,sizeX);
+matA0 = 0.0001*randn(sizeF,sizeX);
 matA1 = randn(sizeX,sizeX);
 matA2 = randn(sizeX,sizeX);
-matB0 = 0.00001*randn(sizeF,sizeX);
+matB0 = 0.0001*randn(sizeF,sizeX);
 matB1 = randn(sizeX,sizeX);
 matB2 = randn(sizeX,sizeX);
 matB3 = randn(sizeX,sizeX);
