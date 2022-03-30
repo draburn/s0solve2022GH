@@ -2,26 +2,31 @@ clear;
 setVerbLevs;
 setprngstates(0);
 %setprngstates(90186240); %90186240 for 150x150. Some stall.
+%setprngstates();
 numFigs = 0;
 %
-sizeX = 150;
-sizeF = 150;
+sizeX = 150; sizeF = 150;
+%sizeX = 15; sizeF = 15;
+%sizeX = 5; sizeF = 5;
 %
 vecXE = randn(sizeX,1);
 matJE = diag(1.0+abs(randn(min([sizeF,sizeX]),1))) + 0.001*randn(sizeF,sizeX);
-matA0 = 0.0001*randn(sizeF,sizeX);
+matA0 = 0.00001*randn(sizeF,sizeX);
 matA1 = randn(sizeX,sizeX);
 matA2 = randn(sizeX,sizeX);
-matB0 = 0.0001*randn(sizeF,sizeX);
+matB0 = 0.00001*randn(sizeF,sizeX);
 matB1 = randn(sizeX,sizeX);
 matB2 = randn(sizeX,sizeX);
 matB3 = randn(sizeX,sizeX);
 y = @(x)( x - vecXE );
 funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
-msg( __FILE__, __LINE__, sprintf( "rcond(matJE'*matJE) = %f.", rcond(matJE'*matJE) ) );
+msg( __FILE__, __LINE__, sprintf( "rcond(matJE'*matJE) = %0.3e.", rcond(matJE'*matJE) ) );
 %
 vecX0 = zeros(sizeX,1);
 vecF0 = funchF(vecX0);
+Df = jacobs( vecX0, funchF );
+msg( __FILE__, __LINE__, sprintf( "rcond(Df'*Df) = %0.3e.", rcond(Df'*Df) ) );
+%
 prm.iterMax = 200;
 %
 timeSS = time();

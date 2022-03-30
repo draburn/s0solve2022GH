@@ -28,10 +28,16 @@ function [ vecX, datOut ] = linsolf( funchMatAProd, vecB, vecX0, prm = [] )
 		return;
 	endif
 	%
+	matP = mygetfield(prm,"matP",[]);
+	%
 	%
 	%
 	% Everything past here is iterated upon.
-	vecV = __orth( vecB, [], prm );
+	vecU = vecB;
+	if ( ~isempty(matP) )
+		vecU = matP*vecU;
+	endif
+	vecV = __orth( vecU, [], prm );
 	assert( isrealarray(vecV,[sizeX,1]) );
 	vecW = funchMatAProd( vecV ); fevalCount++;
 	assert( isrealarray(vecW,[sizeF,1]) );
@@ -54,7 +60,11 @@ function [ vecX, datOut ] = linsolf( funchMatAProd, vecB, vecX0, prm = [] )
 			break;
 		endif
 		%
-		vecV = __orth( vecW, matV, prm );
+		vecU = vecW;
+		if ( ~isempty(matP) )
+			vecU = matP*vecU;
+		endif
+		vecV = __orth( vecU, matV, prm );
 		if ( isempty(vecV) )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Data became linearly dependent." );
 			break;
