@@ -27,9 +27,14 @@ y = @(x)( x - vecXE );
 funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
 msg( __FILE__, __LINE__, sprintf( "rcond(matJE'*matJE) = %f.", rcond(matJE'*matJE) ) );
 %
-vecX0 = zeros(sizeX,1);
+%vecX0 = zeros(sizeX,1);
+vecX0 = vecXE + 0.5*randn(sizeX,1);
 vecF0 = funchF(vecX0);
 prm.iterMax = 200;
+%
+timeSS = time();
+[ vecXF_105, vecFF_105, datOut_105 ] = findZero_105( vecX0, funchF, prm );
+time_105 = time()-timeSS;
 %
 timeSS = time();
 [ vecXF_700, vecFF_700, datOut_700 ] = findZero_700( vecX0, funchF, prm );
@@ -66,6 +71,7 @@ msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "20
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "550", norm(vecFF_550), datOut_550.iterCount, datOut_550.fevalCount, time_550 ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "600", norm(vecFF_600), datOut_600.iterCount, datOut_600.fevalCount, time_600 ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "700", norm(vecFF_700), datOut_700.iterCount, datOut_700.fevalCount, time_700 ) );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "105", norm(vecFF_105), datOut_105.iterCount, datOut_105.fevalCount, time_105 ) );
 %
 %
 %
@@ -76,7 +82,8 @@ semilogy( ...
   datOut_200.fevalCountVals, datOut_200.fNormVals+eps, 'v-', 'markersize', 20, 'linewidth', 2, ...
   datOut_550.fevalCountVals, datOut_550.fNormVals+eps, '+-', 'markersize', 20, 'linewidth', 2, ...
   datOut_600.fevalCountVals, datOut_600.fNormVals+eps, 'x-', 'markersize', 20, 'linewidth', 2, ...
-  datOut_700.fevalCountVals, datOut_700.fNormVals+eps, 's-', 'markersize', 20, 'linewidth', 2   );
+  datOut_700.fevalCountVals, datOut_700.fNormVals+eps, 's-', 'markersize', 20, 'linewidth', 2, ...
+  datOut_105.fevalCountVals, datOut_105.fNormVals+eps, 's-', 'markersize', 20, 'linewidth', 2   );
 grid on;
 ylabel( "||f||" );
 xlabel( "feval count" );
@@ -88,7 +95,8 @@ semilogy( ...
   datOut_200.iterCountVals, datOut_200.fNormVals+eps, 'v-', 'markersize', 20, 'linewidth', 2, ...
   datOut_550.iterCountVals, datOut_550.fNormVals+eps, '+-', 'markersize', 20, 'linewidth', 2, ...
   datOut_600.iterCountVals, datOut_600.fNormVals+eps, 'x-', 'markersize', 20, 'linewidth', 2, ...
-  datOut_700.iterCountVals, datOut_700.fNormVals+eps, 's-', 'markersize', 20, 'linewidth', 2 );
+  datOut_700.iterCountVals, datOut_700.fNormVals+eps, 's-', 'markersize', 20, 'linewidth', 2, ...
+  datOut_105.iterCountVals, datOut_105.fNormVals+eps, 's-', 'markersize', 20, 'linewidth', 2 );
 grid on;
 ylabel( "||f||" );
 xlabel( "iteration count" );
