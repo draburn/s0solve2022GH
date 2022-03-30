@@ -28,7 +28,7 @@ funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (ma
 msg( __FILE__, __LINE__, sprintf( "rcond(matJE'*matJE) = %f.", rcond(matJE'*matJE) ) );
 %
 %vecX0 = zeros(sizeX,1);
-vecX0 = vecXE + 0.5*randn(sizeX,1);
+vecX0 = vecXE + 0.8*randn(sizeX,1);
 vecF0 = funchF(vecX0);
 prm.iterMax = 200;
 %

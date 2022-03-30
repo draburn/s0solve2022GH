@@ -106,11 +106,13 @@ function [ vecXF, vecFF, datOut ] = findZero_105( vecX0, funchF, prm=[] )
 		vecX_next = vecX + vecDelta;
 		vecF_next = funchF(vecX_next); fevalCount++;
 		%
+		if (1)
 		% Apply Broyden update.
 		fooX = vecX_next - vecX;
 		fooF = vecF_next - ( vecF + matJ*vecDelta );
 		fooJ = fooF*(fooX')/(fooX'*fooX);
 		matJ += fooJ;
+		endif
 	endwhile
 	vecXF = vecX_best;
 	vecFF = vecF_best;
