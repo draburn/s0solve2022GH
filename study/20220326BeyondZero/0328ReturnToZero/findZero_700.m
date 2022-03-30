@@ -47,7 +47,9 @@ function [ vecXF, vecFF, datOut ] = findZero_700( vecX0, funchF, prm=[] )
 	%
 	dTreg = Inf; % Trust region size.
 	msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "Initial dTreg = %f.", dTreg ) )
+	initialFallRatio = [];
 	findZero_700__step;
+	initialFallRatio = norm(vecF_next)/norm(vecF);
 	%
 	%
 	%
@@ -117,7 +119,9 @@ function [ vecXF, vecFF, datOut ] = findZero_700( vecX0, funchF, prm=[] )
 		%
 		dTreg = Inf;
 		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "Reset dTreg = %f.", dTreg ) )
+		initialFallRatio = [];
 		findZero_700__step;
+		initialFallRatio = norm(vecF_next)/norm(vecF);
 		%
 		% Apply Broyden update.
 		fooY = matV'*vecDelta;

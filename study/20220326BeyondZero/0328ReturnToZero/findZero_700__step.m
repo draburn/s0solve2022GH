@@ -15,17 +15,31 @@
 	endif
 	%
 	%%%funchDeltaOfP = @(p) matV *( ( p*matHRegu + (1.0-p)*eye(size(matHRegu)) ) \ (-p*vecG) );
-	%%%funchDeltaOfP = @(p) (matV*( ( p*matHRegu + (1.0-p)*eye(size(matHRegu)) ) \ (-p*vecG) )); % <<< THIS WORKS.
+	funchDeltaOfP = @(p) (matV*( ( p*matHRegu + (1.0-p)*eye(size(matHRegu)) ) \ (-p*vecG) )); % <<< THIS WORKS.
 	%funchDeltaOfP = @(p) __funcDeltaOfP( p, matHRegu, vecG );
-	funchDeltaOfP = @(p) ( matV * (__funcSSDeltaOfP( p, matHRegu, vecG )) ); %%% <<< THIS DOES NOT WORK!
+	%%%funchDeltaOfP = @(p) ( matV * (__funcSSDeltaOfP( p, matHRegu, vecG )) ); %%% <<< THIS DOES NOT WORK!
 	% I can't get __funcSSDeltaOfP() to work as a function handle!
 	%
 	%funchDeltaOfP = @(p) ( matV * __funcSSDeltaOfP( p, matHRegu, vecG ) );
-	pMax = __findPOfDeltaNorm( dTreg, funchDeltaOfP  )
+	pMax = __findPOfDeltaNorm( dTreg, funchDeltaOfP  );
 	vecY_pMax = __funcSSDeltaOfP( pMax, matHRegu, vecG );
 	vecDelta_pMax = matV*vecY_pMax;
 	vecFModel_pMax = vecF + matW*vecY_pMax;
 	assert( norm(vecFModel_pMax) < norm(vecF) );
+	%
+	%
+	if ( isempty(initialFallRatio) )
+		% This step is using freshly calculated JV.
+	else
+		% This step is using possibly stale JV.
+		% If model says too little merit, then bail.
+		fallRatioModelExp = mygetfield( prm, "fallRatioModelExp", 0.5 );
+		if ( norm(vecFModel_pMax)/norm(vecF) > initialFallRatio^fallRatioModelExp )
+			vecX_next = vecX;
+			vecF_next = vecF;
+			return;
+		endif
+	endif
 	%
 	%
 	deltaNormTol = mygetfield( prm, "deltaNormTol", sizeX*100.0*eps );
