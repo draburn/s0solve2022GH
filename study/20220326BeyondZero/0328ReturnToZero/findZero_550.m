@@ -1,5 +1,5 @@
 % Dev
-% The quintessential JFNK solver using second order FD, plus minscan of Levenberg curve.
+% The quintessential JFNK solver using first order FD, plus loose minscan of Levenberg curve.
 
 function [ vecXF, vecFF, datOut ] = findZero_550( vecX0, funchF, prm=[] )
 	time0 = time();

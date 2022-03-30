@@ -5,6 +5,7 @@ setprngstates(0);
 %setprngstates(91565536); % 91565536 fsolve fails and is slow.
 %setprngstates(95116336); %95116336 "advancing" is worse; probably a fluke.
 %setprngstates(34444720); %34444720 Challenging 200x200
+%setprngstates(8226384); %8226384 triggers a path.
 %setprngstates();
 numFigs = 0;
 %
@@ -13,10 +14,12 @@ sizeF = 100;
 %
 vecXE = randn(sizeX,1);
 matJE = diag(1.0+abs(randn(min([sizeF,sizeX]),1))) + 0.001*randn(sizeF,sizeX);
-matA0 = 0.00001*randn(sizeF,sizeX);
+%%matA0 = 0.00001*randn(sizeF,sizeX);
+matA0 = 0.0001*randn(sizeF,sizeX);
 matA1 = randn(sizeX,sizeX);
 matA2 = randn(sizeX,sizeX);
-matB0 = 0.00001*randn(sizeF,sizeX);
+%%matB0 = 0.00001*randn(sizeF,sizeX);
+matB0 = 0.0001*randn(sizeF,sizeX);
 matB1 = randn(sizeX,sizeX);
 matB2 = randn(sizeX,sizeX);
 matB3 = randn(sizeX,sizeX);

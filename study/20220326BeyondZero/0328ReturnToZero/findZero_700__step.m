@@ -14,13 +14,10 @@
 		assert( min(diag(matR)) > max(abs(diag(matR)))*cholTol );
 	endif
 	%
-	%%%funchDeltaOfP = @(p) matV *( ( p*matHRegu + (1.0-p)*eye(size(matHRegu)) ) \ (-p*vecG) );
 	funchDeltaOfP = @(p) (matV*( ( p*matHRegu + (1.0-p)*eye(size(matHRegu)) ) \ (-p*vecG) )); % <<< THIS WORKS.
-	%funchDeltaOfP = @(p) __funcDeltaOfP( p, matHRegu, vecG );
 	%%%funchDeltaOfP = @(p) ( matV * (__funcSSDeltaOfP( p, matHRegu, vecG )) ); %%% <<< THIS DOES NOT WORK!
-	% I can't get __funcSSDeltaOfP() to work as a function handle!
 	%
-	%funchDeltaOfP = @(p) ( matV * __funcSSDeltaOfP( p, matHRegu, vecG ) );
+	%
 	pMax = __findPOfDeltaNorm( dTreg, funchDeltaOfP  );
 	vecY_pMax = __funcSSDeltaOfP( pMax, matHRegu, vecG );
 	vecDelta_pMax = matV*vecY_pMax;
@@ -39,6 +36,7 @@
 			vecF_next = vecF;
 			return;
 		endif
+		%msgif( verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "Coasting!" );
 	endif
 	%
 	%

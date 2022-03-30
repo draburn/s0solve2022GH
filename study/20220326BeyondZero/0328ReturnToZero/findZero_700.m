@@ -3,8 +3,6 @@
 %  Eqiv: 200 + JFNK.
 
 function [ vecXF, vecFF, datOut ] = findZero_700( vecX0, funchF, prm=[] )
-	msg( __FILE__, __LINE__, "THIS, _700, DOES NOT WORK PROPERLY!" );
-	msg( __FILE__, __LINE__, "  But, from what I can see, Broyden/coasting is ineffctive with JFNK." );
 	time0 = time();
 	fevalCount = 0;
 	setVerbLevs;
@@ -143,16 +141,7 @@ function p = __findPOfDeltaNorm( deltaNormMax, funchDeltaOfP )
 		p = 1.0;
 		return;
 	endif
-	[ norm(funchDeltaOfP(0.0)), fzero_fun(0.0), fzero_fun(1.0), deltaNormMax ]
 	p = fzero( fzero_fun, [0.0, 1.0] );
-return;
-endfunction
-
-
-function vecDelta = __funcDeltaOfP( p, matH, vecG )
-	[ matR, cholFlag ] = chol( p*matH + (1.0-p)*eye(size(matH)) );
-	assert( 0 == cholFlag );
-	vecDelta = matR \ ( matR' \ (-p*vecG) );
 return;
 endfunction
 
@@ -161,12 +150,5 @@ function vecSSDelta = __funcSSDeltaOfP( p, matH, vecG )
 	[ matR, cholFlag ] = chol( p*matH + (1.0-p)*eye(size(matH)) );
 	assert( 0 == cholFlag );
 	vecSSDelta = matR \ ( matR' \ (-p*vecG) );
-return;
-endfunction
-
-
-function gw()
-	msg( __FILE__, __LINE__, "Goodbye, world!" );
-	error( "Goodbye kitty." );
 return;
 endfunction
