@@ -3,6 +3,7 @@
 %  More important than vecX, however, is matV and matW;
 %   matV provides an orthonormal basis,
 %   and matW = matA*matV;
+%  This code is simple but slow.
 
 function [ vecX, datOut ] = linsolf( funchMatAProd, vecB, vecX0, prm = [] )
 	time0 = time();
