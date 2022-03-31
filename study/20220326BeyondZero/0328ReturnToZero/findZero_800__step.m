@@ -22,7 +22,6 @@
 	vecY_pMax = __funcSSDeltaOfP( pMax, matHRegu, vecG );
 	vecDelta_pMax = matV*vecY_pMax;
 	vecFModel_pMax = vecF + matW*vecY_pMax;
-	assert( norm(vecFModel_pMax) < norm(vecF) );
 	%
 	%
 	if ( isempty(initialFallRatio) )
@@ -38,6 +37,7 @@
 		endif
 		%msgif( verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "Coasting!" );
 	endif
+	assert( norm(vecFModel_pMax) <= norm(vecF) );
 	%
 	%
 	deltaNormTol = mygetfield( prm, "deltaNormTol", sizeX*100.0*eps );

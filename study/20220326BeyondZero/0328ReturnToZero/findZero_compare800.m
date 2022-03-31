@@ -10,7 +10,7 @@ sizeX = 150; sizeF = 150;
 %sizeX = 5; sizeF = 5;
 %
 vecXE = randn(sizeX,1);
-matJE = diag(1.0+abs(randn(min([sizeF,sizeX]),1))) + 0.01*randn(sizeF,sizeX);
+matJE = diag(1.0+abs(randn(min([sizeF,sizeX]),1))) + 0.1*randn(sizeF,sizeX);
 matA0 = 0.0001*randn(sizeF,sizeX);
 matA1 = randn(sizeX,sizeX);
 matA2 = randn(sizeX,sizeX);
@@ -22,7 +22,8 @@ y = @(x)( x - vecXE );
 funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
 msg( __FILE__, __LINE__, sprintf( "rcond(matJE'*matJE) = %0.3e.", rcond(matJE'*matJE) ) );
 %
-vecX0 = zeros(sizeX,1);
+%vecX0 = zeros(sizeX,1);
+vecX0 = vecXE + 0.5*randn(sizeX,1);
 vecF0 = funchF(vecX0);
 Df = jacobs( vecX0, funchF );
 msg( __FILE__, __LINE__, sprintf( "rcond(Df'*Df) = %0.3e.", rcond(Df'*Df) ) );
@@ -30,8 +31,8 @@ msg( __FILE__, __LINE__, sprintf( "rcond(Df'*Df) = %0.3e.", rcond(Df'*Df) ) );
 prm.iterMax = 200;
 %
 timeSS = time();
-[ vecXF_825, vecFF_825, datOut_825 ] = findZero_825( vecX0, funchF, prm );
-time_825 = time()-timeSS;
+[ vecXF_444, vecFF_444, datOut_444 ] = findZero_444( vecX0, funchF, prm );
+time_444 = time()-timeSS;
 %
 timeSS = time();
 [ vecXF_800, vecFF_800, datOut_800 ] = findZero_800( vecX0, funchF, prm );
@@ -62,7 +63,7 @@ msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "20
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "550", norm(vecFF_550), datOut_550.iterCount, datOut_550.fevalCount, time_550 ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "700", norm(vecFF_700), datOut_700.iterCount, datOut_700.fevalCount, time_700 ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "800", norm(vecFF_800), datOut_800.iterCount, datOut_800.fevalCount, time_800 ) );
-msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "825", norm(vecFF_825), datOut_825.iterCount, datOut_825.fevalCount, time_825 ) );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "444", norm(vecFF_444), datOut_444.iterCount, datOut_444.fevalCount, time_444 ) );
 %
 %
 %
@@ -72,7 +73,7 @@ semilogy( ...
   datOut_550.fevalCountVals, datOut_550.fNormVals+eps, '+-', 'markersize', 20, 'linewidth', 2, ...
   datOut_700.fevalCountVals, datOut_700.fNormVals+eps, 's-', 'markersize', 20, 'linewidth', 2, ...
   datOut_800.fevalCountVals, datOut_800.fNormVals+eps, 'o-', 'markersize', 20, 'linewidth', 2, ...
-  datOut_825.fevalCountVals, datOut_825.fNormVals+eps, '^-', 'markersize', 20, 'linewidth', 2    );
+  datOut_444.fevalCountVals, datOut_444.fNormVals+eps, '^-', 'markersize', 20, 'linewidth', 2    );
 grid on;
 ylabel( "||f||" );
 xlabel( "feval count" );
@@ -83,7 +84,7 @@ semilogy( ...
   datOut_550.iterCountVals, datOut_550.fNormVals+eps, '+-', 'markersize', 20, 'linewidth', 2, ...
   datOut_700.iterCountVals, datOut_700.fNormVals+eps, 's-', 'markersize', 20, 'linewidth', 2, ...
   datOut_800.iterCountVals, datOut_800.fNormVals+eps, 'o-', 'markersize', 20, 'linewidth', 2, ...
-  datOut_825.iterCountVals, datOut_825.fNormVals+eps, '^-', 'markersize', 20, 'linewidth', 2 );
+  datOut_444.iterCountVals, datOut_444.fNormVals+eps, '^-', 'markersize', 20, 'linewidth', 2 );
 grid on;
 ylabel( "||f||" );
 xlabel( "iteration count" );

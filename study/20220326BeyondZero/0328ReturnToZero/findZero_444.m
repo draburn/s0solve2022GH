@@ -1,8 +1,9 @@
 % Dev
-%  800 = 700 + conventional AP.
+%  444 = 800 but to full Jacobian in first iter and update Jacobian within linsolf.
 %  Note that _800__step may be identical to _700__step.
+% THIS CODE IS BUGGY.
 
-function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
+function [ vecXF, vecFF, datOut ] = findZero_444( vecX0, funchF, prm=[] )
 	time0 = time();
 	fevalCount = 0;
 	setVerbLevs;
@@ -14,8 +15,6 @@ function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
 	sizeF = size(vecF0,1);
 	assert( isrealarray(vecF0,[sizeF,1]) );
 	assert( 0~=norm(vecF0) );
-	matA0 = mygetfield( prm, "matA0", eye(sizeF,sizeX) ); % Our approximate Jacobian.
-	assert( isrealarray(matA0,[sizeF,sizeX]) );
 	%
 	%
 	%
@@ -32,26 +31,24 @@ function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
 	%
 	vecX = vecX0;
 	vecF = vecF0;
-	matA = matA0;
 	%
 	%
-	epsFD = mygetfield( prm, "epsFD", eps^0.3 );
-	funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
-	linsolf_prm = [];
-	linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1*sqrt(norm(vecF)/norm(vecF0)) );
-	linsolf_prm.matP = pinv(matA);
-	linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
-	[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
-	fevalCount += linsolf_datOut.fevalCount;
-	sizeV = size(linsolf_datOut.matV,2);
-	matV = linsolf_datOut.matV;
-	matW = linsolf_datOut.matW;
+	matJA = zeros( sizeF, sizeX );
+	epsFD = mygetfield( prm, "epsFD", eps^0.4 );
+	for n=1:sizeX
+		vecXP = vecX + epsFD*matIX(:,n);
+		vecFP = funchF( vecXP ); fevalCount++;
+		matJA(:,n) = (vecFP-vecF)/(epsFD);
+	endfor
+	matW = matJA;
+	matV = matIX;
+	sizeV = sizeX;
 	%
 	dTreg = Inf; % Trust region size.
-	msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "Initial dTreg = %f.", dTreg ) )
+	msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "Initial dTreg = %f.", dTreg ) );
 	initialFallRatio = [];
 	findZero_800__step;
-	initialFallRatio = norm(vecF_next)/norm(vecF);
+	initialFallRatio = max([ 0.1, norm(vecF_next)/norm(vecF) ]);
 	%
 	%
 	%
@@ -108,21 +105,22 @@ function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
 		%
 		%
 		%
-		matA = matA*( matIX - matV*(matV') ) + matW*(matV');
+		matJA += ( matW - (matJA*matV) ) * (matV');
+		%%%matJA = eye(sizeF,sizeX);
 		epsFD = mygetfield( prm, "epsFD", eps^0.3 );
 		funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
 		linsolf_prm = [];
 		linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1*sqrt(norm(vecF)/norm(vecF0)) );
-		linsolf_prm.matP = pinv(matA);
+		linsolf_prm.matA = matJA;
 		linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
-		[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
+		[ vecSSDeltaN, linsolf_datOut ] = linsolf_update( funchMatJProd, -vecF, linsolf_prm );
 		fevalCount += linsolf_datOut.fevalCount;
 		sizeV = size(linsolf_datOut.matV,2);
 		matV = linsolf_datOut.matV;
 		matW = linsolf_datOut.matW;
 		if ( verbLev >= VERBLEV__NOTIFY )
 			msg( __FILE__, __LINE__, sprintf( "  [ frob(W-V)/frob(V), frob(W-A*V)/frob(V) ] = [ %f, %f ].", ...
-			  sum(sumsq(matW-matV))/sum(sumsq(matV)), sum(sumsq(matW-matA*matV))/sum(sumsq(matV)) ) );
+			  sum(sumsq(matW-matV))/sum(sumsq(matV)), sum(sumsq(matW-matJA*matV))/sum(sumsq(matV)) ) );
 		endif
 		%
 		dTreg = Inf;
