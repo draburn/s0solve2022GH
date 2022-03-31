@@ -108,8 +108,8 @@ function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
 		%
 		%
 		%
-		matA = matA*( matIX - matV*(matV') ) + matW*(matV');
-		epsFD = mygetfield( prm, "epsFD", eps^0.3 );
+		matA += ( matW - (matA*matV) ) * (matV');
+		epsFD = mygetfield( prm, "epsFD", eps^0.4 );
 		funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
 		linsolf_prm = [];
 		linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1*sqrt(norm(vecF)/norm(vecF0)) );
@@ -121,8 +121,10 @@ function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
 		matV = linsolf_datOut.matV;
 		matW = linsolf_datOut.matW;
 		if ( verbLev >= VERBLEV__NOTIFY )
-			msg( __FILE__, __LINE__, sprintf( "  [ frob(W-V)/frob(V), frob(W-A*V)/frob(V) ] = [ %f, %f ].", ...
-			  sum(sumsq(matW-matV))/sum(sumsq(matV)), sum(sumsq(matW-matA*matV))/sum(sumsq(matV)) ) );
+			msg( __FILE__, __LINE__, sprintf( "  [ rcond(A), frob(W-V)/frob(V), frob(W-A*V)/frob(V) ] = [ %f, %f, %f ].", ...
+			  rcond(matA), ...
+			  sum(sumsq(matW-matV))/sum(sumsq(matV)), ...
+			  sum(sumsq(matW-matA*matV))/sum(sumsq(matV)) ) );
 		endif
 		%
 		dTreg = Inf;

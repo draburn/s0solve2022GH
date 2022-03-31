@@ -106,21 +106,30 @@ function [ vecXF, vecFF, datOut ] = findZero_444( vecX0, funchF, prm=[] )
 		%
 		%
 		matJA += ( matW - (matJA*matV) ) * (matV');
-		%%%matJA = eye(sizeF,sizeX);
-		epsFD = mygetfield( prm, "epsFD", eps^0.3 );
+		epsFD = mygetfield( prm, "epsFD", eps^0.4 );
 		funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
 		linsolf_prm = [];
 		linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1*sqrt(norm(vecF)/norm(vecF0)) );
-		linsolf_prm.matA = matJA;
-		linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
-		[ vecSSDeltaN, linsolf_datOut ] = linsolf_update( funchMatJProd, -vecF, linsolf_prm );
+		%%
+		if (1)
+			linsolf_prm.matA = matJA;
+			linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
+			[ vecSSDeltaN, linsolf_datOut ] = linsolf_update( funchMatJProd, -vecF, linsolf_prm );
+		else
+			linsolf_prm.matP = pinv(matJA);
+			linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
+			[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
+		endif
+		%%
 		fevalCount += linsolf_datOut.fevalCount;
 		sizeV = size(linsolf_datOut.matV,2);
 		matV = linsolf_datOut.matV;
 		matW = linsolf_datOut.matW;
 		if ( verbLev >= VERBLEV__NOTIFY )
-			msg( __FILE__, __LINE__, sprintf( "  [ frob(W-V)/frob(V), frob(W-A*V)/frob(V) ] = [ %f, %f ].", ...
-			  sum(sumsq(matW-matV))/sum(sumsq(matV)), sum(sumsq(matW-matJA*matV))/sum(sumsq(matV)) ) );
+			msg( __FILE__, __LINE__, sprintf( "  [ rcond(A), frob(W-V)/frob(V), frob(W-A*V)/frob(V) ] = [ %f, %f, %f ].", ...
+			  rcond(matJA), ...
+			  sum(sumsq(matW-matV))/sum(sumsq(matV)), ...
+			  sum(sumsq(matW-matJA*matV))/sum(sumsq(matV)) ) );
 		endif
 		%
 		dTreg = Inf;
