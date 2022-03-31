@@ -112,6 +112,10 @@ function [ vecXF, vecFF, datOut ] = findZero_105( vecX0, funchF, prm=[] )
 		fooF = vecF_next - ( vecF + matJ*vecDelta );
 		fooJ = fooF*(fooX')/(fooX'*fooX);
 		matJ += fooJ;
+		if ( 1==iterCount )
+			msg( __FILE__, __LINE__, "Applying double update for first iter, per quad." );
+			matJ += fooJ;
+		endif
 		endif
 	endwhile
 	vecXF = vecX_best;
