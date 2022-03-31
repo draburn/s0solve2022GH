@@ -64,6 +64,7 @@ function [ vecX, datOut ] = linsolf_update( funchMatAProd, vecB, prm = [] )
 		%
 		vecU = vecW;
 		if ( ~isempty(matA) )
+			vecU = vecB - matW*vecY; % Isn't this dangerous, because we could get the same vector repeatedly?
 			matA += (vecW-matA*vecV)*(vecV'); % THIS IS RATHER HARMFUL?
 			vecU = matA\vecU;
 		endif
