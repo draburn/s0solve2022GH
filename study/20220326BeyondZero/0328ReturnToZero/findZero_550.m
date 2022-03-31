@@ -28,7 +28,7 @@ function [ vecXF, vecFF, datOut ] = findZero_550( vecX0, funchF, prm=[] )
 	%
 	vecX = vecX0;
 	vecF = vecF0;
-	epsFD = mygetfield( prm, "epsFD", eps^0.3 );
+	epsFD = mygetfield( prm, "epsFD", eps^0.4 );
 	funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
 	linsolf_prm = [];
 	linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1 );
@@ -99,12 +99,12 @@ function [ vecXF, vecFF, datOut ] = findZero_550( vecX0, funchF, prm=[] )
 		%
 		%
 		%
-		epsFD = mygetfield( prm, "epsFD", eps^0.3 );
+		epsFD = mygetfield( prm, "epsFD", eps^0.4 );
 		funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
 		linsolf_prm = [];
 		linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1 );
 		linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
-			[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
+		[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
 		fevalCount += linsolf_datOut.fevalCount;
 		sizeV = size(linsolf_datOut.matV,2);
 		matV = linsolf_datOut.matV;
