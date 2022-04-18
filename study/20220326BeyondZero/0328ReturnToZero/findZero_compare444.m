@@ -51,6 +51,13 @@ timeSS = time();
 [ vecXF_800, vecFF_800, datOut_800 ] = findZero_800( vecX0, funchF, prm );
 time_800 = time()-timeSS;
 %
+%
+prm = [];
+prm.iterMax = 200;
+timeSS = time();
+[ vecXF_800x, vecFF_800x, datOut_800x ] = findZero_800( vecXF_800, funchF, prm );
+time_800x = time()-timeSS;
+%
 timeSS = time();
 [ vecXF_fsolve, vecFF_fsolve, datOut_fsolve, ] = findZero_fsolve( vecX0, funchF );
 time_fsolve = time()-timeSS;
@@ -61,6 +68,7 @@ msg( __FILE__, __LINE__, "Solver results..." );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11s;  %11s;  %11s;  %11s.", "solver name", "||vecFF||", "iterCount", "fevalCount", "time(s)" ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "fsolve", norm(vecFF_fsolve), datOut_fsolve.iterCount, datOut_fsolve.fevalCount, time_fsolve ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "800", norm(vecFF_800), datOut_800.iterCount, datOut_800.fevalCount, time_800 ) );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "800x", norm(vecFF_800x), datOut_800.iterCount, datOut_800x.fevalCount, time_800x ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "550", norm(vecFF_550), datOut_550.iterCount, datOut_550.fevalCount, time_550 ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "444", norm(vecFF_444), datOut_444.iterCount, datOut_444.fevalCount, time_444 ) );
 %
@@ -69,6 +77,7 @@ msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "44
 numFigs++; figure( numFigs );
 semilogy( ...
   datOut_800.fevalCountVals, datOut_800.fNormVals+eps, 'o-', 'markersize', 20, 'linewidth', 2, ...
+  datOut_800x.fevalCountVals, datOut_800x.fNormVals+eps, 'o-', 'markersize', 20, 'linewidth', 2, ...
   datOut_550.fevalCountVals, datOut_550.fNormVals+eps, 'o-', 'markersize', 20, 'linewidth', 2, ...
   datOut_444.fevalCountVals, datOut_444.fNormVals+eps, '^-', 'markersize', 20, 'linewidth', 2    );
 grid on;
@@ -78,6 +87,7 @@ xlabel( "feval count" );
 numFigs++; figure( numFigs );
 semilogy( ...
   datOut_800.iterCountVals, datOut_800.fNormVals+eps, 'o-', 'markersize', 20, 'linewidth', 2, ...
+  datOut_800x.iterCountVals, datOut_800x.fNormVals+eps, 'o-', 'markersize', 20, 'linewidth', 2, ...
   datOut_550.iterCountVals, datOut_550.fNormVals+eps, 'o-', 'markersize', 20, 'linewidth', 2, ...
   datOut_444.iterCountVals, datOut_444.fNormVals+eps, '^-', 'markersize', 20, 'linewidth', 2 );
 grid on;

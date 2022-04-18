@@ -143,6 +143,60 @@ function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
 	vecFF = vecF_best;
 	datOut.fevalCount = fevalCount;
 	datOut.iterCount = iterCount;
+	%%
+	%%
+	doPP20220418 = true;
+	if (doPP20220418)
+		datOut.dat_pp20220418.vecX = vecX;
+		datOut.dat_pp20220418.vecF = vecF;
+		datOut.dat_pp20220418.matV = matV;
+		datOut.dat_pp20220418.matW = matW;
+	endif
+	%%
+	doPP20220417 = false;
+	if (doPP20220417)
+		sizeV = size(matW,2);
+		matIV = ones(sizeV,sizeV);
+		numPVals = 10001;
+		pVals = linspace( 0.0, 0.99, numPVals );
+		%pVals = ( 1.0 - (1.0-(pVals.^2)).^2);
+		vecMG = -(matW'*vecF);
+		vecDeltaVals = zeros(sizeX,numPVals);
+		vecFModelVals = zeros(sizeF,numPVals);
+		vecFVals = zeros(sizeF,numPVals);
+		for n=1:numPVals
+			p = pVals(n);
+			matH_temp = p*(matW'*matW) + (1.0-p)*matIV;
+			vecY_temp = matH_temp \ (p*vecMG);
+			vecDelta_temp = matV * vecY_temp;
+			vecDeltaVals(:,n) = vecDelta_temp;
+			vecFModelVals(:,n) = vecF + matW*vecY_temp;
+			vecFVals(:,n) = funchF( vecX + matV*vecY_temp );
+		endfor
+		%
+		%sqrt(sumsq(vecDeltaVals,1))
+		%sqrt(sumsq(vecFModelVals,1))
+		%sqrt(sumsq(vecFVals,1))
+		%
+		figure(100);
+		semilogy( ...
+		  pVals, sqrt(sumsq(vecDeltaVals,1)), 's-' );
+		%semilogy( ...
+		%  sqrt(sumsq(vecDeltaVals,1)), sqrt(sumsq(vecFModelVals,1)), 'o-', ...
+		%  sqrt(sumsq(vecDeltaVals,1)), sqrt(sumsq(vecFVals,1)), 'x-' );
+		grid on;
+		%
+		figure(101);
+		semilogy( ...
+		  pVals, sqrt(sumsq(vecFModelVals,1)), 'o-', ...
+		  pVals, sqrt(sumsq(vecFVals,1)), 'x-' );
+		%semilogy( ...
+		%  sqrt(sumsq(vecDeltaVals,1)), sqrt(sumsq(vecFModelVals,1)), 'o-', ...
+		%  sqrt(sumsq(vecDeltaVals,1)), sqrt(sumsq(vecFVals,1)), 'x-' );
+		grid on;
+	endif
+	%%
+	%%
 return;
 endfunction
 
