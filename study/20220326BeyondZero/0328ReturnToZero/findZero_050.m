@@ -136,5 +136,6 @@ function [ vecXF, vecFF, datOut ] = findZero_050( vecX0, funchF, prm=[] )
 	vecFF = vecF_best;
 	datOut.fevalCount = fevalCount;
 	datOut.iterCount = iterCount;
+	datOut.matJ_final = matJ;
 return;
 endfunction

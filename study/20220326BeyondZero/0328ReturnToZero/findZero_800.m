@@ -50,6 +50,11 @@ function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
 	dTreg = Inf; % Trust region size.
 	msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "Initial dTreg = %f.", dTreg ) )
 	initialFallRatio = [];
+	doPP20220419 = true;
+	if (doPP20220419)
+		datOut.vecXVals(:,iterCount+1) = vecX;
+		datOut.vecFVals(:,iterCount+1) = vecF;
+	endif
 	findZero_800__step;
 	initialFallRatio = norm(vecF_next)/norm(vecF);
 	%
@@ -90,6 +95,10 @@ function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
 		%
 		%
 		%
+		if (doPP20220419)
+			datOut.vecXVals(:,iterCount+1) = vecX;
+			datOut.vecFVals(:,iterCount+1) = vecF;
+		endif
 		findZero_800__step;
 		%
 		% This criteria crude, but okay for now.

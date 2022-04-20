@@ -55,7 +55,7 @@ time_800 = time()-timeSS;
 prm = [];
 prm.iterMax = 200;
 timeSS = time();
-[ vecXF_800x, vecFF_800x, datOut_800x ] = findZero_800( vecXF_800, funchF, prm );
+[ vecXF_800x, vecFF_800x, datOut_800x ] = findZero_050( vecXF_800, funchF, prm );
 time_800x = time()-timeSS;
 %
 timeSS = time();

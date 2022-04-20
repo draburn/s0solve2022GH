@@ -14,7 +14,7 @@
 	matWTW = matW'*matW;
 	rcond(matWTW)
 	%return;
-	%wSqScale = max(diag(matWTW));
+	wSqScale = max(diag(matWTW));
 	%
 	numPVals = 10001;
 	pVals = linspace( 0.0, 0.99, numPVals );
@@ -46,7 +46,7 @@
 	grid on;
 	%
 	figure(101);
-	plot( ...
+	loglog( ...
 	  sqrt(sumsq(vecDeltaVals,1)), sqrt(sumsq(vecFModelVals,1)), 'o-', ...
 	  sqrt(sumsq(vecDeltaVals,1)), sqrt(sumsq(vecFVals,1)), 'x-' );
 	grid on;
