@@ -1,5 +1,5 @@
 % Dev
-%  444 = 800 but to full Jacobian in first iter and update Jacobian within linsolf.
+%  444 = 800 but do full Jacobian in first iter and update Jacobian within linsolf.
 %  Note that _800__step may be identical to _700__step.
 % THIS CODE IS BUGGY.
 

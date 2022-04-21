@@ -39,6 +39,7 @@ function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
 	funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
 	linsolf_prm = [];
 	linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1*sqrt(norm(vecF)/norm(vecF0)) );
+	linsolf_prm.tol = mygetfield( prm, "linsolf_tol0", linsolf_prm.tol );
 	linsolf_prm.matP = pinv(matA);
 	linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
 	[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
