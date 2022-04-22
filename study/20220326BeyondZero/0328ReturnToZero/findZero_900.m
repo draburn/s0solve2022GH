@@ -23,18 +23,30 @@ function [ vecXF, vecFF, datOut ] = findZero_900( vecX0, funchF, prm=[] )
 	assert( isrealarray(vecF0,[sizeF,1]) );
 	assert( 0~=norm(vecF0) );
 	%
-	matA0 = mygetfield( prm, "matA0", eye(sizeF,sizeX) ); % Our approximate Jacobian.
-	assert( isrealarray(matA0,[sizeF,sizeX]) );
 	%
 	vecX_best = vecX0;
 	vecF_best = vecF0;
 	%
 	%
 	%
+	%fModelType = mygetfield( prm, "fModelType", F_MODEL_TYPE__CONVENTIONAL );
+	%fModelDat.modelType = fModelType;
+	fModelDat.vecX = vecX0;
+	fModelDat.vecF = vecF0;
+	fModelDat.matA = eye(sizeF,sizeX); % Model for full-space Jacobian.
+	%fModelDat.matV = zeros(sizeX,0); % Most recent local analysis V.
+	%fModelDat.matW = zeros(sizeF,0); % Most recent local analysis JV, plus updates.
+	fModelDat = mygetfield( prm, "fModelDat0", fModelDat );
+	%assert( fModelDat.modelType == fModelType );
+	assert( reldiff(vecX0,fModelDat.vecX,eps) < eps );
+	assert( reldiff(vecF0,fModelDat.vecF,eps) < eps );
+	assert( isrealarray(fModelDat.matA,[sizeF,sizeX]) );
+	%
+	%
+	%
 	iterCount = 0;
 	vecX = vecX0;
 	vecF = vecF0;
-	matA = matA0;
 	datOut.iterCountVals(iterCount+1) = iterCount;
 	datOut.fevalCountVals(iterCount+1) = fevalCount;
 	datOut.fNormVals(iterCount+1) = norm(vecF_best);
@@ -43,7 +55,7 @@ function [ vecXF, vecFF, datOut ] = findZero_900( vecX0, funchF, prm=[] )
 	%
 	step_tol = sqrt(eps); % Use a tight solve on first iteration to get a large subspace.
 	step_prm = mygetfield( prm, "step_prm", [] );
-	[ vecX_next, vecF_next, matA_next, step_datOut ] = __findStep( funchF, vecX, vecF, matA, step_tol, step_prm );
+	[ vecX_next, vecF_next, fModelDat_next, step_datOut ] = __findStep( funchF, vecX, vecF, fModelDat, step_tol, step_prm );
 	fevalCount += step_datOut.fevalCount;
 	%
 	%
@@ -81,7 +93,7 @@ function [ vecXF, vecFF, datOut ] = findZero_900( vecX0, funchF, prm=[] )
 		endif
 		vecX = vecX_next;
 		vecF = vecF_next;
-		matA = matA_next;
+		fModelDat = fModelDat_next;
 		%
 		%
 		%
@@ -93,7 +105,7 @@ function [ vecXF, vecFF, datOut ] = findZero_900( vecX0, funchF, prm=[] )
 		%
 		step_tol = 0.1*norm(vecF)/norm(vecF0);
 		step_prm = mygetfield( prm, "step_prm", [] );
-		[ vecX_next, vecF_next, matA_next, step_datOut ] = __findStep( funchF, vecX, vecF, matA, step_tol, step_prm );
+		[ vecX_next, vecF_next, fModelDat_next, step_datOut ] = __findStep( funchF, vecX, vecF, fModelDat, step_tol, step_prm );
 		fevalCount += step_datOut.fevalCount;
 	endwhile
 	%
@@ -106,45 +118,60 @@ endfunction
 
 
 
-function [ vecX_next, vecF_next, matA_next, step_datOut ] = __findStep( funchF, vecX, vecF, matA, step_tol, step_prm )
+function [ vecX_next, vecF_next, fModelDat_next, step_datOut ] = __findStep( funchF, vecX, vecF, fModelDat, step_tol, step_prm )
 	fevalCount = 0;
 	sizeX = size(vecX,1);
 	sizeF = size(vecF,1);
+	matA = fModelDat.matA;
+	%
+	%
+	%
 	epsFD = mygetfield( step_prm, "epsFD", eps^0.4 );
 	funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
 	vecXGuess0 = zeros(sizeX,1);
 	linsolf_prm = mygetfield( step_prm, "linsolf_prm", [] );
 	linsolf_prm.matP = inv(matA);
 	linsolf_prm.tol = step_tol;
+	%
 	[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, vecXGuess0, linsolf_prm );
 	fevalCount += linsolf_datOut.fevalCount;
-	%
-	%
 	%
 	matV = linsolf_datOut.matV;
 	sizeV = size(matV,2);
 	assert( isrealarray(matV,[sizeX,sizeV]) );
 	matW = linsolf_datOut.matW;
 	assert( isrealarray(matW,[sizeF,sizeV]) );
+	%
+	%
+	%
 	vecG = matW'*vecF;
 	matH = matW'*matW;
+	[ foo, cholFlag ] = chol(matH);
+	assert( 0 == cholFlag ); % Singular matH not supported here.
 	matIV = eye(sizeV,sizeV);
-	funchVecYOfP = @(p)( ( p*matH + (1.0-p)*matIV ) \ (-p*vecG) );
-	funchVecDeltaOfP = @(p)( matV * funchVecYOfP(p) );
-	funchFNormOfP = @(p)( norm(funchF(vecX+funchVecDeltaOfP(p))) );
+	funchYOfP = @(p)( ( p*matH + (1.0-p)*matIV ) \ (-p*vecG) );
+	funchDeltaOfP = @(p)( matV * funchYOfP(p) );
+	funchFNormOfP = @(p)( norm(funchF(vecX+funchDeltaOfP(p))) );
 	%
 	fminbnd_options = optimset( "TolX", 1.0E-3, "TolFun", norm(vecF)*1.0E-4 );
 	fminbnd_options = mygetfield( step_prm, "fminbnd_options", fminbnd_options );
+	%
 	[ fminbnd_x, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchFNormOfP, 0.0, 1.0, fminbnd_options );
 	fevalCount += fminbnd_output.funcCount;
+	%
 	p = fminbnd_x;
-	%
-	%
-	%
-	vecX_next = vecX + funchVecDeltaOfP(p);
+	vecX_next = vecX + funchDeltaOfP(p);
 	vecF_next = funchF(vecX_next);
-	matA_next = matA + ( matW - (matA*matV) ) * (matV');
 	fevalCount++;
+	%
+	matA += ( matW - (matA*matV) ) * (matV'); % Update per subspace.
+	fooX = vecX_next - vecX;
+	assert( norm(fooX) > 0.0 );
+	fooF = vecF_next - ( vecF + matA*fooX );
+	matA += 2.0 * fooF * (fooX') / (fooX'*fooX); % Quadratic upate.
+	fModelDat_next.matA = matA;
+	%
+	%
 	%
 	step_datOut.fevalCount = fevalCount;
 	step_datOut.linsolf_datOut = linsolf_datOut;
