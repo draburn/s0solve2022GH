@@ -4,7 +4,7 @@
 %  900 = JFNK (w strict start) + AP (w OSQU) + Lev*minscan
 %  904 = 900 but replace Lev*minscan with BT/TR per _444 and coast.
 
-function [ vecXF, vecFF, datOut ] = findZero_900( vecX0, funchF, prm=[] )
+function [ vecXF, vecFF, datOut ] = findZero_904( vecX0, funchF, prm=[] )
 	time0 = time();
 	fevalCount = 0;
 	setVerbLevs;
@@ -54,7 +54,8 @@ function [ vecXF, vecFF, datOut ] = findZero_900( vecX0, funchF, prm=[] )
 	%
 	step_tol = sqrt(eps); % Use a tight solve on first iteration to get a large subspace.
 	step_prm = mygetfield( prm, "step_prm", [] );
-	[ vecX_next, vecF_next, fModelDat_next, step_datOut ] = __findStep( funchF, vecX, vecF, fModelDat, step_tol, step_prm );
+	stepSearchDat = [];
+	[ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut ] = __findStep( funchF, vecX, vecF, fModelDat, stepSearchDat, step_tol, step_prm );
 	fevalCount += step_datOut.fevalCount;
 	%
 	%
@@ -104,7 +105,7 @@ function [ vecXF, vecFF, datOut ] = findZero_900( vecX0, funchF, prm=[] )
 		%
 		step_tol = 0.1*norm(vecF)/norm(vecF0);
 		step_prm = mygetfield( prm, "step_prm", [] );
-		[ vecX_next, vecF_next, fModelDat_next, step_datOut ] = __findStep( funchF, vecX, vecF, fModelDat, step_tol, step_prm );
+		[ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut ] = __findStep( funchF, vecX, vecF, fModelDat, stepSearchDat, step_tol, step_prm );
 		fevalCount += step_datOut.fevalCount;
 	endwhile
 	%
@@ -117,7 +118,7 @@ endfunction
 
 
 
-function [ vecX_next, vecF_next, fModelDat_next, step_datOut ] = __findStep( funchF, vecX, vecF, fModelDat, step_tol, step_prm )
+function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut ] = __findStep( funchF, vecX, vecF, fModelDat, stepSearchDat, step_tol, step_prm )
 	fevalCount = 0;
 	sizeX = size(vecX,1);
 	sizeF = size(vecF,1);
@@ -144,17 +145,44 @@ function [ vecX_next, vecF_next, fModelDat_next, step_datOut ] = __findStep( fun
 	%
 	%
 	%
+	fModelDat_curr = fModelDat;
+	fModelDat_curr.matV = matV;
+	fModelDat_curr.matW = matW;
+	fModelDat_curr.matA = matA;
+	stepSearchDat_curr = stepSearchDat;
+	stepSearch_prm = [];
+	[ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, stepSearch_datOut ] = __searchForStep( ...
+	  funchF, vecX, vecF, fModelDat_curr, stepSearchDat_curr, stepSearch_prm );
+	fevalCount += stepSearch_datOut.fevalCount;
+	%
+	%
+	%
+	step_datOut.fevalCount = fevalCount;
+	step_datOut.linsolf_datOut = linsolf_datOut;
+	step_datOut.sizeV = sizeV;
+	step_datOut.stepSearch_datOut = stepSearch_datOut;
+endfunction
+
+function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, stepSearch_datOut ] = __searchForStep( ...
+	  funchF, vecX, vecF, fModelDat, stepSearchDat, stepSearch_prm )
+	%
+	fevalCount = 0;
+	matV = fModelDat.matV;
+	matW = fModelDat.matW;
+	matA = fModelDat.matA;
+	sizeV = size(matV,2);
+	%
 	vecG = matW'*vecF;
-	matH = matW'*matW;
-	[ foo, cholFlag ] = chol(matH);
-	assert( 0 == cholFlag ); % Singular matH not supported here.
+	matHRaw = matW'*matW;
+	matHRegu = calcHRegu(matHRaw);
+	%
 	matIV = eye(sizeV,sizeV);
-	funchYOfP = @(p)( ( p*matH + (1.0-p)*matIV ) \ (-p*vecG) );
+	funchYOfP = @(p)( ( p*matHRegu + (1.0-p)*matIV ) \ (-p*vecG) );
 	funchDeltaOfP = @(p)( matV * funchYOfP(p) );
 	%
 	funchFNormOfP = @(p)( norm(funchF(vecX+funchDeltaOfP(p))) );
 	fminbnd_options = optimset( "TolX", 1.0E-4, "TolFun", norm(vecF)*1.0E-2 );
-	fminbnd_options = mygetfield( step_prm, "fminbnd_options", fminbnd_options );
+	fminbnd_options = mygetfield( stepSearch_prm, "fminbnd_options", fminbnd_options );
 	%
 	[ fminbnd_x, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchFNormOfP, 0.0, 1.0, fminbnd_options );
 	fevalCount += fminbnd_output.funcCount;
@@ -168,11 +196,9 @@ function [ vecX_next, vecF_next, fModelDat_next, step_datOut ] = __findStep( fun
 	assert( norm(fooX) > 0.0 );
 	fooF = vecF_next - ( vecF + matA*fooX );
 	matA += 2.0 * fooF * (fooX') / (fooX'*fooX); % Quadratic upate.
+	fModelDat_next = fModelDat;
 	fModelDat_next.matA = matA;
 	%
-	%
-	%
-	step_datOut.fevalCount = fevalCount;
-	step_datOut.linsolf_datOut = linsolf_datOut;
-	step_datOut.sizeV = sizeV;
+	stepSearchDat_next = [];
+	stepSearch_datOut.fevalCount = fevalCount;
 endfunction
