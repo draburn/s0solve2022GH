@@ -87,6 +87,8 @@ function [ vecXF, vecFF, datOut ] = findZero_444( vecX0, funchF, prm=[] )
 		%
 		%
 		%
+		useCoasting = false;
+		if (useCoasting)
 		findZero_800__step;
 		%
 		% This criteria crude, but okay for now.
@@ -101,6 +103,7 @@ function [ vecXF, vecFF, datOut ] = findZero_444( vecX0, funchF, prm=[] )
 			vecX = vecX_next;
 			vecF = vecF_next;
 			% But, re-calculate Jacobian, below.
+		endif
 		endif
 		%
 		%
