@@ -128,6 +128,7 @@ function [ vecXF, vecFF, datOut ] = findZero_444( vecX0, funchF, prm=[] )
 		sizeV = size(linsolf_datOut.matV,2);
 		matV = linsolf_datOut.matV;
 		matW = linsolf_datOut.matW;
+		%[ matLambda ] = eig( matW'*matW ); msg( __FILE__, __LINE__, sprintf( "phiMin = %e.", min(matLambda)/max(abs(matLambda)) ) );
 		if ( 0 && verbLev >= VERBLEV__NOTIFY )
 			msg( __FILE__, __LINE__, sprintf( "  [ rcond(A), frob(W-V)/frob(V), frob(W-A*V)/frob(V) ] = [ %f, %f, %f ].", ...
 			  rcond(matJA), ...

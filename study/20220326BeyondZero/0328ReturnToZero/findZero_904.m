@@ -4,6 +4,12 @@
 %  900 = JFNK (w strict start) + AP (w OSQU) + Lev*minscan
 %  904 = 900 but replace Lev*minscan with BT/TR per _444 and coast.
 
+
+% 20220422 TODO
+%   Confirm phi patch is analytically correct.
+%   Put phi-patch in loop with linsolf?
+%   Make BT smarter...?
+
 function [ vecXF, vecFF, datOut ] = findZero_904( vecX0, funchF, prm=[] )
 	time0 = time();
 	fevalCount = 0;
@@ -142,6 +148,7 @@ function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut
 	matW = linsolf_datOut.matW;
 	assert( isrealarray(matW,[sizeF,sizeV]) );
 	matA += ( matW - (matA*matV) ) * (matV'); % Update per subspace.
+	%[ matLambda ] = eig( matW'*matW ); msg( __FILE__, __LINE__, sprintf( "phiMin = %e.", min(matLambda)/max(abs(matLambda)) ) );
 	%
 	%
 	%
@@ -149,8 +156,42 @@ function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut
 	fModelDat_curr.matV = matV;
 	fModelDat_curr.matW = matW;
 	fModelDat_curr.matA = matA;
+	%
+	% Phi-patch concept was to do *inside* linsolf, but, whatever.
+	% Also, concept would allow for multiple patches, but we use only one here.
+	usePostLinsolfPhiPatch = mygetfield( step_prm, "usePostLinsolfPhiPatch", true );
+	if ( usePostLinsolfPhiPatch )
+		fModelDat_curr.vecPhi = [];
+		fModelDat_curr.vecGamma = [];
+		phiPatchTol = mygetfield( step_prm, "phiPatchTol", 1.0 );
+		matWTW = matW'*matW;
+		[ matPhi, matLambda ] = eig( matWTW );
+		vecLambda = diag(matLambda);
+		[ lambdaMin, indexOfLambdaMin ] = min( vecLambda );
+		if ( lambdaMin / max(abs(vecLambda)) < phiPatchTol )
+			vecPhi = matPhi(:,indexOfLambdaMin);
+			phiPatchOrder = mygetfield( step_prm, "phiPatchOrder", 2 );
+			switch (phiPatchOrder)
+			case 1
+				error( "phiPatchOrder 1 not implemented." );
+			case 2
+				vecXP = vecX + epsFD*matV*vecPhi;
+				vecXM = vecX - epsFD*matV*vecPhi;
+				vecFP = funchF( vecXP ); fevalCount++;
+				vecFM = funchF( vecXM ); fevalCount++;
+				vecGamma = ( vecFP + vecFM - 2.0*vecF ) / (epsFD^2);
+			otherwise
+				error( "Invalid value of phiPatchOrder." );
+			endswitch
+			fModelDat_curr.vecPhi = vecPhi;
+			fModelDat_curr.vecGamma = vecGamma;
+		endif
+	endif
+	%
 	stepSearchDat_curr = stepSearchDat;
 	stepSearch_prm = [];
+	stepSearch_prm.usePostLinsolfPhiPatch = usePostLinsolfPhiPatch;
+	%
 	[ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, stepSearch_datOut ] = __searchForStep_tr444( ...
 	  funchF, vecX, vecF, fModelDat_curr, stepSearchDat_curr, stepSearch_prm );
 	fevalCount += stepSearch_datOut.fevalCount;
@@ -176,6 +217,10 @@ function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, stepSearch_
 	%
 	vecG = matW'*vecF;
 	matHRaw = matW'*matW;
+	usePostLinsolfPhiPatch = mygetfield( stepSearch_prm, "usePostLinsolfPhiPatch", true );
+	if ( usePostLinsolfPhiPatch )
+		matHRaw += (vecF'*fModelDat.vecGamma) * fModelDat.vecPhi * ( fModelDat.vecPhi' );
+	endif
 	matHRegu = calcHRegu(matHRaw);
 	%
 	matIV = eye(sizeV,sizeV);
@@ -220,6 +265,12 @@ function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, stepSearch_
 	%
 	vecG = matW'*vecF;
 	matHRaw = matW'*matW;
+	usePostLinsolfPhiPatch = mygetfield( stepSearch_prm, "usePostLinsolfPhiPatch", true );
+	if ( usePostLinsolfPhiPatch )
+	if (~isempty(fModelDat.vecGamma))
+		matHRaw += (vecF'*fModelDat.vecGamma) * fModelDat.vecPhi * ( fModelDat.vecPhi' );
+	endif
+	endif
 	matHRegu = calcHRegu(matHRaw);
 	%
 	matIV = eye(sizeV,sizeV);

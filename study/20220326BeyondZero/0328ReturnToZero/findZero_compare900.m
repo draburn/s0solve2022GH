@@ -31,6 +31,24 @@ vecF0 = funchF(vecX0);
 Df = jacobs( vecX0, funchF );
 msg( __FILE__, __LINE__, sprintf( "rcond(Df'*Df) = %0.3e.", rcond(Df'*Df) ) );
 %
+%
+prm = [];
+prm.step_prm.usePostLinsolfPhiPatch = false;
+prm.iterMax = 5;
+prm.iterMax = 200;
+timeSS = time();
+[ vecXF_904, vecFF_904, datOut_904 ] = findZero_904( vecX0, funchF, prm );
+time_904 = time()-timeSS;
+%
+%
+prm = [];
+prm.step_prm.usePostLinsolfPhiPatch = true;
+prm.iterMax = 5;
+prm.iterMax = 200;
+timeSS = time();
+[ vecXF_904x, vecFF_904x, datOut_904x ] = findZero_904( vecX0, funchF, prm );
+time_904x = time()-timeSS;
+%
 prm = [];
 timeSS = time();
 [ vecXF_444, vecFF_444, datOut_444 ] = findZero_444( vecX0, funchF, prm );
@@ -41,14 +59,6 @@ prm.useCoasting = false;
 timeSS = time();
 [ vecXF_444x, vecFF_444x, datOut_444x ] = findZero_444( vecX0, funchF, prm );
 time_444x = time()-timeSS;
-%
-%
-prm = [];
-prm.iterMax = 5;
-prm.iterMax = 200;
-timeSS = time();
-[ vecXF_904, vecFF_904, datOut_904 ] = findZero_904( vecX0, funchF, prm );
-time_904 = time()-timeSS;
 %
 %
 prm = [];
@@ -77,6 +87,7 @@ msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "fs
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "800", norm(vecFF_800), datOut_800.iterCount, datOut_800.fevalCount, time_800 ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "900", norm(vecFF_900), datOut_900.iterCount, datOut_900.fevalCount, time_900 ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "904", norm(vecFF_904), datOut_904.iterCount, datOut_904.fevalCount, time_904 ) );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "904x", norm(vecFF_904x), datOut_904x.iterCount, datOut_904x.fevalCount, time_904x ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "444", norm(vecFF_444), datOut_444.iterCount, datOut_444.fevalCount, time_444 ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "444x", norm(vecFF_444x), datOut_444x.iterCount, datOut_444x.fevalCount, time_444x ) );
 %
@@ -87,6 +98,7 @@ semilogy( ...
   datOut_800.fevalCountVals, datOut_800.fNormVals+eps, 'o-', 'markersize', 20, 'linewidth', 2, ...
   datOut_900.fevalCountVals, datOut_900.fNormVals+eps, 'x-', 'markersize', 20, 'linewidth', 2, ...
   datOut_904.fevalCountVals, datOut_904.fNormVals+eps, 's-', 'markersize', 20, 'linewidth', 2, ...
+  datOut_904x.fevalCountVals, datOut_904x.fNormVals+eps, 's-', 'markersize', 20, 'linewidth', 2, ...
   datOut_444.fevalCountVals, datOut_444.fNormVals+eps, '^-', 'markersize', 20, 'linewidth', 2, ...
   datOut_444x.fevalCountVals, datOut_444x.fNormVals+eps, 'v-', 'markersize', 20, 'linewidth', 2    );
 grid on;
@@ -98,6 +110,7 @@ semilogy( ...
   datOut_800.iterCountVals, datOut_800.fNormVals+eps, 'o-', 'markersize', 20, 'linewidth', 2, ...
   datOut_900.iterCountVals, datOut_900.fNormVals+eps, 'x-', 'markersize', 20, 'linewidth', 2, ...
   datOut_904.iterCountVals, datOut_904.fNormVals+eps, 's-', 'markersize', 20, 'linewidth', 2, ...
+  datOut_904x.iterCountVals, datOut_904x.fNormVals+eps, 's-', 'markersize', 20, 'linewidth', 2, ...
   datOut_444.iterCountVals, datOut_444.fNormVals+eps, '^-', 'markersize', 20, 'linewidth', 2, ...
   datOut_444x.iterCountVals, datOut_444x.fNormVals+eps, 'v-', 'markersize', 20, 'linewidth', 2 );
 grid on;
