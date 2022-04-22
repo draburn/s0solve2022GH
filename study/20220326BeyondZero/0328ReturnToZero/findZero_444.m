@@ -87,7 +87,7 @@ function [ vecXF, vecFF, datOut ] = findZero_444( vecX0, funchF, prm=[] )
 		%
 		%
 		%
-		useCoasting = false;
+		useCoasting = mygetfield( prm, "useCoasting", true );
 		if (useCoasting)
 		findZero_800__step;
 		%
