@@ -141,6 +141,7 @@ function [ vecX_next, vecF_next, fModelDat_next, step_datOut ] = __findStep( fun
 	assert( isrealarray(matV,[sizeX,sizeV]) );
 	matW = linsolf_datOut.matW;
 	assert( isrealarray(matW,[sizeF,sizeV]) );
+	matA += ( matW - (matA*matV) ) * (matV'); % Update per subspace.
 	%
 	%
 	%
@@ -151,20 +152,19 @@ function [ vecX_next, vecF_next, fModelDat_next, step_datOut ] = __findStep( fun
 	matIV = eye(sizeV,sizeV);
 	funchYOfP = @(p)( ( p*matH + (1.0-p)*matIV ) \ (-p*vecG) );
 	funchDeltaOfP = @(p)( matV * funchYOfP(p) );
-	funchFNormOfP = @(p)( norm(funchF(vecX+funchDeltaOfP(p))) );
 	%
-	fminbnd_options = optimset( "TolX", 1.0E-3, "TolFun", norm(vecF)*1.0E-4 );
+	funchFNormOfP = @(p)( norm(funchF(vecX+funchDeltaOfP(p))) );
+	fminbnd_options = optimset( "TolX", 1.0E-4, "TolFun", norm(vecF)*1.0E-2 );
 	fminbnd_options = mygetfield( step_prm, "fminbnd_options", fminbnd_options );
 	%
 	[ fminbnd_x, fminbnd_fval, fminbnd_info, fminbnd_output ] = fminbnd( funchFNormOfP, 0.0, 1.0, fminbnd_options );
 	fevalCount += fminbnd_output.funcCount;
-	%
 	p = fminbnd_x;
+	%
 	vecX_next = vecX + funchDeltaOfP(p);
 	vecF_next = funchF(vecX_next);
 	fevalCount++;
 	%
-	matA += ( matW - (matA*matV) ) * (matV'); % Update per subspace.
 	fooX = vecX_next - vecX;
 	assert( norm(fooX) > 0.0 );
 	fooF = vecF_next - ( vecF + matA*fooX );
