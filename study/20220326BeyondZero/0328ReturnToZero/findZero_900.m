@@ -1,9 +1,7 @@
 % Dev
-%  900 = approaching new JFNK (with phi-patch, etc);
-%   but, 900 itself is just to refresh my memory.
-% TODO: To compare to _444...
-%   Add conventional coasting.
-%   Replace minscan with TR, initialFallRatio, etc.
+%  9xx = approaching new JFNK (with phi-patch, etc),
+%   for prototyping structure and refereshing memory.
+%  900 = JFNK (w strict start) + AP (w OSQU) + Lev*minscan
 
 function [ vecXF, vecFF, datOut ] = findZero_900( vecX0, funchF, prm=[] )
 	time0 = time();
