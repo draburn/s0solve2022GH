@@ -151,7 +151,7 @@ function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut
 	fModelDat_curr.matA = matA;
 	stepSearchDat_curr = stepSearchDat;
 	stepSearch_prm = [];
-	[ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, stepSearch_datOut ] = __searchForStep( ...
+	[ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, stepSearch_datOut ] = __searchForStep_tr444( ...
 	  funchF, vecX, vecF, fModelDat_curr, stepSearchDat_curr, stepSearch_prm );
 	fevalCount += stepSearch_datOut.fevalCount;
 	%
@@ -163,7 +163,9 @@ function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut
 	step_datOut.stepSearch_datOut = stepSearch_datOut;
 endfunction
 
-function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, stepSearch_datOut ] = __searchForStep( ...
+
+
+function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, stepSearch_datOut ] = __searchForStep_minscan( ...
 	  funchF, vecX, vecF, fModelDat, stepSearchDat, stepSearch_prm )
 	%
 	fevalCount = 0;
@@ -201,4 +203,106 @@ function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, stepSearch_
 	%
 	stepSearchDat_next = [];
 	stepSearch_datOut.fevalCount = fevalCount;
+endfunction
+
+
+
+function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, stepSearch_datOut ] = __searchForStep_tr444( ...
+	  funchF, vecX, vecF, fModelDat, stepSearchDat, stepSearch_prm )
+	%
+	setVerbLevs;
+	verbLev = mygetfield( stepSearch_prm, "verbLev", VERBLEV__MAIN );
+	fevalCount = 0;
+	matV = fModelDat.matV;
+	matW = fModelDat.matW;
+	matA = fModelDat.matA;
+	sizeV = size(matV,2);
+	%
+	vecG = matW'*vecF;
+	matHRaw = matW'*matW;
+	matHRegu = calcHRegu(matHRaw);
+	%
+	matIV = eye(sizeV,sizeV);
+	funchYOfP = @(p)( ( p*matHRegu + (1.0-p)*matIV ) \ (-p*vecG) );
+	funchDeltaOfP = @(p)( matV * funchYOfP(p) );
+	%
+	dTreg = mygetfield( stepSearchDat, "dTreg", [] );
+	if (isempty(dTreg))
+		pMax = 1.0;
+	else
+		pMax = __findPOfDeltaNorm( dTreg, funchDeltaOfP  );
+	endif
+	vecY_pMax = funchYOfP( pMax );
+	vecFModel_pMax = vecF + matW*vecY_pMax;
+	%
+	deltaNormTol = mygetfield( stepSearch_prm, "deltaNormTol", 100.0*eps );
+	btMax = mygetfield( stepSearch_prm, "btMax", 30 );
+	btCount = 0;
+	vecDelta_rejected = [];
+	p = pMax;
+	while (1)
+		vecY = funchYOfP( p );
+		vecDelta = matV*vecY;
+		vecX_next = vecX + vecDelta;
+		vecF_next = funchF( vecX_next );
+		fevalCount++;
+		%
+		if ( norm(vecF_next) < 0.5*norm(vecF) + 0.5*norm(vecFModel_pMax) )
+			break;
+		endif
+		if ( norm(vecDelta) < deltaNormTol )
+			msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, "  step: IMPOSED STOP: norm(vecDelta) < deltaNormTol." );
+			break;
+		endif
+		btCount++;
+		if ( btCount > btMax )
+			msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, "  step: IMPOSED STOP: btCount > btMax." );
+			break;
+		endif
+		p /= 2.0;
+		vecDelta_rejected = vecDelta;
+		continue;
+	endwhile
+	if ( ~isempty(vecDelta_rejected) )
+		dTreg = min([ dTreg, norm(vecDelta_rejected) ]);
+		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "  step: Have a rejected step. Set dTreg = %0.3e.", dTreg ) )
+	endif
+	%
+	vecFModel_next = vecF + matW*vecY;
+	rhoThresh0 = mygetfield( stepSearch_prm, "rhoThresh0", 0.05 );
+	rhoThresh1 = mygetfield( stepSearch_prm, "rhoThresh1", 0.30 );
+	rho = norm(vecF_next-vecFModel_next)/norm(vecF);
+	if ( rho < rhoThresh0 )
+		% Model is very accurate at the point.
+		dTreg = max([ dTreg, 2.0*norm(vecDelta) ]);
+		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "  step: Model was very accurate. Set dTreg = %0.3e.", dTreg ) )
+	elseif ( rho > rhoThresh1 )
+		% Model was inaccurate at the point.
+		dTreg = min([ dTreg, norm(vecDelta) ]); % "min([ dTreg," should be superfluous.
+		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "  step: Model was very inaccurate. Set dTreg = %0.3e.", dTreg ) )
+	endif
+	%
+	%
+	%
+	fooX = vecX_next - vecX;
+	assert( norm(fooX) > 0.0 );
+	fooF = vecF_next - ( vecF + matA*fooX );
+	matA += 2.0 * fooF * (fooX') / (fooX'*fooX); % Quadratic upate.
+	fModelDat_next = fModelDat;
+	fModelDat_next.matA = matA;
+	%
+	stepSearchDat_next = [];
+	stepSearch_datOut.fevalCount = fevalCount;
+endfunction
+
+
+
+function p = __findPOfDeltaNorm( deltaNormMax, funchDeltaOfP )
+	fzero_fun = @(p_dummy)( norm(funchDeltaOfP(p_dummy)) - deltaNormMax );
+	if ( fzero_fun(1.0) <= 0.0 )
+		p = 1.0;
+		return;
+	endif
+	p = fzero( fzero_fun, [0.0, 1.0] );
+return;
 endfunction
