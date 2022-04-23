@@ -3,6 +3,7 @@
 %   for prototyping structure and refereshing memory.
 %  900 = JFNK (w strict start) + AP (w OSQU) + Lev*minscan
 %  904 = 900 but replace Lev*minscan with BT/TR per _444 and coast.
+% *** Coasting is not present here.
 
 
 % 20220422 TODO
@@ -148,7 +149,7 @@ function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut
 	matW = linsolf_datOut.matW;
 	assert( isrealarray(matW,[sizeF,sizeV]) );
 	matA += ( matW - (matA*matV) ) * (matV'); % Update per subspace.
-	%[ matLambda ] = eig( matW'*matW ); msg( __FILE__, __LINE__, sprintf( "phiMin = %e.", min(matLambda)/max(abs(matLambda)) ) );
+	%[ vecLambda ] = eig( matW'*matW ); msg( __FILE__, __LINE__, sprintf( "lambdaMin = %e, phiMin = %e.", min(vecLambda), min(vecLambda)/max(abs(vecLambda)) ) );
 	%
 	%
 	%
@@ -268,10 +269,15 @@ function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, stepSearch_
 	usePostLinsolfPhiPatch = mygetfield( stepSearch_prm, "usePostLinsolfPhiPatch", true );
 	if ( usePostLinsolfPhiPatch )
 	if (~isempty(fModelDat.vecGamma))
-		matHRaw += (vecF'*fModelDat.vecGamma) * fModelDat.vecPhi * ( fModelDat.vecPhi' );
+		ftGamma = vecF'*fModelDat.vecGamma;
+		if ( ftGamma > 0.0 )
+			matHRaw += ftGamma * fModelDat.vecPhi * ( fModelDat.vecPhi' );
+		endif
 	endif
 	endif
+	%[ vecLambda ] = eig( matHRaw ); msg( __FILE__, __LINE__, sprintf( "lambdaMin = %e, phiMin = %e.", min(vecLambda), min(vecLambda)/max(abs(vecLambda)) ) );
 	matHRegu = calcHRegu(matHRaw);
+	%[ vecLambda ] = eig( matHRaw ); msg( __FILE__, __LINE__, sprintf( "lambdaMin = %e, phiMin = %e.", min(vecLambda), min(vecLambda)/max(abs(vecLambda)) ) );
 	%
 	matIV = eye(sizeV,sizeV);
 	funchYOfP = @(p)( ( p*matHRegu + (1.0-p)*matIV ) \ (-p*vecG) );
