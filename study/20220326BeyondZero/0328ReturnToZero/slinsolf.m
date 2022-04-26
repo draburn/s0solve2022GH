@@ -42,11 +42,11 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 		%
 		% Calculate trial step.
 		vecX_trial = __calcDelta( localModelDat, stepConstraintDat, prm );
-		error( "HALT!" );
 		vecFModel_trial = __calcFModel( vecX_trial, localModelDat, prm );
 		%
 		%
 		% Decide what to do.
+		error( "HALT!" );
 		trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, localModelDat, prm );
 		switch (trialAction)
 		case "giveUp"
@@ -140,6 +140,7 @@ endfunction
 function vecX_trial = __calcDelta( localModelDat, stepConstraintDat, prm )
 	setVerbLevs;
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	%
 	vecX0 = localModelDat.vecX0;
 	vecF0 = localModelDat.vecF0;
 	sizeX = size(vecX0,1);
@@ -149,7 +150,7 @@ function vecX_trial = __calcDelta( localModelDat, stepConstraintDat, prm )
 	%
 	matV = mygetfield( localModelDat, "matV", [] );
 	if (isempty(matV))
-		% We can't make a valid delta yet.
+		% We don't have a valid model (yet).
 		vecX_trial = [];
 		return;
 	endif
@@ -202,10 +203,56 @@ endfunction
 
 
 
+function vecFModel_trial = __calcFModel( vecX_trial, localModelDat, prm )
+	setVerbLevs;
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	%
+	vecX0 = localModelDat.vecX0;
+	vecF0 = localModelDat.vecF0;
+	sizeX = size(vecX0,1);
+	sizeF = size(vecF0,1);
+	assert( isrealarray(vecX0,[sizeX,1]) );
+	assert( isrealarray(vecF0,[sizeF,1]) );
+	%
+	matV = mygetfield( localModelDat, "matV", [] );
+	if (isempty(matV))
+		% We don't have a valid model (yet).
+		vecFModel_trial = [];
+		return;
+	endif
+	matW = localModelDat.matW;
+	sizeV = size(matV,2);
+	assert( 0 < sizeV );
+	assert( isrealarray(matV,[sizeX,sizeV]) );
+	assert( isrealarray(matW,[sizeF,sizeV]) );
+	assert( reldiff(matV'*matV,ones(sizeV),eps) <= eps );
+	%
+	assert( isrealarray(vecX_trial,[sizeX,1]) );
+	vecD = vecX_trial - vecX0;
+	vecFModel_trial = vecF0 + matW*(matV'*vecD);
+	%
+	matPhi = localModelDat.matPhi;
+	matGamma = localModelDat.matGamma;
+	sizePhi = size(matPhi,2);
+	if ( 0 < sizePhi )
+		assert( isrealarray(matPhi,[sizeX,sizePhi]) );
+		assert( isrealarray(matGamma,[sizeF,sizePhi]) );
+		assert( reldiff(matPhi'*matPhi,ones(sizePhi),eps) <= eps );
+		%
+		for n=1:sizePhi
+			vecFModel_trial += 0.5 * matGamma(:,n) * (matPhi(:,n)'*vecD)^2;
+		endfor
+	endif
+return;
+endfunction
+
+
+
 function [ localModelDat, fevalIncrement ]  = __expandSubspace( localModelDat, preconDat, prm )
 	fevalIncrement = 0;
 	setVerbLevs;
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	%
 	sizeX = size(localModelDat.vecX0,1);
 	sizeF = size(localModelDat.vecF0,1);
 	vecX0 = localModelDat.vecX0;
