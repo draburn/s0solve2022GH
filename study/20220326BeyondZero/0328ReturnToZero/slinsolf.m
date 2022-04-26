@@ -10,24 +10,28 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 	%
 	stepConstraintDat = mygetfield( datIn, "stepConstraintDat", [] );
 	preconDat = mygetfield( datIn, "preconDat", [] );
+	trialActionDat = mygetfield( datIn, "trialActionDat", [] );
+	if (~isempty(trialActionDat))
+		msgif( verbLev >= VERBLEV__NOTIFY, __FILE__, __LINE__, "Input trialActionDat is not empty. Are you sure you know what you're doing?" );
+	endif
 	%
 	localModelDat = mygetfield( datIn, "localModelDat", [] );
 	if (isempty(localModelDat))
 		localModelDat.vecX0 = vecX0;
 		localModelDat.vecF0 = vecF0;
 	else
+		msgif( verbLev >= VERBLEV__NOTIFY, __FILE__, __LINE__, "Input localModelDat is not empty. Are you sure you know what you're doing?" );
 		assert( reldiff(vecX0,localModelDat.vecX0,realmin) <= eps )
 		assert( reldiff(vecF0,localModelDat.vecF0,realmin) <= eps )
 	endif
 	%
 	%
-	% Prep loop.
-	vecX_best = vecX0;
-	vecF_best = vecF0;
-	vecFModel_best = vecF0;
-	stepConstraitDat_best = []; % Essentially, SCD *implied by* best.
-	bestIsNot0 = false;
+	% Prep result.
+	vecX_best = [];
+	vecF_best = [];
+	stepConstraintDat_best = []; % Essentially, SCD *implied by* best.
 	%
+	% Prep loop.
 	vecX = vecX0;
 	vecF = vecF0;
 	iterCount = 0;
@@ -46,8 +50,10 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 		%
 		%
 		% Decide what to do.
+		trialActionDat.vecX_best = vecX_best;
+		trialActionDat.vecF_best = vecF_best;
+		trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, localModelDat, trialActionDat, prm )
 		error( "HALT!" );
-		trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, localModelDat, prm );
 		switch (trialAction)
 		case "giveUp"
 			break;
@@ -76,19 +82,15 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 			stepConstraintDat = __updateSCD_excellent( vecX_trial, vecF_trial, vecFModel_trial, localModelDat, stepConstraintDat, prm );
 			vecX_best = vecX_trial;
 			vecF_best = vecF_trial;
-			vecFModel_best = vecFModel_trial;
 			stepConstraintDat_best = stepConstraintDat;
-			bestIsNot0 = true;
 			break;
 		case "good"
 			vecX_best = vecX_trial;
 			vecF_best = vecF_trial;
-			vecFModel_best = vecFModel_trial;
 			stepConstraintDat_best = stepConstraintDat;
-			bestIsNot0 = true;
 			break;
 		case "okay"
-			if ( bestIsNot0 )
+			if ( ~isempty(vecX_best) )
 			if ( norm(vecF_best) < norm(vecF_trial) )
 				% Previous was better.
 				% Update SCD and return pre-existing best.
@@ -100,19 +102,17 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 			% Update best *then* update SCD.
 			vecX_best = vecX_trial;
 			vecF_best = vecF_trial;
-			vecFModel_best = vecFModel_trial;
 			stepConstraintDat_best = stepConstraintDat;
-			bestIsNot0 = true;
 			stepConstraintDat = __updateSCD_okay( vecX_trial, vecF_trial, vecFModel_trial, localModelDat, stepConstraintDat, prm );
 			continue;
 		case "bad"
-			if ( bestIsNot0 )
+			if ( ~isempty(vecX_best) )
 				msgif( verbLev >= VERBLEV__NOTIFY, __FILE__, __LINE__, "Trial result was 'bad' even though a previous result was at least 'okay'." );
 			endif
 			stepConstraintDat = __updateSCD_bad( vecX_trial, vecF_trial, vecFModel_trial, localModelDat, stepConstraintDat, prm );
 			continue;
 		case "horrid"
-			if ( bestIsNot0 )
+			if ( ~isempty(vecX_best) )
 				msgif( verbLev >= VERBLEV__NOTIFY, __FILE__, __LINE__, "Trial result was 'horrid' even though a previous result was at least 'okay'." );
 			endif
 			stepConstraintDat = __updateSCD_horrid( vecX_trial, localModelDat, stepConstraintDat, prm );
@@ -127,11 +127,8 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 	vecFF = vecF_best;
 	datOut.stepConstraintDat = stepConstraintDat;
 	datOut.preconDat = preconDat;
-	datOut.localModelDat = localModelDat; % Let this be updated to new point externally.
-	if ( ~bestIsNot0 )
-		msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Failed to find a good new point." );
-	endif
-	%
+	datOut.localModelDat = localModelDat; % Let someone externally updated the data to new point.
+	datOut.fevalCount = fevalCount;
 return;
 endfunction
 
@@ -194,6 +191,8 @@ function vecX_trial = __calcDelta( localModelDat, stepConstraintDat, prm )
 	vecDeltaCauchy = pCauchy*matS_curve*(-vecG_curve); % Needs testing.
 	vecDeltaNewton = matS_curve*(matH_curve\(-vecG_curve));
 	%
+	%
+	% Crude placeholder...
 	if (~isempty(stepConstraintDat))
 		error( "Step constraints are not yet supported!" );
 	endif
@@ -243,6 +242,46 @@ function vecFModel_trial = __calcFModel( vecX_trial, localModelDat, prm )
 			vecFModel_trial += 0.5 * matGamma(:,n) * (matPhi(:,n)'*vecD)^2;
 		endfor
 	endif
+return;
+endfunction
+
+
+
+function trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, localModelDat, trialActionDat, prm )
+	setVerbLevs;
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	%
+	if (isempty(vecX_trial))
+		% We don't have a valid trial.
+		trialAction = "expandSubspace";
+		return;
+	endif
+	%
+	vecX0 = localModelDat.vecX0;
+	vecF0 = localModelDat.vecF0;
+	sizeX = size(vecX0,1);
+	sizeF = size(vecF0,1);
+	assert( isrealarray(vecX0,[sizeX,1]) );
+	assert( isrealarray(vecF0,[sizeF,1]) );
+	assert( isrealarray(vecX_trial,[sizeX,1]) );
+	assert( isrealarray(vecFModel_trial,[sizeF,1]) );
+	%
+	%vecX_best = mygetfield( trialActionDat, "vecX_best", [] );
+	%if (~isempty(vecX_best))
+	%	vecF_best = trialActionDat.vecF_best;
+	%	assert( isrealarray(vecX_best,[sizeX,1]) );
+	%	assert( isrealarray(vecF_best,[sizeF,1]) );
+	%endif
+	%
+	%
+	% Crude placeholder...
+	dta_c0 = 0.5
+	if ( norm(vecFModel_trial) < dta_c0 * norm(vecF0) )
+		trialAction = "tryStep";
+		return;
+	endif
+	trialAction = "expandSubspace";
+	return;
 return;
 endfunction
 
