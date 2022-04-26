@@ -38,7 +38,7 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 	while (1)
 		iterMax = mygetfield( prm, "iterMax", 10+sizeX );
 		if ( iterCount >= iterMax )
-			msgif( verbLev >= VERBLEV_MAIN, __FILE__, __LINE__, "IMPOSED STOP: iterCount >= iterMax." );
+			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: iterCount >= iterMax." );
 			break;
 		endif
 		iterCount++;
@@ -52,15 +52,14 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 		% Decide what to do.
 		trialActionDat.vecX_best = vecX_best;
 		trialActionDat.vecF_best = vecF_best;
-		trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, localModelDat, trialActionDat, prm )
-		error( "HALT!" );
+		trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, localModelDat, trialActionDat, prm );
 		switch (trialAction)
 		case "giveUp"
 			break;
 		case "expandSubspace"
-			[ localModelDat, fevalIncrement ]  = __expandSubspace( localModelDat, preconDat, prm );
-			fevalCount += fevalIncrement;
-			if ( 0~=retCode )
+			[ localModelDat, ess_datOut ]  = __expandSubspace( funchF, localModelDat, preconDat, prm );
+			fevalCount += ess_datOut.fevalCount;
+			if ( isempty(localModelDat) )
 				msgif( verbLev >= VERBLEV_MAIN, __FILE__, __LINE__, sprintf( "ALGORITHM BREAKDOWN: __expandSubspace() returned %d.", retCode ) );
 				break;
 			endif
@@ -74,6 +73,7 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 		%
 		%
 		vecF_trial = funchF( vecX_trial ); fevalCount++;
+		error( "HALT!" );
 		trialResult = __determineTrialResult( vecX_trial, vecF_trial, vecFModel_trial, localModelDat, prm );
 		%
 		switch (trialResult)
@@ -161,17 +161,17 @@ function vecX_trial = __calcDelta( localModelDat, stepConstraintDat, prm )
 	vecG = matW'*vecF0;
 	matH = matW'*matW;
 	%
-	matPhi = localModelDat.matPhi;
+	matVPhi = localModelDat.matVPhi;
 	matGamma = localModelDat.matGamma;
-	sizePhi = size(matPhi,2);
+	sizePhi = size(matVPhi,2);
 	if ( 0 < sizePhi )
-		assert( isrealarray(matPhi,[sizeX,sizePhi]) );
+		assert( isrealarray(matVPhi,[sizeV,sizePhi]) );
 		assert( isrealarray(matGamma,[sizeF,sizePhi]) );
-		assert( reldiff(matPhi'*matPhi,ones(sizePhi),eps) <= eps );
+		assert( reldiff(matVPhi'*matVPhi,ones(sizePhi),eps) <= sqrt(eps) );
 		%
 		for n=1:sizePhi
 			msgif( verbLev >= VERBLEV__NOTIFY, __FILE__, __LINE__, "Negative quad term." );
-			matH += (vecF0'*matGamma(:,n)) * matPhi(:,n) * (matPhi(:,n)');
+			matH += (vecF0'*matGamma(:,n)) * matVPhi(:,n) * (matVPhi(:,n)');
 		endfor
 	endif
 	%
@@ -181,15 +181,19 @@ function vecX_trial = __calcDelta( localModelDat, stepConstraintDat, prm )
 		matS_curve = diag( 1.0 ./ ( sqrt(abs(diag(matH))) + eps*hScale ) ); % Needs testing.
 		vecG_curve = matS_curve'*vecG;
 		matH_curve = calcHRegu( matS_curve'*matH*matS_curve );
+		%
+		pCauchy = calcLinishRootOfQuad( 0.5*(vecG_curve'*matH_curve*vecG_curve), -sumsq(vecG_curve), sumsq(vecF0)/2.0 );
+		assert( pCauchy >= 0.0 );
+		vecDeltaCauchy = pCauchy*matS_curve*(-vecG_curve); % Needs testing.
+		vecDeltaNewton = matS_curve*(matH_curve\(-vecG_curve));
 	else
 		vecG_curve = vecG;
 		matH_curve = calcHRegu( matH );
+		pCauchy = calcLinishRootOfQuad( 0.5*(vecG_curve'*matH_curve*vecG_curve), -sumsq(vecG_curve), sumsq(vecF0)/2.0 );
+		assert( pCauchy >= 0.0 );
+		vecDeltaCauchy = pCauchy*(-vecG_curve); % Needs testing.
+		vecDeltaNewton = matH_curve\(-vecG_curve);
 	endif
-	%
-	pCauchy = calcLinishRootOfQuad( 0.5*(vecG_curve'*matH_curve*vecG_curve), -sumsq(vecG_curve), omega );
-	assert( pCauchy >= 0.0 );
-	vecDeltaCauchy = pCauchy*matS_curve*(-vecG_curve); % Needs testing.
-	vecDeltaNewton = matS_curve*(matH_curve\(-vecG_curve));
 	%
 	%
 	% Crude placeholder...
@@ -275,7 +279,7 @@ function trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, loca
 	%
 	%
 	% Crude placeholder...
-	dta_c0 = 0.5
+	dta_c0 = 0.5;
 	if ( norm(vecFModel_trial) < dta_c0 * norm(vecF0) )
 		trialAction = "tryStep";
 		return;
@@ -287,8 +291,8 @@ endfunction
 
 
 
-function [ localModelDat, fevalIncrement ]  = __expandSubspace( localModelDat, preconDat, prm )
-	fevalIncrement = 0;
+function [ localModelDat, datOut ]  = __expandSubspace( funchF, localModelDat, preconDat, prm )
+	fevalCount = 0;
 	setVerbLevs;
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	%
@@ -301,24 +305,86 @@ function [ localModelDat, fevalIncrement ]  = __expandSubspace( localModelDat, p
 	matPhi = mygetfield( localModelDat, "matPhi", zeros(sizeX,0) ); % Make sizeV x sizeV?
 	matGamma = mygetfield( localModelDat, "matGamma", zeros(sizeF,0) );
 	%
-	if ( 1 == size(matW,2) )
-		matU = localModelDat.vecF;
+	if ( 0 == size(matW,2) )
+		vecU = localModelDat.vecF0;
 	else
-		matU = localModelDat.matW(:,end);
+		vecU = localModelDat.matW(:,end);
 	endif
 	%
 	vecV = __calcGuessV( vecU, preconDat, prm );
-	vecV = __calcOrthog( vecV, matV, prm );
+	vecV = __calcOrthonorm( vecV, matV, prm );
 	if ( norm(vecV) < eps )
-		msg( __FILE__, __LINE__, "ALGORITHM BREAKDOWN: norm(vecV) < eps." );
-		retCode = 100;
+		msg( __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Calculation of new basis vector failed." );
+		localModelDat = [];
 		return;
 	endif
-	vecW = __calcJProd( vecV, prm ); fevalIncrement++;
+	epsFD = mygetfield( prm, "epsFD", eps^0.3 );
+	vecFP = funchF( vecX0 + epsFD*vecV ); fevalCount++;
+	vecW = ( vecFP - vecF0 ) / (epsFD*norm(vecV));
 	matV = [ matV, vecV ];
 	matW = [ matW, vecW ];
 	%
-	[ matPhi, matGamma ] = __phiPatch( funchF, vecX0, vecF0, matV, matW, matPhi, matGamma, prm );
-	fevalCount += phiPatch_datOut.fevalCount;
+	[ matPhi, matGamma, pp_datOut ] = __phiPatch( funchF, vecX0, vecF0, matV, matW, matPhi, matGamma, prm );
+	fevalCount += pp_datOut.fevalCount;
+	%
+	localModelDat.matV = matV;
+	localModelDat.matW = matW;
+	localModelDat.matPhi = matPhi;
+	localModelDat.matVPhi = matV'*matPhi;
+	localModelDat.matGamma = matGamma;
+	datOut.fevalCount = fevalCount;
+return;
+endfunction
+%
+function vecV = __calcGuessV( vecU, preconDat, prm )
+	% Support conventional AP.
+	% Use LU instead?
+	matA = mygetfield( preconDat, "matA", [] );
+	if (isempty(matA))
+		vecV = vecU;
+	else
+		vecV = matA\vecU;
+	endif
+return;
+endfunction
+%
+function vecV = __calcOrthonorm( vecV, matV, prm )
+	numPasses = 2;
+	for n=1:numPasses
+		vecV -= matV*(matV'*vecV);
+		v = norm(vecV);
+		if ( 0.0==v )
+			return;
+		else
+			vecV /= v;
+		endif
+	endfor
+return;
+endfunction
+%
+function [ matPhi, matGamma, pp_datOut ] = __phiPatch( funchF, vecX0, vecF0, matV, matW, matPhi, matGamma, prm )
+	fevalCount = 0;
+	sizeF = size(vecF0,1);
+	sizeV = size(matV,2);
+	matWTW = matW'*matW;
+	[ matPsi, matLambda ] = eig( matWTW );
+	assert( isrealarray(matPsi,[sizeV,sizeV]) );
+	%
+	% Re-patch everything for now.
+	%
+	% Patch every eigenvalue for now.
+	matPhi = matV*matPsi;
+	sizePhi = sizeV;
+	%
+	% Patch using second order for now.
+	epsFD = mygetfield( prm, "epsFD", eps^0.3 );
+	matGamma = zeros(sizeF,sizePhi);
+	for n=1:sizePhi
+		vecFP = funchF( vecX0 + epsFD * matPhi(:,n) ); fevalCount++;
+		vecFM = funchF( vecX0 - epsFD * matPhi(:,n) ); fevalCount++;
+		matGamma(:,n) = ( vecFP + vecFM - 2.0*vecF0 ) / (epsFD^2);
+	endfor
+	%
+	pp_datOut.fevalCount = fevalCount;
 return;
 endfunction
