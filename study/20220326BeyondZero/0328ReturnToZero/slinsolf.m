@@ -73,8 +73,8 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 		%
 		%
 		vecF_trial = funchF( vecX_trial ); fevalCount++;
-		error( "HALT!" );
 		trialResult = __determineTrialResult( vecX_trial, vecF_trial, vecFModel_trial, localModelDat, prm );
+		error( "HALT!" );
 		%
 		switch (trialResult)
 		case "excellent"
@@ -279,7 +279,7 @@ function trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, loca
 	%
 	%
 	% Crude placeholder...
-	dta_c0 = 0.5;
+	dta_c0 = 0.9;
 	if ( norm(vecFModel_trial) < dta_c0 * norm(vecF0) )
 		trialAction = "tryStep";
 		return;
@@ -386,5 +386,20 @@ function [ matPhi, matGamma, pp_datOut ] = __phiPatch( funchF, vecX0, vecF0, mat
 	endfor
 	%
 	pp_datOut.fevalCount = fevalCount;
+return;
+endfunction
+
+
+
+function trialResult = __determineTrialResult( vecX_trial, vecF_trial, vecFModel_trial, localModelDat, prm )
+	% Crude placeholder...
+	vecF0 = localModelDat.vecF0;
+	dtr_c0 = 0.9;
+	if ( norm(vecF_trial) < dtr_c0*norm(vecF0) + (1.0-dtr_c0)*norm(vecFModel_trial) )
+		trialResult = "good";
+		return;
+	endif
+	trialResult = "bad";
+	return;
 return;
 endfunction
