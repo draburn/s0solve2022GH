@@ -19,4 +19,9 @@ vecX0 = zeros(sizeX,1);
 vecF0 = funchF(vecX0);
 prm = [];
 datIn = [];
-[ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
+msg( __FILE__, __LINE__, "Calling slinsolf()..." );
+[ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn );
+msg( __FILE__, __LINE__, "Returned from slinsolf()." );
+[ vecX0, vecXF ]
+[ vecF0, vecFF ]
+msg( __FILE__, __LINE__, "Goodbye." );
