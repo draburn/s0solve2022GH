@@ -58,14 +58,29 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 		case "giveUp"
 			break;
 		case "expandSubspace"
-			[ localModelDat, ess_datOut ]  = __expandSubspace( funchF, localModelDat, preconDat, prm );
+			[ localModelDat_new, ess_datOut ]  = __expandSubspace( funchF, localModelDat, preconDat, prm );
 			fevalCount += ess_datOut.fevalCount;
-			if ( isempty(localModelDat) )
+			if ( ~isempty(localModelDat_new) )
+				% Retry, from the top, with new model.
+				localModelDat = localModelDat_new;
+				continue;
+			else
 				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: __expandSubspace() failed." );
-				break;
+				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "  Forcing findGoodStep." );
+				trialAction = "findGoodStep";
+				% Go outside switch.
 			endif
-			continue;
 		case "findGoodStep"
+			% Go below.
+		case "tryStep"
+			% Go below.
+		otherwise
+			error( "Invalid value of trialAction." );
+		endswitch
+		%
+		%
+		%
+		if ( strcmp(trialAction,"findGoodStep") )
 			% This is hack-ish, to allow this code to match conventional behavior, without in-loop step search.
 			[ vecX_trial, vecF_trial, stepConstraintDat_trial, fgs_datOut ] = __findGoodStep( funchF, vecX0, vecF0, localModelDat, stepConstraintDat, prm );
 			fevalCount += fgs_datOut.fevalCount;
@@ -88,11 +103,7 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 			stepConstrantDat = stepConstraintDat_trial; % Not that this assignment matters.
 			%
 			break;
-		case "tryStep"
-			% Go below.
-		otherwise
-			error( "Invalid value of trialAction." );
-		endswitch
+		endif
 		%
 		%
 		%
@@ -150,9 +161,11 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 	%
 	vecXF = vecX_best;
 	vecFF = vecF_best;
+	vecFModelF = __calcFModel( vecX_best, localModelDat, prm );
 	datOut.stepConstraintDat = stepConstraintDat;
 	datOut.preconDat = preconDat;
 	datOut.localModelDat = localModelDat; % Let someone externally updated the data to new point.
+	datOut.vecFModelF = vecFModelF;
 	datOut.fevalCount = fevalCount;
 return;
 endfunction
@@ -246,7 +259,7 @@ function trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, loca
 	%
 	%
 	% Crude placeholder...
-	dta_c0 = 0.1;
+	dta_c0 = mygetfield( prm, "dta_c0", 0.1 );
 	if ( norm(vecFModel_trial) < dta_c0 * norm(vecF0) )
 		%trialAction = "tryStep";
 		trialAction = "findGoodStep"; % This makes us stop expanding subspace, per traditional codes.
@@ -390,6 +403,7 @@ function [ vecX_next, vecF_next, stepConstraintDat_next, fgs_datOut ] = __findGo
 	setVerbLevs;
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	fevalCount = 0;
+	msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Performing __findGoodStep()." );
 	if (~isempty(stepConstraintDat))
 		error( "Step constraints are not yet supported!" );
 	endif
@@ -505,6 +519,10 @@ endfunction
 
 
 function vecFModel_trial = __calcFModel( vecX_trial, localModelDat, prm )
+	if (isempty(vecX_trial))
+		vecFModel_trial = [];
+		return;
+	endif
 	vecX0 = localModelDat.vecX0;
 	vecF0 = localModelDat.vecF0;
 	sizeX = size(vecX0,1);
