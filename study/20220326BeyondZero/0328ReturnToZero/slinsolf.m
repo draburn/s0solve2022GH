@@ -53,7 +53,7 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 		trialActionDat.vecX_best = vecX_best;
 		trialActionDat.vecF_best = vecF_best;
 		trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, localModelDat, trialActionDat, prm );
-		msg( __FILE__, __LINE__, sprintf( "trialAction = '%s'.", trialAction ) );
+		%msg( __FILE__, __LINE__, sprintf( "trialAction = '%s'.", trialAction ) );
 		switch (trialAction)
 		case "giveUp"
 			break;
@@ -66,7 +66,11 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 				continue;
 			else
 				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: __expandSubspace() failed." );
+				if (isempty(localModelDat.matV))
+					error( "__expandSubspate failed for first vector!" );
+				endif
 				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "  Forcing findGoodStep." );
+				msg( __FILE__, __LINE__, "Passing throuhg..." );
 				trialAction = "findGoodStep";
 				% Go outside switch.
 			endif
@@ -309,6 +313,12 @@ function [ localModelDat, ess_datOut ]  = __expandSubspace( funchF, localModelDa
 	%
 	assert( reldiff(matV'*matV,eye(size(matV,2)),eps) <= sqrt(eps) );
 	%
+	if (1)
+	matPhi = [];
+	matGamma = [];
+	sizePhi = 0;
+	matVTPhi = [];
+	else
 	[ matPhi, matGamma, pp_datOut ] = __phiPatch( funchF, vecX0, vecF0, matV, matW, matPhi, matGamma, prm );
 	fevalCount += pp_datOut.fevalCount;
 	sizePhi = size(matPhi,2);
@@ -318,6 +328,7 @@ function [ localModelDat, ess_datOut ]  = __expandSubspace( funchF, localModelDa
 		assert( reldiff(matPhi'*matPhi,eye(size(matPhi,2)),eps) <= sqrt(eps) );
 	endif
 	matVTPhi = matV'*matPhi;
+	endif
 	%
 	vecG = matW'*vecF0;
 	matWTW = matW'*matW;
@@ -352,15 +363,15 @@ endfunction
 %
 function vecV = __calcOrthonorm( vecV, matV, prm )
 	numPasses = 2;
-	v = norm(vecV);
-	if (0.0==v)
+	v0 = norm(vecV);
+	if (0.0==v0)
 		return;
 	endif
 	orthoTol = mygetfield( prm, "orthoTol", 1.0e-10 );
 	for n=1:numPasses
 		vecV -= matV*(matV'*vecV);
 		v = norm(vecV);
-		if ( v <= orthoTol )
+		if ( v <= orthoTol*v0 )
 			vecV(:) = 0.0;
 			return;
 		else
@@ -401,9 +412,9 @@ endfunction
 
 function [ vecX_next, vecF_next, stepConstraintDat_next, fgs_datOut ] = __findGoodStep( funchF, vecX0, vecF0, localModelDat, stepConstraintDat, prm )
 	setVerbLevs;
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	fevalCount = 0;
-	msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Performing __findGoodStep()." );
+	%msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Performing __findGoodStep()." );
 	if (~isempty(stepConstraintDat))
 		error( "Step constraints are not yet supported!" );
 	endif
@@ -413,7 +424,12 @@ function [ vecX_next, vecF_next, stepConstraintDat_next, fgs_datOut ] = __findGo
 	assert( isrealarray(vecX0,[sizeX,1]) );
 	assert( isrealarray(vecF0,[sizeF,1]) );
 	%
-	matV = localModelDat.matV;
+	matV = mygetfield( localModelDat, "matV", [] );
+	if (isempty(matV))
+		localModelDat
+		localModelDat.matV
+		error( "__findGoodStep() was reached with localModelDat.matV being empty. How is this possible?" );
+	endif
 	matH = localModelDat.matH;
 	vecG = localModelDat.vecG;
 	sizeV = size(matV,2);
