@@ -5,8 +5,9 @@
 
 % TODO:
 %  Analysis: OSQU with Phi and Gamma???
+%  Debug: 940+slinsolf is consistently worse; why?
 
-function [ vecXF, vecFF, datOut ] = findZero_904( vecX0, funchF, prm=[] )
+function [ vecXF, vecFF, datOut ] = findZero_940( vecX0, funchF, prm=[] )
 	time0 = time();
 	fevalCount = 0;
 	setVerbLevs;
@@ -180,6 +181,7 @@ function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut
 		return;
 	endif
 	fooF = vecF_next - vecFModel_next;
+	%%%fooF = vecF_next - ( vecF + matA*fooX );
 	matA += 2.0 * fooF * (fooX') / (fooX'*fooX);
 	% TODO: This OSQU may be wrong when already including phi & gamma.
 	%

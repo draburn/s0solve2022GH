@@ -12,7 +12,9 @@ setprngstates(48689984); % 904s are bad, others are good; note: even fsolve stal
 % Two past 48689984?: almost everything stalls.
 numFigs = 0;
 %
-sizeX = 150; sizeF = 150;
+%%%sizeX = 150; sizeF = 150;
+sizeX = 100; sizeF = 100;
+%%%sizeX = 50; sizeF = 50;
 %%%sizeX = 20; sizeF = 20;
 %
 vecXE = randn(sizeX,1);
