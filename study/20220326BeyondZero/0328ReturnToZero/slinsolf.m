@@ -65,11 +65,12 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 				break;
 			endif
 			continue;
-		case "findStep" % This is hack-ish, to match conventional behavior.
-			[ vecX_trial, vecF_trial, stepConstraintDat_step, fs_datOut ] = __findStep();
-			fevalCount += fs_datOut.fevalCount;
+		case "findGoodStep"
+			% This is hack-ish, to allow this code to match conventional behavior, without in-loop step search.
+			[ vecX_trial, vecF_trial, stepConstraintDat_trial, fgs_datOut ] = __findGoodStep( funchF, vecX0, vecF0, localModelDat, stepConstraintDat, prm );
+			fevalCount += fgs_datOut.fevalCount;
 			if (isempty(vecX_trial))
-				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: __findStep() returned []." );
+				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: __findGoodStep() returned []." );
 				break;
 			endif
 			%
@@ -82,8 +83,9 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 			if ( stepIsBest )
 				vecX_best = vecX_trial;
 				vecF_best = vecF_trial;
-				stepConstraintDat_best = stepConstraintDat;
+				stepConstraintDat_best = stepConstraintDat_trial;
 			endif
+			stepConstrantDat = stepConstraintDat_trial; % Not that this assignment matters.
 			%
 			break;
 		case "tryStep"
@@ -181,23 +183,8 @@ function vecX_trial = __calcDelta( localModelDat, stepConstraintDat, prm )
 	assert( isrealarray(matW,[sizeF,sizeV]) );
 	assert( reldiff(matV'*matV,eye(size(matV,2)),eps) <= sqrt(eps) );
 	%
-	vecG = matW'*vecF0;
-	matH = matW'*matW;
-	%
-	matVPhi = localModelDat.matVPhi;
-	matGamma = localModelDat.matGamma;
-	sizePhi = size(matVPhi,2);
-	if ( 0 < sizePhi )
-		assert( isrealarray(matVPhi,[sizeV,sizePhi]) );
-		assert( isrealarray(matGamma,[sizeF,sizePhi]) );
-		assert( reldiff(matVPhi'*matVPhi,eye(size(matVPhi,2)),eps) <= sqrt(eps) );
-		%
-		for n=1:sizePhi
-			%msgif( verbLev >= VERBLEV__NOTIFY, __FILE__, __LINE__, "Negative quad term." ); % Does not mean H will be NPD.
-			matH += (vecF0'*matGamma(:,n)) * matVPhi(:,n) * (matVPhi(:,n)');
-			%matH += abs(vecF0'*matGamma(:,n)) * matVPhi(:,n) * (matVPhi(:,n)');
-		endfor
-	endif
+	vecG = localModelDat.vecG;
+	matH = localModelDat.matH;
 	%
 	%
 	if ( mygetfield( prm, "useMarquardtScaling", false ) )
@@ -231,52 +218,6 @@ endfunction
 
 
 
-function vecFModel_trial = __calcFModel( vecX_trial, localModelDat, prm )
-	setVerbLevs;
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
-	%
-	vecX0 = localModelDat.vecX0;
-	vecF0 = localModelDat.vecF0;
-	sizeX = size(vecX0,1);
-	sizeF = size(vecF0,1);
-	assert( isrealarray(vecX0,[sizeX,1]) );
-	assert( isrealarray(vecF0,[sizeF,1]) );
-	%
-	matV = mygetfield( localModelDat, "matV", [] );
-	if (isempty(matV))
-		% We don't have a valid model (yet).
-		vecFModel_trial = [];
-		return;
-	endif
-	matW = localModelDat.matW;
-	sizeV = size(matV,2);
-	assert( 0 < sizeV );
-	assert( isrealarray(matV,[sizeX,sizeV]) );
-	assert( isrealarray(matW,[sizeF,sizeV]) );
-	assert( reldiff(matV'*matV,eye(size(matV,2)),eps) <= sqrt(eps) );
-	%
-	assert( isrealarray(vecX_trial,[sizeX,1]) );
-	vecD = vecX_trial - vecX0;
-	vecFModel_trial = vecF0 + matW*(matV'*vecD);
-	%
-	matPhi = localModelDat.matPhi;
-	matGamma = localModelDat.matGamma;
-	sizePhi = size(matPhi,2);
-	if ( 0 < sizePhi )
-		assert( isrealarray(matPhi,[sizeX,sizePhi]) );
-		assert( isrealarray(matGamma,[sizeF,sizePhi]) );
-		assert( reldiff(matPhi'*matPhi,eye(sizePhi),eps) <= sqrt(eps) );
-		assert( reldiff(matPhi'*matPhi,eye(size(matPhi,2)),eps) <= sqrt(eps) );
-		%
-		for n=1:sizePhi
-			vecFModel_trial += 0.5 * matGamma(:,n) * (matPhi(:,n)'*vecD)^2;
-		endfor
-	endif
-return;
-endfunction
-
-
-
 function trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, localModelDat, trialActionDat, prm )
 	setVerbLevs;
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
@@ -305,9 +246,10 @@ function trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, loca
 	%
 	%
 	% Crude placeholder...
-	dta_c0 = 0.01;
+	dta_c0 = 0.1;
 	if ( norm(vecFModel_trial) < dta_c0 * norm(vecF0) )
-		trialAction = "tryStep";
+		%trialAction = "tryStep";
+		trialAction = "findGoodStep"; % This makes us stop expanding subspace, per traditional codes.
 		return;
 	endif
 	trialAction = "expandSubspace";
@@ -350,17 +292,35 @@ function [ localModelDat, ess_datOut ]  = __expandSubspace( funchF, localModelDa
 	vecW = ( vecFP - vecF0 ) / (epsFD*norm(vecV));
 	matV = [ matV, vecV ];
 	matW = [ matW, vecW ];
+	sizeV = size(matV,2);
 	%
 	assert( reldiff(matV'*matV,eye(size(matV,2)),eps) <= sqrt(eps) );
 	%
 	[ matPhi, matGamma, pp_datOut ] = __phiPatch( funchF, vecX0, vecF0, matV, matW, matPhi, matGamma, prm );
 	fevalCount += pp_datOut.fevalCount;
+	sizePhi = size(matPhi,2);
+	if ( 0 < sizePhi )
+		assert( isrealarray(matPhi,[sizeX,sizePhi]) );
+		assert( isrealarray(matGamma,[sizeF,sizePhi]) );
+		assert( reldiff(matPhi'*matPhi,eye(size(matPhi,2)),eps) <= sqrt(eps) );
+	endif
+	matVTPhi = matV'*matPhi;
+	%
+	vecG = matW'*vecF0;
+	matWTW = matW'*matW;
+	matH = matWTW;
+	for n=1:sizePhi
+		matH += (vecF0'*matGamma(:,n)) * matVTPhi(:,n) * (matVTPhi(:,n)');
+	endfor
 	%
 	localModelDat.matV = matV;
 	localModelDat.matW = matW;
+	localModelDat.matWTW = matWTW;
 	localModelDat.matPhi = matPhi;
-	localModelDat.matVPhi = matV'*matPhi;
 	localModelDat.matGamma = matGamma;
+	localModelDat.matVTPhi = matVTPhi;
+	localModelDat.vecG = vecG;
+	localModelDat.matH = matH;
 	ess_datOut.fevalCount = fevalCount;
 return;
 endfunction
@@ -426,6 +386,105 @@ endfunction
 
 
 
+function [ vecX_next, vecF_next, stepConstraintDat_next, fgs_datOut ] = __findGoodStep( funchF, vecX0, vecF0, localModelDat, stepConstraintDat, prm )
+	setVerbLevs;
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	fevalCount = 0;
+	if (~isempty(stepConstraintDat))
+		error( "Step constraints are not yet supported!" );
+	endif
+	%
+	sizeX = size(vecX0,1);
+	sizeF = size(vecF0,1);
+	assert( isrealarray(vecX0,[sizeX,1]) );
+	assert( isrealarray(vecF0,[sizeF,1]) );
+	%
+	matV = localModelDat.matV;
+	matH = localModelDat.matH;
+	vecG = localModelDat.vecG;
+	sizeV = size(matV,2);
+	assert( 0 < sizeV );
+	%
+	%
+	matIV = eye(sizeV,sizeV);
+	if ( mygetfield( prm, "useMarquardtScaling", false ) )
+		hScale = sqrt(sum(sum(matH.^2))/sizeV);
+		matS_curve = diag( 1.0 ./ ( sqrt(abs(diag(matH))) + eps*hScale ) ); % Needs testing.
+		vecG_curve = matS_curve'*vecG;
+		matH_curve = calcHRegu( matS_curve'*matH*matS_curve );
+		funchYOfP = @(p)(matS_curve*( (p*matH_curve + (1.0-p)*matIV) \ (-p*vecG_curve) ));
+	else
+		matS_curve = eye(sizeV,sizeV);
+		vecG_curve = vecG;
+		matH_curve = calcHRegu( matH );
+		funchYOfP = @(p)(( (p*matH_curve + (1.0-p)*matIV) \ (-p*vecG_curve) ));
+	endif
+	%
+	dTreg = mygetfield( stepConstraintDat, "dTreg", [] ); % Is this right?
+	if (isempty(dTreg))
+		pMax = 1.0;
+	else
+		pMax = __findPOfDeltaNorm( dTreg, funchDeltaOfP  );
+	endif
+	vecY_pMax = funchYOfP( pMax );
+	vecX_pMax = vecX0 + matV*vecY_pMax;
+	vecFModel_pMax = __calcFModel( vecX_pMax, localModelDat, prm );
+	%
+	btMax = mygetfield( prm, "btMax", 30 );
+	deltaNormTol = mygetfield( prm, "deltaNormTol", 100.0*eps );
+	btCount = 0;
+	vecDelta_rejected = [];
+	p = pMax;
+	while (1)
+		vecY = funchYOfP( p );
+		vecDelta = matV*vecY;
+		vecX_next = vecX0 + vecDelta;
+		vecF_next = funchF( vecX_next );
+		fevalCount++;
+		%
+		if ( norm(vecF_next) < 0.5*norm(vecF0) + 0.5*norm(vecFModel_pMax) )
+			break;
+		endif
+		if ( norm(vecDelta) < deltaNormTol )
+			msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, "  step: IMPOSED STOP: norm(vecDelta) < deltaNormTol." );
+			break;
+		endif
+		btCount++;
+		if ( btCount > btMax )
+			msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, "  step: IMPOSED STOP: btCount > btMax." );
+			break;
+		endif
+		p /= 2.0;
+		vecDelta_rejected = vecDelta;
+		continue;
+	endwhile
+	if ( ~isempty(vecDelta_rejected) )
+		dTreg = min([ dTreg, norm(vecDelta_rejected) ]);
+		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "  step: Have a rejected step. Set dTreg = %0.3e.", dTreg ) )
+	endif
+	%
+	%
+	vecFModel_next = __calcFModel( vecX_next, localModelDat, prm );
+	rhoThresh0 = mygetfield( prm, "rhoThresh0", 0.05 );
+	rhoThresh1 = mygetfield( prm, "rhoThresh1", 0.30 );
+	rho = norm(vecF_next-vecFModel_next)/norm(vecF0);
+	if ( rho < rhoThresh0 )
+		% Model is very accurate at the point.
+		dTreg = max([ dTreg, 2.0*norm(vecDelta) ]);
+		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "  step: Model was very accurate. Set dTreg = %0.3e.", dTreg ) )
+	elseif ( rho > rhoThresh1 )
+		% Model was inaccurate at the point.
+		dTreg = min([ dTreg, norm(vecDelta) ]); % "min([ dTreg," should be superfluous.
+		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "  step: Model was very inaccurate. Set dTreg = %0.3e.", dTreg ) )
+	endif
+	%
+	stepConstraintDat_next.dTreg = dTreg;
+	fgs_datOut.fevalCount = fevalCount;
+return;
+endfunction
+
+
+
 function trialResult = __determineTrialResult( vecX_trial, vecF_trial, vecFModel_trial, localModelDat, prm )
 	% Crude placeholder...
 	vecF0 = localModelDat.vecF0;
@@ -436,5 +495,67 @@ function trialResult = __determineTrialResult( vecX_trial, vecF_trial, vecFModel
 	endif
 	trialResult = "bad";
 	return;
+return;
+endfunction
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RANDOM ACCESS FUNCTIONS
+%
+
+
+function vecFModel_trial = __calcFModel( vecX_trial, localModelDat, prm )
+	vecX0 = localModelDat.vecX0;
+	vecF0 = localModelDat.vecF0;
+	sizeX = size(vecX0,1);
+	sizeF = size(vecF0,1);
+	assert( isrealarray(vecX0,[sizeX,1]) );
+	assert( isrealarray(vecF0,[sizeF,1]) );
+	%
+	matV = mygetfield( localModelDat, "matV", [] );
+	if (isempty(matV))
+		% We don't have a valid model (yet).
+		vecFModel_trial = [];
+		return;
+	endif
+	matW = localModelDat.matW;
+	sizeV = size(matV,2);
+	assert( 0 < sizeV );
+	assert( isrealarray(matV,[sizeX,sizeV]) );
+	assert( isrealarray(matW,[sizeF,sizeV]) );
+	assert( reldiff(matV'*matV,eye(size(matV,2)),eps) <= sqrt(eps) );
+	%
+	assert( isrealarray(vecX_trial,[sizeX,1]) );
+	vecD = vecX_trial - vecX0;
+	vecFModel_trial = vecF0 + matW*(matV'*vecD);
+	%
+	matPhi = localModelDat.matPhi;
+	matGamma = localModelDat.matGamma;
+	sizePhi = size(matPhi,2);
+	if ( 0 < sizePhi )
+		assert( isrealarray(matPhi,[sizeX,sizePhi]) );
+		assert( isrealarray(matGamma,[sizeF,sizePhi]) );
+		assert( reldiff(matPhi'*matPhi,eye(sizePhi),eps) <= sqrt(eps) );
+		assert( reldiff(matPhi'*matPhi,eye(size(matPhi,2)),eps) <= sqrt(eps) );
+		%
+		for n=1:sizePhi
+			vecFModel_trial += 0.5 * matGamma(:,n) * (matPhi(:,n)'*vecD)^2;
+		endfor
+	endif
+return;
+endfunction
+
+
+function p = __findPOfDeltaNorm( deltaNormMax, funchDeltaOfP )
+	if (isempty(deltaNormMax))
+		p = 1.0;
+		return;
+	endif
+	fzero_fun = @(p_dummy)( norm(funchDeltaOfP(p_dummy)) - deltaNormMax );
+	if ( fzero_fun(1.0) <= 0.0 )
+		p = 1.0;
+		return;
+	endif
+	p = fzero( fzero_fun, [0.0, 1.0] );
 return;
 endfunction
