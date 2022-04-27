@@ -70,7 +70,6 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 					error( "__expandSubspate failed for first vector!" );
 				endif
 				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "  Forcing findGoodStep." );
-				msg( __FILE__, __LINE__, "Passing throuhg..." );
 				trialAction = "findGoodStep";
 				% Go outside switch.
 			endif
@@ -279,7 +278,7 @@ endfunction
 function [ localModelDat, ess_datOut ]  = __expandSubspace( funchF, localModelDat, preconDat, prm )
 	fevalCount = 0;
 	setVerbLevs;
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	%
 	sizeX = size(localModelDat.vecX0,1);
 	sizeF = size(localModelDat.vecF0,1);
@@ -346,6 +345,11 @@ function [ localModelDat, ess_datOut ]  = __expandSubspace( funchF, localModelDa
 	localModelDat.vecG = vecG;
 	localModelDat.matH = matH;
 	ess_datOut.fevalCount = fevalCount;
+	%
+	msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "  %10.3e,  %3d,  %3d;  %10.3e,  %10.3e;  %10.3e.", ...
+	  norm(vecF0), sizeV, sizePhi, ...
+	  rcond(matWTW), rcond(matH), ...
+	  norm(vecF0-matW*(matH\vecG)) ) );
 return;
 endfunction
 %

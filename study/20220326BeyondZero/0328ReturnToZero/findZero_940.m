@@ -62,6 +62,7 @@ function [ vecXF, vecFF, datOut ] = findZero_940( vecX0, funchF, prm=[] )
 		vecXF = [];
 		vecFF = [];
 		datOut.fevalCount = fevalCount;
+		datOut.iterCount = iterCount;
 		return;
 	endif
 	%
@@ -79,8 +80,9 @@ function [ vecXF, vecFF, datOut ] = findZero_940( vecX0, funchF, prm=[] )
 		datOut.vecXVals(:,iterCount+1) = vecX_next;
 		datOut.vecFVals(:,iterCount+1) = vecF_next;
 		%
-		msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( "  %10.3e, %4d, %5d;  %10.3e, %10.3e, %10.3e;  %10.3e, %10.3e, %10.3e.", ...
-		  time()-time0, iterCount, fevalCount, ...
+		sizeV = size( fModelDat_next.matV, 2 );
+		msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( "  %10.3e, %4d, %5d, %3d;  %10.3e, %10.3e, %10.3e;  %10.3e, %10.3e, %10.3e.", ...
+		  time()-time0, iterCount, fevalCount, sizeV,...
 		  norm(vecX_next-vecX0), norm(vecX_next-vecX0)-norm(vecX-vecX0), norm(vecX_next-vecX), ...
 		  norm(vecF_next), norm(vecF)-norm(vecF_next), norm(vecF-vecF_next) ) );
 		%
@@ -110,17 +112,14 @@ function [ vecXF, vecFF, datOut ] = findZero_940( vecX0, funchF, prm=[] )
 		%
 		%
 		%
-		step_tol = 0.1*norm(vecF)/norm(vecF0);
+		step_tol = max([ eps/norm(vecF), 0.1/norm(vecF0) ]);
 		step_prm = mygetfield( prm, "step_prm", [] );
 		[ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut ] = __findStep( funchF, vecX, vecF, fModelDat, stepSearchDat, step_tol, step_prm );
 		fevalCount += step_datOut.fevalCount;
 		%
-		if (isempty(vecX_next))
+		if (isempty(vecX_next)||isempty(fModelDat_next))
 			msg( __FILE__, __LINE__, "ALGORITHM BREAKDOWN: __findStep() failed." );
-			vecXF = [];
-			vecFF = [];
-			datOut.fevalCount = fevalCount;
-			return;
+			break;
 		endif
 	endwhile
 	%
@@ -158,6 +157,15 @@ function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut
 		step_datOut.fevalCount = fevalCount;
 		return;
 	endif
+	if ( norm(vecX_next-vecX) < eps )
+		msg( __FILE__, __LINE__, "ALGORITHM BREAKDOWN: slinsolf() failed." );
+		fModelDat_next = [];
+		stepSearchDat_next = [];
+		step_datOut = [];
+		step_datOut.slinsolf_datOut = slinsolf_datOut;
+		step_datOut.fevalCount = fevalCount;
+		return;
+	endif
 	%
 	%
 	%
@@ -177,9 +185,6 @@ function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut
 	endfor
 	% 3: "On-step quadratic update", which is like Broyden x 2.
 	fooX = vecX_next - vecX;
-	if ( norm(fooX) < eps )
-		return;
-	endif
 	fooF = vecF_next - vecFModel_next;
 	%%%fooF = vecF_next - ( vecF + matA*fooX );
 	matA += 2.0 * fooF * (fooX') / (fooX'*fooX);
@@ -191,6 +196,8 @@ function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut
 	%
 	fModelDat_next = [];
 	fModelDat_next.matA = matA;
+	fModelDat_next.matV = matV;
+	fModelDat_next.maPhi = matPhi;
 	%
 	stepSearchDat_next = [];
 	%
