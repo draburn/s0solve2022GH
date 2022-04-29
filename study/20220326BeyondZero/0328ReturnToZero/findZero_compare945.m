@@ -3,6 +3,7 @@ setVerbLevs;
 %setprngstates(0); %500x500 tricky.
 %setprngstates(90186240); %For 150x150 triggers levPull in slinsolf200.
 setprngstates(60288928); %200x200 stallz (except 800), triggers path in findZero_904
+%setprngstates();
 numFigs = 0;
 %
 %sizeX = 500; sizeF = 500;
