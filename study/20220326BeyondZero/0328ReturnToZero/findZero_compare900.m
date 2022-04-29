@@ -38,13 +38,6 @@ vecX0 = vecXE + 0.5*randn(sizeX,1);
 vecF0 = funchF(vecX0);
 Df = jacobs( vecX0, funchF );
 msg( __FILE__, __LINE__, sprintf( "rcond(Df'*Df) = %0.3e.", rcond(Df'*Df) ) );
-
-%
-timeSS = time();
-[ vecXF_fsolve, vecFF_fsolve, datOut_fsolve, ] = findZero_fsolve( vecX0, funchF );
-time_fsolve = time()-timeSS;
-msg( __FILE__, __LINE__, "fsolve results..." );
-msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "fsolve", norm(vecFF_fsolve), datOut_fsolve.iterCount, datOut_fsolve.fevalCount, time_fsolve ) );
 %
 prm = [];
 prm.iterMax = 50;
@@ -52,7 +45,15 @@ prm.slinsolfver = 200;
 timeSS = time();
 [ vecXF_940x200, vecFF_940x200, datOut_940x200 ] = findZero_940( vecX0, funchF, prm );
 time_940x200 = time()-timeSS;
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "940x200", norm(vecFF_940x200), datOut_940x200.iterCount, datOut_940x200.fevalCount, time_940x200 ) );
+
+%msg( __FILE__, __LINE__, "RETURN!" ); return;
 %
+timeSS = time();
+[ vecXF_fsolve, vecFF_fsolve, datOut_fsolve, ] = findZero_fsolve( vecX0, funchF );
+time_fsolve = time()-timeSS;
+msg( __FILE__, __LINE__, "fsolve results..." );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "fsolve", norm(vecFF_fsolve), datOut_fsolve.iterCount, datOut_fsolve.fevalCount, time_fsolve ) );
 %
 prm = [];
 prm.iterMax = 10;

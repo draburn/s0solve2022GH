@@ -158,7 +158,7 @@ endfunction
 
 function vecX_trial = __calcDelta( localModelDat, stepConstraintDat, prm )
 	setVerbLevs;
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	%
 	vecX0 = localModelDat.vecX0;
 	vecF0 = localModelDat.vecF0;
@@ -268,7 +268,7 @@ endfunction
 
 function trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, localModelDat, trialActionDat, prm )
 	setVerbLevs;
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	%
 	if (isempty(vecX_trial))
 		% We don't have a valid trial.
@@ -304,14 +304,23 @@ function trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, loca
 	endif
 	%
 	% Okay-ish placeholder...
+	vecFModel_newton = mygetfield( localModelDat, "vecFModel_newton", 0.0 );
 	dta_c0 = mygetfield( prm, "dta_c0", 0.1 );
-	if ( norm(vecFModel_trial) < dta_c0 * norm(vecF0) )
+	dta_c1 = mygetfield( prm, "dta_c1", 0.1 );
+	msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, ...
+	  sprintf( "dta_c0 = %10.3e, dta_c1 = %10.3e;  ||F0|| = %10.3e,  ||FM_n|| = %10.3e,  ||FM_t|| = %10.3e.", ...
+	  dta_c0, dta_c1, norm(vecF0), norm(vecFModel_newton), norm(vecFModel_trial) ) );
+	if ( norm(vecFModel_newton) > dta_c0 * norm(vecF0) )
+		trialAction = "expandSubspace";
+		return;
+	elseif ( norm(vecFModel_trial) > dta_c1 * norm(vecF0) )
+		trialAction = "expandSubspace";
+		return;
+	else
 		trialAction = "tryStep";
-		%trialAction = "findGoodStep"; % This makes us stop expanding subspace, per traditional codes.
 		return;
 	endif
-	trialAction = "expandSubspace";
-	return;
+	error( "Unreachable code." );
 return;
 endfunction
 
@@ -378,6 +387,7 @@ function [ localModelDat, ess_datOut ]  = __expandSubspace( funchF, localModelDa
 		matH += (vecF0'*matGamma(:,n)) * matVTPhi(:,n) * (matVTPhi(:,n)');
 	endfor
 	%
+	vecFModel_newton = vecF0-matW*(matH\vecG);
 	localModelDat.matV = matV;
 	localModelDat.matW = matW;
 	localModelDat.matWTW = matWTW;
@@ -386,12 +396,13 @@ function [ localModelDat, ess_datOut ]  = __expandSubspace( funchF, localModelDa
 	localModelDat.matVTPhi = matVTPhi;
 	localModelDat.vecG = vecG;
 	localModelDat.matH = matH;
+	localModelDat.vecFModel_newton = vecFModel_newton;
 	ess_datOut.fevalCount = fevalCount;
 	%
 	msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "  %10.3e,  %3d,  %3d;  %10.3e,  %10.3e;  %10.3e.", ...
 	  norm(vecF0), sizeV, sizePhi, ...
 	  rcond(matWTW), rcond(matH), ...
-	  norm(vecF0-matW*(matH\vecG)) ) );
+	  norm(vecFModel_newton) ) );
 return;
 endfunction
 %
