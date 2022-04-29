@@ -1,7 +1,7 @@
 function [ vecXF, vecFF, datOut ] = slinsolf100( funchF, vecX0, vecF0, prm, datIn )
 	% Parse input.
 	setVerbLevs;
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	fevalCount = 0;
 	sizeX = size(vecX0,1);
 	sizeF = size(vecF0,1);

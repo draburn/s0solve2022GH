@@ -123,6 +123,14 @@ function [ vecXF, vecFF, datOut ] = findZero_940( vecX0, funchF, prm=[] )
 		%
 		if (isempty(vecX_next)||isempty(fModelDat_next))
 			msg( __FILE__, __LINE__, "ALGORITHM BREAKDOWN: __findStep() failed." );
+			if (1)
+				iterCount++;
+				datOut.iterCountVals(iterCount+1) = iterCount;
+				datOut.fevalCountVals(iterCount+1) = fevalCount;
+				datOut.fNormVals(iterCount+1) = norm(vecF_best);
+				datOut.vecXVals(:,iterCount+1) = vecX_next;
+				datOut.vecFVals(:,iterCount+1) = vecF_next;
+			endif
 			break;
 		endif
 	endwhile

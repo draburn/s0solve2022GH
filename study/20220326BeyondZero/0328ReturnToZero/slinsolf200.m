@@ -4,7 +4,7 @@
 function [ vecXF, vecFF, datOut ] = slinsolf200( funchF, vecX0, vecF0, prm, datIn )
 	% Parse input.
 	setVerbLevs;
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	fevalCount = 0;
 	sizeX = size(vecX0,1);
 	sizeF = size(vecF0,1);
@@ -56,7 +56,7 @@ function [ vecXF, vecFF, datOut ] = slinsolf200( funchF, vecX0, vecF0, prm, datI
 		trialActionDat.vecX_best = vecX_best;
 		trialActionDat.vecF_best = vecF_best;
 		trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, localModelDat, trialActionDat, prm );
-		msg( __FILE__, __LINE__, sprintf( "trialAction = '%s'.", trialAction ) );
+		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "trialAction = '%s'.", trialAction ) );
 		switch (trialAction)
 		case "giveUp"
 			break;
@@ -116,8 +116,8 @@ function [ vecXF, vecFF, datOut ] = slinsolf200( funchF, vecX0, vecF0, prm, datI
 		%
 		vecF_trial = funchF( vecX_trial ); fevalCount++;
 		trialResult = __determineTrialResult( vecX_trial, vecF_trial, vecFModel_trial, localModelDat, prm );
-		msg( __FILE__, __LINE__, sprintf( "||F||: %g, %g, %g.", norm(vecF0), norm(vecFModel_trial), norm(vecF_trial) ) );
-		msg( __FILE__, __LINE__, sprintf( "trialResult = '%s'.", trialResult ) );
+		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "||F||: %g, %g, %g.", norm(vecF0), norm(vecFModel_trial), norm(vecF_trial) ) );
+		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "trialResult = '%s'.", trialResult ) );
 		%
 		trialIsNewBest = false;
 		if ( isempty(vecX_best) )
@@ -293,7 +293,16 @@ function trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, loca
 	%endif
 	%
 	%
-	% Crude placeholder...
+	matV = mygetfield( localModelDat, "matV", [] );
+	if (~isempty(matV))
+	if (size(matV,2)>=sizeX)
+		% More quad terms may be possible, but no more expanding to do.
+		trialAction = "tryStep";
+		return;
+	endif
+	endif
+	%
+	% Okay-ish placeholder...
 	dta_c0 = mygetfield( prm, "dta_c0", 0.1 );
 	if ( norm(vecFModel_trial) < dta_c0 * norm(vecF0) )
 		trialAction = "tryStep";
