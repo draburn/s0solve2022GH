@@ -11,7 +11,7 @@ setVerbLevs;
 %setprngstates(48689984); % 904s are bad, others are good; note: even fsolve stalls.
 % Two past 48689984?: almost everything stalls.
 %setprngstates(36693936); % Most stall, but not fzero.
-setprngstates(22931408);
+setprngstates(22931408); % 940x200 is bad for 150x150.
 %setprngstates();
 numFigs = 0;
 %
@@ -45,6 +45,21 @@ timeSS = time();
 time_fsolve = time()-timeSS;
 msg( __FILE__, __LINE__, "fsolve results..." );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "fsolve", norm(vecFF_fsolve), datOut_fsolve.iterCount, datOut_fsolve.fevalCount, time_fsolve ) );
+%
+prm = [];
+prm.iterMax = 50;
+prm.slinsolfver = 200;
+timeSS = time();
+[ vecXF_940x200, vecFF_940x200, datOut_940x200 ] = findZero_940( vecX0, funchF, prm );
+time_940x200 = time()-timeSS;
+%
+%
+prm = [];
+prm.iterMax = 10;
+prm.slinsolfver = 100;
+timeSS = time();
+[ vecXF_940, vecFF_940, datOut_940 ] = findZero_940( vecX0, funchF, prm );
+time_940 = time()-timeSS;
 %
 %
 %
@@ -90,21 +105,6 @@ prm.iterMax = 200;
 timeSS = time();
 [ vecXF_800, vecFF_800, datOut_800 ] = findZero_800( vecX0, funchF, prm );
 time_800 = time()-timeSS;
-%
-prm = [];
-prm.iterMax = 50;
-prm.slinsolfver = 200;
-timeSS = time();
-[ vecXF_940x200, vecFF_940x200, datOut_940x200 ] = findZero_940( vecX0, funchF, prm );
-time_940x200 = time()-timeSS;
-%
-%
-prm = [];
-prm.iterMax = 10;
-prm.slinsolfver = 100;
-timeSS = time();
-[ vecXF_940, vecFF_940, datOut_940 ] = findZero_940( vecX0, funchF, prm );
-time_940 = time()-timeSS;
 %
 %
 

@@ -73,7 +73,7 @@ function [ vecXF, vecFF, datOut ] = slinsolf200( funchF, vecX0, vecF0, prm, datI
 					error( "__expandSubspate failed for first vector!" );
 				endif
 				%trialAction = "findGoodStep";
-				trialAction = "tryStep";
+				trialAction = "findGoodStep";
 				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( "  Forcing '%s'.", trialAction ) );
 				% Go outside switch.
 			endif
@@ -96,13 +96,13 @@ function [ vecXF, vecFF, datOut ] = slinsolf200( funchF, vecX0, vecF0, prm, datI
 				break;
 			endif
 			%
-			stepIsBest = false;
+			fgsIsBest = false;
 			if ( isempty(vecX_best) )
-				stepIsBest = true;
-			elseif ( norm(vecF_step) < norm(vecF_best) )
-				stepIsBest = true;
+				fgsIsBest = true;
+			elseif ( norm(vecF_trial) < norm(vecF_best) )
+				fgsIsBest = true;
 			endif
-			if ( stepIsBest )
+			if ( fgsIsBest )
 				vecX_best = vecX_trial;
 				vecF_best = vecF_trial;
 				stepConstraintDat_best = stepConstraintDat_trial;
@@ -297,7 +297,8 @@ function trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, loca
 	if (~isempty(matV))
 	if (size(matV,2)>=sizeX)
 		% More quad terms may be possible, but no more expanding to do.
-		trialAction = "tryStep";
+		%trialAction = "tryStep";
+		trialAction = "findGoodStep";
 		return;
 	endif
 	endif
@@ -461,7 +462,7 @@ function [ vecX_next, vecF_next, stepConstraintDat_next, fgs_datOut ] = __findGo
 	fevalCount = 0;
 	%msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Performing __findGoodStep()." );
 	if (~isempty(stepConstraintDat))
-		error( "Step constraints are not yet supported!" );
+		msgif( verbLev >= VERBLEV__WARN, __FILE__, __LINE__, "WARNING: Incoming step constraints are not yet supported here." );
 	endif
 	%
 	sizeX = size(vecX0,1);

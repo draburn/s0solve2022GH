@@ -17,3 +17,4 @@ VERBLEV__MAIN = 500;
 VERBLEV__PROGRESS = 600;
 VERBLEV__COPIOUS = 700;
 VERBLEV__UNLIMITED = 800;
+% "warn" and "notify" are verbs, the rest aren't...
