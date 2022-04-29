@@ -129,7 +129,7 @@ function vecY = __getY( matW, vecB, prm=[] )
 	if ( 0==cholFlag && min(diag(matR)) > cholTol*max(abs(diag(matR))) )
 		matHRegu = matH;
 	else
-		matHRegu = matH + hNorm*sqrt(eps)*matIX;
+		matHRegu = matH + hNorm*sqrt(eps)*eye(sizeV,sizeV);
 		[ matR, cholFlag ] = chol(matHRegu);
 		assert( 0 == cholFlag );
 		assert( min(diag(matR)) > max(abs(diag(matR)))*cholTol );
