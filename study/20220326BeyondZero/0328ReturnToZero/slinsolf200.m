@@ -1,4 +1,7 @@
-function [ vecXF, vecFF, datOut ] = slinsolf100( funchF, vecX0, vecF0, prm, datIn )
+% slinsolf200: let's focus on trial steps & walls;
+%  de-prioritizing quadratic terms.
+
+function [ vecXF, vecFF, datOut ] = slinsolf200( funchF, vecX0, vecF0, prm, datIn )
 	% Parse input.
 	setVerbLevs;
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
@@ -116,56 +119,27 @@ function [ vecXF, vecFF, datOut ] = slinsolf100( funchF, vecX0, vecF0, prm, datI
 		msg( __FILE__, __LINE__, sprintf( "trialResult = '%s'.", trialResult ) );
 		%
 		switch (trialResult)
-		case "excellent"
-			% Update (loosen) SCD, then accept step.
-			stepConstraintDat = __updateSCD_excellent( vecX_trial, vecF_trial, vecFModel_trial, localModelDat, stepConstraintDat, prm );
-			vecX_best = vecX_trial;
-			vecF_best = vecF_trial;
-			stepConstraintDat_best = stepConstraintDat;
-			break;
 		case "good"
 			vecX_best = vecX_trial;
 			vecF_best = vecF_trial;
 			stepConstraintDat_best = stepConstraintDat;
 			break;
-		case "okay"
-			if ( ~isempty(vecX_best) )
-			if ( norm(vecF_best) < norm(vecF_trial) )
-				% Previous was better.
-				% Update SCD and return pre-existing best.
-				stepConstraintDat = __updateSCD_okay( vecX_trial, vecF_trial, vecFModel_trial, localModelDat, stepConstraintDat, prm );
-				stepConstraintDat_best = stepConstraintDat;
-				break;
-			endif
-			endif
-			% Update best *then* update SCD.
-			% Hence, _best might not satisfy SCD.
-			vecX_best = vecX_trial;
-			vecF_best = vecF_trial;
-			stepConstraintDat_best = stepConstraintDat;
-			stepConstraintDat = __updateSCD_okay( vecX_trial, vecF_trial, vecFModel_trial, localModelDat, stepConstraintDat, prm );
-			continue;
 		case "bad"
 			if ( ~isempty(vecX_best) )
+				% This may be inaccessible.
 				msgif( verbLev >= VERBLEV__NOTIFY, __FILE__, __LINE__, "Trial result was 'bad' even though a previous result was at least 'okay'." );
 			endif
 			stepConstraintDat = __updateSCD_bad( vecX_trial, vecF_trial, vecFModel_trial, localModelDat, stepConstraintDat, prm );
 			continue;
-		case "horrid"
-			if ( ~isempty(vecX_best) )
-				msgif( verbLev >= VERBLEV__NOTIFY, __FILE__, __LINE__, "Trial result was 'horrid' even though a previous result was at least 'okay'." );
-			endif
-			stepConstraintDat = __updateSCD_horrid( vecX_trial, localModelDat, stepConstraintDat, prm );
-			continue;
-		otherwise
-			error( "Invalid value of trialResult." );
 		endswitch
 		error( "Inaccessible code." );
 	endwhile
 	%
 	vecXF = vecX_best;
 	vecFF = vecF_best;
-	vecFModelF = __calcFModel( vecX_best, localModelDat, prm );
+	vecFModelF = __calcFModel( vecX_best, localModelDat, prm ); % Recalc to ensure in-sync with _best.
+	stepConstraintDat = stepConstraintDat_best
+	%
 	datOut.stepConstraintDat = stepConstraintDat;
 	datOut.preconDat = preconDat;
 	datOut.localModelDat = localModelDat; % Let someone externally updated the data to new point.
