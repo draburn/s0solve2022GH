@@ -39,6 +39,7 @@ msg( __FILE__, __LINE__, sprintf( "rcond(Df'*Df) = %0.3e.", rcond(Df'*Df) ) );
 %
 prm = [];
 prm.iterMax = 200;
+prm.slinsolfver = 100;
 timeSS = time();
 [ vecXF_940, vecFF_940, datOut_940 ] = findZero_940( vecX0, funchF, prm );
 time_940 = time()-timeSS;

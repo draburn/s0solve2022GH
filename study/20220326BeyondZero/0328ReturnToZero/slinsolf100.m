@@ -1,4 +1,4 @@
-function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
+function [ vecXF, vecFF, datOut ] = slinsolf100( funchF, vecX0, vecF0, prm, datIn )
 	% Parse input.
 	setVerbLevs;
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
@@ -139,6 +139,7 @@ function [ vecXF, vecFF, datOut ] = slinsolf( funchF, vecX0, vecF0, prm, datIn )
 			endif
 			endif
 			% Update best *then* update SCD.
+			% Hence, _best might not satisfy SCD.
 			vecX_best = vecX_trial;
 			vecF_best = vecF_trial;
 			stepConstraintDat_best = stepConstraintDat;

@@ -2,10 +2,12 @@
 %  9xx = approaching new JFNK (with phi-patch, etc),
 %   for prototyping structure and refereshing memory.
 %  940 = slisolf.
-
+%
+%  2022.04.28: Note that there is no coasting here.
 % TODO:
 %  Analysis: OSQU with Phi and Gamma???
-%  Debug: 940+slinsolf is consistently worse; why?
+
+
 
 function [ vecXF, vecFF, datOut ] = findZero_940( vecX0, funchF, prm=[] )
 	time0 = time();
@@ -54,6 +56,7 @@ function [ vecXF, vecFF, datOut ] = findZero_940( vecX0, funchF, prm=[] )
 	%
 	step_tol = sqrt(eps); % Use a tight solve on first iteration to get a large subspace.
 	step_prm = mygetfield( prm, "step_prm", [] );
+	step_prm.slinsolfver = mygetfield( prm, "slinsolfver", 100 );
 	stepSearchDat = [];
 	[ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut ] = __findStep( funchF, vecX, vecF, fModelDat, stepSearchDat, step_tol, step_prm );
 	fevalCount += step_datOut.fevalCount;
@@ -114,6 +117,7 @@ function [ vecXF, vecFF, datOut ] = findZero_940( vecX0, funchF, prm=[] )
 		%
 		step_tol = max([ eps/norm(vecF), 0.1/norm(vecF0) ]);
 		step_prm = mygetfield( prm, "step_prm", [] );
+		step_prm.slinsolfver = mygetfield( prm, "slinsolfver", 100 );
 		[ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut ] = __findStep( funchF, vecX, vecF, fModelDat, stepSearchDat, step_tol, step_prm );
 		fevalCount += step_datOut.fevalCount;
 		%
@@ -145,7 +149,12 @@ function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut
 	slinsolf_prm.dta_c0 = step_tol;
 	slinsolf_datIn = [];
 	slinsolf_datIn.preconDat.matA = matA;
-	[ vecX_next, vecF_next, slinsolf_datOut ] = slinsolf( funchF, vecX, vecF, slinsolf_prm, slinsolf_datIn );
+	switch (mygetfield(step_prm,"slinsolfver",100))
+	case 100
+		[ vecX_next, vecF_next, slinsolf_datOut ] = slinsolf100( funchF, vecX, vecF, slinsolf_prm, slinsolf_datIn );
+	otherwise
+		error( "Invalid slinsolfver." );
+	endswitch
 	fevalCount += slinsolf_datOut.fevalCount;
 	%
 	if (isempty(vecX_next))
