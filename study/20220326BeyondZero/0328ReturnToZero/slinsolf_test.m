@@ -18,6 +18,8 @@ funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (ma
 vecX0 = zeros(sizeX,1);
 vecF0 = funchF(vecX0);
 prm = [];
+prm.dta_c1 = 0.5;
+prm.dtr_c0 = 0.01;
 datIn = [];
 msg( __FILE__, __LINE__, "Calling slinsolf()..." );
 [ vecXF, vecFF, datOut ] = slinsolf200( funchF, vecX0, vecF0, prm, datIn );

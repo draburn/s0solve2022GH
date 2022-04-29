@@ -5,6 +5,7 @@ function [ vecXF, vecFF, datOut ] = slinsolf200( funchF, vecX0, vecF0, prm, datI
 	% Parse input.
 	setVerbLevs;
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	fevalCount = 0;
 	sizeX = size(vecX0,1);
 	sizeF = size(vecF0,1);
@@ -210,57 +211,116 @@ function vecX_trial = __calcDelta( localModelDat, stepConstraintDat, prm )
 	numWalls = mygetfield( stepConstraintDat, "numWalls", 0 );
 	funchYOfP = @(p)(matS_curve*( (p*matH_curve + (1.0-p)*matIV) \ (-p*vecG_curve) ));
 	%
-	% Generate points along curve, pull inwards to satisfy constraints, find best according to model.
-	% (An alteriative would be to use fminunc (or the constrained version, if available)
-	%  to find a/the min of the full quadratic F, but, this is good enough for now.
-	calcDeltaCurvePrm = mygetfield( prm, "calcDeltaCurvePrm", [] );
-	numPts = mygetfield( calcDeltaCurvePrm, "numPts", 101 );
-	pMax = mygetfield( calcDeltaCurvePrm, "pMax", 1.0 );
-	a0 = mygetfield( calcDeltaCurvePrm, "a0", 2.0 );
-	a1 = mygetfield( calcDeltaCurvePrm, "a1", 2.0 );
-	assert( isrealscalar(numPts) );
-	assert( isrealscalar(pMax) );
-	assert( isrealscalar(a0) );
-	assert( isrealscalar(a1) );
-	assert( 2 <= numPts );
-	assert( 0.0 < pMax );
-	%assert( pMax <= 1.0 );
-	assert( 0.0 < a0 );
-	assert( 0.0 < a1 );
-	%
-	foo = linspace( pMax, 0.0, numPts );
-	pOfPts = ( 1.0 - (foo.^a0) ).^a1;
-	%
-	p_best = 0.0;
-	vecY_best = zeros(sizeV,1);
-	vecFModel_best = vecF0;
-	for indexP = 2 : numPts
-		p = pOfPts(indexP);
-		vecY_raw = funchYOfP(p);
-		vecDelta_raw = matV*vecY_raw;
+	switch ( mygetfield(prm,"calcDeltaMethod","levPull_v100") )
+	case "levPull_v000"
+		% Generate points along curve, pull inwards to satisfy constraints, find best according to model.
+		% (An alteriative would be to use fminunc (or the constrained version, if available)
+		%  to find a/the min of the full quadratic F, but, this is good enough for now.
+		calcDeltaCurvePrm = mygetfield( prm, "calcDeltaCurvePrm", [] );
+		numPts = mygetfield( calcDeltaCurvePrm, "numPts", 101 );
+		pMax = mygetfield( calcDeltaCurvePrm, "pMax", 1.0 );
+		a0 = mygetfield( calcDeltaCurvePrm, "a0", 2.0 );
+		a1 = mygetfield( calcDeltaCurvePrm, "a1", 2.0 );
+		assert( isrealscalar(numPts) );
+		assert( isrealscalar(pMax) );
+		assert( isrealscalar(a0) );
+		assert( isrealscalar(a1) );
+		assert( 2 <= numPts );
+		assert( 0.0 < pMax );
+		%assert( pMax <= 1.0 );
+		assert( 0.0 < a0 );
+		assert( 0.0 < a1 );
 		%
-		vecDelta = vecDelta_raw;
-		for indexW = 1 : numWalls
-			vecDeltaOfWall = stepConstraintDat.vecDeltaOfWall(:,indexW);
-			s0 = vecDeltaOfWall'*vecDeltaOfWall;
-			assert( s0 > 0.0 );
-			s = vecDelta'*vecDeltaOfWall;
-			if ( s > s0 )
-				vecDelta *= s0/s;
+		foo = linspace( pMax, 0.0, numPts );
+		pOfPts = ( 1.0 - (foo.^a0) ).^a1;
+		%
+		p_best = 0.0;
+		vecY_best = zeros(sizeV,1);
+		vecFModel_best = vecF0;
+		for indexP = 2 : numPts
+			p = pOfPts(indexP);
+			vecY_raw = funchYOfP(p);
+			vecDelta_raw = matV*vecY_raw;
+			%
+			vecDelta = vecDelta_raw;
+			for indexW = 1 : numWalls
+				vecDeltaOfWall = stepConstraintDat.vecDeltaOfWall(:,indexW);
+				s0 = vecDeltaOfWall'*vecDeltaOfWall;
+				assert( s0 > 0.0 );
+				s = vecDelta'*vecDeltaOfWall;
+				if ( s > s0 )
+					vecDelta *= s0/s;
+				endif
+			endfor
+			%
+			vecX = vecX0 + vecDelta;
+			vecFModel = __calcFModel( vecX, localModelDat, prm );
+			%
+			if ( norm(vecFModel) < norm(vecFModel_best) )
+				p_best = p;
+				vecX_best = vecX;
+				vecFModel_best = vecFModel;
 			endif
 		endfor
 		%
-		vecX = vecX0 + vecDelta;
-		vecFModel = __calcFModel( vecX, localModelDat, prm );
+		vecX_trial = vecX_best;
+		return;
+	case "levPull_v100"
+		% Generate points along curve, pull inwards to satisfy constraints, find best according to model.
+		% (An alteriative would be to use fminunc (or the constrained version, if available)
+		%  to find a/the min of the full quadratic F, but, this is good enough for now.
+		% But, be faster!
+		calcDeltaCurvePrm = mygetfield( prm, "calcDeltaCurvePrm", [] );
+		numPts = mygetfield( calcDeltaCurvePrm, "numPts", 101 );
+		pMax = mygetfield( calcDeltaCurvePrm, "pMax", 1.0 );
+		a0 = mygetfield( calcDeltaCurvePrm, "a0", 2.0 );
+		a1 = mygetfield( calcDeltaCurvePrm, "a1", 2.0 );
+		assert( isrealscalar(numPts) );
+		assert( isrealscalar(pMax) );
+		assert( isrealscalar(a0) );
+		assert( isrealscalar(a1) );
+		assert( 2 <= numPts );
+		assert( 0.0 < pMax );
+		%assert( pMax <= 1.0 );
+		assert( 0.0 < a0 );
+		assert( 0.0 < a1 );
 		%
-		if ( norm(vecFModel) < norm(vecFModel_best) )
-			p_best = p;
-			vecX_best = vecX;
-			vecFModel_best = vecFModel;
+		foo = linspace( pMax, 0.0, numPts );
+		pOfPts = ( 1.0 - (foo.^a0) ).^a1;
+		pOfPts(1) = pOfPts(2)/numPts; % point is unused, but hack to avoid db zero.
+		muOfPts = (1.0-pOfPts)./pOfPts;
+		%
+		vecZOfPts = zeros(sizeV,numPts);
+		for indexP = 2 : numPts
+			matR = chol( matH_curve + muOfPts(indexP)*matIV ); % Two steps with chol() is slightly faster, AFAIK.
+			vecZOfPts =  matR \ ( matR' \ vecG ); % Note minus sign is missing.
+		endfor
+		vecYOfPts = -matS_curve*vecZOfPts;
+		% We could try to do constraints in Y space.
+		% But, POITROME.
+		%
+		vecDeltaOfPts = matV*vecYOfPts; % Needs constraints
+		if ( numWalls > 0 )
+			vecDeltaOfWalls = stepConstraintDat.vecDeltaOfWall;
+			s0OfWalls = sum(vecDeltaOfWalls.*vecDeltaOfWalls,1);
+			%
+			% Could probably do this witout the numWalls loop, but POITROME.
+			for indexW=1:numWalls
+				s1OfPts = vecDeltaOfWalls(:,indexW)'*vecDeltaOfPts;
+				vecDeltaOfPts += ( s1OfPts > s0OfWalls(indexW) ) .* vecDeltaOfPts .* ( s0OfWalls(indexW)./s1OfPts - 1.0 );
+			endfor
 		endif
-	endfor
-	%
-	vecX_trial = vecX_best;
+		%
+		%
+		vecFModelOfPts = __calcFModelOfDelta( vecDeltaOfPts, localModelDat, prm );
+		omegaModelOfPts = sum( vecFModelOfPts.*vecFModelOfPts, 1 );
+		[ omegaModel_best, indexP_best ] = min(omegaModelOfPts);
+		vecX_trial = vecX0 + vecDeltaOfPts(:,indexP_best);
+		return;
+	otherwise
+		error( "Invalid value of calcDeltaMethod." );
+	endswitch
+	error( "Unreachable code." );
 return;
 endfunction
 
@@ -645,6 +705,29 @@ function vecFModel_trial = __calcFModel( vecX_trial, localModelDat, prm )
 		%
 		for n=1:sizePhi
 			vecFModel_trial += 0.5 * matGamma(:,n) * (matPhi(:,n)'*vecD)^2;
+		endfor
+	endif
+return;
+endfunction
+
+
+function vecFModelOfPts = __calcFModelOfDelta( vecDeltaOfPts, localModelDat, prm )
+	if (isempty(vecDeltaOfPts))
+		vecFModel_trial = [];
+		return;
+	endif
+	matV = mygetfield( localModelDat, "matV", [] );
+	if (isempty(matV))
+		vecFModel_trial = [];
+		return;
+	endif
+	vecFModelOfPts = localModelDat.vecF0 + localModelDat.matW*(matV'*vecDeltaOfPts); % Automatic broadcasting.
+	matPhi = mygetfield( localModelDat, "matPhi", [] );
+	if (~isempty(matPhi))
+		sizePhi = size(matPhi,2);
+		matGammaO2 = localModelDat.matGamma / 2.0;
+		for n=1:sizePhi
+			vecFModelOfPts += matGammaO2 * (matPhi(:,n)'*vecDeltaOfPts).^2;
 		endfor
 	endif
 return;
