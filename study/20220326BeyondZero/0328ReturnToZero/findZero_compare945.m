@@ -1,31 +1,16 @@
 clear;
 setVerbLevs;
-%setprngstates(0);
-%setprngstates(90186240); %90186240 for 150x150. Some stall.
-%setprngstates(76252688); %76252688 for 150x150 causes div 0 in hack code in lisolf_directed.
-%setprngstates(53244560); % 550 very slow; 880 okay.
-%setprngstates(0); % 800 stalls but 550 does not.
-%setprngstates(9216528); % 800 stalls but 550 does not.
-%setprngstates(17374144); % 800 is weird but converges.
-%setprngstates(53858336); % 800 stalls but 550 does not.
-%setprngstates(48689984); % 904s are bad, others are good; note: even fsolve stalls.
-% Two past 48689984?: almost everything stalls.
-%setprngstates(36693936); % Most stall, but not fzero.
-%setprngstates(22931408); % 940x200 was bad for 150x150, pre-2022-04-29.
-setprngstates();
+setprngstates(0);
 numFigs = 0;
 %
-sizeX = 150; sizeF = 150;
-%%%sizeX = 100; sizeF = 100;
-%%%sizeX = 50; sizeF = 50;
-%%%sizeX = 20; sizeF = 20;
+sizeX = 500; sizeF = 500;
 %
 vecXE = randn(sizeX,1);
 matJE = diag(1.0+abs(randn(min([sizeF,sizeX]),1))) + 0.3*randn(sizeF,sizeX);
-matA0 = 0.0001*randn(sizeF,sizeX);
+matA0 = 1.0e-4*randn(sizeF,sizeX);
 matA1 = randn(sizeX,sizeX);
 matA2 = randn(sizeX,sizeX);
-matB0 = 0.0001*randn(sizeF,sizeX);
+matB0 = 1.0e-4*randn(sizeF,sizeX);
 matB1 = randn(sizeX,sizeX);
 matB2 = randn(sizeX,sizeX);
 matB3 = randn(sizeX,sizeX);
@@ -34,10 +19,10 @@ funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (ma
 msg( __FILE__, __LINE__, sprintf( "rcond(matJE'*matJE) = %0.3e.", rcond(matJE'*matJE) ) );
 %
 %vecX0 = zeros(sizeX,1);
-vecX0 = vecXE + 0.5*randn(sizeX,1);
+vecX0 = vecXE + 1.0e-1*randn(sizeX,1);
 vecF0 = funchF(vecX0);
-Df = jacobs( vecX0, funchF );
-msg( __FILE__, __LINE__, sprintf( "rcond(Df'*Df) = %0.3e.", rcond(Df'*Df) ) );
+%Df = jacobs( vecX0, funchF );
+%msg( __FILE__, __LINE__, sprintf( "rcond(Df'*Df) = %0.3e.", rcond(Df'*Df) ) );
 
 
 timeSS = time();
@@ -45,11 +30,10 @@ timeSS = time();
 time_fsolve = time()-timeSS;
 msg( __FILE__, __LINE__, "fsolve results..." );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "fsolve", norm(vecFF_fsolve), datOut_fsolve.iterCount, datOut_fsolve.fevalCount, time_fsolve ) );
-msg( __FILE__, __LINE__, "RETURN!" ); return;
 
 
 prm = [];
-prm.iterMax = 50;
+prm.iterMax = 100;
 prm.slinsolfver = 200;
 timeSS = time();
 [ vecXF_940x200, vecFF_940x200, datOut_940x200 ] = findZero_940( vecX0, funchF, prm );
@@ -70,7 +54,7 @@ time_940 = time()-timeSS;
 prm = [];
 prm.step_prm.usePostLinsolfPhiPatch = false;
 prm.iterMax = 5;
-prm.iterMax = 200;
+prm.iterMax = 100;
 timeSS = time();
 [ vecXF_904, vecFF_904, datOut_904 ] = findZero_904( vecX0, funchF, prm );
 time_904 = time()-timeSS;
@@ -79,7 +63,7 @@ time_904 = time()-timeSS;
 prm = [];
 prm.step_prm.usePostLinsolfPhiPatch = true;
 prm.iterMax = 5;
-prm.iterMax = 200;
+prm.iterMax = 100;
 timeSS = time();
 [ vecXF_904x, vecFF_904x, datOut_904x ] = findZero_904( vecX0, funchF, prm );
 time_904x = time()-timeSS;
@@ -97,7 +81,7 @@ time_444x = time()-timeSS;
 %
 %
 prm = [];
-prm.iterMax = 200;
+prm.iterMax = 100;
 prm.linsolf_tol0 = 0.01;
 timeSS = time();
 [ vecXF_900, vecFF_900, datOut_900 ] = findZero_900( vecX0, funchF, prm );
@@ -105,7 +89,7 @@ time_900 = time()-timeSS;
 %
 %
 prm = [];
-prm.iterMax = 200;
+prm.iterMax = 100;
 timeSS = time();
 [ vecXF_800, vecFF_800, datOut_800 ] = findZero_800( vecX0, funchF, prm );
 time_800 = time()-timeSS;
