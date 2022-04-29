@@ -152,6 +152,8 @@ function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut
 	switch (mygetfield(step_prm,"slinsolfver",100))
 	case 100
 		[ vecX_next, vecF_next, slinsolf_datOut ] = slinsolf100( funchF, vecX, vecF, slinsolf_prm, slinsolf_datIn );
+	case 200
+		[ vecX_next, vecF_next, slinsolf_datOut ] = slinsolf200( funchF, vecX, vecF, slinsolf_prm, slinsolf_datIn );
 	otherwise
 		error( "Invalid slinsolfver." );
 	endswitch

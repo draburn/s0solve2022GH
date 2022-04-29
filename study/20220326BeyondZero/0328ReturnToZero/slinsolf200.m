@@ -56,7 +56,7 @@ function [ vecXF, vecFF, datOut ] = slinsolf200( funchF, vecX0, vecF0, prm, datI
 		trialActionDat.vecX_best = vecX_best;
 		trialActionDat.vecF_best = vecF_best;
 		trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, localModelDat, trialActionDat, prm );
-		%msg( __FILE__, __LINE__, sprintf( "trialAction = '%s'.", trialAction ) );
+		msg( __FILE__, __LINE__, sprintf( "trialAction = '%s'.", trialAction ) );
 		switch (trialAction)
 		case "giveUp"
 			break;
@@ -68,12 +68,13 @@ function [ vecXF, vecFF, datOut ] = slinsolf200( funchF, vecX0, vecF0, prm, datI
 				localModelDat = localModelDat_new;
 				continue;
 			else
-				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: __expandSubspace() failed." );
+				%msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: __expandSubspace() failed." );
 				if (isempty(localModelDat.matV))
 					error( "__expandSubspate failed for first vector!" );
 				endif
-				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "  Forcing findGoodStep." );
-				trialAction = "findGoodStep";
+				%trialAction = "findGoodStep";
+				trialAction = "tryStep";
+				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( "  Forcing '%s'.", trialAction ) );
 				% Go outside switch.
 			endif
 		case "findGoodStep"
@@ -118,18 +119,23 @@ function [ vecXF, vecFF, datOut ] = slinsolf200( funchF, vecX0, vecF0, prm, datI
 		msg( __FILE__, __LINE__, sprintf( "||F||: %g, %g, %g.", norm(vecF0), norm(vecFModel_trial), norm(vecF_trial) ) );
 		msg( __FILE__, __LINE__, sprintf( "trialResult = '%s'.", trialResult ) );
 		%
-		switch (trialResult)
-		case "good"
+		trialIsNewBest = false;
+		if ( isempty(vecX_best) )
+			trialIsNewBest = true;
+		elseif ( norm(vecF_trial) < norm(vecF_best) )
+			trialIsNewBest = true;
+		endif
+		if (trialIsNewBest)
 			vecX_best = vecX_trial;
 			vecF_best = vecF_trial;
 			stepConstraintDat_best = stepConstraintDat;
+		endif
+		%
+		switch (trialResult)
+		case "accept"
 			break;
-		case "bad"
-			if ( ~isempty(vecX_best) )
-				% This may be inaccessible.
-				msgif( verbLev >= VERBLEV__NOTIFY, __FILE__, __LINE__, "Trial result was 'bad' even though a previous result was at least 'okay'." );
-			endif
-			stepConstraintDat = __updateSCD_bad( vecX_trial, vecF_trial, vecFModel_trial, localModelDat, stepConstraintDat, prm );
+		case "reject"
+			stepConstraintDat = __updateSCD_addWall( vecX_trial, vecF_trial, vecFModel_trial, localModelDat, stepConstraintDat, prm );
 			continue;
 		endswitch
 		error( "Inaccessible code." );
@@ -138,7 +144,7 @@ function [ vecXF, vecFF, datOut ] = slinsolf200( funchF, vecX0, vecF0, prm, datI
 	vecXF = vecX_best;
 	vecFF = vecF_best;
 	vecFModelF = __calcFModel( vecX_best, localModelDat, prm ); % Recalc to ensure in-sync with _best.
-	stepConstraintDat = stepConstraintDat_best
+	stepConstraintDat = stepConstraintDat_best;
 	%
 	datOut.stepConstraintDat = stepConstraintDat;
 	datOut.preconDat = preconDat;
@@ -176,34 +182,85 @@ function vecX_trial = __calcDelta( localModelDat, stepConstraintDat, prm )
 	%
 	vecG = localModelDat.vecG;
 	matH = localModelDat.matH;
+	hScale = sqrt(sum(sum(matH.^2))/sizeV);
+	matIV = eye(sizeV,sizeV);
 	%
 	%
 	if ( mygetfield( prm, "useMarquardtScaling", false ) )
-		hScale = sqrt(sum(sum(matH.^2))/sizeV);
 		matS_curve = diag( 1.0 ./ ( sqrt(abs(diag(matH))) + eps*hScale ) ); % Needs testing.
-		vecG_curve = matS_curve'*vecG;
-		matH_curve = calcHRegu( matS_curve'*matH*matS_curve );
-		%
-		pCauchy = calcLinishRootOfQuad( 0.5*(vecG_curve'*matH_curve*vecG_curve), -sumsq(vecG_curve), sumsq(vecF0)/2.0 );
-		assert( pCauchy >= 0.0 );
-		vecDeltaCauchy = pCauchy*matS_curve*(-vecG_curve); % Needs testing.
-		vecDeltaNewton = matS_curve*(matH_curve\(-vecG_curve));
 	else
-		vecG_curve = vecG;
-		matH_curve = calcHRegu( matH );
-		pCauchy = calcLinishRootOfQuad( 0.5*(vecG_curve'*matH_curve*vecG_curve), -sumsq(vecG_curve), sumsq(vecF0)/2.0 );
-		assert( pCauchy >= 0.0 );
-		vecDeltaCauchy = pCauchy*(-vecG_curve); % Needs testing.
-		vecDeltaNewton = matH_curve\(-vecG_curve);
+		matS_curve = matIV;
 	endif
 	%
 	%
-	% Crude placeholder...
-	if (~isempty(stepConstraintDat))
-		error( "Step constraints are not yet supported!" );
+	vecG_curve = matS_curve'*vecG;
+	matH_curve = calcHRegu( matS_curve'*matH*matS_curve );
+	%
+	pCauchy = calcLinishRootOfQuad( 0.5*(vecG_curve'*matH_curve*vecG_curve), -sumsq(vecG_curve), sumsq(vecF0)/2.0 );
+	assert( pCauchy >= 0.0 );
+	vecDeltaCauchy = pCauchy*matS_curve*(-vecG_curve); % Needs testing.
+	vecDeltaNewton = matS_curve*(matH_curve\(-vecG_curve));
+	%
+	if ( isempty(stepConstraintDat) )
+		vecX_trial = vecX0 + matV * vecDeltaNewton;
+		return;
 	endif
-	vecX_trial = vecX0 + matV*vecDeltaNewton;
-	%vecX_trial = vecX0 + 0.01*matV*vecDeltaCauchy; % HACK.
+	%
+	%
+	numWalls = mygetfield( stepConstraintDat, "numWalls", 0 );
+	funchYOfP = @(p)(matS_curve*( (p*matH_curve + (1.0-p)*matIV) \ (-p*vecG_curve) ));
+	%
+	% Generate points along curve, pull inwards to satisfy constraints, find best according to model.
+	% (An alteriative would be to use fminunc (or the constrained version, if available)
+	%  to find a/the min of the full quadratic F, but, this is good enough for now.
+	calcDeltaCurvePrm = mygetfield( prm, "calcDeltaCurvePrm", [] );
+	numPts = mygetfield( calcDeltaCurvePrm, "numPts", 101 );
+	pMax = mygetfield( calcDeltaCurvePrm, "pMax", 1.0 );
+	a0 = mygetfield( calcDeltaCurvePrm, "a0", 2.0 );
+	a1 = mygetfield( calcDeltaCurvePrm, "a1", 2.0 );
+	assert( isrealscalar(numPts) );
+	assert( isrealscalar(pMax) );
+	assert( isrealscalar(a0) );
+	assert( isrealscalar(a1) );
+	assert( 2 <= numPts );
+	assert( 0.0 < pMax );
+	%assert( pMax <= 1.0 );
+	assert( 0.0 < a0 );
+	assert( 0.0 < a1 );
+	%
+	foo = linspace( pMax, 0.0, numPts );
+	pOfPts = ( 1.0 - (foo.^a0) ).^a1;
+	%
+	p_best = 0.0;
+	vecY_best = zeros(sizeV,1);
+	vecFModel_best = vecF0;
+	for indexP = 2 : numPts
+		p = pOfPts(indexP);
+		vecY_raw = funchYOfP(p);
+		vecDelta_raw = matV*vecY_raw;
+		%
+		vecDelta = vecDelta_raw;
+		for indexW = 1 : numWalls
+			vecDeltaOfWall = stepConstraintDat.vecDeltaOfWall(:,indexW);
+			s0 = vecDeltaOfWall'*vecDeltaOfWall;
+			assert( s0 > 0.0 );
+			s = vecDelta'*vecDeltaOfWall;
+			if ( s > s0 )
+				vecDelta *= s0/s;
+			endif
+		endfor
+		%
+		vecX = vecX0 + vecDelta;
+		vecFModel = __calcFModel( vecX, localModelDat, prm );
+		%
+		if ( norm(vecFModel) < norm(vecFModel_best) )
+			p_best = p;
+			vecX_best = vecX;
+			vecFModel_best = vecFModel;
+		endif
+	endfor
+	%
+	vecX_trial = vecX_best;
 return;
 endfunction
 
@@ -239,8 +296,8 @@ function trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, loca
 	% Crude placeholder...
 	dta_c0 = mygetfield( prm, "dta_c0", 0.1 );
 	if ( norm(vecFModel_trial) < dta_c0 * norm(vecF0) )
-		%trialAction = "tryStep";
-		trialAction = "findGoodStep"; % This makes us stop expanding subspace, per traditional codes.
+		trialAction = "tryStep";
+		%trialAction = "findGoodStep"; % This makes us stop expanding subspace, per traditional codes.
 		return;
 	endif
 	trialAction = "expandSubspace";
@@ -497,13 +554,27 @@ endfunction
 function trialResult = __determineTrialResult( vecX_trial, vecF_trial, vecFModel_trial, localModelDat, prm )
 	% Crude placeholder...
 	vecF0 = localModelDat.vecF0;
-	dtr_c0 = 0.9;
+	dtr_c0 = mygetfield( prm, "dtr_c0", 0.9 );
 	if ( norm(vecF_trial) < dtr_c0*norm(vecF0) + (1.0-dtr_c0)*norm(vecFModel_trial) )
-		trialResult = "good";
+		trialResult = "accept";
 		return;
 	endif
-	trialResult = "bad";
+	trialResult = "reject";
 	return;
+return;
+endfunction
+
+
+
+function stepConstraintDat = __updateSCD_addWall( vecX_trial, vecF_trial, vecFModel_trial, localModelDat, stepConstraintDat, prm )
+	wallBTFactor = mygetfield( prm, "wallBTFactor", 0.5 );
+	assert( wallBTFactor < 1.0 );
+	assert( wallBTFactor > 0.0 );
+	vecX0 = localModelDat.vecX0;
+	numWalls = mygetfield( stepConstraintDat, "numWalls", 0 );
+	numWalls++;
+	stepConstraintDat.numWalls = numWalls;
+	stepConstraintDat.vecDeltaOfWall(:,numWalls) = wallBTFactor*(vecX_trial-vecX0);
 return;
 endfunction
 
@@ -553,6 +624,32 @@ function vecFModel_trial = __calcFModel( vecX_trial, localModelDat, prm )
 		%
 		for n=1:sizePhi
 			vecFModel_trial += 0.5 * matGamma(:,n) * (matPhi(:,n)'*vecD)^2;
+		endfor
+	endif
+return;
+endfunction
+
+
+function vecFModel_trial = __calcFModelOfY( vecY, localModelDat, prm )
+	if (isempty(vecX_trial))
+		vecFModel_trial = [];
+		return;
+	endif
+	%
+	matV = mygetfield( localModelDat, "matV", [] );
+	if (isempty(matV))
+		% We don't have a valid model (yet).
+		vecFModel_trial = [];
+		return;
+	endif
+	%
+	vecFModel_trial = localModelDat.vecF0 + localModelDat.matW*vecY;
+	%
+	matVPhi = mygetfield( localModelDat, "matVPhi", [] );
+	if (~isempty(matVPhi))
+		sizePhi = size(localModelDat.matVPhi,2);
+		for n=1:sizePhi
+			vecFModel_trial += 0.5 * localModelDat.matGamma(:,n) * (localModelDat.matVPhi(:,n)'*vecY)^2;
 		endfor
 	endif
 return;

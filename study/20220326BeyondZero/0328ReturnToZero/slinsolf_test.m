@@ -1,7 +1,7 @@
 clear;
 setprngstates(0);
 %
-sizeX = 3; sizeF = 3;
+sizeX = 50; sizeF = 50;
 vecXE = randn(sizeX,1);
 matJE = diag(1.0+abs(randn(min([sizeF,sizeX]),1))) + 0.3*randn(sizeF,sizeX);
 matA0 = 0.0001*randn(sizeF,sizeX);
@@ -20,8 +20,10 @@ vecF0 = funchF(vecX0);
 prm = [];
 datIn = [];
 msg( __FILE__, __LINE__, "Calling slinsolf()..." );
-[ vecXF, vecFF, datOut ] = slinsolf100( funchF, vecX0, vecF0, prm, datIn );
+[ vecXF, vecFF, datOut ] = slinsolf200( funchF, vecX0, vecF0, prm, datIn );
 msg( __FILE__, __LINE__, "Returned from slinsolf()." );
-[ vecX0, vecXF ]
-[ vecF0, vecFF ]
+vecFF = funchF(vecXF);
+[ norm(vecF0), norm(vecFF) ]
+%[ vecX0, vecXF ]
+%[ vecF0, vecFF ]
 msg( __FILE__, __LINE__, "Goodbye." );
