@@ -102,6 +102,9 @@ function [ vecXF, vecFF, datOut ] = findZero_940( vecX0, funchF, prm=[] )
 		elseif ( iterCount >= iterMax )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: iterCount >= iterMax." );
 			break;
+		elseif ( stopsignalpresent() )
+			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: stopsignalpresent" );
+			break;
 		endif
 		vecX = vecX_next;
 		vecF = vecF_next;

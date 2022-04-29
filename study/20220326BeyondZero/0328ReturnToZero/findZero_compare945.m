@@ -1,9 +1,11 @@
 clear;
 setVerbLevs;
 setprngstates(0);
+%setprngstates(90186240); %For 150x150 triggers levPull in slinsolf200.
 numFigs = 0;
 %
 sizeX = 500; sizeF = 500;
+%sizeX = 150; sizeF = 150;
 %
 vecXE = randn(sizeX,1);
 matJE = diag(1.0+abs(randn(min([sizeF,sizeX]),1))) + 0.3*randn(sizeF,sizeX);
@@ -39,6 +41,14 @@ timeSS = time();
 [ vecXF_940x200, vecFF_940x200, datOut_940x200 ] = findZero_940( vecX0, funchF, prm );
 time_940x200 = time()-timeSS;
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "940x200", norm(vecFF_940x200), datOut_940x200.iterCount, datOut_940x200.fevalCount, time_940x200 ) );
+
+
+if (stopsignalpresent())
+	msg( __FILE__, __LINE__, "Received stop signal." );
+	return;
+endif
+
+%msg( __FILE__, __LINE__, "Goodbye!" ); return;
 
 
 

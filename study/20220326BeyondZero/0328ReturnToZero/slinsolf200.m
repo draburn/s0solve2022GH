@@ -6,6 +6,7 @@ function [ vecXF, vecFF, datOut ] = slinsolf200( funchF, vecX0, vecF0, prm, datI
 	setVerbLevs;
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	debugMode = mygetfield( prm, "debugMode", false );
 	fevalCount = 0;
 	sizeX = size(vecX0,1);
 	sizeF = size(vecF0,1);
@@ -160,13 +161,16 @@ endfunction
 function vecX_trial = __calcDelta( localModelDat, stepConstraintDat, prm )
 	setVerbLevs;
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
+	debugMode = mygetfield( prm, "debugMode", false );
 	%
 	vecX0 = localModelDat.vecX0;
 	vecF0 = localModelDat.vecF0;
 	sizeX = size(vecX0,1);
 	sizeF = size(vecF0,1);
-	assert( isrealarray(vecX0,[sizeX,1]) );
-	assert( isrealarray(vecF0,[sizeF,1]) );
+	if (debugMode)
+		assert( isrealarray(vecX0,[sizeX,1]) );
+		assert( isrealarray(vecF0,[sizeF,1]) );
+	endif
 	%
 	matV = mygetfield( localModelDat, "matV", [] );
 	if (isempty(matV))
@@ -176,10 +180,12 @@ function vecX_trial = __calcDelta( localModelDat, stepConstraintDat, prm )
 	endif
 	matW = localModelDat.matW;
 	sizeV = size(matV,2);
-	assert( 0 < sizeV );
-	assert( isrealarray(matV,[sizeX,sizeV]) );
-	assert( isrealarray(matW,[sizeF,sizeV]) );
-	assert( reldiff(matV'*matV,eye(size(matV,2)),eps) <= sqrt(eps) );
+	if (debugMode)
+		assert( 0 < sizeV );
+		assert( isrealarray(matV,[sizeX,sizeV]) );
+		assert( isrealarray(matW,[sizeF,sizeV]) );
+		assert( reldiff(matV'*matV,eye(size(matV,2)),eps) <= sqrt(eps) );
+	endif
 	%
 	vecG = localModelDat.vecG;
 	matH = localModelDat.matH;
@@ -329,10 +335,15 @@ endfunction
 function trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, localModelDat, trialActionDat, prm )
 	setVerbLevs;
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
+	debugMode = mygetfield( prm, "debugMode", false );
 	%
 	if (isempty(vecX_trial))
 		% We don't have a valid trial.
 		trialAction = "expandSubspace";
+		return;
+	elseif (stopsignalpresent())
+		msgif( verbLev >= VERBLEV__NOTIFY, __FILE__, __LINE__, "Received stop signal." );
+		trialAction = "giveUp";
 		return;
 	endif
 	%
@@ -340,10 +351,12 @@ function trialAction = __determineTrialAction( vecX_trial, vecFModel_trial, loca
 	vecF0 = localModelDat.vecF0;
 	sizeX = size(vecX0,1);
 	sizeF = size(vecF0,1);
-	assert( isrealarray(vecX0,[sizeX,1]) );
-	assert( isrealarray(vecF0,[sizeF,1]) );
-	assert( isrealarray(vecX_trial,[sizeX,1]) );
-	assert( isrealarray(vecFModel_trial,[sizeF,1]) );
+	if (debugMode)
+		assert( isrealarray(vecX0,[sizeX,1]) );
+		assert( isrealarray(vecF0,[sizeF,1]) );
+		assert( isrealarray(vecX_trial,[sizeX,1]) );
+		assert( isrealarray(vecFModel_trial,[sizeF,1]) );
+	endif
 	%
 	%vecX_best = mygetfield( trialActionDat, "vecX_best", [] );
 	%if (~isempty(vecX_best))
@@ -390,6 +403,7 @@ function [ localModelDat, ess_datOut ]  = __expandSubspace( funchF, localModelDa
 	fevalCount = 0;
 	setVerbLevs;
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
+	debugMode = mygetfield( prm, "debugMode", false );
 	%
 	sizeX = size(localModelDat.vecX0,1);
 	sizeF = size(localModelDat.vecF0,1);
@@ -421,7 +435,9 @@ function [ localModelDat, ess_datOut ]  = __expandSubspace( funchF, localModelDa
 	matW = [ matW, vecW ];
 	sizeV = size(matV,2);
 	%
-	assert( reldiff(matV'*matV,eye(size(matV,2)),eps) <= sqrt(eps) );
+	if (debugMode)
+		assert( reldiff(matV'*matV,eye(size(matV,2)),eps) <= sqrt(eps) );
+	endif
 	%
 	if (1)
 	matPhi = [];
@@ -433,9 +449,11 @@ function [ localModelDat, ess_datOut ]  = __expandSubspace( funchF, localModelDa
 	fevalCount += pp_datOut.fevalCount;
 	sizePhi = size(matPhi,2);
 	if ( 0 < sizePhi )
+		if (debugMode)
 		assert( isrealarray(matPhi,[sizeX,sizePhi]) );
 		assert( isrealarray(matGamma,[sizeF,sizePhi]) );
 		assert( reldiff(matPhi'*matPhi,eye(size(matPhi,2)),eps) <= sqrt(eps) );
+		endif
 	endif
 	matVTPhi = matV'*matPhi;
 	endif
@@ -499,12 +517,15 @@ return;
 endfunction
 %
 function [ matPhi, matGamma, pp_datOut ] = __phiPatch( funchF, vecX0, vecF0, matV, matW, matPhi, matGamma, prm )
+	debugMode = mygetfield( prm, "debugMode", false );
 	fevalCount = 0;
 	sizeF = size(vecF0,1);
 	sizeV = size(matV,2);
 	matWTW = matW'*matW;
 	[ matPsi, matLambda ] = eig( matWTW );
-	assert( isrealarray(matPsi,[sizeV,sizeV]) );
+	if (debugMode)
+		assert( isrealarray(matPsi,[sizeV,sizeV]) );
+	endif
 	%
 	% Re-patch everything for now.
 	%
@@ -530,6 +551,7 @@ endfunction
 function [ vecX_next, vecF_next, stepConstraintDat_next, fgs_datOut ] = __findGoodStep( funchF, vecX0, vecF0, localModelDat, stepConstraintDat, prm )
 	setVerbLevs;
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
+	debugMode = mygetfield( prm, "debugMode", false );
 	fevalCount = 0;
 	%msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Performing __findGoodStep()." );
 	if (~isempty(stepConstraintDat))
@@ -538,8 +560,10 @@ function [ vecX_next, vecF_next, stepConstraintDat_next, fgs_datOut ] = __findGo
 	%
 	sizeX = size(vecX0,1);
 	sizeF = size(vecF0,1);
-	assert( isrealarray(vecX0,[sizeX,1]) );
-	assert( isrealarray(vecF0,[sizeF,1]) );
+	if (debugMode)
+		assert( isrealarray(vecX0,[sizeX,1]) );
+		assert( isrealarray(vecF0,[sizeF,1]) );
+	endif
 	%
 	matV = mygetfield( localModelDat, "matV", [] );
 	if (isempty(matV))
@@ -666,6 +690,7 @@ endfunction
 
 
 function vecFModel_trial = __calcFModel( vecX_trial, localModelDat, prm )
+	debugMode = mygetfield( prm, "debugMode", false );
 	if (isempty(vecX_trial))
 		vecFModel_trial = [];
 		return;
@@ -674,8 +699,10 @@ function vecFModel_trial = __calcFModel( vecX_trial, localModelDat, prm )
 	vecF0 = localModelDat.vecF0;
 	sizeX = size(vecX0,1);
 	sizeF = size(vecF0,1);
-	assert( isrealarray(vecX0,[sizeX,1]) );
-	assert( isrealarray(vecF0,[sizeF,1]) );
+	if (debugMode)
+		assert( isrealarray(vecX0,[sizeX,1]) );
+		assert( isrealarray(vecF0,[sizeF,1]) );
+	endif
 	%
 	matV = mygetfield( localModelDat, "matV", [] );
 	if (isempty(matV))
@@ -685,10 +712,12 @@ function vecFModel_trial = __calcFModel( vecX_trial, localModelDat, prm )
 	endif
 	matW = localModelDat.matW;
 	sizeV = size(matV,2);
-	assert( 0 < sizeV );
-	assert( isrealarray(matV,[sizeX,sizeV]) );
-	assert( isrealarray(matW,[sizeF,sizeV]) );
-	assert( reldiff(matV'*matV,eye(size(matV,2)),eps) <= sqrt(eps) );
+	if (debugMode)
+		assert( 0 < sizeV );
+		assert( isrealarray(matV,[sizeX,sizeV]) );
+		assert( isrealarray(matW,[sizeF,sizeV]) );
+		assert( reldiff(matV'*matV,eye(size(matV,2)),eps) <= sqrt(eps) );
+	endif
 	%
 	assert( isrealarray(vecX_trial,[sizeX,1]) );
 	vecD = vecX_trial - vecX0;
@@ -698,10 +727,12 @@ function vecFModel_trial = __calcFModel( vecX_trial, localModelDat, prm )
 	matGamma = localModelDat.matGamma;
 	sizePhi = size(matPhi,2);
 	if ( 0 < sizePhi )
-		assert( isrealarray(matPhi,[sizeX,sizePhi]) );
-		assert( isrealarray(matGamma,[sizeF,sizePhi]) );
-		assert( reldiff(matPhi'*matPhi,eye(sizePhi),eps) <= sqrt(eps) );
-		assert( reldiff(matPhi'*matPhi,eye(size(matPhi,2)),eps) <= sqrt(eps) );
+		if (debugMode)
+			assert( isrealarray(matPhi,[sizeX,sizePhi]) );
+			assert( isrealarray(matGamma,[sizeF,sizePhi]) );
+			assert( reldiff(matPhi'*matPhi,eye(sizePhi),eps) <= sqrt(eps) );
+			assert( reldiff(matPhi'*matPhi,eye(size(matPhi,2)),eps) <= sqrt(eps) );
+		endif
 		%
 		for n=1:sizePhi
 			vecFModel_trial += 0.5 * matGamma(:,n) * (matPhi(:,n)'*vecD)^2;
