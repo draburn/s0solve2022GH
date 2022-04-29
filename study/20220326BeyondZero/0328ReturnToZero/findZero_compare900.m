@@ -8,12 +8,15 @@ setVerbLevs;
 %setprngstates(9216528); % 800 stalls but 550 does not.
 %setprngstates(17374144); % 800 is weird but converges.
 %setprngstates(53858336); % 800 stalls but 550 does not.
-setprngstates(48689984); % 904s are bad, others are good; note: even fsolve stalls.
+%setprngstates(48689984); % 904s are bad, others are good; note: even fsolve stalls.
 % Two past 48689984?: almost everything stalls.
+%setprngstates(36693936); % Most stall, but not fzero.
+setprngstates(22931408);
+%setprngstates();
 numFigs = 0;
 %
-%%%sizeX = 150; sizeF = 150;
-sizeX = 100; sizeF = 100;
+sizeX = 150; sizeF = 150;
+%%%sizeX = 100; sizeF = 100;
 %%%sizeX = 50; sizeF = 50;
 %%%sizeX = 20; sizeF = 20;
 %
@@ -35,22 +38,14 @@ vecX0 = vecXE + 0.5*randn(sizeX,1);
 vecF0 = funchF(vecX0);
 Df = jacobs( vecX0, funchF );
 msg( __FILE__, __LINE__, sprintf( "rcond(Df'*Df) = %0.3e.", rcond(Df'*Df) ) );
+
 %
-%
-prm = [];
-prm.iterMax = 200;
-prm.slinsolfver = 200;
 timeSS = time();
-[ vecXF_940x200, vecFF_940x200, datOut_940x200 ] = findZero_940( vecX0, funchF, prm );
-time_940x200 = time()-timeSS;
+[ vecXF_fsolve, vecFF_fsolve, datOut_fsolve, ] = findZero_fsolve( vecX0, funchF );
+time_fsolve = time()-timeSS;
+msg( __FILE__, __LINE__, "fsolve results..." );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "fsolve", norm(vecFF_fsolve), datOut_fsolve.iterCount, datOut_fsolve.fevalCount, time_fsolve ) );
 %
-%
-prm = [];
-prm.iterMax = 200;
-prm.slinsolfver = 100;
-timeSS = time();
-[ vecXF_940, vecFF_940, datOut_940 ] = findZero_940( vecX0, funchF, prm );
-time_940 = time()-timeSS;
 %
 %
 prm = [];
@@ -96,9 +91,20 @@ timeSS = time();
 [ vecXF_800, vecFF_800, datOut_800 ] = findZero_800( vecX0, funchF, prm );
 time_800 = time()-timeSS;
 %
+prm = [];
+prm.iterMax = 50;
+prm.slinsolfver = 200;
 timeSS = time();
-[ vecXF_fsolve, vecFF_fsolve, datOut_fsolve, ] = findZero_fsolve( vecX0, funchF );
-time_fsolve = time()-timeSS;
+[ vecXF_940x200, vecFF_940x200, datOut_940x200 ] = findZero_940( vecX0, funchF, prm );
+time_940x200 = time()-timeSS;
+%
+%
+prm = [];
+prm.iterMax = 10;
+prm.slinsolfver = 100;
+timeSS = time();
+[ vecXF_940, vecFF_940, datOut_940 ] = findZero_940( vecX0, funchF, prm );
+time_940 = time()-timeSS;
 %
 %
 
