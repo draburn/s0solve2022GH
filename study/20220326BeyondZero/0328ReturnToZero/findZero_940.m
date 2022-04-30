@@ -54,7 +54,8 @@ function [ vecXF, vecFF, datOut ] = findZero_940( vecX0, funchF, prm=[] )
 	datOut.vecXVals(:,iterCount+1) = vecX;
 	datOut.vecFVals(:,iterCount+1) = vecF;
 	%
-	step_tol = sqrt(eps); % Use a tight solve on first iteration to get a large subspace.
+	%%%step_tol = sqrt(eps); % Use a tight solve on first iteration to get a large subspace.
+	step_tol = 1.0e-4;
 	step_prm = mygetfield( prm, "step_prm", [] );
 	step_prm.slinsolfver = mygetfield( prm, "slinsolfver", 100 );
 	stepSearchDat = [];
