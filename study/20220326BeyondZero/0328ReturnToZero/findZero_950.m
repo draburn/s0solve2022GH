@@ -2,14 +2,11 @@
 %  9xx = approaching new JFNK (with phi-patch, etc),
 %   for prototyping structure and refereshing memory.
 %  940 = slisolf.
-%
-%  2022.04.28: Note that there is no coasting here.
-% TODO:
-%  Analysis: OSQU with Phi and Gamma???
+%  950 += coasting.
 
 
 
-function [ vecXF, vecFF, datOut ] = findZero_940( vecX0, funchF, prm=[] )
+function [ vecXF, vecFF, datOut ] = findZero_950( vecX0, funchF, prm=[] )
 	time0 = time();
 	fevalCount = 0;
 	setVerbLevs;
@@ -113,6 +110,7 @@ function [ vecXF, vecFF, datOut ] = findZero_940( vecX0, funchF, prm=[] )
 		%
 		%
 		%
+		zzz
 		% TODO: Add coasting.
 		% If successful, "continue" back to start of loop.
 		% If not, do following...
@@ -208,10 +206,16 @@ function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut
 	endfor
 	% 3: "On-step quadratic update", which is like Broyden x 2.
 	fooX = vecX_next - vecX;
+	fooY = matV'*(fooX);
+	assert( reldiff(matV*fooY,fooX) > sqrt(eps) );
 	fooF = vecF_next - vecFModel_next;
 	%%%fooF = vecF_next - ( vecF + matA*fooX );
 	matA += 2.0 * fooF * (fooX') / (fooX'*fooX);
+	matW += 2.0 * fooF * (fooY') / (fooY'*fooY);
 	% TODO: This OSQU may be wrong when already including phi & gamma.
+	%
+	%
+	%Update matW
 	%
 	% Question: Is this equivalent to updating W then updating A???
 	%
@@ -220,7 +224,9 @@ function [ vecX_next, vecF_next, fModelDat_next, stepSearchDat_next, step_datOut
 	fModelDat_next = [];
 	fModelDat_next.matA = matA;
 	fModelDat_next.matV = matV;
-	fModelDat_next.maPhi = matPhi;
+	fModelDat_next.matW += matW;
+	fModelDat_next.matPhi = matPhi;
+	fModelDat_next.matGamma = matGamma;
 	%
 	stepSearchDat_next = [];
 	%
