@@ -1,18 +1,22 @@
 clear;
 tic();
 %setprngstates(14920800);
-setprngstates(70883440);
+%setprngstates(70883440);
+%setprngstates(95901904);
+setprngstates(51041264);
 numFigs = 0;
 %
 sizeX = 2; sizeF = sizeX;
 vecF = randn(sizeF,1);
+omega = 0.5*sumsq(vecF)
 matJ0 = randn(sizeF,sizeX);
-matDJ = 0.2*abs(randn(sizeF,sizeX));
+%%%matDJ = 0.2*abs(randn(sizeF,sizeX));
+matDJ = 10.0*abs(randn(sizeF,sizeX));
 % matJ = matJ0 + matDJ.*(randn(sizeF,sizeX));
 %
 numThetaVals = 101;
-thetaVals = 2.0*pi*linspace(0.0,1.0,numThetaVals);
-%thetaVals = linspace(3.124,3.125,numThetaVals);
+%%%thetaVals = 2.0*pi*linspace(0.0,1.0,numThetaVals);
+thetaVals = linspace(2.0,4.0,numThetaVals);
 vecVVals = [ cos(thetaVals); sin(thetaVals) ];
 matVVTVals = zeros(sizeX,sizeX,numThetaVals);
 matIMVVTVals = zeros(sizeX,sizeX,numThetaVals);
@@ -24,7 +28,7 @@ vecMF = -vecF;
 %
 vecX0I = (matJ0'*matJ0)\(matJ0*vecMF);
 vecX0P = (matJ0'*matJ0 + diag(diag(matDJ'*matDJ)) )\(matJ0*vecMF);
-
+(vecX0P'*vecX0I)/(norm(vecX0P)*norm(vecX0I))
 %
 %
 numTrials = 100;
@@ -69,11 +73,11 @@ omega2VarVals = sqrt( omega2SqAvgVals - (omega2AvgVals.^2) );
 %
 %
 numFigs++; figure(numFigs);
-semilogy( ...
+plot( ...
   thetaVals, omegaAvgVals + omegaVarVals, 'o-', ...
   thetaVals, omegaAvgVals, 'o-', ...
-  thetaVals, omega2AvgVals + omega2VarVals, 's-', ...
-  thetaVals, omega2AvgVals, 's-' );
+  thetaVals, omega2AvgVals + omega2VarVals, '*-', ...
+  thetaVals, omega2AvgVals, '*-' );
 grid on;
 xlabel( "theta" );
 ylabel( "omega" );
