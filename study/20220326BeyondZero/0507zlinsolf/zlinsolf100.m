@@ -248,7 +248,7 @@ function fModelDat = __analyzeModel( fModelDat, prm )
 	matV = fModelDat.matV; % Subspace basis matrix.
 	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
 	matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
-	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify y'*B*y <= 1.
+	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify norm(B*y) <= 1.
 	%sizeX = size(vecX,1);
 	%sizeF = size(vecF,1);
 	%sizeV = size(matV,2);
@@ -256,10 +256,11 @@ function fModelDat = __analyzeModel( fModelDat, prm )
 	% Basics.
 	matWTW = matW'*matW;
 	vecMG = -(matW'*vecF);
+	matBTB = matB'*matB;
 	%
 	vecYIU = __calcStep( matWTW, vecMG, prm );
-	vecYIB = __calcBoundStep( matWTW, matB, vecMG, prm );
-	vecYPB = __calcBoundStep( matWTW + matA, matB, vecMG, prm );
+	vecYIB = __calcBoundStep( matWTW, matBTB, vecMG, prm );
+	vecYPB = __calcBoundStep( matWTW + matA, matBTB, vecMG, prm );
 	%
 	if (0)
 		msg( __FILE__, __LINE__, "Doing tests on __calcStep() and __calcBoundStep()." );
@@ -267,13 +268,13 @@ function fModelDat = __analyzeModel( fModelDat, prm )
 		vecF = [ 1.0; 1.0 ]
 		matH = matW'*matW
 		vecG = matW'*vecF
-		matB = [ 1.0, 0.0; 0.0, 1.0  ]*100.0
+		matBTB = [ 1.0, 0.0; 0.0, 1.0  ]*100.0
 		vecYU = __calcStep( matH, -vecG, prm )
 		vecGU = vecG + matH*vecYU
-		bu = vecYU'*matB*vecYU
-		vecYB = __calcBoundStep( matH, matB, -vecG, prm )
+		bu = norm(matB*vecYU)
+		vecYB = __calcBoundStep( matH, matBTB, -vecG, prm )
 		vecGB = vecG + matH*vecYB
-		bb = vecYB'*matB*vecYB
+		bb = norm(matB*vecYB)
 		error( "PLEASE SEE DEBUG RESULTS ABOVE." );
 	endif
 	%
@@ -301,9 +302,9 @@ function fModelDat = __analyzeModel( fModelDat, prm )
 	fModelDat.omegaModelVarIB = vecYIB'*matA*vecYIB;
 	fModelDat.omegaModelVarPB = vecYPB'*matA*vecYPB;
 	%
-	fModelDat.bIU = vecYIU'*matB*vecYIU;
-	fModelDat.bIB = vecYIB'*matB*vecYIB;
-	fModelDat.bPB = vecYPB'*matB*vecYPB;
+	fModelDat.bIU = norm(matB*vecYIU);
+	fModelDat.bIB = norm(matB*vecYIB);
+	fModelDat.bPB = norm(matB*vecYPB);
 	%
 	fModelDat.omega = sumsq(vecF)/2.0;
 return;
@@ -335,7 +336,7 @@ return;
 endfunction
 
 
-function vecY = __calcBoundStep( matH, matB, vecMG, prm )
+function vecY = __calcBoundStep( matH, matBTB, vecMG, prm )
 	[ matR, cholFlag ] = chol( matH );
 	%
 	cholSafeTol = mygetfield( prm, "cholSafeTol", sqrt(eps) );
@@ -344,14 +345,14 @@ function vecY = __calcBoundStep( matH, matB, vecMG, prm )
 	else
 		epsRelRegu = mygetfield( prm, "epsRelRegu", sqrt(eps) );
 		hScale = max(max(abs(matH)));
-		bScale = max(max(abs(matB)));
+		bScale = max(max(abs(matBTB)));
 		assert( 0.0 < hScale );
 		assert( 0.0 < bScale );
 		s1 = 1.0 - (epsRelRegu*hScale/bScale);
 	endif
 	%
-	funchYOfS = @(s)( ( s*matH + (1.0-s)*matB ) \ (s*vecMG) );
-	funchBOfY = @(y)( y'*matB*y );
+	funchYOfS = @(s)( ( s*matH + (1.0-s)*matBTB ) \ (s*vecMG) );
+	funchBOfY = @(y)( y'*matBTB*y );
 	vecY1 = funchYOfS(s1);
 	b1 = funchBOfY(vecY1);
 	if ( b1 <= 1.0 )
@@ -376,7 +377,7 @@ function [ fModelDat, datOut ] = __expandModel( vecU, funchF, fModelDat, prm )
 	matV = fModelDat.matV; % Subspace basis matrix.
 	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
 	matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
-	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify y'*B*y <= 1.
+	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify ||B*y|| <= 1.
 	%sizeX = size(vecX,1);
 	%sizeF = size(vecF,1);
 	sizeV = size(matV,2);
@@ -407,7 +408,7 @@ function [ fModelDat, datOut ] = __expandModel( vecU, funchF, fModelDat, prm )
 	assert( 0.0 < bScale1 );
 	fModelDat.matB = zeros(sizeV+1,sizeV+1);
 	fModelDat.matB(1:sizeV,1:sizeV) = matB;
-	fModelDat.matB(sizeV+1,sizeV+1) = bScale0 + bScale1*sum(sum(matB.^2))/(sizeV^2);
+	fModelDat.matB(sizeV+1,sizeV+1) = bScale0 + bScale1*sqrt(sum(sum(matB.^2)))/sizeV;
 	%
 	%
 	datOut.fevalCount = fevalCount;
@@ -464,7 +465,7 @@ function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
 	matV = fModelDat.matV; % Subspace basis matrix.
 	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
 	matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
-	%matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify y'*B*y <= 1.
+	%matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify ||B*y|| <= 1.
 	%sizeX = size(vecX,1);
 	%sizeF = size(vecF,1);
 	sizeV = size(matV,2);
@@ -509,17 +510,23 @@ function fModelDat = __increaseB( vecY, fModelDat, prm )
 	%matV = fModelDat.matV; % Subspace basis matrix.
 	%matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
 	%matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
-	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify y'*B*y <= 1.
+	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify ||B*y|| <= 1.
 	%sizeX = size(vecX,1);
 	%sizeF = size(vecF,1);
-	%sizeV = size(matV,2);
+	sizeV = size(matB,2);
+	echo__matB = matB
 	%
 	%
-	%error( "Frick. Had wrong definition of matB..." );
-	msg( __FILE__, __LINE__, "This is a crude hack for __increaseB()." );
-	b = vecY'*matB*vecY;
-	assert( 0.0 < b );
-	matB /= b;
+	matIV = eye(sizeV,sizeV);
+	yNorm = norm(vecY);
+	assert( 0.0 < yNorm );
+	vecYHat = vecY/yNorm;
+	matB -= (matB*vecYHat)*(vecYHat');
+	matB += vecYHat*(vecYHat')/yNorm;
+	b = norm(matB*vecY)
+	echo__matB = matB
+	eig(matB)
+	error( "HALT!" );
 	%
 	fModelDat.matB = matB;
 	if (0)
