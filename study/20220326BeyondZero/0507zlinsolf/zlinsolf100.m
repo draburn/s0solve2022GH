@@ -17,9 +17,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 	%
 	% Current local vecX and vecF are stored only in fModelDat to avoid redundancy.
 	iterCount = 0;
-	haveCand = false; % Have candidate for next X?
-	vecXCand = [];
-	vecFCand = [];
+	vecX_cand = []; % Candidate for next vecX.
+	vecF_cand = [];
 	vecX_best = vecX_initial;
 	vecF_best = vecF_initial;
 	%
@@ -27,9 +26,16 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 	while (1)
 		iterCount++;
 		fModelDat = __analyzeModel( fModelDat, prm );
+		msgif( prm.msgCopious, __FILE__, __LINE__, "vvvvv Data dump..." );
+		omega = fModelDat.omega
+		omegaModelAvgIU = fModelDat.omegaModelAvgIU
+		omegaModelAvgPlusVarIU = fModelDat.omegaModelAvgIU + fModelDat.omegaModelVarIU
+		matVLocal = fModelDat.matVLocal
+		matA = fModelDat.matA
+		msgif( prm.msgCopious, __FILE__, __LINE__, "^^^^^ End data dump." );
 		%
 		% Simple stoping criteria.
-		if ( sumsq(vecF_best) <= prm.fTol^2 )
+		if ( norm(vecF_best) <= prm.fTol )
 			msgif( prm.msgMain, __FILE__, __LINE__, "SUCCESS: sumsq(vecF_best) <= prm.fTol^2." );
 			break;
 		endif
@@ -47,10 +53,89 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		if ( fModelDat.omegaModelAvgIU > prm.omegaTol )
 			% Conceptually, we could also consider "refreshing" something already in our space.
 			% This is an area for future analysis.
+			msgif( prm.msgCopious, __FILE__, __LINE__, "Expanding subspace." );
 			[ fModelDat, datOut_expandModel ] = __expandModel( fModelDat.vecFModelIU, funchF, fModelDat, prm );
 			fevalCount += datOut_expandModel.fevalCount;
 			continue;
 		endif
+		%
+		if ( fModelDat.bIU <= 1.0  && fModelDat.omegaModelAvgIU + fModelDat.omegaModelVarIU <= prm.omegaTol )
+		%%%%%if ( fModelDat.omegaModelAvgIU + fModelDat.omegaModelVarIU <= prm.omegaTol )
+			msgif( prm.msgCopious, __FILE__, __LINE__, "Trying ideal unbound step." );
+			vecX_trial = fModelDat.vecXIU;
+			%%%%%vecX_trial = fModelDat.vecXIB;
+			vecF_trial = funchF( vecX_trial );
+			msg( __FILE__, __LINE__, "TODO: Decrease B if model is very good!" );
+			omega_trial = sumsq(vecF_trial)/2.0;
+			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  omega_trial = %g.", omega_trial ) );
+			fevalCount++;
+			if ( norm(vecF_trial) < norm(vecF_best) )
+				msgif( prm.msgCopious, __FILE__, __LINE__, "  Step is new best." );
+				vecX_best = vecX_trial;
+				vecF_best = vecF_trial;
+			endif
+			if ( ~isempty(vecF_cand) )
+			if ( norm(vecF_trial) >= norm(vecF_cand) )
+				msgif( prm.msgNotice, __FILE__, __LINE__, "Current trial is worse than earlier candidate; moving to earlier candidate." );
+				fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
+				clear vecX_trial;
+				clear vecF_trial;
+				clear omega_trial;
+				vecX_cand = [];
+				vecF_cand = [];
+				continue;
+			endif
+			endif
+			%
+			avefaThresh = mygetfield( prm, "avefaThresh", 0.5 ); % Actual vs expect fall acceptace threshold
+			assert( 0.0 < avefaThresh );
+			assert( avefaThresh < 1.0 );
+			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  actual fall = %g.", fModelDat.omega - omega_trial ) );
+			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  expected fall = %g.", fModelDat.omega - (fModelDat.omegaModelAvgIU + fModelDat.omegaModelVarIU) ) );
+			if ( omega_trial <= fModelDat.omega - avefaThresh*( fModelDat.omega - (fModelDat.omegaModelAvgIU + fModelDat.omegaModelVarIU) ) )
+				msgif( prm.msgCopious, __FILE__, __LINE__, "  Accepting step." );
+				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
+				clear vecX_trial;
+				clear vecF_trial;
+				clear omega_trial;
+				vecX_cand = [];
+				vecF_cand = [];
+				continue;
+			endif
+			msgif( prm.msgCopious, __FILE__, __LINE__, "  Rejecting step." );
+			%
+			if ( norm(vecF_trial) < norm(fModelDat.vecF) )
+				% Trial is better than current, at least, so it's a candidate.
+				vecX_cand = vecX_trial;
+				vecF_cand = vecF_trial;
+			endif
+			%
+			bUpFactor = mygetfield( prm, "bUpFactor", 0.5 );
+			fModelDat = __increaseB( bUpFactor*fModelDat.vecYIU, fModelDat, prm );
+			%
+			clear vecX_trial;
+			clear vecF_trial;
+			clear omega_trial;
+			continue;
+		endif
+		%
+		minRelFallThresh = mygetfield( prm, "minRelFallThresh", 1.0E-4 );
+		if ( fModelDat.omegaModelAvgIB > fModelDat.omega*(1.0-minRelFallThresh) )
+			msgif( prm.msgMain, "We seem to have no way to reduce omega much." );
+			msgif( prm.msgMain, "  This is expected to happen near a bad local minimum." );
+			msgif( prm.msgMain, "  Todo: add handling for this case." );
+			break;
+		endif
+		%
+		%practicalRelFallThresh = mygetfield( prm, "practicalRelFallThresh", 0.5 );
+		%if ( fModelDat.omegaModelAvgPB + fModelDat.omegaModelVarPB <= fModelDat.omega - practicalRelFallThresh*(fModelDat.omega-fModelDat.omegaModelAvgIB) )
+		%	error( "Not implemented." );
+		%	continue;
+		%endif
+		%
+		[ fModelDat, datOut_refresh ] = __refresh( fModelDat.vecYPB, funchF, fModelDat, prm );
+		fevalCount += datOut_refresh.fevalCount;
+		continue;
 		%
 		error( "Reached end of main loop without having selected an action." );
 	endwhile
@@ -129,7 +214,7 @@ function [ fModelDat, datOut ] = __initModel( funchF, vecX, vecF, prm )
 	%
 	fModelDat.vecX = vecX;
 	fModelDat.vecF = vecF;
-	fModelDat.matVLoc = [ vecV ];
+	fModelDat.matVLocal = [ vecV ];
 	fModelDat.matV = [ vecV ];
 	fModelDat.matW = [ vecW ];
 	fModelDat.matA = [ 0.0 ];
@@ -157,13 +242,13 @@ endfunction
 
 function fModelDat = __analyzeModel( fModelDat, prm )
 	% Unpack.
-	%vecX = fModelDat.vecX;
+	%matVLocal = fModelDat.matVLocal;
+	vecX = fModelDat.vecX;
 	vecF = fModelDat.vecF;
 	matV = fModelDat.matV; % Subspace basis matrix.
 	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
 	matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
 	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify y'*B*y <= 1.
-	%matVLoc = fModelDat.matVLoc;
 	%sizeX = size(vecX,1);
 	%sizeF = size(vecF,1);
 	%sizeV = size(matV,2);
@@ -196,6 +281,14 @@ function fModelDat = __analyzeModel( fModelDat, prm )
 	vecFModelIB = vecF + (matW*vecYIB);
 	vecFModelPB = vecF + (matW*vecYPB);
 	%
+	fModelDat.vecYIU = vecYIU;
+	fModelDat.vecYIB = vecYIB;
+	fModelDat.vecYPB = vecYPB;
+	%
+	fModelDat.vecXIU = vecX + (matV*vecYIU);
+	fModelDat.vecXIB = vecX + (matV*vecYIB);
+	fModelDat.vecXPB = vecX + (matV*vecYPB);
+	%
 	fModelDat.vecFModelIU = vecFModelIU;
 	fModelDat.vecFModelIB = vecFModelIB;
 	fModelDat.vecFModelPB = vecFModelPB;
@@ -211,6 +304,8 @@ function fModelDat = __analyzeModel( fModelDat, prm )
 	fModelDat.bIU = vecYIU'*matB*vecYIU;
 	fModelDat.bIB = vecYIB'*matB*vecYIB;
 	fModelDat.bPB = vecYPB'*matB*vecYPB;
+	%
+	fModelDat.omega = sumsq(vecF)/2.0;
 return;
 endfunction
 
@@ -276,7 +371,8 @@ function [ fModelDat, datOut ] = __expandModel( vecU, funchF, fModelDat, prm )
 	% Unpack.
 	vecX = fModelDat.vecX;
 	vecF = fModelDat.vecF;
-	matVLoc = fModelDat.matVLoc; % Locally evaluated subspace basis matrix.
+	%omega = fModelDat.omega;
+	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
 	matV = fModelDat.matV; % Subspace basis matrix.
 	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
 	matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
@@ -285,9 +381,10 @@ function [ fModelDat, datOut ] = __expandModel( vecU, funchF, fModelDat, prm )
 	%sizeF = size(vecF,1);
 	sizeV = size(matV,2);
 	%
+	%
 	uNorm = norm(vecU);
 	assert( 0.0 < uNorm );
-	vecV = __calcOrthonorm( vecU, fModelDat.matV, prm );
+	vecV = __calcOrthonorm( vecU, matV, prm );
 	if ( 0.0 == norm(vecV) )
 		error( "Failed to generate new subspace basis vector." );
 	endif
@@ -297,7 +394,8 @@ function [ fModelDat, datOut ] = __expandModel( vecU, funchF, fModelDat, prm )
 		error( "Jacobian along new subspace basis vector is zero." );
 	endif
 	%
-	fModelDat.matVLoc = [ matVLoc, vecV ];
+	%
+	fModelDat.matVLocal = [ matVLocal, vecV ];
 	fModelDat.matV = [ matV, vecV ];
 	fModelDat.matW = [ matW, vecW ];
 	fModelDat.matA = zeros(sizeV+1,sizeV+1);
@@ -324,6 +422,10 @@ function vecV = __calcOrthonorm( vecU, matV, prm )
 	if (0.0==u0)
 		return;
 	endif
+	if (isempty(matV))
+		vecV = vecU/u0;
+		return;
+	endif
 	orthoTol = mygetfield( prm, "orthoTol", 1.0e-10 );
 	vecV = vecU;
 	for n=1:numPasses
@@ -338,3 +440,95 @@ function vecV = __calcOrthonorm( vecU, matV, prm )
 	endfor
 return;
 endfunction
+
+
+function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
+	msg( __FILE__, __LINE__, "TODO: Update matA in a REASONABLE fashion!" );
+	matW = fModelDat.matW;
+	fModelDat.matA += diag(abs(diag(matW'*matW)));
+	msg( __FILE__, __LINE__, "TODO: Update matW when move!" );
+	fModelDat.matVLocal = [];
+	fModelDat.vecX = vecX_trial;
+	fModelDat.vecF = vecF_trial;
+return;
+endfunction
+
+
+function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
+	fevalCount = 0;
+	% Unpack.
+	vecX = fModelDat.vecX;
+	vecF = fModelDat.vecF;
+	%omega = fModelDat.omega;
+	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
+	matV = fModelDat.matV; % Subspace basis matrix.
+	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
+	matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
+	%matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify y'*B*y <= 1.
+	%sizeX = size(vecX,1);
+	%sizeF = size(vecF,1);
+	sizeV = size(matV,2);
+	%
+	%
+	yNorm = norm(vecY);
+	assert( 0.0 < yNorm );
+	vecYHat = vecY/yNorm;
+	vecU = matV*vecYHat;
+	vecV = __calcOrthonorm( vecU, matVLocal, prm );
+	if ( 0.0 == norm(vecV) )
+		error( "Failed to generate local subspace basis vector." );
+	endif
+	vecW = __calcJV( vecV, funchF, vecX, vecF, prm );
+	fevalCount++;
+	if ( 0.0 == norm(vecW) )
+		error( "Jacobian along local subspace basis vector is zero." );
+	endif
+	%
+	matVLocal = [ matVLocal, vecV ];
+	%
+	%%%matE = eye(sizeV,sizeV) - vecYHat*(vecYHat');
+	matE = eye(sizeV,sizeV) - matV'*matVLocal*(matVLocal')*matV;
+	%
+	fModelDat.matVLocal = matVLocal;
+	fModelDat.matW = matW + (matW*vecYHat-vecW)*(vecYHat');
+	fModelDat.matA = matE * matA * matE;
+	%
+	%
+	datOut.fevalCount = fevalCount;
+return;
+endfunction
+
+
+
+function fModelDat = __increaseB( vecY, fModelDat, prm )
+	% Unpack.
+	%vecX = fModelDat.vecX;
+	%vecF = fModelDat.vecF;
+	%omega = fModelDat.omega;
+	%matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
+	%matV = fModelDat.matV; % Subspace basis matrix.
+	%matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
+	%matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
+	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify y'*B*y <= 1.
+	%sizeX = size(vecX,1);
+	%sizeF = size(vecF,1);
+	%sizeV = size(matV,2);
+	%
+	%
+	%error( "Frick. Had wrong definition of matB..." );
+	msg( __FILE__, __LINE__, "This is a crude hack for __increaseB()." );
+	b = vecY'*matB*vecY;
+	assert( 0.0 < b );
+	matB /= b;
+	%
+	fModelDat.matB = matB;
+	if (0)
+		fModelDat.hackCounter = mygetfield( fModelDat, "hackCounter", 0 );
+		fModelDat.hackCounter++;
+		if ( 10 <= fModelDat.hackCounter )
+			error( "BREAK!" );
+		endif
+	endif
+return;
+endfunction
+
