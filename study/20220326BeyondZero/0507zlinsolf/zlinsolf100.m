@@ -15,6 +15,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 	[ fModelDat, datOut_initModel ] = __initModel( funchF, vecX_initial, vecF_initial, prm );
 	fevalCount += datOut_initModel.fevalCount;
 	%
+	% Current local vecX and vecF are stored only in fModelDat to avoid redundancy.
 	iterCount = 0;
 	haveCand = false; % Have candidate for next X?
 	vecXCand = [];
@@ -43,6 +44,15 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			break;
 		endif
 		%
+		if ( fModelDat.omegaModelAvgIU > prm.omegaTol )
+			% Conceptually, we could also consider "refreshing" something already in our space.
+			% This is an area for future analysis.
+			[ fModelDat, datOut_expandModel ] = __expandModel( fModelDat.vecFModelIU, funchF, fModelDat, prm );
+			fevalCount += datOut_expandModel.fevalCount;
+			continue;
+		endif
+		%
+		error( "Reached end of main loop without having selected an action." );
 	endwhile
 	%
 	%
@@ -66,12 +76,14 @@ function prm = __initPrm( vecX, vecF, prm )
 	fTol = max([ sqrt(eps)*norm(vecF), eps ]);
 	prm.fTol = mygetfield( prm, "fTol", fTol );
 	prm.iterLimit = mygetfield( prm, "iterLimit", ceil(20 + 10*sqrt(sizeX) + 0.01*sizeX) );
+	%
+	prm.omegaTol = fTol^2/2.0;
 return;
 endfunction
 
 
-function [ fModelDat, datOut_init ] = __initModel( funchF, vecX, vecF, prm )
-	datOut_init = [];
+function [ fModelDat, datOut ] = __initModel( funchF, vecX, vecF, prm )
+	datOut = [];
 	fevalCount = 0;
 	%
 	fModelDat = mygetfield( prm, "fModelDat_initial", [] );
@@ -109,29 +121,38 @@ function [ fModelDat, datOut_init ] = __initModel( funchF, vecX, vecF, prm )
 		error( "Initial vecF is zero." );
 	endif
 	vecV = vecF/fNorm;
-	epsFD = mygetfield( prm, "epsFD", eps^0.3 );
-	assert( 0.0 < epsFD );
-	vecFP = funchF( vecX + epsFD*vecV );
+	vecW = __calcJV( vecV, funchF, vecX, vecF, prm );
 	fevalCount++;
-	vecW = ( vecFP - vecF ) / (epsFD*norm(vecV));
 	if ( 0.0 == norm(vecW) )
 		error( "Initial vecW is zero." );
 	endif
 	%
-	bScale0 = mygetfield( prm, "bScale0", eps );
-	assert( 0.0 < bScale0 );
 	fModelDat.vecX = vecX;
 	fModelDat.vecF = vecF;
+	fModelDat.matVLoc = [ vecV ];
 	fModelDat.matV = [ vecV ];
 	fModelDat.matW = [ vecW ];
 	fModelDat.matA = [ 0.0 ];
-	fModelDat.matB = [ bScale0 ];
-	fModelDat.matVLoc = [ vecV ];
 	%
-	datOut_init.fevalCount = fevalCount;
+	bScale0 = mygetfield( prm, "bScale0", eps );
+	assert( 0.0 < bScale0 );
+	fModelDat.matB = [ bScale0 ];
+	%
+	datOut.fevalCount = fevalCount;
 return;
 endfunction
 
+
+
+function vecW = __calcJV( vecV, funchF, vecX, vecF, prm )
+	v = norm(vecV);
+	assert( 0.0 < v );
+	epsFD = mygetfield( prm, "epsFD", eps^0.3 );
+	assert( 0.0 < epsFD );
+	vecFP = funchF( vecX + epsFD*vecV );
+	vecW = ( vecFP - vecF ) / (epsFD*norm(vecV));
+return;
+endfunction
 
 
 function fModelDat = __analyzeModel( fModelDat, prm )
@@ -175,13 +196,21 @@ function fModelDat = __analyzeModel( fModelDat, prm )
 	vecFModelIB = vecF + (matW*vecYIB);
 	vecFModelPB = vecF + (matW*vecYPB);
 	%
-	omegaModelAvgIU = sumsq(vecFModelIU)/2.0;
-	omegaModelAvgIB = sumsq(vecFModelIB)/2.0;
-	omegaModeAvglPB = sumsq(vecFModelPB)/2.0;
+	fModelDat.vecFModelIU = vecFModelIU;
+	fModelDat.vecFModelIB = vecFModelIB;
+	fModelDat.vecFModelPB = vecFModelPB;
 	%
-	omegaModelVarIU = vecFModelIU'*matA*vecFModelIU;
-	omegaModelVarIB = vecFModelIB'*matA*vecFModelIB;
-	omegaModelVarPB = vecFModelPB'*matA*vecFModelPB;
+	fModelDat.omegaModelAvgIU = sumsq(vecFModelIU)/2.0;
+	fModelDat.omegaModelAvgIB = sumsq(vecFModelIB)/2.0;
+	fModelDat.omegaModeAvglPB = sumsq(vecFModelPB)/2.0;
+	%
+	fModelDat.omegaModelVarIU = vecYIU'*matA*vecYIU;
+	fModelDat.omegaModelVarIB = vecYIB'*matA*vecYIB;
+	fModelDat.omegaModelVarPB = vecYPB'*matA*vecYPB;
+	%
+	fModelDat.bIU = vecYIU'*matB*vecYIU;
+	fModelDat.bIB = vecYIB'*matB*vecYIB;
+	fModelDat.bPB = vecYPB'*matB*vecYPB;
 return;
 endfunction
 
@@ -238,5 +267,74 @@ function vecY = __calcBoundStep( matH, matB, vecMG, prm )
 	funchBM1OfS = @(s)( funchBOfY(funchYOfS(s)) - 1.0 );
 	s = fzero( funchBM1OfS, [0.0, s1] );
 	vecY = funchYOfS(s);
+return;
+endfunction
+
+
+function [ fModelDat, datOut ] = __expandModel( vecU, funchF, fModelDat, prm )
+	fevalCount = 0;
+	% Unpack.
+	vecX = fModelDat.vecX;
+	vecF = fModelDat.vecF;
+	matVLoc = fModelDat.matVLoc; % Locally evaluated subspace basis matrix.
+	matV = fModelDat.matV; % Subspace basis matrix.
+	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
+	matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
+	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify y'*B*y <= 1.
+	%sizeX = size(vecX,1);
+	%sizeF = size(vecF,1);
+	sizeV = size(matV,2);
+	%
+	uNorm = norm(vecU);
+	assert( 0.0 < uNorm );
+	vecV = __calcOrthonorm( vecU, fModelDat.matV, prm );
+	if ( 0.0 == norm(vecV) )
+		error( "Failed to generate new subspace basis vector." );
+	endif
+	vecW = __calcJV( vecV, funchF, vecX, vecF, prm );
+	fevalCount++;
+	if ( 0.0 == norm(vecV) )
+		error( "Jacobian along new subspace basis vector is zero." );
+	endif
+	%
+	fModelDat.matVLoc = [ matVLoc, vecV ];
+	fModelDat.matV = [ matV, vecV ];
+	fModelDat.matW = [ matW, vecW ];
+	fModelDat.matA = zeros(sizeV+1,sizeV+1);
+	fModelDat.matA(1:sizeV,1:sizeV) = matA;
+	%
+	bScale0 = mygetfield( prm, "bScale0", eps );
+	bScale1 = mygetfield( prm, "bScale1", 1.0e-4 );
+	assert( 0.0 < bScale0 );
+	assert( 0.0 < bScale1 );
+	fModelDat.matB = zeros(sizeV+1,sizeV+1);
+	fModelDat.matB(1:sizeV,1:sizeV) = matB;
+	fModelDat.matB(sizeV+1,sizeV+1) = bScale0 + bScale1*sum(sum(matB.^2))/(sizeV^2);
+	%
+	%
+	datOut.fevalCount = fevalCount;
+return;
+endfunction
+
+
+
+function vecV = __calcOrthonorm( vecU, matV, prm )
+	numPasses = 2;
+	u0 = norm(vecU);
+	if (0.0==u0)
+		return;
+	endif
+	orthoTol = mygetfield( prm, "orthoTol", 1.0e-10 );
+	vecV = vecU;
+	for n=1:numPasses
+		vecV -= matV*(matV'*vecV);
+		v = norm(vecV);
+		if ( v <= orthoTol*u0 )
+			vecV(:) = 0.0;
+			return;
+		else
+			vecV /= v;
+		endif
+	endfor
 return;
 endfunction
