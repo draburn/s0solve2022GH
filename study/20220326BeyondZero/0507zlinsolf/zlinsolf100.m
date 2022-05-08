@@ -132,12 +132,76 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			break;
 		endif
 		%
-		%practicalRelFallThresh = mygetfield( prm, "practicalRelFallThresh", 0.5 );
-		%if ( fModelDat.omegaModelAvgPB + fModelDat.omegaModelVarPB <= fModelDat.omega - practicalRelFallThresh*(fModelDat.omega-fModelDat.omegaModelAvgIB) )
+		%
 		%	error( "Not implemented." );
 		%	continue;
 		%endif
 		%
+		practicalRelFallThresh = mygetfield( prm, "practicalRelFallThresh", 0.5 );
+		if ( fModelDat.omegaModelAvgPB + fModelDat.omegaModelVarPB <= fModelDat.omega - practicalRelFallThresh*(fModelDat.omega-fModelDat.omegaModelAvgIB) )
+			msgif( prm.msgCopious, __FILE__, __LINE__, "Trying practical bound step." );
+			vecX_trial = fModelDat.vecXPB;
+			vecF_trial = funchF( vecX_trial );
+			omega_trial = sumsq(vecF_trial)/2.0;
+			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  omega_trial = %g.", omega_trial ) );
+			fevalCount++;
+			if ( norm(vecF_trial) < norm(vecF_best) )
+				msgif( prm.msgCopious, __FILE__, __LINE__, "  Step is new best." );
+				vecX_best = vecX_trial;
+				vecF_best = vecF_trial;
+			endif
+			if ( ~isempty(vecF_cand) )
+			if ( norm(vecF_trial) >= norm(vecF_cand) )
+				msgif( prm.msgNotice, __FILE__, __LINE__, "Current trial is worse than earlier candidate; moving to earlier candidate." );
+				fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
+				clear vecX_trial;
+				clear vecF_trial;
+				clear omega_trial;
+				vecX_cand = [];
+				vecF_cand = [];
+				continue;
+			endif
+			endif
+			%
+			avefaThresh = mygetfield( prm, "avefaThresh", 0.5 ); % Actual vs expect fall acceptace threshold
+			assert( 0.0 < avefaThresh );
+			assert( avefaThresh < 1.0 );
+			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  actual fall = %g.", fModelDat.omega - omega_trial ) );
+			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  expected fall = %g.", fModelDat.omega - (fModelDat.omegaModelAvgPB + fModelDat.omegaModelVarPB) ) );
+			if ( omega_trial <= fModelDat.omega - avefaThresh*( fModelDat.omega - (fModelDat.omegaModelAvgPB + fModelDat.omegaModelVarPB) ) )
+				msgif( prm.msgCopious, __FILE__, __LINE__, "  Accepting step." );
+				excellentThresh = mygetfield( prm, "excellentThresh", 0.1 );
+				if ( norm(vecF_trial-fModelDat.vecFModelPB) < excellentThresh*norm(fModelDat.vecFModelPB) );
+					msg( __FILE__, __LINE__, "  Model was very accurate; increasing trust region size." );
+					bDnFactor = mygetfield( prm, "bDnFactor", 1.5 );
+					fModelDat = __adjustB( bDnFactor*fModelDat.vecYPB, fModelDat, prm );
+				endif
+				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
+				clear vecX_trial;
+				clear vecF_trial;
+				clear omega_trial;
+				vecX_cand = [];
+				vecF_cand = [];
+				continue;
+			endif
+			msgif( prm.msgCopious, __FILE__, __LINE__, "  Rejecting step." );
+			%
+			if ( norm(vecF_trial) < norm(fModelDat.vecF) )
+				% Trial is better than current, at least, so it's a candidate.
+				vecX_cand = vecX_trial;
+				vecF_cand = vecF_trial;
+			endif
+			%
+			bUpFactor = mygetfield( prm, "bUpFactor", 0.5 );
+			fModelDat = __adjustB( bUpFactor*fModelDat.vecYPB, fModelDat, prm );
+			%
+			clear vecX_trial;
+			clear vecF_trial;
+			clear omega_trial;
+			continue;
+		endif
+		%
+		msgif( prm.msgNotice, __FILE__, __LINE__, "Refreshing subspace." );
 		[ fModelDat, datOut_refresh ] = __refresh( fModelDat.vecYPB, funchF, fModelDat, prm );
 		fevalCount += datOut_refresh.fevalCount;
 		continue;
@@ -301,7 +365,7 @@ function fModelDat = __analyzeModel( fModelDat, prm )
 	%
 	fModelDat.omegaModelAvgIU = sumsq(vecFModelIU)/2.0;
 	fModelDat.omegaModelAvgIB = sumsq(vecFModelIB)/2.0;
-	fModelDat.omegaModeAvglPB = sumsq(vecFModelPB)/2.0;
+	fModelDat.omegaModelAvgPB = sumsq(vecFModelPB)/2.0;
 	%
 	fModelDat.omegaModelVarIU = vecYIU'*matA*vecYIU;
 	fModelDat.omegaModelVarIB = vecYIB'*matA*vecYIB;
