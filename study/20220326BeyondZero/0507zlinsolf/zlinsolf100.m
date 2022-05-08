@@ -1,6 +1,27 @@
 % DRaburn 2022.05.07
 %  zlinsolf100
 %  First concrete attempt at MVP.
+%
+% DRaburn 2022.05.07...
+%   Todo:
+%    - Reconsider how to adjust B (present method is hackish).
+%    - Implement partial-quadratic update to A when taking a step.
+%    - Refactor trial step handling.
+%   Soon:
+%    - Implement halding of BLM / overly small TR as momentum / restart jump, consider quadratic terms?
+%    - Allow for a constant matrix preconditioner.
+%    - Allow dog-leg intstead of Levenberg curve.
+%    - Refactor from scratch, test, compare, etc.
+%   Much later:
+%    - Optimize Octave code.
+%    - Code in C/C++.
+%    - Try with PIES.
+%    - Test against available solvers.
+%   Post-MVP:
+%    ~ Reconsider anything and everything.
+%    - Sepratrix domain enumeration for "basin" BLM handling?
+%    - Non-smooth functions: automatically adjust epsFD for differentiation, what else?
+%    - Automatic scaling in X, (makes subspace basis non-orthogonal)?
 
 function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, vecF_initial=[], prm=[] )
 	% Init...
@@ -12,6 +33,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 	endif
 	prm = __initPrm( vecX_initial, vecF_initial, prm );
 	%
+	msgif( prm.msgCopious, __FILE__, __LINE__, "Initializing subspace." );
 	[ fModelDat, datOut_initModel ] = __initModel( funchF, vecX_initial, vecF_initial, prm );
 	fevalCount += datOut_initModel.fevalCount;
 	%
@@ -22,9 +44,15 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 	vecX_best = vecX_initial;
 	vecF_best = vecF_initial;
 	%
-	%
 	while (1)
+		%
+		datOut.iterCountVals(iterCount+1) = iterCount;
+		datOut.fevalCountVals(iterCount+1) = fevalCount;
+		datOut.fNormVals(iterCount+1) = norm(vecF_best);
+		datOut.vecXVals(:,iterCount+1) = fModelDat.vecX;
+		datOut.vecFVals(:,iterCount+1) = fModelDat.vecF;
 		iterCount++;
+		%
 		fModelDat = __analyzeModel( fModelDat, prm );
 		msgif( prm.msgCopious, __FILE__, __LINE__, "vvvvv Data dump..." );
 		omega = fModelDat.omega
@@ -205,11 +233,14 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		[ fModelDat, datOut_refresh ] = __refresh( fModelDat.vecYPB, funchF, fModelDat, prm );
 		fevalCount += datOut_refresh.fevalCount;
 		continue;
-		%
-		error( "Reached end of main loop without having selected an action." );
 	endwhile
 	%
 	%
+	datOut.iterCountVals(iterCount+1) = iterCount;
+	datOut.fevalCountVals(iterCount+1) = fevalCount;
+	datOut.fNormVals(iterCount+1) = norm(vecF_best);
+	datOut.vecXVals(:,iterCount+1) = fModelDat.vecX;
+	datOut.vecFVals(:,iterCount+1) = fModelDat.vecF;
 	%
 	datOut.fevalCount = fevalCount;
 return;
@@ -515,13 +546,59 @@ endfunction
 
 
 function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
-	msg( __FILE__, __LINE__, "TODO: Update matA in a REASONABLE fashion!" );
-	matW = fModelDat.matW;
-	fModelDat.matA += diag(abs(diag(matW'*matW)));
-	msg( __FILE__, __LINE__, "TODO: Update matW when move!" );
+	vecX = fModelDat.vecX;
+	vecF = fModelDat.vecF;
+	%omega = fModelDat.omega;
+	%matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
+	matV = fModelDat.matV; % Subspace basis matrix.
+	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
+	matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
+	%matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify ||B*y|| <= 1.
+	%sizeX = size(vecX,1);
+	%sizeF = size(vecF,1);
+	sizeV = size(matV,2);
+	%
+	vecDeltaX = vecX_trial - vecX;
+	vecY = matV'*vecDeltaX;
+	yNorm = norm(vecY);
+	assert( 0.0 < yNorm );
+	%
+	%
+	%
+	msgif( prm.msgCopious, __FILE__, __LINE__, "TODO: consider partial quadratic update (OSQU)." );
+	msgif( prm.msgCopious, __FILE__, __LINE__, "  Here, only linear (Broyden) update is applied." );
+	vecFModel_trial = vecF + matW*vecY;
+	vecRho = vecF_trial - vecFModel_trial;
+	matW_plus = matW + vecRho * (vecY')/(yNorm^2);
+	%
+	%
+	%
+	stepUpdateAccuracyCoeff = mygetfield( prm, "stepUpdateAccuracyCoeff", 0.5 );
+	assert( 0.0 <= stepUpdateAccuracyCoeff );
+	assert( stepUpdateAccuracyCoeff <= 1.0 );
+	matE = eye(sizeV,sizeV) - (stepUpdateAccuracyCoeff*vecY)*(vecY');
+	%
+	matD = diag(max([ abs(diag(matW'*matW)), abs(diag(matW_plus'*matW_plus)) ]'));
+	foo1 = sumsq( matW_plus*vecY - matW*vecY ) - vecY'*matA*vecY;
+	foo2 = vecY'*matD*vecY;
+	if ( foo1 <= 0.0 )
+		s = 0.0;
+	elseif ( foo2 <= foo1 )
+		s = 1.0;
+	else
+		s = foo1 / foo2;
+		assert( 0.0 <= s );
+		assert( s <= 1.0 );
+	endif
+	matA = matE*( matA + s*matD )*matE;
+	%
+	%
+	%
 	fModelDat.matVLocal = [];
 	fModelDat.vecX = vecX_trial;
 	fModelDat.vecF = vecF_trial;
+	fModelDat.matW = matW;
+	fModelDat.matA = matA;
 return;
 endfunction
 
@@ -558,7 +635,6 @@ function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
 	%
 	matVLocal = [ matVLocal, vecV ];
 	%
-	%%%matE = eye(sizeV,sizeV) - vecYHat*(vecYHat');
 	matE = eye(sizeV,sizeV) - matV'*matVLocal*(matVLocal')*matV;
 	%
 	fModelDat.matVLocal = matVLocal;
