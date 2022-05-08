@@ -65,7 +65,6 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			vecX_trial = fModelDat.vecXIU;
 			%%%%%vecX_trial = fModelDat.vecXIB;
 			vecF_trial = funchF( vecX_trial );
-			msg( __FILE__, __LINE__, "TODO: Decrease B if model is very good!" );
 			omega_trial = sumsq(vecF_trial)/2.0;
 			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  omega_trial = %g.", omega_trial ) );
 			fevalCount++;
@@ -94,6 +93,12 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  expected fall = %g.", fModelDat.omega - (fModelDat.omegaModelAvgIU + fModelDat.omegaModelVarIU) ) );
 			if ( omega_trial <= fModelDat.omega - avefaThresh*( fModelDat.omega - (fModelDat.omegaModelAvgIU + fModelDat.omegaModelVarIU) ) )
 				msgif( prm.msgCopious, __FILE__, __LINE__, "  Accepting step." );
+				excellentThresh = mygetfield( prm, "excellentThresh", 0.1 );
+				if ( norm(vecF_trial-fModelDat.vecFModelIU) < excellentThresh*norm(fModelDat.vecFModelIU) );
+					msg( __FILE__, __LINE__, "  Model was very accurate; increasing trust region size." );
+					bDnFactor = mygetfield( prm, "bDnFactor", 1.5 );
+					fModelDat = __adjustB( bDnFactor*fModelDat.vecYIU, fModelDat, prm );
+				endif
 				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
 				clear vecX_trial;
 				clear vecF_trial;
