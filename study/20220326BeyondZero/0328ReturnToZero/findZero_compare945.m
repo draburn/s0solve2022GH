@@ -37,6 +37,16 @@ vecF0 = funchF(vecX0);
 %msg( __FILE__, __LINE__, sprintf( "rcond(Df'*Df) = %0.3e.", rcond(Df'*Df) ) );
 
 
+
+prm = [];
+prm.iterMax = 700;
+timeSS = time();
+[ vecXF_z100, vecFF_z100, datOut_z100 ] = zlinsolf100( funchF, vecX0, [], prm );
+time_z100 = time()-timeSS;
+%
+msg( __FILE__, __LINE__, "Goodbye!" ); return;
+
+
 timeSS = time();
 [ vecXF_fsolve, vecFF_fsolve, datOut_fsolve, ] = findZero_fsolve( vecX0, funchF );
 time_fsolve = time()-timeSS;
@@ -44,16 +54,6 @@ msg( __FILE__, __LINE__, "fsolve results..." );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "fsolve", norm(vecFF_fsolve), datOut_fsolve.iterCount, datOut_fsolve.fevalCount, time_fsolve ) );
 %msg( __FILE__, __LINE__, "Goodbye!" ); return;
 
-%msg( __FILE__, __LINE__, "Goodbye!" ); return;
-
-
-
-prm = [];
-prm.iterMax = 1000;
-timeSS = time();
-[ vecXF_z100, vecFF_z100, datOut_z100 ] = zlinsolf100( funchF, vecX0, [], prm );
-time_z100 = time()-timeSS;
-%
 %msg( __FILE__, __LINE__, "Goodbye!" ); return;
 
 
