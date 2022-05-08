@@ -111,7 +111,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			endif
 			%
 			bUpFactor = mygetfield( prm, "bUpFactor", 0.5 );
-			fModelDat = __increaseB( bUpFactor*fModelDat.vecYIU, fModelDat, prm );
+			fModelDat = __adjustB( bUpFactor*fModelDat.vecYIU, fModelDat, prm );
 			%
 			clear vecX_trial;
 			clear vecF_trial;
@@ -503,7 +503,7 @@ endfunction
 
 
 
-function fModelDat = __increaseB( vecY, fModelDat, prm )
+function fModelDat = __adjustB( vecY, fModelDat, prm )
 	% Unpack.
 	%vecX = fModelDat.vecX;
 	%vecF = fModelDat.vecF;
@@ -521,19 +521,39 @@ function fModelDat = __increaseB( vecY, fModelDat, prm )
 	%vecLambda = eig(matB'*matB)
 	%abs(matB*vecY)
 	%
-	%
 	msg( __FILE__, __LINE__, "This __adjustB() is (a little) silly." );
-	yNorm = norm(vecY);
-	assert( 0.0 < yNorm );
-	[ b, indexV ] = max(abs(matB*vecY));
-	matB(indexV,indexV) = 1.0/yNorm;
-	%
-	%want to keep matB strongly non-singular...
-	for n=1:sizeV
-	if ( matB(n,n) < 10.0*sqrt(eps)*matB(indexV,indexV) )
-		matB(n,n) = 10.0*sqrt(eps)*matB(indexV,indexV);
+	bNorm = norm(matB*vecY);
+	if ( bNorm > 1.0 )
+		% We're decreasing B / expanding TR.
+		bCoeffLo = mygetfield( prm, "bCoeffLo", 10.0*sqrt(eps) );
+		yNorm = norm(vecY);
+		assert( 0.0 < yNorm );
+		[ bOld, indexV ] = max(abs(matB*vecY));
+		bNew = 1.0/yNorm;
+		%
+		for n=1:sizeV
+		if ( bCoeffLo*matB(n,n) > bNew )
+			bNew = bCoeffLo*matB(n,n);
+		endif
+		endfor
+		%
+		matB(indexV,indexV) = bNew;
+	elseif ( bNorm < 1 )
+		% We're increasing B / constricting TR.
+		yNorm = norm(vecY);
+		assert( 0.0 < yNorm );
+		[ bOld, indexV ] = max(abs(matB*vecY));
+		bNew = 1.0/yNorm;
+		matB(indexV,indexV) = bNew;
+		%
+		bCoeffLo = mygetfield( prm, "bCoeffLo", 10.0*sqrt(eps) );
+		bLo = bCoeffLo*bNew;
+		for n=1:sizeV
+		if ( matB(n,n) < bLo )
+			matB(n,n) = bLo;
+		endif
+		endfor
 	endif
-	endfor
 	%
 	fModelDat.matB = matB;
 	%echo__matB = matB
