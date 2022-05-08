@@ -103,7 +103,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			endif
 			if ( ~isempty(vecF_cand) )
 			if ( norm(vecF_trial) >= norm(vecF_cand) )
-				msgif( prm.msgNotice, __FILE__, __LINE__, "Current trial is worse than earlier candidate; moving to earlier candidate." );
+				msgif( prm.msgNotice, __FILE__, __LINE__, "Current trial is worse than earlier candidate; forcing acceptance of earlier candidate." );
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fevalCount = %d).", norm(fModelDat.vecF), norm(vecF_cand), fevalCount ) );
 				fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
 				clear vecX_trial;
 				clear vecF_trial;
@@ -127,6 +128,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 					bDnFactor = mygetfield( prm, "bDnFactor", 1.5 );
 					fModelDat = __adjustB( bDnFactor*fModelDat.vecYIU, fModelDat, prm );
 				endif
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fevalCount = %d).", norm(fModelDat.vecF), norm(vecF_trial), fevalCount ) );
 				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
 				clear vecX_trial;
 				clear vecF_trial;
@@ -162,9 +164,9 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		%
 		minRelFallThresh = mygetfield( prm, "minRelFallThresh", 1.0E-4 );
 		if ( fModelDat.omegaModelAvgIB > fModelDat.omega*(1.0-minRelFallThresh) )
-			msgif( prm.msgMain, "We seem to have no way to reduce omega much." );
-			msgif( prm.msgMain, "  This is expected to happen near a bad local minimum." );
-			msgif( prm.msgMain, "  Todo: add handling for this case." );
+			msgif( prm.msgMain, __FILE__, __LINE__, "We seem to have no way to reduce omega much." );
+			msgif( prm.msgMain, __FILE__, __LINE__, "  This is expected to happen near a bad local minimum." );
+			msgif( prm.msgMain, __FILE__, __LINE__, "  Todo: add handling for this case." );
 			break;
 		endif
 		%
@@ -188,7 +190,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			endif
 			if ( ~isempty(vecF_cand) )
 			if ( norm(vecF_trial) >= norm(vecF_cand) )
-				msgif( prm.msgNotice, __FILE__, __LINE__, "Current trial is worse than earlier candidate; moving to earlier candidate." );
+				msgif( prm.msgNotice, __FILE__, __LINE__, "Current trial is worse than earlier candidate; forcing acceptance of earlier candidate." );
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fevalCount = %d).", norm(fModelDat.vecF), norm(vecF_cand), fevalCount ) );
 				fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
 				clear vecX_trial;
 				clear vecF_trial;
@@ -212,6 +215,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 					bDnFactor = mygetfield( prm, "bDnFactor", 1.5 );
 					fModelDat = __adjustB( bDnFactor*fModelDat.vecYPB, fModelDat, prm );
 				endif
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fevalCount = %d).", norm(fModelDat.vecF), norm(vecF_trial), fevalCount ) );
 				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
 				clear vecX_trial;
 				clear vecF_trial;
@@ -246,7 +250,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			continue;
 		endif
 		%
-		msgif( prm.msgNotice, __FILE__, __LINE__, "Refreshing subspace." );
+		msgif( prm.msgCopious, __FILE__, __LINE__, "Refreshing subspace." );
 		[ fModelDat, datOut_refresh ] = __refresh( fModelDat.vecYPB, funchF, fModelDat, prm );
 		fevalCount += datOut_refresh.fevalCount;
 		continue;
@@ -268,7 +272,8 @@ endfunction
 function prm = __initPrm( vecX, vecF, prm )
 	setVerbLevs;
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	prm.msgCopious = mygetfield( prm, "msgCopious", verbLev >= VERBLEV__COPIOUS );
 	prm.msgProgress = mygetfield( prm, "msgProgress", verbLev >= VERBLEV__PROGRESS );
 	prm.msgMain = mygetfield( prm, "msgMain", verbLev >= VERBLEV__MAIN );
@@ -576,6 +581,9 @@ function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
 	%sizeX = size(vecX,1);
 	%sizeF = size(vecF,1);
 	sizeV = size(matV,2);
+	%
+	msg( __FILE__, __LINE__, sprintf( " ( ||F||: %10.3e -> %10.3e. )", norm(vecF), norm(vecF_trial) ) );
+	%
 	%
 	vecDeltaX = vecX_trial - vecX;
 	vecY = matV'*vecDeltaX;
