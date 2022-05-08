@@ -49,7 +49,17 @@ msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "fs
 
 
 prm = [];
-prm.iterMax = 10;
+prm.iterMax = 1000;
+timeSS = time();
+[ vecXF_z100, vecFF_z100, datOut_z100 ] = zlinsolf100( funchF, vecX0, [], prm );
+time_z100 = time()-timeSS;
+%
+%msg( __FILE__, __LINE__, "Goodbye!" ); return;
+
+
+
+prm = [];
+prm.iterMax = 20;
 prm.slinsolfver = 100;
 timeSS = time();
 [ vecXF_940, vecFF_940, datOut_940 ] = findZero_940( vecX0, funchF, prm );
@@ -59,8 +69,7 @@ time_940 = time()-timeSS;
 %
 prm = [];
 prm.step_prm.usePostLinsolfPhiPatch = false;
-prm.iterMax = 5;
-prm.iterMax = 100;
+prm.iterMax = 20;
 timeSS = time();
 [ vecXF_904, vecFF_904, datOut_904 ] = findZero_904( vecX0, funchF, prm );
 time_904 = time()-timeSS;
@@ -68,22 +77,21 @@ time_904 = time()-timeSS;
 %
 prm = [];
 prm.step_prm.usePostLinsolfPhiPatch = true;
-prm.iterMax = 5;
-prm.iterMax = 100;
+prm.iterMax = 20;
 timeSS = time();
 [ vecXF_904x, vecFF_904x, datOut_904x ] = findZero_904( vecX0, funchF, prm );
 time_904x = time()-timeSS;
 %
 %
 prm = [];
-prm.iterMax = 100;
+prm.iterMax = 20;
 timeSS = time();
 [ vecXF_800, vecFF_800, datOut_800 ] = findZero_800( vecX0, funchF, prm );
 time_800 = time()-timeSS;
 
 
 prm = [];
-prm.iterMax = 50;
+prm.iterMax = 20;
 prm.slinsolfver = 200;
 timeSS = time();
 [ vecXF_940x200, vecFF_940x200, datOut_940x200 ] = findZero_940( vecX0, funchF, prm );
@@ -117,6 +125,7 @@ msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "94
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "940x200", norm(vecFF_940x200), datOut_940x200.iterCount, datOut_940x200.fevalCount, time_940x200 ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "904", norm(vecFF_904), datOut_904.iterCount, datOut_904.fevalCount, time_904 ) );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "904x", norm(vecFF_904x), datOut_904x.iterCount, datOut_904x.fevalCount, time_904x ) );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "z100", norm(vecFF_z100), datOut_z100.iterCount, datOut_z100.fevalCount, time_z100 ) );
 %
 %
 %
@@ -128,7 +137,8 @@ semilogy( ...
   datOut_940.fevalCountVals, datOut_940.fNormVals+epsViz, '*-', 'markersize', 20, 'linewidth', 2, ...
   datOut_940x200.fevalCountVals, datOut_940x200.fNormVals+epsViz, 'p-', 'markersize', 20, 'linewidth', 2, ...
   datOut_904.fevalCountVals, datOut_904.fNormVals+epsViz, 'o-', 'markersize', 20, 'linewidth', 2, ...
-  datOut_904x.fevalCountVals, datOut_904x.fNormVals+epsViz, 's-', 'markersize', 20, 'linewidth', 2  );
+  datOut_904x.fevalCountVals, datOut_904x.fNormVals+epsViz, 's-', 'markersize', 20, 'linewidth', 2, ...
+  datOut_z100.fevalCountVals, datOut_z100.fNormVals+epsViz, '+-', 'markersize', 20, 'linewidth', 2  );
 title( "legend" );
 legend( ...
   "800", ...
@@ -136,6 +146,7 @@ legend( ...
   "940x200", ...
   "904", ...
   "904x", ...
+  "z100", ...
   "location", "southwest" );
 %
 numFigs++; figure( numFigs );
@@ -144,7 +155,8 @@ semilogy( ...
   datOut_940.fevalCountVals, datOut_940.fNormVals+epsViz, '*-', 'markersize', 20, 'linewidth', 2, ...
   datOut_940x200.fevalCountVals, datOut_940x200.fNormVals+epsViz, 'p-', 'markersize', 20, 'linewidth', 2, ...
   datOut_904.fevalCountVals, datOut_904.fNormVals+epsViz, 'o-', 'markersize', 20, 'linewidth', 2, ...
-  datOut_904x.fevalCountVals, datOut_904x.fNormVals+epsViz, 's-', 'markersize', 20, 'linewidth', 2  );
+  datOut_904x.fevalCountVals, datOut_904x.fNormVals+epsViz, 's-', 'markersize', 20, 'linewidth', 2, ...
+  datOut_z100.fevalCountVals, datOut_z100.fNormVals+epsViz, '+-', 'markersize', 20, 'linewidth', 2  );
 grid on;
 ylabel( "||f||" );
 xlabel( "feval count" );
@@ -155,7 +167,8 @@ semilogy( ...
   datOut_940.iterCountVals, datOut_940.fNormVals+epsViz, '*-', 'markersize', 20, 'linewidth', 2, ...
   datOut_940x200.iterCountVals, datOut_940x200.fNormVals+epsViz, 'p-', 'markersize', 20, 'linewidth', 2, ...
   datOut_904.iterCountVals, datOut_904.fNormVals+epsViz, 'o-', 'markersize', 20, 'linewidth', 2, ...
-  datOut_904x.iterCountVals, datOut_904x.fNormVals+epsViz, 's-', 'markersize', 20, 'linewidth', 2);
+  datOut_904x.iterCountVals, datOut_904x.fNormVals+epsViz, 's-', 'markersize', 20, 'linewidth', 2, ...
+  datOut_z100.iterCountVals, datOut_z100.fNormVals+epsViz, '+-', 'markersize', 20, 'linewidth', 2 );
 grid on;
 ylabel( "||f||" );
 xlabel( "iteration count" );
