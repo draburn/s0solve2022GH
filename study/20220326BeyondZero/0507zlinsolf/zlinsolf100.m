@@ -90,10 +90,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		endif
 		%
 		if ( fModelDat.bIU <= 1.0 && fModelDat.omegaModelAvgIU + fModelDat.omegaModelVarIU <= prm.omegaTol )
-		%%%%%if ( fModelDat.omegaModelAvgIU + fModelDat.omegaModelVarIU <= prm.omegaTol )
 			msgif( prm.msgCopious, __FILE__, __LINE__, "Trying ideal unbound step." );
 			vecX_trial = fModelDat.vecXIU;
-			%%%%%vecX_trial = fModelDat.vecXIB;
 			vecF_trial = funchF( vecX_trial );
 			omega_trial = sumsq(vecF_trial)/2.0;
 			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  omega_trial = %g.", omega_trial ) );
@@ -105,7 +103,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			endif
 			if ( ~isempty(vecF_cand) )
 			if ( norm(vecF_trial) >= norm(vecF_cand) )
-				msgif( prm.msgNotice, __FILE__, __LINE__, "Current trial is worse than earlier candidate; moving to earlier candidate." );
+				msgif( prm.msgNotice, __FILE__, __LINE__, "Current trial is worse than earlier candidate; forcing acceptance of earlier candidate." );
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fevalCount = %d).", norm(fModelDat.vecF), norm(vecF_cand), fevalCount ) );
 				fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
 				clear vecX_trial;
 				clear vecF_trial;
@@ -129,6 +128,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 					bDnFactor = mygetfield( prm, "bDnFactor", 1.5 );
 					fModelDat = __adjustB( bDnFactor*fModelDat.vecYIU, fModelDat, prm );
 				endif
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fevalCount = %d).", norm(fModelDat.vecF), norm(vecF_trial), fevalCount ) );
 				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
 				clear vecX_trial;
 				clear vecF_trial;
@@ -145,8 +145,16 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				vecF_cand = vecF_trial;
 			endif
 			%
+			yNorm = norm( fModelDat.vecYIU );
+			bBefore = norm( fModelDat.matB * fModelDat.vecYIU );
+			%
 			bUpFactor = mygetfield( prm, "bUpFactor", 0.5 );
 			fModelDat = __adjustB( bUpFactor*fModelDat.vecYIU, fModelDat, prm );
+			%
+			bAfter = norm( fModelDat.matB * fModelDat.vecYIU );
+			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  ||B*y|| before: %g -> %g.", bBefore, bAfter ) );
+			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  ||y|| = %10.3e.", yNorm ) );
+			assert( bAfter > 1.01*bBefore );
 			%
 			clear vecX_trial;
 			clear vecF_trial;
@@ -156,9 +164,9 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		%
 		minRelFallThresh = mygetfield( prm, "minRelFallThresh", 1.0E-4 );
 		if ( fModelDat.omegaModelAvgIB > fModelDat.omega*(1.0-minRelFallThresh) )
-			msgif( prm.msgMain, "We seem to have no way to reduce omega much." );
-			msgif( prm.msgMain, "  This is expected to happen near a bad local minimum." );
-			msgif( prm.msgMain, "  Todo: add handling for this case." );
+			msgif( prm.msgMain, __FILE__, __LINE__, "We seem to have no way to reduce omega much." );
+			msgif( prm.msgMain, __FILE__, __LINE__, "  This is expected to happen near a bad local minimum." );
+			msgif( prm.msgMain, __FILE__, __LINE__, "  Todo: add handling for this case." );
 			break;
 		endif
 		%
@@ -182,7 +190,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			endif
 			if ( ~isempty(vecF_cand) )
 			if ( norm(vecF_trial) >= norm(vecF_cand) )
-				msgif( prm.msgNotice, __FILE__, __LINE__, "Current trial is worse than earlier candidate; moving to earlier candidate." );
+				msgif( prm.msgNotice, __FILE__, __LINE__, "Current trial is worse than earlier candidate; forcing acceptance of earlier candidate." );
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fevalCount = %d).", norm(fModelDat.vecF), norm(vecF_cand), fevalCount ) );
 				fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
 				clear vecX_trial;
 				clear vecF_trial;
@@ -206,6 +215,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 					bDnFactor = mygetfield( prm, "bDnFactor", 1.5 );
 					fModelDat = __adjustB( bDnFactor*fModelDat.vecYPB, fModelDat, prm );
 				endif
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fevalCount = %d).", norm(fModelDat.vecF), norm(vecF_trial), fevalCount ) );
 				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
 				clear vecX_trial;
 				clear vecF_trial;
@@ -222,8 +232,17 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				vecF_cand = vecF_trial;
 			endif
 			%
+			%
+			yNorm = norm( fModelDat.vecYPB );
+			bBefore = norm( fModelDat.matB * fModelDat.vecYPB );
+			%
 			bUpFactor = mygetfield( prm, "bUpFactor", 0.5 );
 			fModelDat = __adjustB( bUpFactor*fModelDat.vecYPB, fModelDat, prm );
+			%
+			bAfter = norm( fModelDat.matB * fModelDat.vecYPB );
+			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  ||B*y||: %10.3e -> %10.3e.", bBefore, bAfter ) );
+			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  ||y|| = %10.3e.", yNorm ) );
+			assert( bAfter > 1.01*bBefore );
 			%
 			clear vecX_trial;
 			clear vecF_trial;
@@ -231,7 +250,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			continue;
 		endif
 		%
-		msgif( prm.msgNotice, __FILE__, __LINE__, "Refreshing subspace." );
+		msgif( prm.msgCopious, __FILE__, __LINE__, "Refreshing subspace." );
 		[ fModelDat, datOut_refresh ] = __refresh( fModelDat.vecYPB, funchF, fModelDat, prm );
 		fevalCount += datOut_refresh.fevalCount;
 		continue;
@@ -252,7 +271,9 @@ endfunction
 
 function prm = __initPrm( vecX, vecF, prm )
 	setVerbLevs;
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	prm.msgCopious = mygetfield( prm, "msgCopious", verbLev >= VERBLEV__COPIOUS );
 	prm.msgProgress = mygetfield( prm, "msgProgress", verbLev >= VERBLEV__PROGRESS );
 	prm.msgMain = mygetfield( prm, "msgMain", verbLev >= VERBLEV__MAIN );
@@ -561,6 +582,9 @@ function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
 	%sizeF = size(vecF,1);
 	sizeV = size(matV,2);
 	%
+	msg( __FILE__, __LINE__, sprintf( " ( ||F||: %10.3e -> %10.3e. )", norm(vecF), norm(vecF_trial) ) );
+	%
+	%
 	vecDeltaX = vecX_trial - vecX;
 	vecY = matV'*vecDeltaX;
 	yNorm = norm(vecY);
@@ -677,7 +701,7 @@ function fModelDat = __adjustB( vecY, fModelDat, prm )
 		yNorm = norm(vecY);
 		assert( 0.0 < yNorm );
 		[ bOld, indexV ] = max(abs(matB*vecY));
-		bNew = 1.0/yNorm;
+		bNew = 1.0/abs(yNorm);
 		%
 		for n=1:sizeV
 		if ( bCoeffLo*matB(n,n) > bNew )
@@ -691,7 +715,7 @@ function fModelDat = __adjustB( vecY, fModelDat, prm )
 		yNorm = norm(vecY);
 		assert( 0.0 < yNorm );
 		[ bOld, indexV ] = max(abs(matB*vecY));
-		bNew = 1.0/yNorm;
+		bNew = 1.0/abs(vecY(indexV));
 		matB(indexV,indexV) = bNew;
 		%
 		bCoeffLo = mygetfield( prm, "bCoeffLo", 10.0*sqrt(eps) );
@@ -709,61 +733,6 @@ function fModelDat = __adjustB( vecY, fModelDat, prm )
 	%vecLambda = eig(matB'*matB)
 	%abs(matB*vecY)
 	return;
-	
-	%
-	%
-	yNorm = norm(vecY);
-	assert( 0.0 < yNorm );
-	yHat = vecY/yNorm;
-	b = norm(matB*vecY);
-	assert( 0.0 < b );
-	s = (b^-1)-1.0
-	s = median([ 1.0E-8, 1.0E8, s ])
-	matB += (s*(matB*yHat))*(yHat');
-	echo__matB = matB
-	echo__matBTB = matB'*matB
-	vecLambda = eig(matB'*matB)
-	error( "HALT!" );
-	
-	
-	%
-	%
-	yNorm = norm(vecY);
-	assert( 0.0 < yNorm );
-	yHat = vecY/yNorm;
-	b = norm(matB*vecY);
-	assert( 0.0 < b );
-	s = (b^-1)-1.0
-	s = median([ 1.0E-8, 1.0E8, s ])
-	matB += (s*(matB*yHat))*(yHat');
-	echo__matB = matB
-	echo__matBTB = matB'*matB
-	vecLambda = eig(matB'*matB)
-	error( "HALT!" );
-	%
-	%
-	
-	
-	%
-	%
-	matIV = eye(sizeV,sizeV);
-	vecYHat = vecY/yNorm;
-	matB -= (matB*vecYHat)*(vecYHat');
-	matB += vecYHat*(vecYHat')/yNorm;
-	b = norm(matB*vecY)
-	echo__matB = matB
-	echo__matBTB = matB'*matB
-	vecLambda = eig(matB'*matB)
-	error( "HALT!" );
-	%
-	fModelDat.matB = matB;
-	if (0)
-		fModelDat.hackCounter = mygetfield( fModelDat, "hackCounter", 0 );
-		fModelDat.hackCounter++;
-		if ( 10 <= fModelDat.hackCounter )
-			error( "BREAK!" );
-		endif
-	endif
 return;
 endfunction
 

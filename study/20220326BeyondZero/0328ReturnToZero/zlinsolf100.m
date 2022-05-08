@@ -72,6 +72,14 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		%
 		if ( iterCount > prm.iterMax )
 			msgif( prm.msgMain, __FILE__, __LINE__, "IMPOSED STOP: iterCount >= prm.iterMax." );
+			if (1)
+				msgif( prm.msgCopious, __FILE__, __LINE__, "vvvvv Data dump..." );
+				__dumpModel( fModelDat, prm );
+				vecX_cand
+				vecF_cand
+				msgif( prm.msgCopious, __FILE__, __LINE__, "^^^^^ End data dump." );
+				msgif( prm.msgMain, __FILE__, __LINE__, "IMPOSED STOP: iterCount >= prm.iterMax." );
+			endif
 			break;
 		endif
 		%
@@ -271,8 +279,8 @@ endfunction
 
 function prm = __initPrm( vecX, vecF, prm )
 	setVerbLevs;
-	%verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	prm.msgCopious = mygetfield( prm, "msgCopious", verbLev >= VERBLEV__COPIOUS );
 	prm.msgProgress = mygetfield( prm, "msgProgress", verbLev >= VERBLEV__PROGRESS );
@@ -582,7 +590,7 @@ function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
 	%sizeF = size(vecF,1);
 	sizeV = size(matV,2);
 	%
-	msg( __FILE__, __LINE__, sprintf( " ( ||F||: %10.3e -> %10.3e. )", norm(vecF), norm(vecF_trial) ) );
+	msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( " ( ||F||: %10.3e -> %10.3e. )", norm(vecF), norm(vecF_trial) ) );
 	%
 	%
 	vecDeltaX = vecX_trial - vecX;
@@ -708,6 +716,7 @@ function fModelDat = __adjustB( vecY, fModelDat, prm )
 			bNew = bCoeffLo*matB(n,n);
 		endif
 		endfor
+		matB = 0.9*matB;
 		%
 		matB(indexV,indexV) = bNew;
 	elseif ( bNorm < 1 )
@@ -725,6 +734,7 @@ function fModelDat = __adjustB( vecY, fModelDat, prm )
 			matB(n,n) = bLo;
 		endif
 		endfor
+		matB = 2.0*matB;
 	endif
 	%
 	fModelDat.matB = matB;
@@ -736,3 +746,44 @@ function fModelDat = __adjustB( vecY, fModelDat, prm )
 return;
 endfunction
 
+function __dumpModel( fModelDat, prm )
+	msg( __FILE__, __LINE__, "vvvvvvvvvvvvvvvvvvvv Begin __dumpModel()..." );
+	vecX = fModelDat.vecX;
+	vecF = fModelDat.vecF;
+	omega = fModelDat.omega;
+	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
+	matV = fModelDat.matV; % Subspace basis matrix.
+	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
+	matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
+	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify ||B*y|| <= 1.
+	sizeX = size(vecX,1);
+	sizeF = size(vecF,1);
+	sizeV = size(matB,2);
+	%
+	echo__omega = omega
+	sizeVLocal = size(matVLocal,2)
+	sizeV = size(matV,2)
+	%
+	vecYIU = fModelDat.vecYIU;
+	vecYIB = fModelDat.vecYIB;
+	vecYPB = fModelDat.vecYPB;
+	%
+	vecFModelIU = vecF + (matW*vecYIU);
+	vecFModelIB = vecF + (matW*vecYIB);
+	vecFModelPB = vecF + (matW*vecYPB);
+	%
+	omegaModelAvgIU = sumsq(vecFModelIU)/2.0
+	omegaModelAvgIB = sumsq(vecFModelIB)/2.0
+	omegaModelAvgPB = sumsq(vecFModelPB)/2.0
+	%
+	omegaModelVarIU = vecYIU'*matA*vecYIU
+	omegaModelVarIB = vecYIB'*matA*vecYIB
+	omegaModelVarPB = vecYPB'*matA*vecYPB
+	%
+	bIU = norm(matB*vecYIU)
+	bIB = norm(matB*vecYIB)
+	bPB = norm(matB*vecYPB)
+	%
+	msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^ End __dumpModel()." );
+return;
+endfunction
