@@ -219,7 +219,7 @@ function [ fModelDat, datOut ] = __initModel( funchF, vecX, vecF, prm )
 	fModelDat.matW = [ vecW ];
 	fModelDat.matA = [ 0.0 ];
 	%
-	bScale0 = mygetfield( prm, "bScale0", eps );
+	bScale0 = mygetfield( prm, "bScale0", sqrt(eps) );
 	assert( 0.0 < bScale0 );
 	fModelDat.matB = [ bScale0 ];
 	%
@@ -337,9 +337,10 @@ endfunction
 
 
 function vecY = __calcBoundStep( matH, matBTB, vecMG, prm )
-	[ matR, cholFlag ] = chol( matH );
 	%
 	cholSafeTol = mygetfield( prm, "cholSafeTol", sqrt(eps) );
+	%
+	[ matR, cholFlag ] = chol( matH );
 	if ( 0 == cholFlag && min(diag(matR)) > cholSafeTol*max(abs(diag(matR))) )
 		s1 = 1.0;
 	else
@@ -361,6 +362,7 @@ function vecY = __calcBoundStep( matH, matBTB, vecMG, prm )
 	endif
 	%
 	funchBM1OfS = @(s)( funchBOfY(funchYOfS(s)) - 1.0 );
+	
 	s = fzero( funchBM1OfS, [0.0, s1] );
 	vecY = funchYOfS(s);
 return;
@@ -402,7 +404,7 @@ function [ fModelDat, datOut ] = __expandModel( vecU, funchF, fModelDat, prm )
 	fModelDat.matA = zeros(sizeV+1,sizeV+1);
 	fModelDat.matA(1:sizeV,1:sizeV) = matA;
 	%
-	bScale0 = mygetfield( prm, "bScale0", eps );
+	bScale0 = mygetfield( prm, "bScale0", sqrt(eps) );
 	bScale1 = mygetfield( prm, "bScale1", 1.0e-4 );
 	assert( 0.0 < bScale0 );
 	assert( 0.0 < bScale1 );
@@ -514,18 +516,76 @@ function fModelDat = __increaseB( vecY, fModelDat, prm )
 	%sizeX = size(vecX,1);
 	%sizeF = size(vecF,1);
 	sizeV = size(matB,2);
+	%echo__matB = matB
+	%echo__matBTB = matB'*matB
+	%vecLambda = eig(matB'*matB)
+	%abs(matB*vecY)
+	%
+	%
+	msg( __FILE__, __LINE__, "This __adjustB() is (a little) silly." );
+	yNorm = norm(vecY);
+	assert( 0.0 < yNorm );
+	[ b, indexV ] = max(abs(matB*vecY));
+	matB(indexV,indexV) = 1.0/yNorm;
+	%
+	%want to keep matB strongly non-singular...
+	for n=1:sizeV
+	if ( matB(n,n) < 10.0*sqrt(eps)*matB(indexV,indexV) )
+		matB(n,n) = 10.0*sqrt(eps)*matB(indexV,indexV);
+	endif
+	endfor
+	%
+	fModelDat.matB = matB;
+	%echo__matB = matB
+	%echo__matBTB = matB'*matB
+	%vecLambda = eig(matB'*matB)
+	%abs(matB*vecY)
+	return;
+	
+	%
+	%
+	yNorm = norm(vecY);
+	assert( 0.0 < yNorm );
+	yHat = vecY/yNorm;
+	b = norm(matB*vecY);
+	assert( 0.0 < b );
+	s = (b^-1)-1.0
+	s = median([ 1.0E-8, 1.0E8, s ])
+	matB += (s*(matB*yHat))*(yHat');
 	echo__matB = matB
+	echo__matBTB = matB'*matB
+	vecLambda = eig(matB'*matB)
+	error( "HALT!" );
+	
+	
+	%
+	%
+	yNorm = norm(vecY);
+	assert( 0.0 < yNorm );
+	yHat = vecY/yNorm;
+	b = norm(matB*vecY);
+	assert( 0.0 < b );
+	s = (b^-1)-1.0
+	s = median([ 1.0E-8, 1.0E8, s ])
+	matB += (s*(matB*yHat))*(yHat');
+	echo__matB = matB
+	echo__matBTB = matB'*matB
+	vecLambda = eig(matB'*matB)
+	error( "HALT!" );
+	%
+	%
+	
+	
 	%
 	%
 	matIV = eye(sizeV,sizeV);
-	yNorm = norm(vecY);
-	assert( 0.0 < yNorm );
 	vecYHat = vecY/yNorm;
 	matB -= (matB*vecYHat)*(vecYHat');
 	matB += vecYHat*(vecYHat')/yNorm;
 	b = norm(matB*vecY)
 	echo__matB = matB
-	eig(matB)
+	echo__matBTB = matB'*matB
+	vecLambda = eig(matB'*matB)
 	error( "HALT!" );
 	%
 	fModelDat.matB = matB;
