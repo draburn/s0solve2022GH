@@ -73,6 +73,17 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		  norm(fModelDat.vecYIB), fModelDat.bIB, ...
 		  norm(fModelDat.vecYPB), fModelDat.bPB ) );
 		%
+		if ( fModelDat.bPB > 1.0 + sqrt(eps) || fModelDat.bIB > 1.0 + sqrt(eps) )
+			msg( __FILE__, __LINE__, "ERROR: fModelDat.bPB or bIB > 1.0 + sqrt(eps)" );
+			break;
+		endif
+		if ( fModelDat.omegaModelAvgIU > fModelDat.omega ...
+		  || fModelDat.omegaModelAvgIB > fModelDat.omega ...
+		  || fModelDat.omegaModelAvgPB > fModelDat.omega )
+			msg( __FILE__, __LINE__, "ERROR: omegaModelAvg (of at least one flavor) > omega." );
+			break;
+		endif
+		%
 		% Simple stoping criteria.
 		if ( norm(vecF_best) <= prm.fTol )
 			msgif( prm.msgMain, __FILE__, __LINE__, "SUCCESS: sumsq(vecF_best) <= prm.fTol^2." );
@@ -97,13 +108,16 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			break;
 		endif
 		%
-		if ( fModelDat.omegaModelAvgIU > prm.omegaTol && size(fModelDat.matV,2) < size(vecX_initial,1) )
-			% Conceptually, we could also consider "refreshing" something already in our space.
+		if ( fModelDat.omegaModelAvgIU > prm.omegaTol )
+		if ( size(fModelDat.matV,2) < size(vecX_initial,1) )
+			% Conceptually, we could also consider "refreshing" something already in our space;
+			%  alternatively, we could be more conservative about expanding the subspace.
 			% This is an area for future analysis.
 			msgif( prm.msgCopious, __FILE__, __LINE__, "Expanding subspace." );
 			[ fModelDat, datOut_expandModel ] = __expandModel( fModelDat.vecFModelIU, funchF, fModelDat, prm );
 			fevalCount += datOut_expandModel.fevalCount;
 			continue;
+		endif
 		endif
 		%
 		if ( fModelDat.bIU <= 1.0 && fModelDat.omegaModelAvgIU + fModelDat.omegaModelVarIU <= prm.omegaTol )
@@ -147,7 +161,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 					fModelDat = __removeB( bRemoveFactor*fModelDat.vecYIU, fModelDat, prm );
 				endif
 				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
-				  fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount ) );
+				  fModelDat.omega, sumsq(vecF_trial)/2.0, fModelDat.omega-sumsq(vecF_trial)/2.0, fevalCount ) );
 				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
 				clear vecX_trial;
 				clear vecF_trial;
@@ -240,7 +254,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 					fModelDat = __removeB( bRemoveFactor*fModelDat.vecYPB, fModelDat, prm );
 				endif
 				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
-				  fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount ) );
+				  fModelDat.omega, sumsq(vecF_trial)/2.0, fModelDat.omega-sumsq(vecF_trial)/2.0, fevalCount ) );
 				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
 				clear vecX_trial;
 				clear vecF_trial;
@@ -304,8 +318,8 @@ endfunction
 function prm = __initPrm( vecX, vecF, prm )
 	setVerbLevs;
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
-	%verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	prm.msgCopious = mygetfield( prm, "msgCopious", verbLev >= VERBLEV__COPIOUS );
 	prm.msgProgress = mygetfield( prm, "msgProgress", verbLev >= VERBLEV__PROGRESS );
 	prm.msgMain = mygetfield( prm, "msgMain", verbLev >= VERBLEV__MAIN );
@@ -466,7 +480,7 @@ function vecY = __calcStep( matH, vecMG, prm )
 	if ( 0 == cholFlag && min(diag(matR)) > cholSafeTol*max(abs(diag(matR))) )
 		vecY = matR \ (matR'\vecMG);
 	else
-		msgif( prm.msgNotice, __FILE__, __LINE__, "Extrapolating step to singular point." );
+		msgif( prm.msgNotice, __FILE__, __LINE__, "Extrapolating step to singular point. (Perhaps should bail instead?)" );
 		hScale = max(max(abs(matH)));
 		assert( 0.0 < hScale );
 		sizeV = size(matH,1);
@@ -522,9 +536,6 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 	%
 	s = fzero( funchBM1OfS, [0.0, s1] );
 	vecY = funchYOfS(s);
-	%
-	assert( (vecY'*matH*vecY)/2.0 - (vecY'*vecMG) <= 0.0 );
-	assert( funchBOfY(vecY) < 1.0 + sqrt(eps) );
 return;
 endfunction
 
@@ -649,6 +660,8 @@ function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
 		assert( 0.0 <= s );
 		assert( s <= 1.0 );
 	endif
+	coeffD = mygetfield( prm, "coeffD", 10.0 );
+	s*=coeffD;
 	matA = matE*( matA + s*matD )*matE;
 	%
 	%
