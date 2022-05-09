@@ -121,7 +121,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			if ( ~isempty(vecF_cand) )
 			if ( norm(vecF_trial) >= norm(vecF_cand) )
 				msgif( prm.msgNotice, __FILE__, __LINE__, "Current trial is worse than earlier candidate; forcing acceptance of earlier candidate." );
-				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fevalCount = %d).", norm(fModelDat.vecF), norm(vecF_cand), fevalCount ) );
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
+				  fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount ) );
 				fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
 				clear vecX_trial;
 				clear vecF_trial;
@@ -145,7 +146,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 					bRemoveFactor = mygetfield( prm, "bRemoveFactor", 1.5 );
 					fModelDat = __removeB( bRemoveFactor*fModelDat.vecYIU, fModelDat, prm );
 				endif
-				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fevalCount = %d).", norm(fModelDat.vecF), norm(vecF_trial), fevalCount ) );
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
+				  fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount ) );
 				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
 				clear vecX_trial;
 				clear vecF_trial;
@@ -212,7 +214,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			if ( ~isempty(vecF_cand) )
 			if ( norm(vecF_trial) >= norm(vecF_cand) )
 				msgif( prm.msgNotice, __FILE__, __LINE__, "Current trial is worse than earlier candidate; forcing acceptance of earlier candidate." );
-				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fevalCount = %d).", norm(fModelDat.vecF), norm(vecF_cand), fevalCount ) );
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
+				  fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount ) );
 				fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
 				clear vecX_trial;
 				clear vecF_trial;
@@ -236,7 +239,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 					bRemoveFactor = mygetfield( prm, "bRemoveFactor", 1.5 );
 					fModelDat = __removeB( bRemoveFactor*fModelDat.vecYPB, fModelDat, prm );
 				endif
-				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fevalCount = %d).", norm(fModelDat.vecF), norm(vecF_trial), fevalCount ) );
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
+				  fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount ) );
 				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
 				clear vecX_trial;
 				clear vecF_trial;
@@ -520,6 +524,7 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 	vecY = funchYOfS(s);
 	%
 	assert( (vecY'*matH*vecY)/2.0 - (vecY'*vecMG) <= 0.0 );
+	assert( funchBOfY(vecY) < 1.0 + sqrt(eps) );
 return;
 endfunction
 
@@ -626,10 +631,11 @@ function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
 	%
 	%
 	%
-	stepUpdateAccuracyCoeff = mygetfield( prm, "stepUpdateAccuracyCoeff", 0.5 );
+	vecYHat = vecY/yNorm;
+	stepUpdateAccuracyCoeff = mygetfield( prm, "stepUpdateAccuracyCoeff", 0.0 );
 	assert( 0.0 <= stepUpdateAccuracyCoeff );
 	assert( stepUpdateAccuracyCoeff <= 1.0 );
-	matE = eye(sizeV,sizeV) - (stepUpdateAccuracyCoeff*vecY)*(vecY');
+	matE = eye(sizeV,sizeV) - (stepUpdateAccuracyCoeff*vecYHat)*(vecYHat');
 	%
 	matD = diag(max([ abs(diag(matW'*matW)), abs(diag(matW_plus'*matW_plus)) ]'));
 	foo1 = sumsq( matW_plus*vecY - matW*vecY ) - vecY'*matA*vecY;
