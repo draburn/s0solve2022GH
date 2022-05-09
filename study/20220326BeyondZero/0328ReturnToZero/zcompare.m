@@ -1,8 +1,8 @@
 clear;
 setVerbLevs;
 mainStartTime = time();
-runStr = datestr(now,31);
-msg( __FILE__, __LINE__, sprintf( "Starting run '%s'.", runStr ) );
+mainStartDatestr = datestr(now,31);
+msg( __FILE__, __LINE__, sprintf( "Starting run suite '%s'.", mainStartDatestr ) );
 %
 %
 sizeX = 10;
@@ -13,21 +13,50 @@ zcompare__setF;
 %
 %
 numRuns = 0;
-numRuns++; runList(numRuns).r.runType = 50; runList(numRuns).r.prm = [];
-numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = [];
-numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm = [];
+numRuns++; runList(numRuns).r.runType = 50; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "(WIP)";
+numRuns++; runList(numRuns).r.runType = -1; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "(dne)";
 %
 %
 assert( 0 < numRuns );
 for runIndex = 1 : numRuns
 	r = runList(runIndex).r;
-	msg( __FILE__, __LINE__, sprintf( "Starting run of type '%d' (%d/%d).", r.runType, runIndex, numRuns ) );
+	if (isempty(r.prmMemo))
+		r.runName = sprintf( "%d", r.runType );
+	else
+		r.runName = sprintf( "%d %s", r.runType, r.prmMemo );
+	endif
+	msg( __FILE__, __LINE__, sprintf( "Starting run %d/%d: '%s'...", runIndex, numRuns, r.runName ) );
 	zcompare__doRun;
 	runList(runIndex).r = r;
 endfor
+vecF0 = funchF(vecX0);
 %
 mainElapsedTime = time()-runStartTime;
-msg( __FILE__, __LINE__, sprintf( "Run '%s' with F '%s' completed in %0.3es.", runStr, runFStr, mainElapsedTime ) );
+msg( __FILE__, __LINE__, sprintf( "Run suite '%s' with F '%s' completed in %0.3es.", mainStartDatestr, runFStr, mainElapsedTime ) );
+%
+msg( __FILE__, __LINE__, sprintf( "norm(vecF0) = %g.", norm(vecF0) ) );
+msg( __FILE__, __LINE__, "Solver results..." );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11s;  %11s;  %11s;  %11s.", "solver name", "||vecFF||", "stepCount", "fevalCount", "time(s)" ) );
+for runIndex = 1 : numRuns
+	r = runList(runIndex).r;
+	msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", ...
+	  r.runName, norm(r.vecFF), r.stepCount, r.fevalCount, r.elapsedTime ) );
+endfor
+%
+msg( __FILE__, __LINE__, "Goodbye!" );
+return;
+
+
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "fsolve", norm(vecFF_fsolve), datOut_fsolve.iterCount, datOut_fsolve.fevalCount, time_fsolve ) );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "800", norm(vecFF_800), datOut_800.iterCount, datOut_800.fevalCount, time_800 ) );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "940", norm(vecFF_940), datOut_940.iterCount, datOut_940.fevalCount, time_940 ) );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "940x200", norm(vecFF_940x200), datOut_940x200.iterCount, datOut_940x200.fevalCount, time_940x200 ) );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "904", norm(vecFF_904), datOut_904.iterCount, datOut_904.fevalCount, time_904 ) );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "904x", norm(vecFF_904x), datOut_904x.iterCount, datOut_904x.fevalCount, time_904x ) );
+%msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "z100", norm(vecFF_z100), datOut_z100.iterCount, datOut_z100.fevalCount, time_z100 ) );
+msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "z100", norm(vecFF_z100), datOut_z100.stepCount, datOut_z100.fevalCount, time_z100 ) );
 
 error( "END OF VALID CODE." );
 
