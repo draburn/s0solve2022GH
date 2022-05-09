@@ -41,6 +41,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 	%
 	% Current local vecX and vecF are stored only in fModelDat to avoid redundancy.
 	iterCount = 0;
+	stepCount = 0;
 	vecX_cand = []; % Candidate for next vecX.
 	vecF_cand = [];
 	vecX_best = vecX_initial;
@@ -50,9 +51,11 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		%
 		datOut.iterCountVals(iterCount+1) = iterCount;
 		datOut.fevalCountVals(iterCount+1) = fevalCount;
+		datOut.stepCountVals(iterCount+1) = stepCount;
 		datOut.fNormVals(iterCount+1) = norm(vecF_best);
 		datOut.vecXVals(:,iterCount+1) = fModelDat.vecX;
 		datOut.vecFVals(:,iterCount+1) = fModelDat.vecF;
+		datOut.iterCountOfSteps(stepCount+1) = iterCount;
 		iterCount++;
 		%
 		%
@@ -108,7 +111,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			break;
 		endif
 		%
-		if ( fModelDat.omegaModelAvgIU > prm.omegaTol )
+		%if ( fModelDat.omegaModelAvgIU > prm.omegaTol )
+		if ( fModelDat.omegaModelAvgIU > fModelDat.omega/100.0 )
 		if ( size(fModelDat.matV,2) < size(vecX_initial,1) )
 			% Conceptually, we could also consider "refreshing" something already in our space;
 			%  alternatively, we could be more conservative about expanding the subspace.
@@ -138,6 +142,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
 				  fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount ) );
 				fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
+				stepCount++;
 				clear vecX_trial;
 				clear vecF_trial;
 				clear omega_trial;
@@ -163,6 +168,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
 				  fModelDat.omega, sumsq(vecF_trial)/2.0, fModelDat.omega-sumsq(vecF_trial)/2.0, fevalCount ) );
 				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
+				stepCount++;
 				clear vecX_trial;
 				clear vecF_trial;
 				clear omega_trial;
@@ -231,6 +237,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
 				  fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount ) );
 				fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
+				stepCount++;
 				clear vecX_trial;
 				clear vecF_trial;
 				clear omega_trial;
@@ -256,6 +263,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
 				  fModelDat.omega, sumsq(vecF_trial)/2.0, fModelDat.omega-sumsq(vecF_trial)/2.0, fevalCount ) );
 				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
+				stepCount++;
 				clear vecX_trial;
 				clear vecF_trial;
 				clear omega_trial;
@@ -305,12 +313,15 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 	%
 	datOut.iterCountVals(iterCount+1) = iterCount;
 	datOut.fevalCountVals(iterCount+1) = fevalCount;
+	datOut.stepCountVals(iterCount+1) = stepCount;
 	datOut.fNormVals(iterCount+1) = norm(vecF_best);
 	datOut.vecXVals(:,iterCount+1) = fModelDat.vecX;
 	datOut.vecFVals(:,iterCount+1) = fModelDat.vecF;
+	datOut.iterCountOfSteps(stepCount+1) = iterCount;
 	%
 	datOut.fevalCount = fevalCount;
 	datOut.iterCount = iterCount;
+	datOut.stepCount = stepCount;
 return;
 endfunction
 
@@ -328,7 +339,8 @@ function prm = __initPrm( vecX, vecF, prm )
 	%
 	sizeX = size(vecX,1);
 	sizeF = size(vecF,1);
-	fTol = max([ sqrt(eps)*norm(vecF), eps ]);
+	%fTol = max([ sqrt(eps)*norm(vecF), eps ]);
+	fTol = eps;
 	prm.fTol = mygetfield( prm, "fTol", fTol );
 	prm.iterMax = mygetfield( prm, "iterMax", ceil(20 + 10*sqrt(sizeX) + 0.01*sizeX) );
 	%
@@ -660,7 +672,7 @@ function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
 		assert( 0.0 <= s );
 		assert( s <= 1.0 );
 	endif
-	coeffD = mygetfield( prm, "coeffD", 10.0 );
+	coeffD = mygetfield( prm, "coeffD", 1.0 );
 	s*=coeffD;
 	matA = matE*( matA + s*matD )*matE;
 	%
@@ -763,6 +775,9 @@ function fModelDat = __removeB( vecY, fModelDat, prm )
 	%sizeV = size(matB,2);
 	%sizeB = size(matB,2);
 	%
+	if ( isempty(matB) )
+		return;
+	endif
 	msk = logical( abs(vecY'*matB) >= 1.0 );
 	fModelDat.matB = matB( :, msk );
 return;
