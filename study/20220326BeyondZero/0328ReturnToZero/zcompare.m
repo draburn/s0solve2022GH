@@ -4,17 +4,21 @@ numFigs = 0;
 mainStartTime = time();
 mainStartDatestr = datestr(now,31);
 msg( __FILE__, __LINE__, sprintf( "Starting run suite '%s'.", mainStartDatestr ) );
+if ( stopsignalpresent() )
+	error( "Stop signal is already present." );
+endif
 %
 %
-sizeX = 10;
+sizeX = 100;
 fType = 10;
-fSeed = -1;
+fSeed = 0;
 zcompare__setF;
 %
 %
 %
 numRuns = 0;
-numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "(WIP)";
+%numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "(WIP)";
+numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prmMemo = "it1000";
 %numRuns++; runList(numRuns).r.runType = 50; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
@@ -24,6 +28,8 @@ numRuns++; runList(numRuns).r.runType = 940; runList(numRuns).r.prm.step_prm.use
 numRuns++; runList(numRuns).r.runType = 940; runList(numRuns).r.prm.step_prm.usePostLinsolfPhiPatch = true; runList(numRuns).r.prmMemo = "uplpp true";
 %numRuns++; runList(numRuns).r.runType = -1; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "(dne)";
 %
+numRuns = 1;
+%
 %
 %
 msg( __FILE__, __LINE__, "TODO: Run with fsolve for comparison." );
@@ -31,6 +37,10 @@ msg( __FILE__, __LINE__, "TODO: Run with fsolve for comparison." );
 %
 assert( 0 < numRuns );
 for runIndex = 1 : numRuns
+	if ( stopsignalpresent() )
+		msg( __FILE__, __LINE__, "Received stop signal." );
+		return;
+	endif
 	r = runList(runIndex).r;
 	if (isempty(r.prmMemo))
 		r.runName = sprintf( "%d", r.runType );

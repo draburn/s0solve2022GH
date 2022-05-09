@@ -98,8 +98,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			if (1)
 				msgif( prm.msgCopious, __FILE__, __LINE__, "vvvvv Data dump..." );
 				__dumpModel( fModelDat, prm );
-				vecX_cand
-				vecF_cand
+				%vecX_cand
+				%vecF_cand
 				msgif( prm.msgCopious, __FILE__, __LINE__, "^^^^^ End data dump." );
 				msgif( prm.msgMain, __FILE__, __LINE__, "IMPOSED STOP: iterCount >= prm.iterMax." );
 			endif
@@ -745,7 +745,7 @@ function fModelDat = __addB( vecY, fModelDat, prm )
 	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify max(abs(y'*B)) <= 1.
 	%sizeX = size(vecX,1);
 	%sizeF = size(vecF,1);
-	%sizeV = size(matB,2);
+	%sizeV = size(matV,2);
 	%sizeB = size(matB,2);
 	%
 	ysumsq = sumsq(vecY);
@@ -772,7 +772,7 @@ function fModelDat = __removeB( vecY, fModelDat, prm )
 	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify max(abs(y'*B)) <= 1.
 	%sizeX = size(vecX,1);
 	%sizeF = size(vecF,1);
-	%sizeV = size(matB,2);
+	%sizeV = size(matV,2);
 	%sizeB = size(matB,2);
 	%
 	if ( isempty(matB) )
@@ -792,10 +792,11 @@ function __dumpModel( fModelDat, prm )
 	matV = fModelDat.matV; % Subspace basis matrix.
 	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
 	matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
-	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify ||B*y|| <= 1.
+	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify max(abs(y'*B)) <= 1.
 	sizeX = size(vecX,1);
 	sizeF = size(vecF,1);
-	sizeV = size(matB,2);
+	sizeV = size(matV,2);
+	sizeB = size(matB,2);
 	%
 	echo__omega = omega
 	sizeVLocal = size(matVLocal,2)
@@ -817,9 +818,15 @@ function __dumpModel( fModelDat, prm )
 	omegaModelVarIB = vecYIB'*matA*vecYIB
 	omegaModelVarPB = vecYPB'*matA*vecYPB
 	%
-	bIU = norm(matB*vecYIU)
-	bIB = norm(matB*vecYIB)
-	bPB = norm(matB*vecYPB)
+	if (isempty(matB))
+		bIU = 0.0
+		bIB = 0.0
+		bPB = 0.0
+	else
+		bIU = max(abs(vecYIU'*matB))
+		bIB = max(abs(vecYIB'*matB))
+		bPB = max(abs(vecYPB'*matB))
+	endif
 	%
 	msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^ End __dumpModel()." );
 return;
