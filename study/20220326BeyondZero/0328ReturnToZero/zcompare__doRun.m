@@ -17,6 +17,30 @@ case 550
 	r.fevalCountOfStep = r.datOut.fevalCountVals;
 	r.fBestNormOfStep = r.datOut.fNormVals;
 	r.isValid = true;
+case 800
+	r.runTypeDescrip = "JFNK+TR+AP";
+	[ r.vecXF, r.vecFF, r.datOut ] = findZero_800( vecX0, funchF, r.prm );
+	r.fevalCount = r.datOut.fevalCount;
+	r.stepCount = r.datOut.iterCount;
+	r.fevalCountOfStep = r.datOut.fevalCountVals;
+	r.fBestNormOfStep = r.datOut.fNormVals;
+	r.isValid = true;
+case 904
+	r.runTypeDescrip = "phiPatch?";
+	[ r.vecXF, r.vecFF, r.datOut ] = findZero_904( vecX0, funchF, r.prm );
+	r.fevalCount = r.datOut.fevalCount;
+	r.stepCount = r.datOut.iterCount;
+	r.fevalCountOfStep = r.datOut.fevalCountVals;
+	r.fBestNormOfStep = r.datOut.fNormVals;
+	r.isValid = true;
+case 940
+	r.runTypeDescrip = "phiPatch + slinsolf?";
+	[ r.vecXF, r.vecFF, r.datOut ] = findZero_940( vecX0, funchF, r.prm );
+	r.fevalCount = r.datOut.fevalCount;
+	r.stepCount = r.datOut.iterCount;
+	r.fevalCountOfStep = r.datOut.fevalCountVals;
+	r.fBestNormOfStep = r.datOut.fNormVals;
+	r.isValid = true;
 case 1100
 	r.runTypeDescrip = "z100";
 	[ r.vecXF, r.vecFF, r.datOut ] = zlinsolf100( funchF, vecX0, [], r.prm );
