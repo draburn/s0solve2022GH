@@ -17,7 +17,11 @@ numRuns = 0;
 numRuns++; runList(numRuns).r.runType = 50; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "(WIP)";
-numRuns++; runList(numRuns).r.runType = -1; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "(dne)";
+%numRuns++; runList(numRuns).r.runType = -1; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "(dne)";
+%
+%
+%
+msg( __FILE__, __LINE__, "TODO: Run with fsolve for comparison." );
 %
 %
 assert( 0 < numRuns );
@@ -31,7 +35,8 @@ for runIndex = 1 : numRuns
 	msg( __FILE__, __LINE__, sprintf( "Starting run %d/%d: '%s'...", runIndex, numRuns, r.runName ) );
 	zcompare__doRun;
 	markerTypes = "+o*xsd^v<>ph";
-	r.mlStyle = [ markerTypes(mod(runIndex,numRuns)+1), "-" ];
+	r.mlStyle = [ markerTypes(mod(runIndex,length(markerTypes))+1), "-" ];
+	r.mSize = 10+3*(numRuns-runIndex);
 	runList(runIndex).r = r;
 endfor
 vecF0 = funchF(vecX0);
@@ -61,7 +66,7 @@ m = 0;
 for n=1:numRuns
 	r = runList(n).r;
 	if (r.isValid)
-		semilogy( r.fevalCountOfStep, r.fBestNormOfStep+epsViz, r.mlStyle, 'markersize', 20, 'linewidth', 2 );
+		semilogy( r.fevalCountOfStep, r.fBestNormOfStep+epsViz, r.mlStyle, 'markersize', r.mSize, 'linewidth', 2 );
 		hold on;
 		m++;
 		leg(m) = sprintf( "%s (%s)", r.runName, r.runTypeDescrip );
@@ -76,7 +81,7 @@ epsViz = 1.0e-18;
 for n=1:numRuns
 	r = runList(n).r;
 	if (r.isValid)
-		semilogy( r.fevalCountOfStep, r.fBestNormOfStep+epsViz, r.mlStyle, 'markersize', 20, 'linewidth', 2 );
+		semilogy( r.fevalCountOfStep, r.fBestNormOfStep+epsViz, r.mlStyle, 'markersize', r.mSize, 'linewidth', 2 );
 		hold on;
 	endif
 endfor
@@ -92,7 +97,7 @@ epsViz = 1.0e-18;
 for n=1:numRuns
 	r = runList(n).r;
 	if (r.isValid)
-		semilogy( (0:r.stepCount), r.fBestNormOfStep+epsViz, r.mlStyle, 'markersize', 20, 'linewidth', 2 );
+		semilogy( (0:r.stepCount), r.fBestNormOfStep+epsViz, r.mlStyle, 'markersize', r.mSize, 'linewidth', 2 );
 		hold on;
 	endif
 endfor
