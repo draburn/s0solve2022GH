@@ -55,16 +55,23 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		datOut.vecFVals(:,iterCount+1) = fModelDat.vecF;
 		iterCount++;
 		%
+		%
 		fModelDat = __analyzeModel( fModelDat, prm );
-		if (0)
-			msgif( prm.msgCopious, __FILE__, __LINE__, "vvvvv Data dump..." );
-			omega = fModelDat.omega
-			omegaModelAvgIU = fModelDat.omegaModelAvgIU
-			omegaModelAvgPlusVarIU = fModelDat.omegaModelAvgIU + fModelDat.omegaModelVarIU
-			matVLocal = fModelDat.matVLocal
-			matA = fModelDat.matA
-			msgif( prm.msgCopious, __FILE__, __LINE__, "^^^^^ End data dump." );
-		endif
+		%
+		msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( ...
+		  "  iter:  %5d / %5d;  omega: %10.3e / %10.3e;  sizeV: %d;  sizeVLoc: %d;  sizeB: %d.", ...
+		  iterCount, prm.iterMax, sumsq(fModelDat.vecF)/2.0, prm.omegaTol, ...
+		  size(fModelDat.matV,2), size(fModelDat.matVLocal,2), size(fModelDat.matB,2) ) );
+		msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( ...
+		  "  omega:  %10.3e, %10.3e IU;  %10.3e, %10.3e IB;  %10.3e, %10.3e PB.", ...
+		  fModelDat.omegaModelAvgIU, fModelDat.omegaModelVarIU, ...
+		  fModelDat.omegaModelAvgIB, fModelDat.omegaModelVarIB, ...
+		  fModelDat.omegaModelAvgPB, fModelDat.omegaModelVarPB ) );
+		msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( ...
+		  "  steps:  %10.3e, %10.3e IU;  %10.3e, %10.3e IB;  %10.3e, %10.3e PB.", ...
+		  norm(fModelDat.vecYIU), fModelDat.bIU, ...
+		  norm(fModelDat.vecYIB), fModelDat.bIB, ...
+		  norm(fModelDat.vecYPB), fModelDat.bPB ) );
 		%
 		% Simple stoping criteria.
 		if ( norm(vecF_best) <= prm.fTol )
@@ -90,7 +97,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			break;
 		endif
 		%
-		if ( fModelDat.omegaModelAvgIU > prm.omegaTol )
+		if ( fModelDat.omegaModelAvgIU > prm.omegaTol && size(fModelDat.matV,2) < size(vecX_initial,1) )
 			% Conceptually, we could also consider "refreshing" something already in our space.
 			% This is an area for future analysis.
 			msgif( prm.msgCopious, __FILE__, __LINE__, "Expanding subspace." );
@@ -128,8 +135,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			avefaThresh = mygetfield( prm, "avefaThresh", 0.5 ); % Actual vs expect fall acceptace threshold
 			assert( 0.0 < avefaThresh );
 			assert( avefaThresh < 1.0 );
-			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  actual fall = %g.", fModelDat.omega - omega_trial ) );
 			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  expected fall = %g.", fModelDat.omega - (fModelDat.omegaModelAvgIU + fModelDat.omegaModelVarIU) ) );
+			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  actual fall = %g.", fModelDat.omega - omega_trial ) );
 			if ( omega_trial <= fModelDat.omega - avefaThresh*( fModelDat.omega - (fModelDat.omegaModelAvgIU + fModelDat.omegaModelVarIU) ) )
 				msgif( prm.msgCopious, __FILE__, __LINE__, "  Accepting step." );
 				excellentThresh = mygetfield( prm, "excellentThresh", 0.1 );
@@ -219,8 +226,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			avefaThresh = mygetfield( prm, "avefaThresh", 0.5 ); % Actual vs expect fall acceptace threshold
 			assert( 0.0 < avefaThresh );
 			assert( avefaThresh < 1.0 );
-			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  actual fall = %g.", fModelDat.omega - omega_trial ) );
 			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  expected fall = %g.", fModelDat.omega - (fModelDat.omegaModelAvgPB + fModelDat.omegaModelVarPB) ) );
+			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  actual fall = %g.", fModelDat.omega - omega_trial ) );
 			if ( omega_trial <= fModelDat.omega - avefaThresh*( fModelDat.omega - (fModelDat.omegaModelAvgPB + fModelDat.omegaModelVarPB) ) )
 				msgif( prm.msgCopious, __FILE__, __LINE__, "  Accepting step." );
 				excellentThresh = mygetfield( prm, "excellentThresh", 0.1 );
@@ -292,9 +299,9 @@ endfunction
 
 function prm = __initPrm( vecX, vecF, prm )
 	setVerbLevs;
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
-	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	prm.msgCopious = mygetfield( prm, "msgCopious", verbLev >= VERBLEV__COPIOUS );
 	prm.msgProgress = mygetfield( prm, "msgProgress", verbLev >= VERBLEV__PROGRESS );
 	prm.msgMain = mygetfield( prm, "msgMain", verbLev >= VERBLEV__MAIN );
@@ -440,6 +447,10 @@ function fModelDat = __analyzeModel( fModelDat, prm )
 	endif
 	%
 	fModelDat.omega = sumsq(vecF)/2.0;
+	%
+	assert( fModelDat.omegaModelAvgIU <= fModelDat.omega );
+	assert( fModelDat.omegaModelAvgIB <= fModelDat.omega );
+	assert( fModelDat.omegaModelAvgPB <= fModelDat.omega );
 return;
 endfunction
 
@@ -475,10 +486,14 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 		return;
 	endif
 	%
-	cholSafeTol = mygetfield( prm, "cholSafeTol", sqrt(eps) );
+	%cholSafeTol = mygetfield( prm, "cholSafeTol", sqrt(eps) );
 	%
-	[ matR, cholFlag ] = chol( matH );
-	if ( 0 == cholFlag && min(diag(matR)) > cholSafeTol*max(abs(diag(matR))) )
+	%[ matR, cholFlag ] = chol( matH );
+	%if ( 0 == cholFlag && min(diag(matR)) > cholSafeTol*max(abs(diag(matR))) )
+	% Looks like chol isn't accurate enough, and/or "\" triggers a check based on rcond()?
+	% So, we'l use rcond too.
+	rc = rcond( matH );
+	if ( rcond(matH) > sqrt(eps) )
 		s1 = 1.0;
 	else
 		epsRelRegu = mygetfield( prm, "epsRelRegu", sqrt(eps) );
@@ -486,8 +501,9 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 		sScale = max(max(abs(matSCurve)));
 		assert( 0.0 < hScale );
 		assert( 0.0 < sScale );
-		s1 = 1.0 - (epsRelRegu*hScale/sScale);
+		s1 = 1.0 - (epsRelRegu*hScale/(epsRelRegu*hScale+sScale));
 	endif
+	assert( s1 >= 0.0 );
 	%
 	funchYOfS = @(s)( ( s*matH + (1.0-s)*matSCurve ) \ (s*vecMG) );
 	funchBOfY = @(y)( max(abs(y'*matB)) );
@@ -502,6 +518,8 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 	%
 	s = fzero( funchBM1OfS, [0.0, s1] );
 	vecY = funchYOfS(s);
+	%
+	assert( (vecY'*matH*vecY)/2.0 - (vecY'*vecMG) <= 0.0 );
 return;
 endfunction
 

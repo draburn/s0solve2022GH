@@ -44,7 +44,7 @@ timeSS = time();
 [ vecXF_z100, vecFF_z100, datOut_z100 ] = zlinsolf100( funchF, vecX0, [], prm );
 time_z100 = time()-timeSS;
 %
-%msg( __FILE__, __LINE__, sprintf("Elapsed time = %10.3e.",time()-timeSS) ); msg( __FILE__, __LINE__, "Goodbye!" ); return;
+msg( __FILE__, __LINE__, sprintf("Elapsed time = %10.3e.",time()-timeSS) ); msg( __FILE__, __LINE__, "Goodbye!" ); return;
 
 
 timeSS = time();
