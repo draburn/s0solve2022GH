@@ -3,7 +3,7 @@ setVerbLevs;
 numFigs = 0;
 mainStartTime = time();
 mainStartDatestr = datestr(now,31);
-printf( "\n\n\n" );
+printf( "\n\nVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV\n" );
 msg( __FILE__, __LINE__, sprintf( "Starting run suite '%s'.", mainStartDatestr ) );
 if ( stopsignalpresent() )
 	error( "Stop signal is already present." );
@@ -12,7 +12,7 @@ endif
 %
 sizeX = 50;
 fType = 10;
-fSeed = 6375408;
+fSeed = 67249984;
 zcompare__setF;
 %
 if (0)
@@ -26,14 +26,14 @@ endif
 %
 %
 numRuns = 0;
-numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 2000; runList(numRuns).r.prmMemo = "it2k";
-numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 6500; runList(numRuns).r.prmMemo = "it6.5k";
+%numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
+%%%numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 2000; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prmMemo = "";
 resumeRun = numRuns;
 %
-numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 2000; runList(numRuns).r.prmMemo = "it2k";
-numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 6500; runList(numRuns).r.prmMemo = "it6.5k";
+%numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 2000; runList(numRuns).r.prmMemo = "";
+%%%numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prmMemo = "";
 %
 %numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 904; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
@@ -55,6 +55,7 @@ for runIndex = 1 : numRuns
 		msg( __FILE__, __LINE__, "Received stop signal." );
 		return;
 	endif
+	msg( __FILE__, __LINE__, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" );
 	r = runList(runIndex).r;
 	zcompare__doRun;
 	if ( 0 < resumeRun )
@@ -68,6 +69,7 @@ for runIndex = 1 : numRuns
 	endif
 	endif
 	runList(runIndex).r = r;
+	msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" );
 endfor
 vecF0 = funchF(vecX0);
 %
@@ -106,8 +108,19 @@ for n=1:numRuns
 	endif
 endfor
 hold off;
+grid on;
 legend( leg );
-title( "LEGEND" );
+xlabel( "feval count" );
+ylabel( "||F best||" );
+title( "||F best|| vs feval count" );
+%title( "LEGEND" );
+
+mainCPPElapsedTime = time()-mainStartTime;
+msg( __FILE__, __LINE__, sprintf( "With plots, run suite '%s' with F '%s' completed in %0.3es.", mainStartDatestr, runFStr, time()-mainStartTime ) );
+msg( __FILE__, __LINE__, "Goodbye!" );
+printf( "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
+return;
+
 %
 numFigs++; figure(numFigs);
 epsViz = 1.0e-18;
@@ -144,6 +157,6 @@ title( "||F best|| vs step count" );
 %
 
 mainCPPElapsedTime = time()-mainStartTime;
-msg( __FILE__, __LINE__, sprintf( "With plots, run suite '%s' with F '%s' completed in %0.3es.", mainStartDatestr, runFStr, time()-mainCPPElapsedTime ) );
+msg( __FILE__, __LINE__, sprintf( "With plots, run suite '%s' with F '%s' completed in %0.3es.", mainStartDatestr, runFStr, time()-mainStartTime ) );
 msg( __FILE__, __LINE__, "Goodbye!" );
 return;

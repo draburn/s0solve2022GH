@@ -5,7 +5,8 @@
 	assert( 0 ~= hNorm );
 	cholTol = mygetfield( prm, "cholTol", 1e-6 );
 	[ matR, cholFlag ] = chol(matH);
-	if ( 0==cholFlag && min(diag(matR)) > cholTol*max(abs(diag(matR))) )
+	%if ( 0==cholFlag && min(diag(matR)) > cholTol*max(abs(diag(matR))) ) % But "\" warning triggers off rcond!
+	if ( rcond(matH) > eps^0.8 && 0==cholFlag )
 		matHRegu = matH;
 	else
 		sizeV = size(matW,2);
@@ -17,6 +18,7 @@
 	%
 	funchDeltaOfP = @(p) (matV*( ( p*matHRegu + (1.0-p)*eye(size(matHRegu)) ) \ (-p*vecG) )); % <<< THIS WORKS.
 	%%%funchDeltaOfP = @(p) ( matV * (__funcSSDeltaOfP( p, matHRegu, vecG )) ); %%% <<< THIS DOES NOT WORK!
+	% DRaburn 2022.05.10: Shouldn't that be hScale*eye?
 	%
 	%
 	pMax = __findPOfDeltaNorm( dTreg, funchDeltaOfP  );
