@@ -75,15 +75,15 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		  iterCount, prm.iterMax, sumsq(fModelDat.vecF)/2.0, prm.omegaTol, ...
 		  size(fModelDat.matV,2), size(fModelDat.matVLocal,2), size(fModelDat.matB,2) ) );
 		msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( ...
-		  "  omega:  %10.3e, %10.3e IU;  %10.3e, %10.3e IB;  %10.3e, %10.3e PB.", ...
-		  fModelDat.omegaModelAvgIU, fModelDat.omegaModelVarIU, ...
-		  fModelDat.omegaModelAvgIB, fModelDat.omegaModelVarIB, ...
-		  fModelDat.omegaModelAvgPB, fModelDat.omegaModelVarPB ) );
+		  "  omega IU: %8.2e ~ %8.2e (%8.2e);  IB: %8.2e ~ %8.2e (%8.2e);  PB:  %8.2e ~ %8.2e (%8.2e).", ...
+		  fModelDat.omegaModelAvgIU, fModelDat.omegaModelVarIU, fModelDat.omega-fModelDat.omegaModelAvgIU, ...
+		  fModelDat.omegaModelAvgIB, fModelDat.omegaModelVarIB, fModelDat.omega-fModelDat.omegaModelAvgIB, ...
+		  fModelDat.omegaModelAvgPB, fModelDat.omegaModelVarPB, fModelDat.omega-fModelDat.omegaModelAvgPB ) );
 		msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( ...
-		  "  steps:  %10.3e, %10.3e IU;  %10.3e, %10.3e IB;  %10.3e, %10.3e PB.", ...
-		  norm(fModelDat.vecYIU), fModelDat.bIU, ...
-		  norm(fModelDat.vecYIB), fModelDat.bIB, ...
-		  norm(fModelDat.vecYPB), fModelDat.bPB ) );
+		  "  step  IU: %8.2e @ %8.2e b %8.2e;  IB: %8.2e @ %8.2e b %8.2e;  PB: %8.2e @ %8.2e b %8.2e.", ...
+		  norm(fModelDat.vecYIU), fModelDat.lIU, fModelDat.bIU, ...
+		  norm(fModelDat.vecYIB), fModelDat.lIB, fModelDat.bIB, ...
+		  norm(fModelDat.vecYPB), fModelDat.lPB, fModelDat.bPB ) );
 		%
 		if ( fModelDat.bPB > 1.0 + sqrt(eps) || fModelDat.bIB > 1.0 + sqrt(eps) )
 			msg( __FILE__, __LINE__, "ERROR: fModelDat.bPB or bIB > 1.0 + sqrt(eps)" );
@@ -94,6 +94,9 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		  || fModelDat.omegaModelAvgPB > fModelDat.omega*(1.0+sqrt(eps)) )
 			msg( __FILE__, __LINE__, "ERROR: omegaModelAvg (of at least one flavor) > omega*(1.0+sqrt(eps))." );
 			break;
+		endif
+		if (mygetfield(fModelDat,"haltAfterNextReport",false))
+			error( "HALT!" );
 		endif
 		%
 		% Simple stoping criteria.
@@ -246,7 +249,126 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		%
 		practicalRelFallThresh = mygetfield( prm, "practicalRelFallThresh", 0.5 );
 		if ( fModelDat.omegaModelAvgPB + fModelDat.omegaModelVarPB <= fModelDat.omega - practicalRelFallThresh*(fModelDat.omega-fModelDat.omegaModelAvgIB) )
+		if ( fModelDat.omegaModelAvgPB <= 2.0 * fModelDat.omegaModelAvgIB )
 			msgif( prm.msgCopious, __FILE__, __LINE__, "Trying practical bound step." );
+			%
+			%
+			%%%
+			makePlotsAndHalt = false;
+			if (0)
+			makePlotsAndHalt = (size(fModelDat.matVLocal,2)>=10 && size(fModelDat.matB,2)>=11);
+			%makePlotsAndHalt = (size(fModelDat.matB,2)>=3);
+			if ( makePlotsAndHalt )
+				vecY = fModelDat.vecYPB;
+				fModelDat.haltAfterNextReport = true;
+				msg( __FILE__, __LINE__, "Making plots before refreshing and/or adding wall!" );
+				numFigs = 0;
+				%
+				%
+				%
+				numPts = 101;
+				%sPts = linspace(0.99999,0.9999,numPts);
+				sPts = linspace(0.9999,0.0,numPts);
+				sPts = ( 1.0 - sPts.^2 ).^2;
+				%%%sPts = linspace( 0.99, 1.00, numPts );
+				sizeV = size(fModelDat.matV,2);
+				sizeF = size(fModelDat.vecF,1);
+				vecMG = -(fModelDat.matW'*fModelDat.vecF);
+				matH0 = fModelDat.matW'*fModelDat.matW;
+				matH1 = matH0 + fModelDat.matA;
+				matSCurve = eye(sizeV,sizeV);
+				%
+				for n=1:numPts
+					vecYIPts(:,n) = ( sPts(n)*matH0 + (1.0-sPts(n))*matSCurve ) \ (sPts(n)*vecMG);
+					vecYPPts(:,n) = ( sPts(n)*matH1 + (1.0-sPts(n))*matSCurve ) \ (sPts(n)*vecMG);
+					vecFModelIPts(:,n) = fModelDat.vecF + fModelDat.matW*vecYIPts(:,n);
+					vecFModelPPts(:,n) = fModelDat.vecF + fModelDat.matW*vecYPPts(:,n);
+					omegaModelAvgIPts(n) = sumsq(vecFModelIPts(:,n))/2.0;
+					omegaModelAvgPPts(n) = sumsq(vecFModelPPts(:,n))/2.0;
+					omegaModelPVarIPts(n) = omegaModelAvgIPts(:,n) + 0.5*vecYIPts(:,n)'*fModelDat.matA*vecYIPts(:,n);
+					omegaModelPVarPPts(n) = omegaModelAvgPPts(:,n) + 0.5*vecYPPts(:,n)'*fModelDat.matA*vecYPPts(:,n);
+					vecFActualIPts(:,n) = funchF( fModelDat.vecX + fModelDat.matV*vecYIPts(:,n) );
+					vecFActualPPts(:,n) = funchF( fModelDat.vecX + fModelDat.matV*vecYPPts(:,n) );
+					omegaActualIPts(n) = sumsq(vecFActualIPts(:,n))/2.0;
+					omegaActualPPts(n) = sumsq(vecFActualPPts(:,n))/2.0;
+					rhoIPts(n) = sumsq( vecFActualIPts(:,n) - vecFModelIPts(:,n) )/2.0;
+					rhoPPts(n) = sumsq( vecFActualPPts(:,n) - vecFModelPPts(:,n) )/2.0;
+					bIPts(n) = max(abs(vecYIPts(:,n)'*fModelDat.matB));
+					bPPts(n) = max(abs(vecYPPts(:,n)'*fModelDat.matB));
+					%lIPts(n) = (eps+norm(fModelDat.matVLocal'*fModelDat.matV*vecYIPts(:,n)))/(eps+norm(vecYIPts(:,n)));
+					%lPPts(n) = (eps+norm(fModelDat.matVLocal'*fModelDat.matV*vecYPPts(:,n)))/(eps+norm(vecYPPts(:,n)));
+					lIPts(n) = norm(fModelDat.matVLocal'*fModelDat.matV*vecYIPts(:,n))/norm(vecYIPts(:,n));
+					lPPts(n) = norm(fModelDat.matVLocal'*fModelDat.matV*vecYPPts(:,n))/norm(vecYPPts(:,n));
+				endfor
+				%
+				%
+				indexOfPB = numPts;
+				while (bPPts(indexOfPB)>1.0)
+					indexOfPB--;
+				endwhile
+				%
+				numFigs++; figure(numFigs);
+				axLo = max([ 0.0, min(omegaModelAvgIPts) - 0.5*(fModelDat.omega - min(omegaModelAvgIPts)) ]);
+				axHi = min([ 2.0*fModelDat.omega, fModelDat.omega + 0.5*(fModelDat.omega - min(omegaModelAvgIPts)) ]);
+				cap_omegaModelAvgIPts = cap( omegaModelAvgIPts, 0.0, axHi );
+				cap_omegaModelAvgPPts = cap( omegaModelAvgPPts, 0.0, axHi );
+				cap_omegaModelPVarIPts = cap( omegaModelPVarIPts, 0.0, axHi );
+				cap_omegaModelPVarPPts = cap( omegaModelPVarPPts, 0.0, axHi );
+				cap_omegaActualIPts = cap( omegaActualIPts, 0.0, axHi );
+				cap_omegaActualPPts = cap( omegaActualPPts, 0.0, axHi );
+				plot( ...
+				  sPts, cap_omegaModelAvgIPts, 'o-', 'markersize', 30, ...
+				  sPts, cap_omegaModelAvgPPts, 'x-', 'markersize', 26, ...
+				  sPts, cap_omegaModelPVarIPts, 's-', 'markersize', 22, ...
+				  sPts, cap_omegaModelPVarPPts, '+-', 'markersize', 18, ...
+				  sPts, cap_omegaActualIPts, 'p-', 'markersize', 14, ...
+				  sPts, cap_omegaActualPPts, '*-', 'markersize', 10, ...
+				  sPts(indexOfPB)*[1.0,1.0], [axLo,axHi], 'r^-' );
+				axis([ 0.0, 1.0, axLo, axHi ]);
+				grid on;
+				xlabel( "s" );
+				ylabel( "omega" );
+				legend( ...
+				  "omega model avg I", ...
+				  "omega model avg P", ...
+				  "omega model pvar I", ...
+				  "omega model pvar P", ...
+				  "omega actual I", ...
+				  "omega actual P", ...
+				  "boundary for P", ...
+				  "location", "northeast" );
+				%
+				numFigs++; figure(numFigs);
+				plot( ...
+				  sPts, bIPts, 'o-', ...
+				  sPts, bPPts, 'x-', ...
+				  sPts, 1.0+(0.0*sPts), 'k-', ...
+				  sPts, max(abs(vecY'*fModelDat.matB)), 'rp-', ...
+				  sPts(indexOfPB)*[1.0,1.0], [0.0,2.0], 'r^-' );
+				axis([ 0.0, 1.0, 0.0, 3.0 ]);
+				grid on;
+				xlabel( "s" );
+				ylabel( "b" );
+				legend( ...
+				  "bI", ...
+				  "bP", ....
+				  "1.0", ...
+				  "trial step", ...
+				  "boundary for P", ...
+				  "location", "northwest" );
+				%
+				numFigs++; figure(numFigs);
+				plot( ...
+				  sPts, lIPts, 'o-', ...
+				  sPts, lPPts, 'x-' );
+				grid on;
+				xlabel( "s" );
+				ylabel( "||VLocal'*V*y||/||y||" );
+			endif
+			endif
+			%%%
+			%
+			%
 			vecX_trial = fModelDat.vecXPB;
 			vecF_trial = funchF( vecX_trial );
 			omega_trial = sumsq(vecF_trial)/2.0;
@@ -271,8 +393,6 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				vecX_cand = [];
 				vecF_cand = [];
 				continue;
-			else
-				msg( __FILE__, __LINE__, "HACK: Current trial is worse than earlier candidate, but not forcing acceptance!" );
 			endif
 			endif
 			%
@@ -291,7 +411,16 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				endif
 				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
 				  fModelDat.omega, sumsq(vecF_trial)/2.0, fModelDat.omega-sumsq(vecF_trial)/2.0, fevalCount ) );
+				%
+				%
+				%%%
 				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
+				%msg( __FILE__, __LINE__, "HACK! Reinitializing fModelDat!" );
+				%[ fModelDat, datOut_initModel ] = __initModel( funchF, vecX_trial, vecF_trial, prm );
+				%fevalCount += datOut_initModel.fevalCount;
+				%%%
+				%
+				%
 				stepCount++;
 				datOut.iterCountOfSteps(stepCount+1) = iterCount+1;
 				clear vecX_trial;
@@ -318,6 +447,10 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			refreshedTrialStep = false;
 			if ( 0.0 ~= norm(vecV) )
 				msgif( prm.msgCopious, __FILE__, __LINE__, "  Refreshing trial step before adding wall." );
+				%assert( reldiff( norm(fModelDat.matVLocal'*vecV), 0.0, eps ) < sqrt(eps) );
+				%assert( reldiff( norm(fModelDat.matVLocal'*vecV), 0.0, eps ) < sqrt(eps) );
+				%assert( 0.0 ~= norm(vecV) );
+				%assert( fModelDat.lPB < 1.0-sqrt(eps) ); % Conceptually equiv to 0=norm(vecV), but less reliable?
 				[ fModelDat, datOut_refresh ] = __refresh( vecY, funchF, fModelDat, prm );
 				fevalCount += datOut_refresh.fevalCount;
 				refreshedTrialStep = true;
@@ -336,33 +469,152 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			%
 			%
 			%%%
-			if (0)
-			if ( size(fModelDat.matB,2)==12 )
-				msg( __FILE__, __LINE__, "Making plot!" );
-				numFigs = 0;
+			if (1)
+			if ( makePlotsAndHalt )
+				msg( __FILE__, __LINE__, "Making plots after refreshing and/or adding wall!" );
+				numFigs = 10;
 				%
-				numPts = 1001;
+				%
+				%
+				numPts = 101;
+				sPts = linspace(0.999,0.0,numPts);
+				sPts = ( 1.0 - sPts.^2 ).^2;
+				sizeV = size(fModelDat.matV,2);
+				sizeF = size(fModelDat.vecF,1);
+				vecMG = -(fModelDat.matW'*fModelDat.vecF);
+				matH0 = fModelDat.matW'*fModelDat.matW;
+				matH1 = matH0 + fModelDat.matA;
+				matSCurve = eye(sizeV,sizeV);
+				%
+				vecYIPts = zeros(sizeV,numPts);
+				vecYPPts = zeros(sizeV,numPts);
+				vecFModelIPts = zeros(sizeF,numPts);
+				vecFModelPPts = zeros(sizeF,numPts);
+				vecFActualIPts = zeros(sizeF,numPts);
+				vecFActualPPts = zeros(sizeF,numPts);
+				omegaModelAvgIPts = zeros(1,numPts);
+				omegaModelAvgPPts = zeros(1,numPts);
+				omegaModelPVarIPts = zeros(1,numPts);
+				omegaModelPVarPPts = zeros(1,numPts);
+				omegaActualIPts = zeros(1,numPts);
+				omegaActualPPts = zeros(1,numPts);
+				rhoIPts = zeros(1,numPts);
+				rhoPPts = zeros(1,numPts);
+				bIPts = zeros(1,numPts);
+				bPPts = zeros(1,numPts);
+				for n=1:numPts
+					vecYIPts(:,n) = ( sPts(n)*matH0 + (1.0-sPts(n))*matSCurve ) \ (sPts(n)*vecMG);
+					vecYPPts(:,n) = ( sPts(n)*matH1 + (1.0-sPts(n))*matSCurve ) \ (sPts(n)*vecMG);
+					vecFModelIPts(:,n) = fModelDat.vecF + fModelDat.matW*vecYIPts(:,n);
+					vecFModelPPts(:,n) = fModelDat.vecF + fModelDat.matW*vecYPPts(:,n);
+					omegaModelAvgIPts(n) = sumsq(vecFModelIPts(:,n))/2.0;
+					omegaModelAvgPPts(n) = sumsq(vecFModelPPts(:,n))/2.0;
+					omegaModelPVarIPts(n) = omegaModelAvgIPts(:,n) + 0.5*vecYIPts(:,n)'*fModelDat.matA*vecYIPts(:,n);
+					omegaModelPVarPPts(n) = omegaModelAvgPPts(:,n) + 0.5*vecYPPts(:,n)'*fModelDat.matA*vecYPPts(:,n);
+					vecFActualIPts(:,n) = funchF( fModelDat.vecX + fModelDat.matV*vecYIPts(:,n) );
+					vecFActualPPts(:,n) = funchF( fModelDat.vecX + fModelDat.matV*vecYPPts(:,n) );
+					omegaActualIPts(n) = sumsq(vecFActualIPts(:,n))/2.0;
+					omegaActualPPts(n) = sumsq(vecFActualPPts(:,n))/2.0;
+					rhoIPts(n) = sumsq( vecFActualIPts(:,n) - vecFModelIPts(:,n) )/2.0;
+					rhoPPts(n) = sumsq( vecFActualPPts(:,n) - vecFModelPPts(:,n) )/2.0;
+					bIPts(n) = max(abs(vecYIPts(:,n)'*fModelDat.matB));
+					bPPts(n) = max(abs(vecYPPts(:,n)'*fModelDat.matB));
+					%lIPts(n) = (eps+norm(fModelDat.matVLocal'*fModelDat.matV*vecYIPts(:,n)))/(eps+norm(vecYIPts(:,n)));
+					%lPPts(n) = (eps+norm(fModelDat.matVLocal'*fModelDat.matV*vecYPPts(:,n)))/(eps+norm(vecYPPts(:,n)));
+					lIPts(n) = norm(fModelDat.matVLocal'*fModelDat.matV*vecYIPts(:,n))/norm(vecYIPts(:,n));
+					lPPts(n) = norm(fModelDat.matVLocal'*fModelDat.matV*vecYPPts(:,n))/norm(vecYPPts(:,n));
+				endfor
+				%
+				%
+				indexOfPB = numPts;
+				while (bPPts(indexOfPB)>1.0)
+					indexOfPB--;
+				endwhile
+				%
+				numFigs++; figure(numFigs);
+				axLo = max([ 0.0, min(omegaModelAvgIPts) - 0.5*(fModelDat.omega - min(omegaModelAvgIPts)) ]);
+				axHi = min([ 2.0*fModelDat.omega, fModelDat.omega + 0.5*(fModelDat.omega - min(omegaModelAvgIPts)) ]);
+				cap_omegaModelAvgIPts = cap( omegaModelAvgIPts, 0.0, axHi );
+				cap_omegaModelAvgPPts = cap( omegaModelAvgPPts, 0.0, axHi );
+				cap_omegaModelPVarIPts = cap( omegaModelPVarIPts, 0.0, axHi );
+				cap_omegaModelPVarPPts = cap( omegaModelPVarPPts, 0.0, axHi );
+				cap_omegaActualIPts = cap( omegaActualIPts, 0.0, axHi );
+				cap_omegaActualPPts = cap( omegaActualPPts, 0.0, axHi );
+				plot( ...
+				  sPts, cap_omegaModelAvgIPts, 'o-', 'markersize', 30, ...
+				  sPts, cap_omegaModelAvgPPts, 'x-', 'markersize', 26, ...
+				  sPts, cap_omegaModelPVarIPts, 's-', 'markersize', 22, ...
+				  sPts, cap_omegaModelPVarPPts, '+-', 'markersize', 18, ...
+				  sPts, cap_omegaActualIPts, 'p-', 'markersize', 14, ...
+				  sPts, cap_omegaActualPPts, '*-', 'markersize', 10, ...
+				  sPts(indexOfPB)*[1.0,1.0], [axLo,axHi], 'r^-' );
+				axis([ 0.0, 1.0, axLo, axHi ]);
+				grid on;
+				xlabel( "s" );
+				ylabel( "omega" );
+				legend( ...
+				  "omega model avg I", ...
+				  "omega model avg P", ...
+				  "omega model pvar I", ...
+				  "omega model pvar P", ...
+				  "omega actual I", ...
+				  "omega actual P", ...
+				  "boundary for P", ...
+				  "location", "northeast" );
+				%
+				numFigs++; figure(numFigs);
+				plot( ...
+				  sPts, bIPts, 'o-', ...
+				  sPts, bPPts, 'x-', ...
+				  sPts, 1.0+(0.0*sPts), 'k-', ...
+				  sPts, max(abs(vecY'*fModelDat.matB)), 'rp-', ...
+				  sPts(indexOfPB)*[1.0,1.0], [0.0,2.0], 'r^-' );
+				axis([ 0.0, 1.0, 0.0, 3.0 ]);
+				grid on;
+				xlabel( "s" );
+				ylabel( "b" );
+				legend( ...
+				  "bI", ...
+				  "bP", ....
+				  "1.0", ...
+				  "trial step", ...
+				  "boundary for P", ...
+				  "location", "northwest" );
+				%
+				numFigs++; figure(numFigs);
+				plot( ...
+				  sPts, lIPts, 'o-', ...
+				  sPts, lPPts, 'x-' );
+				grid on;
+				xlabel( "s" );
+				ylabel( "||VLocal'*V*y||/||y||" );
+				%
+				%
+				%
+				if (0)
+				numPts = 101;
 				pPts = linspace(0.0,1.0,numPts).^2;
 				fModelNormPts = zeros(1,numPts);
 				fModelResNormPts = zeros(1,numPts);
 				for n=1:numPts
 					omegaModelAvgPts(n) = sumsq( fModelDat.vecF + fModelDat.matW*vecY*pPts(n) )/2.0;
 					omegaModelPVarPts(n) = omegaModelAvgPts(n) + (pPts(n)^2)*(vecY'*fModelDat.matA*vecY)/2.0;
+					%omegaModelPVar0Pts(n) = omegaModelAvgPts(n) + (pPts(n)^2)*(vecY'*fModelDat.matA0*vecY)/2.0;
 					rhoVsTrialPts(n) = sumsq( fModelDat.vecF + fModelDat.matW*vecY*pPts(n) - vecF_trial )/2.0;
 					vecXAtPts(:,n) = fModelDat.vecX + fModelDat.matV*vecY*pPts(n);
 					vecFAtPts(:,n) = funchF( vecXAtPts(:,n) );
 					omegaAtPts(n) = sumsq( vecFAtPts(:,n) )/2.0;
 					rhoAtPts(n) = sumsq( fModelDat.vecF + fModelDat.matW*vecY*pPts(n) - vecFAtPts(:,n) )/2.0;
 				endfor
-				rd = reldiff( vecF_trial, vecFAtPts(:,numPts) )
-				assert( rd < sqrt(eps) );
+				%rd = reldiff( vecF_trial, vecFAtPts(:,numPts) )
+				%assert( rd < sqrt(eps) );
 				%
 				%
 				numFigs++; figure(numFigs);
 				plot( ...
-				  pPts, omegaModelAvgPts, 'o-', ...
-				  pPts, omegaModelPVarPts, 's-', ...
-				  pPts, omegaAtPts, 'p-' );
+				  pPts, omegaModelAvgPts, 'o-', 'markersize', 20, ...
+				  pPts, omegaModelPVarPts, 's-', 'markersize', 12, ...
+				  pPts, omegaAtPts, 'p-', 'markersize', 4 );
 				grid on;
 				xlabel("p");
 				legend( ...
@@ -384,8 +636,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				%
 				numFigs++; figure(numFigs);
 				plot( ...
-				  pPts, rhoVsTrialPts, 'x-', ...
-				  pPts, rhoAtPts, '+-' );
+				  pPts, rhoVsTrialPts, 'x-', 'markersize', 20, ...
+				  pPts, rhoAtPts, '+-', 'markersize', 12 );
 				grid on;
 				xlabel("p");
 				legend( ...
@@ -393,7 +645,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				  "rho actual", ...
 				  "location", "northeast" );
 				%
-				error( "HALT" );
+				endif
 			endif
 			endif
 			%%%
@@ -404,6 +656,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			clear vecF_trial;
 			clear omega_trial;
 			continue;
+		endif
 		endif
 		%
 		msgif( prm.msgCopious, __FILE__, __LINE__, "Refreshing subspace." );
@@ -429,14 +682,14 @@ endfunction
 
 function prm = __initPrm( vecX, vecF, prm )
 	setVerbLevs;
-	%verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	prm.msgCopious = mygetfield( prm, "msgCopious", verbLev >= VERBLEV__COPIOUS );
 	prm.msgProgress = mygetfield( prm, "msgProgress", verbLev >= VERBLEV__PROGRESS );
 	prm.msgMain = mygetfield( prm, "msgMain", verbLev >= VERBLEV__MAIN );
 	prm.msgNotice = mygetfield( prm, "msgNotice", verbLev >= VERBLEV__NOTICE );
-	prm.debugMode = mygetfield( prm, "debugMode", true );
+	prm.debugMode = mygetfield( prm, "debugMode", false );
 	%
 	sizeX = size(vecX,1);
 	sizeF = size(vecF,1);
@@ -501,6 +754,7 @@ function [ fModelDat, datOut ] = __initModel( funchF, vecX, vecF, prm )
 	fModelDat.matV = [ vecV ];
 	fModelDat.matW = [ vecW ];
 	fModelDat.matA = [ 0.0 ];
+	fModelDat.matA0 = [ 0.0 ];
 	fModelDat.matB = [];
 	%
 	datOut.fevalCount = fevalCount;
@@ -577,6 +831,15 @@ function fModelDat = __analyzeModel( fModelDat, prm )
 		fModelDat.bIB = max(abs(vecYIB'*matB));
 		fModelDat.bPB = max(abs(vecYPB'*matB));
 	endif
+	if (isempty(matVLocal))
+		fModelDat.lIU = 0.0;
+		fModelDat.lIB = 0.0;
+		fModelDat.lPB = 0.0;
+	else
+		fModelDat.lIU = norm(matVLocal'*matV*vecYIU)/(eps+norm(vecYIU));
+		fModelDat.lIB = norm(matVLocal'*matV*vecYIB)/(eps+norm(vecYIB));
+		fModelDat.lPB = norm(matVLocal'*matV*vecYPB)/(eps+norm(vecYPB));
+	endif
 	%
 	fModelDat.omega = sumsq(vecF)/2.0;
 return;
@@ -646,6 +909,7 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 	%
 	s = fzero( funchBM1OfS, [0.0, s1] );
 	vecY = funchYOfS(s);
+	assert( reldiff(max(abs(vecY'*matB)),1.0) < sqrt(eps) );
 return;
 endfunction
 
@@ -660,6 +924,7 @@ function [ fModelDat, datOut ] = __expandModel( vecU, funchF, fModelDat, prm )
 	matV = fModelDat.matV; % Subspace basis matrix.
 	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
 	matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
+	matA0 = fModelDat.matA0;
 	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify max(abs(y'*B)) <= 1.
 	%sizeX = size(vecX,1);
 	%sizeF = size(vecF,1);
@@ -691,6 +956,8 @@ function [ fModelDat, datOut ] = __expandModel( vecU, funchF, fModelDat, prm )
 	fModelDat.matA = zeros(sizeV+1,sizeV+1);
 	fModelDat.matA(1:sizeV,1:sizeV) = matA;
 	fModelDat.matB = [ matB; zeros(1,sizeB) ];
+	fModelDat.matA0 = zeros(sizeV+1,sizeV+1);
+	fModelDat.matA0(1:sizeV,1:sizeV) = matA0;
 	%
 	%
 	datOut.fevalCount = fevalCount;
@@ -734,6 +1001,7 @@ function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
 	matV = fModelDat.matV; % Subspace basis matrix.
 	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
 	matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
+	matA0 = fModelDat.matA0;
 	%matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify max(abs(y'*B)) <= 1.
 	%sizeX = size(vecX,1);
 	%sizeF = size(vecF,1);
@@ -759,6 +1027,7 @@ function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
 	%
 	%
 	vecYHat = vecY/yNorm;
+	if (0)
 	stepUpdateAccuracyCoeff = mygetfield( prm, "stepUpdateAccuracyCoeff", 0.0 );
 	assert( 0.0 <= stepUpdateAccuracyCoeff );
 	assert( stepUpdateAccuracyCoeff <= 1.0 );
@@ -778,15 +1047,21 @@ function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
 	endif
 	coeffD = mygetfield( prm, "coeffD", 10.0 );
 	s*=coeffD;
-	matA = matE*( matA + s*matD )*matE;
+	matA0 = matE*( matA + s*matD )*matE;
+	endif
+	%%%matA0 = matA + s*matD;
+	%
+	matWTW = matW'*matW;
+	matA0 = 10000.0*( 10.0*diag(diag(matWTW)) + matWTW + eye(sizeV,sizeV)*max(max(matWTW))*0.1 );
 	%
 	%
 	%
 	fModelDat.matVLocal = [];
 	fModelDat.vecX = vecX_trial;
 	fModelDat.vecF = vecF_trial;
-	fModelDat.matW = matW;
-	fModelDat.matA = matA;
+	fModelDat.matW = matW_plus;
+	fModelDat.matA = matA0;
+	fModelDat.matA0 = matA0;
 return;
 endfunction
 
@@ -800,7 +1075,7 @@ function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
 	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
 	matV = fModelDat.matV; % Subspace basis matrix.
 	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
-	matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
+	matA0 = fModelDat.matA0; % Hessian variation matrix, < (delta W)' * (delta W) >.
 	%matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify max(abs(y'*B)) <= 1.
 	%sizeX = size(vecX,1);
 	%sizeF = size(vecF,1);
@@ -842,7 +1117,8 @@ function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
 	%
 	fModelDat.matVLocal = matVLocal;
 	fModelDat.matW = matW + (vecW - matW*vecYHat)*(vecYHat');
-	fModelDat.matA = matE * matA * matE;
+	fModelDat.matA = matE * matA0 * matE;
+	%zzz
 	%
 	%
 	datOut.fevalCount = fevalCount;
