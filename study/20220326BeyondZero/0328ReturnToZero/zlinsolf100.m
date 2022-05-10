@@ -81,10 +81,10 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			msg( __FILE__, __LINE__, "ERROR: fModelDat.bPB or bIB > 1.0 + sqrt(eps)" );
 			break;
 		endif
-		if ( fModelDat.omegaModelAvgIU > fModelDat.omega ...
-		  || fModelDat.omegaModelAvgIB > fModelDat.omega ...
-		  || fModelDat.omegaModelAvgPB > fModelDat.omega )
-			msg( __FILE__, __LINE__, "ERROR: omegaModelAvg (of at least one flavor) > omega." );
+		if ( fModelDat.omegaModelAvgIU > fModelDat.omega*(1.0+sqrt(eps)) ...
+		  || fModelDat.omegaModelAvgIB > fModelDat.omega*(1.0+sqrt(eps)) ...
+		  || fModelDat.omegaModelAvgPB > fModelDat.omega*(1.0+sqrt(eps)) )
+			msg( __FILE__, __LINE__, "ERROR: omegaModelAvg (of at least one flavor) > omega*(1.0+sqrt(eps))." );
 			break;
 		endif
 		%
@@ -332,9 +332,9 @@ endfunction
 
 function prm = __initPrm( vecX, vecF, prm )
 	setVerbLevs;
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
-	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	prm.msgCopious = mygetfield( prm, "msgCopious", verbLev >= VERBLEV__COPIOUS );
 	prm.msgProgress = mygetfield( prm, "msgProgress", verbLev >= VERBLEV__PROGRESS );
 	prm.msgMain = mygetfield( prm, "msgMain", verbLev >= VERBLEV__MAIN );
@@ -481,10 +481,6 @@ function fModelDat = __analyzeModel( fModelDat, prm )
 	endif
 	%
 	fModelDat.omega = sumsq(vecF)/2.0;
-	%
-	assert( fModelDat.omegaModelAvgIU <= fModelDat.omega );
-	assert( fModelDat.omegaModelAvgIB <= fModelDat.omega );
-	assert( fModelDat.omegaModelAvgPB <= fModelDat.omega );
 return;
 endfunction
 
