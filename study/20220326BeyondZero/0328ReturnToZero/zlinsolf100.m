@@ -2,6 +2,9 @@
 %  zlinsolf100
 %  First concrete attempt at MVP.
 %
+% DRaburn 2022.05.09...
+%   Oh, I've been forgetting to update this change list. Whoops.
+%
 % DRaburn 2022.05.08...
 %   - Overhaulled trust region / boundary stuff.
 %
@@ -209,7 +212,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				msgif( prm.msgCopious, __FILE__, __LINE__, "  Accepting step." );
 				excellentThresh = mygetfield( prm, "excellentThresh", 0.1 );
 				if ( norm(vecF_trial-fModelDat.vecFModelIU) <= excellentThresh*norm(fModelDat.vecFModelIU) )
-					msg( __FILE__, __LINE__, "  Model was very accurate; removing wall(s)." );
+					msgif( prm.msgCopious, __FILE__, __LINE__, "  Model was very accurate; removing wall(s)." );
 					bRemoveFactor = mygetfield( prm, "bRemoveFactor", 1.5 );
 					fModelDat = __removeB( bRemoveFactor*fModelDat.vecYIU, fModelDat, prm );
 				endif
@@ -248,11 +251,11 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			vecFModel = fModelDat.vecF + fModelDat.matW*vecY;
 			badThresh = mygetfield( prm, "badThresh", 0.5 );
 			if ( norm( vecF_trial - vecFModel ) > badThresh * norm(vecFModel) )
-				msg( __FILE__, __LINE__, "  Model was very bad; adding wall." );
+				msgif( prm.msgCopious, __FILE__, __LINE__, "  Model was very bad; adding wall." );
 				bAddFactor = mygetfield( prm, "bAddFactor", 0.5 );
 				fModelDat = __addB( bAddFactor*vecY, fModelDat, prm );
 			elseif (~refreshedTrialStep)
-				msg( __FILE__, __LINE__, "  Did not refresh trial step but model was bed enough; adding wall." );
+				msgif( prm.msgCopious, __FILE__, __LINE__, "  Did not refresh trial step but model was bed enough; adding wall." );
 				bAddFactor = mygetfield( prm, "bAddFactor", 0.5 );
 				fModelDat = __addB( bAddFactor*vecY, fModelDat, prm );
 			endif
@@ -438,7 +441,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				msgif( prm.msgCopious, __FILE__, __LINE__, "  Accepting step." );
 				excellentThresh = mygetfield( prm, "excellentThresh", 0.1 );
 				if ( norm(vecF_trial-fModelDat.vecFModelPB) <= excellentThresh*norm(fModelDat.vecFModelPB) )
-					msg( __FILE__, __LINE__, "  Model was very accurate; removing wall(s)." );
+					msgif( prm.msgCopious, __FILE__, __LINE__, "  Model was very accurate; removing wall(s)." );
 					bRemoveFactor = mygetfield( prm, "bRemoveFactor", 1.5 );
 					fModelDat = __removeB( bRemoveFactor*fModelDat.vecYPB, fModelDat, prm );
 				endif
@@ -491,11 +494,11 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			vecFModel = fModelDat.vecF + fModelDat.matW*vecY;
 			badThresh = mygetfield( prm, "badThresh", 0.5 );
 			if ( norm( vecF_trial - vecFModel ) > badThresh * norm(vecFModel) )
-				msg( __FILE__, __LINE__, "  Model was very bad; adding wall." );
+				msgif( prm.msgCopious, __FILE__, __LINE__, "  Model was very bad; adding wall." );
 				bAddFactor = mygetfield( prm, "bAddFactor", 0.5 );
 				fModelDat = __addB( bAddFactor*vecY, fModelDat, prm );
 			elseif (~refreshedTrialStep)
-				msg( __FILE__, __LINE__, "  Did not refresh trial step but model was bed enough; adding wall." );
+				msgif( prm.msgCopious, __FILE__, __LINE__, "  Did not refresh trial step but model was bed enough; adding wall." );
 				bAddFactor = mygetfield( prm, "bAddFactor", 0.5 );
 				fModelDat = __addB( bAddFactor*vecY, fModelDat, prm );
 			endif

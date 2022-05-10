@@ -29,6 +29,7 @@ numRuns = 0;
 numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 300; runList(numRuns).r.prmMemo = "it300";
 numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "it3000";
+resumeRun = numRuns;
 %
 numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 300; runList(numRuns).r.prmMemo = "it300";
@@ -44,7 +45,6 @@ numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3
 %numRuns++; runList(numRuns).r.runType = -1; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "(dne)";
 %
 %
-resumeRun = 3;
 %
 msg( __FILE__, __LINE__, "TODO: Run with fsolve for comparison." );
 %
