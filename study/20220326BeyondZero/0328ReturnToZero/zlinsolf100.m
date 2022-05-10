@@ -71,9 +71,9 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		endif
 		%
 		msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( ...
-		  "  iter:  %5d / %5d;  omega: %10.3e / %10.3e;  sizeV: %d;  sizeVLoc: %d;  sizeB: %d.", ...
+		  "  iter:  %5d / %5d;  omega: %8.2e / %8.2e;  sizeV: %3d / %3d / %3d;  sizeF: %3d;  sizeB: %3d.", ...
 		  iterCount, prm.iterMax, sumsq(fModelDat.vecF)/2.0, prm.omegaTol, ...
-		  size(fModelDat.matV,2), size(fModelDat.matVLocal,2), size(fModelDat.matB,2) ) );
+		  size(fModelDat.matVLocal,2), size(fModelDat.matV,2), size(vecX_initial,1), size(vecF_initial,1), size(fModelDat.matB,2) ) );
 		msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( ...
 		  "  omega IU: %8.2e ~ %8.2e (%8.2e);  IB: %8.2e ~ %8.2e (%8.2e);  PB:  %8.2e ~ %8.2e (%8.2e).", ...
 		  fModelDat.omegaModelAvgIU, fModelDat.omegaModelVarIU, fModelDat.omega-fModelDat.omegaModelAvgIU, ...
@@ -149,9 +149,15 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			msgif( prm.msgCopious, __FILE__, __LINE__, "Trying ideal unbound step." );
 			vecX_trial = fModelDat.vecXIU;
 			vecF_trial = funchF( vecX_trial );
-			omega_trial = sumsq(vecF_trial)/2.0;
-			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  omega_trial = %g.", omega_trial ) );
 			fevalCount++;
+			omega_trial = sumsq(vecF_trial)/2.0;
+			%msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  omega_trial = %g.", omega_trial ) );
+			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  >> trial... omega: %8.2e to %8.2e, expected %8.2e ~ %8.2e;", ...
+			  fModelDat.omega, omega_trial, ...
+			  fModelDat.omegaModelAvgPB, fModelDat.omegaModelAvgPB + fModelDat.omegaModelVarPB ) );
+			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "              fall: %8.2e, expected %8.2e ~ %8.2e.", ...
+			  fModelDat.omega-omega_trial, ...
+			  fModelDat.omega - fModelDat.omegaModelAvgPB, fModelDat.omega - (fModelDat.omegaModelAvgPB + fModelDat.omegaModelVarPB) ) );
 			if ( norm(vecF_trial) < norm(vecF_best) )
 				msgif( prm.msgCopious, __FILE__, __LINE__, "  Step is new best." );
 				vecX_best = vecX_trial;
@@ -177,8 +183,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			avefaThresh = mygetfield( prm, "avefaThresh", 0.5 ); % Actual vs expect fall acceptace threshold
 			assert( 0.0 < avefaThresh );
 			assert( avefaThresh < 1.0 );
-			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  expected fall = %g.", fModelDat.omega - (fModelDat.omegaModelAvgIU + fModelDat.omegaModelVarIU) ) );
-			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  actual fall = %g.", fModelDat.omega - omega_trial ) );
+			%msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  expected fall = %g.", fModelDat.omega - (fModelDat.omegaModelAvgIU + fModelDat.omegaModelVarIU) ) );
+			%msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  actual fall = %g.", fModelDat.omega - omega_trial ) );
 			if ( omega_trial <= fModelDat.omega - avefaThresh*( fModelDat.omega - (fModelDat.omegaModelAvgIU + fModelDat.omegaModelVarIU) ) )
 				msgif( prm.msgCopious, __FILE__, __LINE__, "  Accepting step." );
 				excellentThresh = mygetfield( prm, "excellentThresh", 0.1 );
@@ -255,8 +261,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			%
 			%%%
 			makePlotsAndHalt = false;
-			if (0)
-			makePlotsAndHalt = (size(fModelDat.matVLocal,2)>=10 && size(fModelDat.matB,2)>=11);
+			if (1)
+			makePlotsAndHalt = ( size(fModelDat.matVLocal,2)>=50 && size(fModelDat.matB,2)>=20 );
 			%makePlotsAndHalt = (size(fModelDat.matB,2)>=3);
 			if ( makePlotsAndHalt )
 				vecY = fModelDat.vecYPB;
@@ -371,9 +377,15 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			%
 			vecX_trial = fModelDat.vecXPB;
 			vecF_trial = funchF( vecX_trial );
-			omega_trial = sumsq(vecF_trial)/2.0;
-			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  omega_trial = %g.", omega_trial ) );
 			fevalCount++;
+			omega_trial = sumsq(vecF_trial)/2.0;
+			%msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  omega_trial = %g.", omega_trial ) );
+			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  >> trial... omega: %8.2e to %8.2e, expected %8.2e ~ %8.2e;", ...
+			  fModelDat.omega, omega_trial, ...
+			  fModelDat.omegaModelAvgPB, fModelDat.omegaModelAvgPB + fModelDat.omegaModelVarPB ) );
+			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "              fall: %8.2e, expected %8.2e ~ %8.2e.", ...
+			  fModelDat.omega-omega_trial, ...
+			  fModelDat.omega - fModelDat.omegaModelAvgPB, fModelDat.omega - (fModelDat.omegaModelAvgPB + fModelDat.omegaModelVarPB) ) );
 			if ( norm(vecF_trial) < norm(vecF_best) )
 				msgif( prm.msgCopious, __FILE__, __LINE__, "  Step is new best." );
 				vecX_best = vecX_trial;
@@ -399,8 +411,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			avefaThresh = mygetfield( prm, "avefaThresh", 0.5 ); % Actual vs expect fall acceptace threshold
 			assert( 0.0 < avefaThresh );
 			assert( avefaThresh < 1.0 );
-			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  expected fall = %g.", fModelDat.omega - (fModelDat.omegaModelAvgPB + fModelDat.omegaModelVarPB) ) );
-			msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  actual fall = %g.", fModelDat.omega - omega_trial ) );
+			%msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  expected fall = %g.", fModelDat.omega - (fModelDat.omegaModelAvgPB + fModelDat.omegaModelVarPB) ) );
+			%msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "  actual fall = %g.", fModelDat.omega - omega_trial ) );
 			if ( omega_trial <= fModelDat.omega - avefaThresh*( fModelDat.omega - (fModelDat.omegaModelAvgPB + fModelDat.omegaModelVarPB) ) )
 				msgif( prm.msgCopious, __FILE__, __LINE__, "  Accepting step." );
 				excellentThresh = mygetfield( prm, "excellentThresh", 0.1 );
@@ -682,9 +694,9 @@ endfunction
 
 function prm = __initPrm( vecX, vecF, prm )
 	setVerbLevs;
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
-	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	prm.msgCopious = mygetfield( prm, "msgCopious", verbLev >= VERBLEV__COPIOUS );
 	prm.msgProgress = mygetfield( prm, "msgProgress", verbLev >= VERBLEV__PROGRESS );
 	prm.msgMain = mygetfield( prm, "msgMain", verbLev >= VERBLEV__MAIN );
@@ -1052,7 +1064,7 @@ function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
 	%%%matA0 = matA + s*matD;
 	%
 	matWTW = matW'*matW;
-	matA0 = 10000.0*( 10.0*diag(diag(matWTW)) + matWTW + eye(sizeV,sizeV)*max(max(matWTW))*0.1 );
+	matA0 = 100.0*( diag(diag(matWTW)) + eye(sizeV,sizeV)*max(max(matWTW))*0.1 );
 	%
 	%
 	%

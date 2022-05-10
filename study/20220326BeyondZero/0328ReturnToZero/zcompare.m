@@ -13,10 +13,18 @@ sizeX = 50;
 fType = 5;
 fSeed = 0;
 zcompare__setF;
+%
+if (1)
+	numRuns = 0;
+	runIndex = 0;
+	r.runType = 1100; r.prm.iterMax = 1000; r.prmMemo = "it1000";
+	zcompare__doRun;
+	msg( __FILE__, __LINE__, "Goodbye!" ); return;
+endif
+%
+%
+%
 numRuns = 0;
-%
-%
-%
 numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prmMemo = "it1000";
@@ -35,11 +43,7 @@ numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 1
 %numRuns++; runList(numRuns).r.runType = -1; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "(dne)";
 %
 %
-% Hacks
-%numRuns = 1;
 resumeRun = 3;
-%
-%
 %
 msg( __FILE__, __LINE__, "TODO: Run with fsolve for comparison." );
 %
@@ -52,6 +56,7 @@ for runIndex = 1 : numRuns
 	endif
 	r = runList(runIndex).r;
 	zcompare__doRun;
+	if ( 0 < resumeRun )
 	if ( runIndex == resumeRun )
 		vecX0 = r.vecXF;
 		resumeFevalCount = r.fevalCount;
@@ -59,6 +64,7 @@ for runIndex = 1 : numRuns
 	elseif ( runIndex > resumeRun )
 		r.fevalCountOfStep += resumeFevalCount;
 		r.stepCountOfStep += resumeStepCount;
+	endif
 	endif
 	runList(runIndex).r = r;
 endfor
