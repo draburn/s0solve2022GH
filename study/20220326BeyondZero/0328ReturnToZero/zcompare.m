@@ -9,23 +9,26 @@ if ( stopsignalpresent() )
 endif
 %
 %
-sizeX = 100;
+sizeX = 50;
 fType = 5;
 fSeed = 0;
 zcompare__setF;
+useResume = true;
+haveResumed = false;
 %
 %
 %
 numRuns = 0;
 %numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "(WIP)";
 numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prmMemo = "it1000";
+numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prmMemo = "it1000";
 %numRuns++; runList(numRuns).r.runType = 50; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 904; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
+%numRuns++; runList(numRuns).r.runType = 904; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 904; runList(numRuns).r.prm.slinsolfver = 100; runList(numRuns).r.prmMemo = "sl100";
 %numRuns++; runList(numRuns).r.runType = 904; runList(numRuns).r.prm.slinsolfver = 200; runList(numRuns).r.prmMemo = "sl200";
-numRuns++; runList(numRuns).r.runType = 940; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
+%numRuns++; runList(numRuns).r.runType = 940; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 940; runList(numRuns).r.prm.step_prm.usePostLinsolfPhiPatch = false; runList(numRuns).r.prmMemo = "uplpp false";
 %numRuns++; runList(numRuns).r.runType = 940; runList(numRuns).r.prm.step_prm.usePostLinsolfPhiPatch = true; runList(numRuns).r.prmMemo = "uplpp true";
 %numRuns++; runList(numRuns).r.runType = -1; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "(dne)";
@@ -44,16 +47,18 @@ for runIndex = 1 : numRuns
 		return;
 	endif
 	r = runList(runIndex).r;
-	if (isempty(r.prmMemo))
-		r.runName = sprintf( "%d", r.runType );
-	else
-		r.runName = sprintf( "%d %s", r.runType, r.prmMemo );
-	endif
-	msg( __FILE__, __LINE__, sprintf( "Starting run %d/%d: '%s'...", runIndex, numRuns, r.runName ) );
 	zcompare__doRun;
-	markerTypes = "+o*xsd^v<>ph";
-	r.mlStyle = [ markerTypes(mod(runIndex,length(markerTypes))+1), "-" ];
-	r.mSize = 10+3*(numRuns-runIndex);
+	if (useResume)
+		if (~haveResumed)
+			vecX0 = r.vecXF;
+			resumeFevalCount = r.fevalCount;
+			resumeStepCount = r.stepCount;
+			haveResumed = true;
+		else
+			r.fevalCountOfStep += resumeFevalCount;
+			r.stepCountOfStep += resumeStepCount;
+		endif
+	endif
 	runList(runIndex).r = r;
 endfor
 vecF0 = funchF(vecX0);
@@ -116,8 +121,8 @@ epsViz = 1.0e-18;
 for n=1:numRuns
 	r = runList(n).r;
 	if (r.isValid)
-		%loglog( 1+(0:r.stepCount), r.fBestNormOfStep+epsViz, r.mlStyle, 'markersize', r.mSize, 'linewidth', 2 );
-		semilogy( (0:r.stepCount), r.fBestNormOfStep+epsViz, r.mlStyle, 'markersize', r.mSize, 'linewidth', 2 );
+		%loglog( r.stepCountOfStep, r.fBestNormOfStep+epsViz, r.mlStyle, 'markersize', r.mSize, 'linewidth', 2 );
+		semilogy( r.stepCountOfStep, r.fBestNormOfStep+epsViz, r.mlStyle, 'markersize', r.mSize, 'linewidth', 2 );
 		hold on;
 	endif
 endfor

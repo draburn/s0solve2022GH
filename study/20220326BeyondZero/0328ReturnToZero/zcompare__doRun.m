@@ -1,3 +1,9 @@
+if (isempty(r.prmMemo))
+	r.runName = sprintf( "%d", r.runType );
+else
+	r.runName = sprintf( "%d %s", r.runType, r.prmMemo );
+endif
+msg( __FILE__, __LINE__, sprintf( "Starting run %d/%d: '%s'...", runIndex, numRuns, r.runName ) );
 runStartTime = time();
 %
 switch( r.runType )
@@ -58,6 +64,10 @@ otherwise
 	r.isValid = false;
 	return;
 endswitch
+markerTypes = "+o*xsd^v<>ph";
+r.mlStyle = [ markerTypes(mod(runIndex,length(markerTypes))+1), "-" ];
+r.mSize = 10+3*(numRuns-runIndex);
+r.stepCountOfStep = ( 0 : r.stepCount );
 %
 msg( __FILE__, __LINE__, "TODO: If run did not converge, resume with a different solver (fsovle?) and see if that converges." );
 %
