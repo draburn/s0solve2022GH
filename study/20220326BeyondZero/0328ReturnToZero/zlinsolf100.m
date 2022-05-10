@@ -110,13 +110,10 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		%
 		if ( iterCount > prm.iterMax )
 			msgif( prm.msgMain, __FILE__, __LINE__, "IMPOSED STOP: iterCount >= prm.iterMax." );
-			if (1)
+			if (prm.msgCopious)
 				msgif( prm.msgCopious, __FILE__, __LINE__, "vvvvv Data dump..." );
 				__dumpModel( fModelDat, prm );
-				%vecX_cand
-				%vecF_cand
 				msgif( prm.msgCopious, __FILE__, __LINE__, "^^^^^ End data dump." );
-				msgif( prm.msgMain, __FILE__, __LINE__, "IMPOSED STOP: iterCount >= prm.iterMax." );
 			endif
 			break;
 		endif
@@ -1181,7 +1178,6 @@ function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
 	fModelDat.matW = matW + ( matWLocal - matW*(matV')*matVLocal)*(matVLocal'*matV); % Yeah?
 	%
 	fModelDat.matA = matE * matA0 * matE;
-	%zzz
 	%
 	%
 	datOut.fevalCount = fevalCount;

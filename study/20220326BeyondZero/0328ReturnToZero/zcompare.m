@@ -10,7 +10,7 @@ if ( stopsignalpresent() )
 endif
 %
 %
-sizeX = 50;
+sizeX = 100;
 fType = 10;
 fSeed = 0;
 zcompare__setF;
@@ -27,13 +27,13 @@ endif
 %
 numRuns = 0;
 numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 300; runList(numRuns).r.prmMemo = "it300";
-numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "it3000";
+numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 2000; runList(numRuns).r.prmMemo = "it2k";
+numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 6500; runList(numRuns).r.prmMemo = "it6.5k";
 resumeRun = numRuns;
 %
 numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 300; runList(numRuns).r.prmMemo = "it300";
-numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "it3000";
+numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 2000; runList(numRuns).r.prmMemo = "it2k";
+numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 6500; runList(numRuns).r.prmMemo = "it6.5k";
 %
 %numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 904; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
@@ -71,8 +71,8 @@ for runIndex = 1 : numRuns
 endfor
 vecF0 = funchF(vecX0);
 %
-mainElapsedTime = time()-runStartTime;
-msg( __FILE__, __LINE__, sprintf( "Run suite '%s' with F '%s' completed in %0.3es.", mainStartDatestr, runFStr, mainElapsedTime ) );
+mainCalcElapsedTime = time()-mainStartTime;
+msg( __FILE__, __LINE__, sprintf( "Run suite '%s' with F '%s' completed in %0.3es.", mainStartDatestr, runFStr, mainCalcElapsedTime ) );
 %
 msg( __FILE__, __LINE__, sprintf( "norm(vecF0) = %g.", norm(vecF0) ) );
 msg( __FILE__, __LINE__, "Solver results..." );
@@ -102,7 +102,7 @@ for n=1:numRuns
 		semilogy( r.fevalCountOfStep, r.fBestNormOfStep+epsViz, r.mlStyle, 'markersize', r.mSize, 'linewidth', 2 );
 		hold on;
 		m++;
-		leg(m) = sprintf( "%s (%s)", r.runName, r.runTypeDescrip );
+		leg(m) = sprintf( "%d: %s (%s)", n, r.runName, r.runTypeDescrip );
 	endif
 endfor
 hold off;
@@ -141,7 +141,9 @@ grid on;
 xlabel( "step count" );
 ylabel( "||F best||" );
 title( "||F best|| vs step count" );
-
 %
+
+mainCPPElapsedTime = time()-mainStartTime;
+msg( __FILE__, __LINE__, sprintf( "With plots, run suite '%s' with F '%s' completed in %0.3es.", mainStartDatestr, runFStr, time()-mainCPPElapsedTime ) );
 msg( __FILE__, __LINE__, "Goodbye!" );
 return;
