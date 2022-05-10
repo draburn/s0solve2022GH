@@ -41,11 +41,13 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 	%
 	% Current local vecX and vecF are stored only in fModelDat to avoid redundancy.
 	iterCount = 0;
-	stepCount = 0;
 	vecX_cand = []; % Candidate for next vecX.
 	vecF_cand = [];
 	vecX_best = vecX_initial;
 	vecF_best = vecF_initial;
+	%
+	stepCount = 0;
+	datOut.iterCountOfSteps(stepCount+1) = 1;
 	%
 	while (1)
 		%
@@ -55,7 +57,6 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		datOut.fNormVals(iterCount+1) = norm(vecF_best);
 		datOut.vecXVals(:,iterCount+1) = fModelDat.vecX;
 		datOut.vecFVals(:,iterCount+1) = fModelDat.vecF;
-		datOut.iterCountOfSteps(stepCount+1) = iterCount;
 		iterCount++;
 		%
 		%
@@ -143,6 +144,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				  fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount ) );
 				fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
 				stepCount++;
+				datOut.iterCountOfSteps(stepCount+1) = iterCount+1;
 				clear vecX_trial;
 				clear vecF_trial;
 				clear omega_trial;
@@ -169,6 +171,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				  fModelDat.omega, sumsq(vecF_trial)/2.0, fModelDat.omega-sumsq(vecF_trial)/2.0, fevalCount ) );
 				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
 				stepCount++;
+				datOut.iterCountOfSteps(stepCount+1) = iterCount+1;
 				clear vecX_trial;
 				clear vecF_trial;
 				clear omega_trial;
@@ -238,6 +241,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				  fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount ) );
 				fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
 				stepCount++;
+				datOut.iterCountOfSteps(stepCount+1) = iterCount+1;
 				clear vecX_trial;
 				clear vecF_trial;
 				clear omega_trial;
@@ -264,6 +268,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				  fModelDat.omega, sumsq(vecF_trial)/2.0, fModelDat.omega-sumsq(vecF_trial)/2.0, fevalCount ) );
 				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
 				stepCount++;
+				datOut.iterCountOfSteps(stepCount+1) = iterCount+1;
 				clear vecX_trial;
 				clear vecF_trial;
 				clear omega_trial;
@@ -313,7 +318,6 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 	%
 	datOut.iterCountVals(iterCount+1) = iterCount;
 	datOut.fevalCountVals(iterCount+1) = fevalCount;
-	datOut.stepCountVals(iterCount+1) = stepCount;
 	datOut.fNormVals(iterCount+1) = norm(vecF_best);
 	datOut.vecXVals(:,iterCount+1) = fModelDat.vecX;
 	datOut.vecFVals(:,iterCount+1) = fModelDat.vecF;

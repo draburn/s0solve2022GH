@@ -28,7 +28,7 @@ numRuns++; runList(numRuns).r.runType = 940; runList(numRuns).r.prm.step_prm.use
 numRuns++; runList(numRuns).r.runType = 940; runList(numRuns).r.prm.step_prm.usePostLinsolfPhiPatch = true; runList(numRuns).r.prmMemo = "uplpp true";
 %numRuns++; runList(numRuns).r.runType = -1; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "(dne)";
 %
-numRuns = 1;
+%numRuns = 1;
 %
 %
 %
