@@ -124,6 +124,26 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				foo = size(fModelDat.matVLocal,2);
 				assert( reldiff( eye(foo,foo), fModelDat.matVLocal'*fModelDat.matVLocal, eps ) < sqrt(eps) );
 				clear foo;
+				%
+				rd = reldiff( fModelDat.matWLocal, fModelDat.matW*(fModelDat.matV'*fModelDat.matVLocal) );
+				if ( rd > sqrt(eps) )
+					error( "matWLocal does not agree with matW." );
+				endif
+				%
+				if (0)
+				fooZ1 = fModelDat.matV'*fModelDat.matVLocal*(fModelDat.matVLocal'*fModelDat.vecYIU);
+				if ( norm(fooZ1) > 0.0 )
+					fooZ1 *= sqrt(eps)/norm(fooZ1);
+					fooZ2 = 2.0*fooZ1;
+					fooM1 = fModelDat.vecF + fModelDat.matW*fooZ1;
+					fooM2 = fModelDat.vecF + fModelDat.matW*fooZ2;
+					fooF1 = funchF( fModelDat.vecX + fModelDat.matV*fooZ1 );
+					fooF2 = funchF( fModelDat.vecX + fModelDat.matV*fooZ2 );
+					rho1 = norm(fooM1-fooF1);
+					rho2 = norm(fooM2-fooF2);
+					assert( rho2 < 1.5*rho1 );
+				endif
+				endif
 			endif
 		endif
 		%
@@ -262,8 +282,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			%%%
 			makePlotsAndHalt = false;
 			if (1)
-			makePlotsAndHalt = ( size(fModelDat.matVLocal,2)>=50 && size(fModelDat.matB,2)>=20 );
-			%makePlotsAndHalt = (size(fModelDat.matB,2)>=3);
+			makePlotsAndHalt = ( size(fModelDat.matVLocal,2)>=1 && size(fModelDat.matB,2)>=20 );
 			if ( makePlotsAndHalt )
 				vecY = fModelDat.vecYPB;
 				fModelDat.haltAfterNextReport = true;
@@ -701,7 +720,7 @@ function prm = __initPrm( vecX, vecF, prm )
 	prm.msgProgress = mygetfield( prm, "msgProgress", verbLev >= VERBLEV__PROGRESS );
 	prm.msgMain = mygetfield( prm, "msgMain", verbLev >= VERBLEV__MAIN );
 	prm.msgNotice = mygetfield( prm, "msgNotice", verbLev >= VERBLEV__NOTICE );
-	prm.debugMode = mygetfield( prm, "debugMode", false );
+	prm.debugMode = mygetfield( prm, "debugMode", true );
 	%
 	sizeX = size(vecX,1);
 	sizeF = size(vecF,1);
@@ -765,6 +784,7 @@ function [ fModelDat, datOut ] = __initModel( funchF, vecX, vecF, prm )
 	fModelDat.matVLocal = [ vecV ];
 	fModelDat.matV = [ vecV ];
 	fModelDat.matW = [ vecW ];
+	fModelDat.matWLocal = [ vecW ];
 	fModelDat.matA = [ 0.0 ];
 	fModelDat.matA0 = [ 0.0 ];
 	fModelDat.matB = [];
@@ -933,6 +953,7 @@ function [ fModelDat, datOut ] = __expandModel( vecU, funchF, fModelDat, prm )
 	vecF = fModelDat.vecF;
 	%omega = fModelDat.omega;
 	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
+	matWLocal = fModelDat.matWLocal; % Locally evaluated subspace basis matrix.
 	matV = fModelDat.matV; % Subspace basis matrix.
 	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
 	matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
@@ -959,8 +980,10 @@ function [ fModelDat, datOut ] = __expandModel( vecU, funchF, fModelDat, prm )
 	%
 	if (isempty(matVLocal))
 		fModelDat.matVLocal = [ vecV ];
+		fModelDat.matWLocal = [ vecW ];
 	else
 		fModelDat.matVLocal = [ matVLocal, vecV ];
+		fModelDat.matWLocal = [ matWLocal, vecW ];
 	endif
 	%
 	fModelDat.matV = [ matV, vecV ];
@@ -1069,6 +1092,7 @@ function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
 	%
 	%
 	fModelDat.matVLocal = [];
+	fModelDat.matWLocal = [];
 	fModelDat.vecX = vecX_trial;
 	fModelDat.vecF = vecF_trial;
 	fModelDat.matW = matW_plus;
@@ -1085,6 +1109,7 @@ function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
 	vecF = fModelDat.vecF;
 	%omega = fModelDat.omega;
 	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
+	matWLocal = fModelDat.matWLocal;
 	matV = fModelDat.matV; % Subspace basis matrix.
 	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
 	matA0 = fModelDat.matA0; % Hessian variation matrix, < (delta W)' * (delta W) >.
@@ -1115,6 +1140,7 @@ function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
 	endif
 	%
 	matVLocal = [ matVLocal, vecV ];
+	matWLocal = [ matWLocal, vecW ];
 	sizeVLocal++;
 	if ( prm.debugMode )
 		assert( reldiff( matVLocal, matV*(matV'*matVLocal), eps ) < sqrt(eps) );
@@ -1128,7 +1154,16 @@ function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
 	matE = eye(sizeV,sizeV) - matV'*matVLocal*(matVLocal')*matV;
 	%
 	fModelDat.matVLocal = matVLocal;
-	fModelDat.matW = matW + (vecW - matW*vecYHat)*(vecYHat');
+	fModelDat.matWLocal = matWLocal;
+	%
+	%%% The yHats are NOT perpendicular!
+	%%%fModelDat.matW = matW + (vecW - matW*vecYHat)*(vecYHat');
+	%%% This z thing also works..
+	%%%vecZ = matV'*vecV;
+	%%%fModelDat.matW = matW + (vecW - matW*vecZ)*(vecZ');
+	% But, to be safe, let's do this.
+	fModelDat.matW = matW + ( matWLocal - matW*(matV')*matVLocal)*(matVLocal'*matV); % Yeah?
+	%
 	fModelDat.matA = matE * matA0 * matE;
 	%zzz
 	%

@@ -14,7 +14,7 @@ fType = 5;
 fSeed = 0;
 zcompare__setF;
 %
-if (1)
+if (0)
 	numRuns = 0;
 	runIndex = 0;
 	r.runType = 1100; r.prm.iterMax = 1000; r.prmMemo = "it1000";
