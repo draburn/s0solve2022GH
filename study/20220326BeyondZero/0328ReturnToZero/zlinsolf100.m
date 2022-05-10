@@ -282,6 +282,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			%%%
 			makePlotsAndHalt = false;
 			if (1)
+			if ( prm.msgCopious && prm.debugMode )
 			makePlotsAndHalt = ( size(fModelDat.matVLocal,2)>=1 && size(fModelDat.matB,2)>=20 );
 			if ( makePlotsAndHalt )
 				vecY = fModelDat.vecYPB;
@@ -389,6 +390,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				grid on;
 				xlabel( "s" );
 				ylabel( "||VLocal'*V*y||/||y||" );
+			endif
 			endif
 			endif
 			%%%
@@ -713,9 +715,9 @@ endfunction
 
 function prm = __initPrm( vecX, vecF, prm )
 	setVerbLevs;
-	%verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	prm.msgCopious = mygetfield( prm, "msgCopious", verbLev >= VERBLEV__COPIOUS );
 	prm.msgProgress = mygetfield( prm, "msgProgress", verbLev >= VERBLEV__PROGRESS );
 	prm.msgMain = mygetfield( prm, "msgMain", verbLev >= VERBLEV__MAIN );
@@ -1130,7 +1132,18 @@ function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
 		error( "Failed to generate local subspace basis vector." );
 	endif
 	if (prm.debugMode)
-		assert( 0.0 == __calcOrthonorm( vecV, matV, prm ) );
+		prmTemp.orthoTol = sqrt(eps);
+		foo = __calcOrthonorm( vecV, matV, prmTemp );
+		if ( norm(foo) != 0.0 )
+			msg( __FILE__, __LINE__, "Data dump..." );
+			[ norm(vecU), norm(vecV), norm(foo) ]
+			[ norm(vecU), norm(vecV), norm(foo) ] - 1.0
+			[ vecV'*vecU, foo'*vecU, foo'*vecV ]
+			[ norm( matV'*vecU ), norm( matV'*vecV ), norm( matV'*foo ) ]
+			[ norm( vecV - matV*(matV'*vecV) ), norm( vecU - matV*(matV'*vecU) ), norm( foo - matV*(matV'*foo) ) ]
+			[ norm( vecV - matV*(matV'*vecV) ), norm( vecU - matV*(matV'*vecU) ), norm( foo - matV*(matV'*foo) ) ] - 1.0
+			error( "Subspace basis vector was thrown out of own space?!?!" );
+		endif
 	endif
 	%
 	vecW = __calcJV( vecV, funchF, vecX, vecF, prm );

@@ -3,6 +3,7 @@ setVerbLevs;
 numFigs = 0;
 mainStartTime = time();
 mainStartDatestr = datestr(now,31);
+printf( "\n\n\n" );
 msg( __FILE__, __LINE__, sprintf( "Starting run suite '%s'.", mainStartDatestr ) );
 if ( stopsignalpresent() )
 	error( "Stop signal is already present." );
@@ -10,7 +11,7 @@ endif
 %
 %
 sizeX = 50;
-fType = 5;
+fType = 10;
 fSeed = 0;
 zcompare__setF;
 %
@@ -26,12 +27,12 @@ endif
 %
 numRuns = 0;
 numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prmMemo = "it1000";
+numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 300; runList(numRuns).r.prmMemo = "it300";
+numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "it3000";
 %
 numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prmMemo = "it1000";
+numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 300; runList(numRuns).r.prmMemo = "it300";
+numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "it3000";
 %
 %numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 904; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
