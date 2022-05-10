@@ -8,7 +8,8 @@
 	if ( 0==cholFlag && min(diag(matR)) > cholTol*max(abs(diag(matR))) )
 		matHRegu = matH;
 	else
-		matHRegu = matH + hNorm*sqrt(eps)*matIX;
+		sizeV = size(matW,2);
+		matHRegu = matH + hNorm*sqrt(eps)*eye(sizeV);
 		[ matR, cholFlag ] = chol(matHRegu);
 		assert( 0 == cholFlag );
 		assert( min(diag(matR)) > max(abs(diag(matR)))*cholTol );
