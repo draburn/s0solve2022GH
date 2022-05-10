@@ -61,6 +61,14 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		%
 		%
 		fModelDat = __analyzeModel( fModelDat, prm );
+		if ( fModelDat.omegaModelVarIU < 0.0 ...
+		  || fModelDat.omegaModelVarIB < 0.0 ...
+		  || fModelDat.omegaModelVarPB < 0.0 )
+			msgif( prm.msgNotice, __FILE__, __LINE__, "WARNING omegaModelVar (of at least one flavor) was negative." );
+			fModelDat.omegaModelVarIU = max([ fModelDat.omegaModelVarIU, 0.0 ]);
+			fModelDat.omegaModelVarIB = max([ fModelDat.omegaModelVarIB, 0.0 ]);
+			fModelDat.omegaModelVarPB = max([ fModelDat.omegaModelVarPB, 0.0 ]);
+		endif
 		%
 		msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( ...
 		  "  iter:  %5d / %5d;  omega: %10.3e / %10.3e;  sizeV: %d;  sizeVLoc: %d;  sizeB: %d.", ...
@@ -192,15 +200,21 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			vecY = fModelDat.vecYIU;
 			vecU = fModelDat.matV*vecY;
 			vecV = __calcOrthonorm( vecU, fModelDat.matVLocal, prm );
+			refreshedTrialStep = false;
 			if ( 0.0 ~= norm(vecV) )
 				msgif( prm.msgCopious, __FILE__, __LINE__, "  Refreshing trial step before adding wall." );
 				[ fModelDat, datOut_refresh ] = __refresh( vecY, funchF, fModelDat, prm );
 				fevalCount += datOut_refresh.fevalCount;
+				refreshedTrialStep = true;
 			endif
 			vecFModel = fModelDat.vecF + fModelDat.matW*vecY;
 			badThresh = mygetfield( prm, "badThresh", 0.5 );
 			if ( norm( vecF_trial - vecFModel ) > badThresh * norm(vecFModel) )
 				msg( __FILE__, __LINE__, "  Model was very bad; adding wall." );
+				bAddFactor = mygetfield( prm, "bAddFactor", 0.5 );
+				fModelDat = __addB( bAddFactor*vecY, fModelDat, prm );
+			elseif (~refreshedTrialStep)
+				msg( __FILE__, __LINE__, "  Did not refresh trial step but model was bed enough; adding wall." );
 				bAddFactor = mygetfield( prm, "bAddFactor", 0.5 );
 				fModelDat = __addB( bAddFactor*vecY, fModelDat, prm );
 			endif
@@ -234,6 +248,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				vecX_best = vecX_trial;
 				vecF_best = vecF_trial;
 			endif
+			if (0)
 			if ( ~isempty(vecF_cand) )
 			if ( norm(vecF_trial) >= norm(vecF_cand) )
 				msgif( prm.msgNotice, __FILE__, __LINE__, "Current trial is worse than earlier candidate; forcing acceptance of earlier candidate." );
@@ -248,6 +263,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				vecX_cand = [];
 				vecF_cand = [];
 				continue;
+			endif
 			endif
 			endif
 			%
@@ -290,15 +306,21 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			vecY = fModelDat.vecYPB;
 			vecU = fModelDat.matV*vecY;
 			vecV = __calcOrthonorm( vecU, fModelDat.matVLocal, prm );
+			refreshedTrialStep = false;
 			if ( 0.0 ~= norm(vecV) )
 				msgif( prm.msgCopious, __FILE__, __LINE__, "  Refreshing trial step before adding wall." );
 				[ fModelDat, datOut_refresh ] = __refresh( vecY, funchF, fModelDat, prm );
 				fevalCount += datOut_refresh.fevalCount;
+				refreshedTrialStep = true;
 			endif
 			vecFModel = fModelDat.vecF + fModelDat.matW*vecY;
 			badThresh = mygetfield( prm, "badThresh", 0.5 );
 			if ( norm( vecF_trial - vecFModel ) > badThresh * norm(vecFModel) )
 				msg( __FILE__, __LINE__, "  Model was very bad; adding wall." );
+				bAddFactor = mygetfield( prm, "bAddFactor", 0.5 );
+				fModelDat = __addB( bAddFactor*vecY, fModelDat, prm );
+			elseif (~refreshedTrialStep)
+				msg( __FILE__, __LINE__, "  Did not refresh trial step but model was bed enough; adding wall." );
 				bAddFactor = mygetfield( prm, "bAddFactor", 0.5 );
 				fModelDat = __addB( bAddFactor*vecY, fModelDat, prm );
 			endif
@@ -672,7 +694,7 @@ function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
 		assert( 0.0 <= s );
 		assert( s <= 1.0 );
 	endif
-	coeffD = mygetfield( prm, "coeffD", 1.0 );
+	coeffD = mygetfield( prm, "coeffD", 10.0 );
 	s*=coeffD;
 	matA = matE*( matA + s*matD )*matE;
 	%

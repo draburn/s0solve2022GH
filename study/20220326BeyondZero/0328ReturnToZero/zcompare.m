@@ -34,7 +34,7 @@ numRuns++; runList(numRuns).r.runType = 940; runList(numRuns).r.prm = []; runLis
 %
 %
 % Hacks
-%numRuns = 1;
+numRuns = 1;
 useResume = true;
 haveResumed = false;
 %
