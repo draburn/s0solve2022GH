@@ -20,7 +20,7 @@ numRuns = 0;
 %numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "(WIP)";
 numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prmMemo = "it1000";
 numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prmMemo = "it1000";
-numRuns++; runList(numRuns).r.runType = 50; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
+%numRuns++; runList(numRuns).r.runType = 50; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 444; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
@@ -34,7 +34,7 @@ numRuns++; runList(numRuns).r.runType = 940; runList(numRuns).r.prm = []; runLis
 %
 %
 % Hacks
-numRuns = 1;
+%numRuns = 1;
 useResume = true;
 haveResumed = false;
 %
@@ -82,6 +82,8 @@ for runIndex = 1 : numRuns
 	endif
 endfor
 %
+%
+msg( __FILE__, __LINE__, "Generating plots..." );
 %
 %
 numFigs++; figure(numFigs);

@@ -115,6 +115,15 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			break;
 		endif
 		%
+		if (prm.debugMode)
+			if (~isempty(fModelDat.matVLocal))
+				assert( reldiff( fModelDat.matVLocal, fModelDat.matV*(fModelDat.matV'*fModelDat.matVLocal), eps ) < sqrt(eps) );
+				foo = size(fModelDat.matVLocal,2);
+				assert( reldiff( eye(foo,foo), fModelDat.matVLocal'*fModelDat.matVLocal, eps ) < sqrt(eps) );
+				clear foo;
+			endif
+		endif
+		%
 		if ( stopsignalpresent() )
 			msgif( prm.msgMain, __FILE__, __LINE__, "IMPOSED STOP: Received stop signal." );
 			break;
@@ -248,7 +257,6 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				vecX_best = vecX_trial;
 				vecF_best = vecF_trial;
 			endif
-			if (0)
 			if ( ~isempty(vecF_cand) )
 			if ( norm(vecF_trial) >= norm(vecF_cand) )
 				msgif( prm.msgNotice, __FILE__, __LINE__, "Current trial is worse than earlier candidate; forcing acceptance of earlier candidate." );
@@ -263,7 +271,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				vecX_cand = [];
 				vecF_cand = [];
 				continue;
-			endif
+			else
+				msg( __FILE__, __LINE__, "HACK: Current trial is worse than earlier candidate, but not forcing acceptance!" );
 			endif
 			endif
 			%
@@ -324,6 +333,72 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				bAddFactor = mygetfield( prm, "bAddFactor", 0.5 );
 				fModelDat = __addB( bAddFactor*vecY, fModelDat, prm );
 			endif
+			%
+			%
+			%%%
+			if (0)
+			if ( size(fModelDat.matB,2)==12 )
+				msg( __FILE__, __LINE__, "Making plot!" );
+				numFigs = 0;
+				%
+				numPts = 1001;
+				pPts = linspace(0.0,1.0,numPts).^2;
+				fModelNormPts = zeros(1,numPts);
+				fModelResNormPts = zeros(1,numPts);
+				for n=1:numPts
+					omegaModelAvgPts(n) = sumsq( fModelDat.vecF + fModelDat.matW*vecY*pPts(n) )/2.0;
+					omegaModelPVarPts(n) = omegaModelAvgPts(n) + (pPts(n)^2)*(vecY'*fModelDat.matA*vecY)/2.0;
+					rhoVsTrialPts(n) = sumsq( fModelDat.vecF + fModelDat.matW*vecY*pPts(n) - vecF_trial )/2.0;
+					vecXAtPts(:,n) = fModelDat.vecX + fModelDat.matV*vecY*pPts(n);
+					vecFAtPts(:,n) = funchF( vecXAtPts(:,n) );
+					omegaAtPts(n) = sumsq( vecFAtPts(:,n) )/2.0;
+					rhoAtPts(n) = sumsq( fModelDat.vecF + fModelDat.matW*vecY*pPts(n) - vecFAtPts(:,n) )/2.0;
+				endfor
+				rd = reldiff( vecF_trial, vecFAtPts(:,numPts) )
+				assert( rd < sqrt(eps) );
+				%
+				%
+				numFigs++; figure(numFigs);
+				plot( ...
+				  pPts, omegaModelAvgPts, 'o-', ...
+				  pPts, omegaModelPVarPts, 's-', ...
+				  pPts, omegaAtPts, 'p-' );
+				grid on;
+				xlabel("p");
+				legend( ...
+				  "omega model avg", ...
+				  "omega model pvar", ...
+				  "omega actual", ...
+				  "location", "northeast" );
+				%
+				%
+				numFigs++; figure(numFigs);
+				plot( ...
+				  pPts, omegaAtPts, 'p-' );
+				grid on;
+				xlabel("p");
+				legend( ...
+				  "omega actual", ...
+				  "location", "northeast" );
+				%
+				%
+				numFigs++; figure(numFigs);
+				plot( ...
+				  pPts, rhoVsTrialPts, 'x-', ...
+				  pPts, rhoAtPts, '+-' );
+				grid on;
+				xlabel("p");
+				legend( ...
+				  "rho vs trial", ...
+				  "rho actual", ...
+				  "location", "northeast" );
+				%
+				error( "HALT" );
+			endif
+			endif
+			%%%
+			%
+			%
 			%
 			clear vecX_trial;
 			clear vecF_trial;
@@ -454,6 +529,7 @@ function fModelDat = __analyzeModel( fModelDat, prm )
 	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
 	matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
 	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify max(abs(y'*B)) <= 1.
+	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
 	%sizeX = size(vecX,1);
 	%sizeF = size(vecF,1);
 	sizeV = size(matV,2);
@@ -604,7 +680,12 @@ function [ fModelDat, datOut ] = __expandModel( vecU, funchF, fModelDat, prm )
 	endif
 	%
 	%
-	fModelDat.matVLocal = [ matVLocal, vecV ];
+	if (isempty(matVLocal))
+		fModelDat.matVLocal = [ vecV ];
+	else
+		fModelDat.matVLocal = [ matVLocal, vecV ];
+	endif
+	%
 	fModelDat.matV = [ matV, vecV ];
 	fModelDat.matW = [ matW, vecW ];
 	fModelDat.matA = zeros(sizeV+1,sizeV+1);
@@ -622,6 +703,7 @@ function vecV = __calcOrthonorm( vecU, matV, prm )
 	numPasses = 2;
 	u0 = norm(vecU);
 	if (0.0==u0)
+		vecV = 0.0*vecU;
 		return;
 	endif
 	if (isempty(matV))
@@ -723,6 +805,7 @@ function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
 	%sizeX = size(vecX,1);
 	%sizeF = size(vecF,1);
 	sizeV = size(matV,2);
+	sizeVLocal = size(matVLocal,2);
 	%sizeB = size(matB,2);
 	%
 	%
@@ -734,6 +817,10 @@ function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
 	if ( 0.0 == norm(vecV) )
 		error( "Failed to generate local subspace basis vector." );
 	endif
+	if (prm.debugMode)
+		assert( 0.0 == __calcOrthonorm( vecV, matV, prm ) );
+	endif
+	%
 	vecW = __calcJV( vecV, funchF, vecX, vecF, prm );
 	fevalCount++;
 	if ( 0.0 == norm(vecW) )
@@ -741,11 +828,20 @@ function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
 	endif
 	%
 	matVLocal = [ matVLocal, vecV ];
+	sizeVLocal++;
+	if ( prm.debugMode )
+		assert( reldiff( matVLocal, matV*(matV'*matVLocal), eps ) < sqrt(eps) );
+		assert( reldiff( eye(sizeVLocal,sizeVLocal), matVLocal'*matVLocal, eps ) < sqrt(eps) );
+	endif
+	matVLocal = matV*(matV'*matVLocal);
+	for n=1:sizeVLocal
+		matVLocal(:,n) /= norm(matVLocal(:,n));
+	endfor
 	%
 	matE = eye(sizeV,sizeV) - matV'*matVLocal*(matVLocal')*matV;
 	%
 	fModelDat.matVLocal = matVLocal;
-	fModelDat.matW = matW + (matW*vecYHat-vecW)*(vecYHat');
+	fModelDat.matW = matW + (vecW - matW*vecYHat)*(vecYHat');
 	fModelDat.matA = matE * matA * matE;
 	%
 	%
