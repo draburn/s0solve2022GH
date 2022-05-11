@@ -78,7 +78,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		  iterCount, prm.iterMax, stepCount, fevalCount, sumsq(fModelDat.vecF)/2.0, prm.omegaTol, ...
 		  size(fModelDat.matVLocal,2), size(fModelDat.matV,2), size(vecX_initial,1), size(vecF_initial,1), size(fModelDat.matB,2) ) );
 		msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( ...
-		  "  omega IU: %8.2e ~ %8.2e (%8.2e);  IB: %8.2e ~ %8.2e (%8.2e);  PB:  %8.2e ~ %8.2e (%8.2e).", ...
+		  "  omega IU: %8.2e ~ %8.2e (%8.2e);  IB: %8.2e ~ %8.2e (%8.2e);  PB: %8.2e ~ %8.2e (%8.2e).", ...
 		  fModelDat.omegaModelAvgIU, fModelDat.omegaModelVarIU, fModelDat.omega-fModelDat.omegaModelAvgIU, ...
 		  fModelDat.omegaModelAvgIB, fModelDat.omegaModelVarIB, fModelDat.omega-fModelDat.omegaModelAvgIB, ...
 		  fModelDat.omegaModelAvgPB, fModelDat.omegaModelVarPB, fModelDat.omega-fModelDat.omegaModelAvgPB ) );
@@ -696,7 +696,12 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		endif
 		%
 		msgif( prm.msgCopious, __FILE__, __LINE__, "Refreshing subspace." );
-		[ fModelDat, datOut_refresh ] = __refresh( fModelDat.vecYPB, funchF, fModelDat, prm );
+		%%%
+		%%% STUDY ME!
+		%%%[ fModelDat, datOut_refresh ] = __refresh( fModelDat.vecYPB, funchF, fModelDat, prm );
+		[ fModelDat, datOut_refresh ] = __refresh( fModelDat.vecYIB, funchF, fModelDat, prm );
+		%%%
+		%%%
 		fevalCount += datOut_refresh.fevalCount;
 		continue;
 	endwhile
@@ -1066,6 +1071,8 @@ function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
 	%
 	%
 	%
+	%%%
+	%%% STUDY ME!
 	vecYHat = vecY/yNorm;
 	if (0)
 	stepUpdateAccuracyCoeff = mygetfield( prm, "stepUpdateAccuracyCoeff", 0.0 );
@@ -1093,6 +1100,9 @@ function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
 	%
 	matWTW = matW'*matW;
 	matA0 = 100.0*( diag(diag(matWTW)) + eye(sizeV,sizeV)*max(max(matWTW))*0.1 );
+	%%%matA0 += matA + 0.00001*diag(diag(matWTW));
+	%%%
+	%%%
 	%
 	%
 	%
