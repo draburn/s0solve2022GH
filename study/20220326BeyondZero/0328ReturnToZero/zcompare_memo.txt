@@ -2,3 +2,5 @@
 10_55323424x50: fz800 faster than z100.
 10_55323424x50: Screenshot_2022-05-11_14-11-00.png
   Screenshot_2022-05-11_14-21-51.png shows z100 has more fevals per step.
+  Screenshot_2022-05-11_14-55-37.png, reloading vecX0 from disk after iterMax=900 with zlinsolf100;
+    zlinsolf100 is clearly putting far too many fevals in to second step.

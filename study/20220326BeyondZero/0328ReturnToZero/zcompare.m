@@ -28,6 +28,15 @@ endif
 %
 %
 numRuns = 0;
+if (1)
+%numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 15; runList(numRuns).r.prmMemo = "";
+%numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 900; runList(numRuns).r.prmMemo = "";
+%resumeRun = numRuns;
+load vecX0.m;
+numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 100; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 2000; runList(numRuns).r.prmMemo = "";
+resumeRun = 0;
+else
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 2000; runList(numRuns).r.prmMemo = "";
@@ -45,6 +54,7 @@ resumeRun = numRuns;
 %numRuns++; runList(numRuns).r.runType = 940; runList(numRuns).r.prm.step_prm.usePostLinsolfPhiPatch = false; runList(numRuns).r.prmMemo = "uplpp false";
 %numRuns++; runList(numRuns).r.runType = 940; runList(numRuns).r.prm.step_prm.usePostLinsolfPhiPatch = true; runList(numRuns).r.prmMemo = "uplpp true";
 %numRuns++; runList(numRuns).r.runType = -1; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "(dne)";
+endif
 %
 %
 %
@@ -73,90 +83,5 @@ for runIndex = 1 : numRuns
 	runList(runIndex).r = r;
 	msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" );
 endfor
-vecF0 = funchF(vecX0);
-%
 mainCalcElapsedTime = time()-mainStartTime;
-msg( __FILE__, __LINE__, sprintf( "Run suite '%s' with F '%s' completed in %0.3es.", mainStartDatestr, runFStr, mainCalcElapsedTime ) );
-%
-msg( __FILE__, __LINE__, sprintf( "norm(vecF0) = %g.", norm(vecF0) ) );
-msg( __FILE__, __LINE__, "Solver results..." );
-msg( __FILE__, __LINE__, sprintf( "  %15s:  %11s;  %11s;  %11s;  %11s.", "solver name", "||vecFF||", "stepCount", "fevalCount", "time(s)" ) );
-for runIndex = 1 : numRuns
-	r = runList(runIndex).r;
-	if (r.isValid)
-		msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", ...
-		  r.runName, norm(r.vecFF), r.stepCount, r.fevalCount, r.elapsedTime ) );
-	else
-		msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", r.runName, -1.0, -1, -1, -1.0 ) );
-	endif
-endfor
-%
-%
-msg( __FILE__, __LINE__, "Generating plots..." );
-%
-%
-numFigs++; figure(numFigs);
-epsViz = 1.0e-18;
-leg = {};
-m = 0;
-for n=1:numRuns
-	r = runList(n).r;
-	if (r.isValid)
-		%loglog( r.fevalCountOfStep, r.fBestNormOfStep+epsViz, r.mlStyle, 'markersize', r.mSize, 'linewidth', 2 );
-		semilogy( r.fevalCountOfStep, r.fBestNormOfStep+epsViz, r.mlStyle, 'markersize', r.mSize, 'linewidth', 2 );
-		hold on;
-		m++;
-		leg(m) = sprintf( "%d: %s (%s)", n, r.runName, r.runTypeDescrip );
-	endif
-endfor
-hold off;
-grid on;
-set( legend( leg ), 'Interpreter', 'none' );
-set( xlabel( "feval count" ), 'Interpreter', 'none' );
-set( ylabel( "||F best||" ), 'Interpreter', 'none' );
-set( title([ mainStartDatestr " " runFStr " CNVG V FEVAL" ]), 'Interpreter', 'none' );
-%
-%
-if (0)
-numFigs++; figure(numFigs);
-epsViz = 1.0e-18;
-for n=1:numRuns
-	r = runList(n).r;
-	if (r.isValid)
-		%loglog( r.fevalCountOfStep, r.fBestNormOfStep+epsViz, r.mlStyle, 'markersize', r.mSize, 'linewidth', 2 );
-		semilogy( r.fevalCountOfStep, r.fBestNormOfStep+epsViz, r.mlStyle, 'markersize', r.mSize, 'linewidth', 2 );
-		hold on;
-	endif
-endfor
-hold off;
-grid on;
-xlabel( "feval count" );
-ylabel( "||F best||" );
-title( "||F best|| vs feval count" );
-endif
-%
-%
-if (1)
-numFigs++; figure(numFigs);
-epsViz = 1.0e-18;
-for n=1:numRuns
-	r = runList(n).r;
-	if (r.isValid)
-		%loglog( r.stepCountOfStep, r.fBestNormOfStep+epsViz, r.mlStyle, 'markersize', r.mSize, 'linewidth', 2 );
-		semilogy( r.stepCountOfStep, r.fBestNormOfStep+epsViz, r.mlStyle, 'markersize', r.mSize, 'linewidth', 2 );
-		hold on;
-	endif
-endfor
-hold off;
-grid on;
-%set( legend( leg ), 'Interpreter', 'none' );
-set( xlabel( "feval count" ), 'Interpreter', 'none' );
-set( ylabel( "||F best||" ), 'Interpreter', 'none' );
-set( title([ mainStartDatestr " " runFStr " CNVG V STEP" ]), 'Interpreter', 'none' );
-endif
-%
-%
-mainCPPElapsedTime = time()-mainStartTime;
-msg( __FILE__, __LINE__, sprintf( "With plots, run suite '%s' with F '%s' completed in %0.3es.", mainStartDatestr, runFStr, time()-mainStartTime ) );
-printf( "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
-msg( __FILE__, __LINE__, "Goodbye!" ); return;
+zpost;
