@@ -61,6 +61,3 @@ case 50
 otherwise
 	error( "Invalid fType." );
 endswitch
-%
-runFStr = sprintf( "%d_%dx%d", fType, fSeed, sizeX );
-msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
