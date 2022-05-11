@@ -12,7 +12,7 @@ endif
 %
 sizeX = 50;
 fType = 10;
-fSeed = -1;
+fSeed = 55323424;
 zcompare__setF;
 %
 if (0)

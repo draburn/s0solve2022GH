@@ -154,6 +154,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		%
 		%if ( fModelDat.omegaModelAvgIU > prm.omegaTol )
 		if ( fModelDat.omegaModelAvgIU > fModelDat.omega/100.0 )
+		%%%if ( fModelDat.omegaModelAvgIU > max([ prm.omegaTol, 0.1*fModelDat.omega*(fModelDat.omega/(sumsq(vecF_initial)/2.0)) ]) )
 		if ( size(fModelDat.matV,2) < size(vecX_initial,1) )
 			% Conceptually, we could also consider "refreshing" something already in our space;
 			%  alternatively, we could be more conservative about expanding the subspace.

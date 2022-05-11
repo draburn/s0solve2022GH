@@ -8,7 +8,12 @@ setVerbLevs;
 %setprngstates(67710144); %200x200, 940x200 is bad.
 %setprngstates(30223904);% 300x300 fsolve converges; others fail.
 %matJE = diag(10.0+abs(randn(min([sizeF,sizeX]),1))) + 0.3*randn(sizeF,sizeX); 1.0e-2
-setprngstates(2315152); %300x300: 940x200 good. Breaks zlinsolf100!
+%
+% DRaburn 2022.05.10.
+%setprngstates(2315152); %300x300: 940x200 good.
+%setprngstates(41932496); %800 stalls.
+%setprngstates(43748128); %Only 800 cnvg?
+setprngstates();
 %
 numFigs = 0;
 %
@@ -19,11 +24,14 @@ sizeX = 300; sizeF = 300;
 %sizeX = 50; sizeF = 50;
 %
 vecXE = randn(sizeX,1);
-matJE = diag(10.0+abs(randn(min([sizeF,sizeX]),1))) + 0.3*randn(sizeF,sizeX);
-matA0 = 1.0e-2*randn(sizeF,sizeX);
+%%%matJE = diag(10.0+abs(randn(min([sizeF,sizeX]),1))) + 0.3*randn(sizeF,sizeX);
+matJE = eye(sizeF,sizeX) + 1.0*randn(sizeF,sizeX);
+%%%matA0 = 1.0e-2*randn(sizeF,sizeX);
+matA0 = 1.0e-3*randn(sizeF,sizeX);
 matA1 = randn(sizeX,sizeX);
 matA2 = randn(sizeX,sizeX);
-matB0 = 1.0e-2*randn(sizeF,sizeX);
+%%%matB0 = 1.0e-2*randn(sizeF,sizeX);
+matB0 = 1.0e-3*randn(sizeF,sizeX);
 matB1 = randn(sizeX,sizeX);
 matB2 = randn(sizeX,sizeX);
 matB3 = randn(sizeX,sizeX);
@@ -38,7 +46,7 @@ vecF0 = funchF(vecX0);
 %msg( __FILE__, __LINE__, sprintf( "rcond(Df'*Df) = %0.3e.", rcond(Df'*Df) ) );
 
 
-if (1)
+if (0)
 prm = [];
 prm.iterMax = 2000;
 timeSS = time();
@@ -54,6 +62,9 @@ timeSS = time();
 time_fsolve = time()-timeSS;
 msg( __FILE__, __LINE__, "fsolve results..." );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "fsolve", norm(vecFF_fsolve), datOut_fsolve.iterCount, datOut_fsolve.fevalCount, time_fsolve ) );
+if ( norm(vecFF_fsolve) > sqrt(eps) )
+	msg( __FILE__, __LINE__, "fsolve() failed to converge. Goodbye!" ); return;
+endif
 %msg( __FILE__, __LINE__, "Goodbye!" ); return;
 
 %msg( __FILE__, __LINE__, "Goodbye!" ); return;

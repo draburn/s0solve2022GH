@@ -1,44 +1,40 @@
 clear;
 setVerbLevs;
-%setprngstates(0); %500x500 tricky.
-%setprngstates(90186240); %For 150x150 triggers levPull in slinsolf200.
-%setprngstates(60288928); %200x200 stallz (except 800), triggers path in findZero_904
-%matJE = diag(1.0+abs(randn(min([sizeF,sizeX]),1))) + 0.3*randn(sizeF,sizeX); 1.0e-4
+% This is about as hard as I can make this model and still reliably get convergence.
 %
-%setprngstates(67710144); %200x200, 940x200 is bad.
-%setprngstates(30223904);% 300x300 fsolve converges; others fail.
-%matJE = diag(10.0+abs(randn(min([sizeF,sizeX]),1))) + 0.3*randn(sizeF,sizeX); 1.0e-2
-setprngstates(2315152); %300x300: 940x200 good. Breaks zlinsolf100!
+setprngstates();
 %
 numFigs = 0;
 %
+sizeX = 1000; sizeF = 1000;
 %sizeX = 500; sizeF = 500;
-sizeX = 300; sizeF = 300;
+%sizeX = 300; sizeF = 300;
 %sizeX = 200; sizeF = 200;
 %sizeX = 150; sizeF = 150;
 %sizeX = 50; sizeF = 50;
 %
-vecXE = randn(sizeX,1);
-matJE = diag(10.0+abs(randn(min([sizeF,sizeX]),1))) + 0.3*randn(sizeF,sizeX);
-matA0 = 1.0e-2*randn(sizeF,sizeX);
-matA1 = randn(sizeX,sizeX);
-matA2 = randn(sizeX,sizeX);
-matB0 = 1.0e-2*randn(sizeF,sizeX);
-matB1 = randn(sizeX,sizeX);
-matB2 = randn(sizeX,sizeX);
-matB3 = randn(sizeX,sizeX);
+myrand = @(s1,s2)( 2.0*rand(s1,s2) - 1.0 );
+%
+vecXE = myrand(sizeX,1);
+matJE = eye(sizeF,sizeX) + 1.0e-2*myrand(sizeF,sizeX);
+matA0 = 0*1.0e-4*myrand(sizeF,sizeX);
+matA1 = myrand(sizeX,sizeX);
+matA2 = myrand(sizeX,sizeX);
+matB0 = 0*1.0e-5*myrand(sizeF,sizeX);
+matB1 = myrand(sizeX,sizeX);
+matB2 = myrand(sizeX,sizeX);
+matB3 = myrand(sizeX,sizeX);
 y = @(x)( x - vecXE );
 funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
 msg( __FILE__, __LINE__, sprintf( "rcond(matJE'*matJE) = %0.3e.", rcond(matJE'*matJE) ) );
 %
-%vecX0 = zeros(sizeX,1);
-vecX0 = vecXE + 1.0e-1*randn(sizeX,1);
+vecX0 = myrand(sizeX,1);
 vecF0 = funchF(vecX0);
 %Df = jacobs( vecX0, funchF );
 %msg( __FILE__, __LINE__, sprintf( "rcond(Df'*Df) = %0.3e.", rcond(Df'*Df) ) );
 
 
-if (1)
+if (0)
 prm = [];
 prm.iterMax = 2000;
 timeSS = time();
@@ -54,6 +50,9 @@ timeSS = time();
 time_fsolve = time()-timeSS;
 msg( __FILE__, __LINE__, "fsolve results..." );
 msg( __FILE__, __LINE__, sprintf( "  %15s:  %11.3e;  %11d;  %11d;  %11.3e.", "fsolve", norm(vecFF_fsolve), datOut_fsolve.iterCount, datOut_fsolve.fevalCount, time_fsolve ) );
+if ( norm(vecFF_fsolve) > sqrt(eps) )
+	msg( __FILE__, __LINE__, "fsolve() failed to converge. Goodbye!" ); return;
+endif
 %msg( __FILE__, __LINE__, "Goodbye!" ); return;
 
 %msg( __FILE__, __LINE__, "Goodbye!" ); return;
@@ -148,7 +147,9 @@ legend( ...
   "940x200", ...
   "904", ...
   "904x", ...
-  "location", "southwest" );
+  "location", "northeast" );
+grid on;
+msg( __FILE__, __LINE__, "Goodbye." ); return;
 %
 numFigs++; figure( numFigs );
 semilogy( ...
