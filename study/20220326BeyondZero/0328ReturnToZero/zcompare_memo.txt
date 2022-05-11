@@ -1,2 +1,4 @@
 10_81484320x50: zlinsolf100 conveges but 800 doesn't.
 10_55323424x50: fz800 faster than z100.
+10_55323424x50: Screenshot_2022-05-11_14-11-00.png
+  Screenshot_2022-05-11_14-21-51.png shows z100 has more fevals per step.

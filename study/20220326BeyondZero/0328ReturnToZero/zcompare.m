@@ -29,8 +29,8 @@ endif
 %
 numRuns = 0;
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 2000; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 2000; runList(numRuns).r.prmMemo = "";
 resumeRun = numRuns;
 %
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
@@ -111,24 +111,13 @@ for n=1:numRuns
 endfor
 hold off;
 grid on;
-legObj = legend( leg );
-xlabObj = xlabel( "feval count" );
-ylabObj = ylabel( "||F best||" );
-%title( "||F best|| vs feval count" );
-%title( "LEGEND" );
-titleObj = title( [ mainStartDatestr " " runFStr " cnvg" ] );
-set( legObj, 'Interpreter', 'none' );
-set( xlabObj, 'Interpreter', 'none' );
-set( ylabObj, 'Interpreter', 'none' );
-set( titleObj, 'Interpreter', 'none' );
-
-mainCPPElapsedTime = time()-mainStartTime;
-msg( __FILE__, __LINE__, sprintf( "With plots, run suite '%s' with F '%s' completed in %0.3es.", mainStartDatestr, runFStr, time()-mainStartTime ) );
-msg( __FILE__, __LINE__, "Goodbye!" );
-printf( "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
-return;
-
+set( legend( leg ), 'Interpreter', 'none' );
+set( xlabel( "feval count" ), 'Interpreter', 'none' );
+set( ylabel( "||F best||" ), 'Interpreter', 'none' );
+set( title([ mainStartDatestr " " runFStr " CNVG V FEVAL" ]), 'Interpreter', 'none' );
 %
+%
+if (0)
 numFigs++; figure(numFigs);
 epsViz = 1.0e-18;
 for n=1:numRuns
@@ -144,8 +133,10 @@ grid on;
 xlabel( "feval count" );
 ylabel( "||F best||" );
 title( "||F best|| vs feval count" );
+endif
 %
 %
+if (1)
 numFigs++; figure(numFigs);
 epsViz = 1.0e-18;
 for n=1:numRuns
@@ -158,12 +149,14 @@ for n=1:numRuns
 endfor
 hold off;
 grid on;
-xlabel( "step count" );
-ylabel( "||F best||" );
-title( "||F best|| vs step count" );
+%set( legend( leg ), 'Interpreter', 'none' );
+set( xlabel( "feval count" ), 'Interpreter', 'none' );
+set( ylabel( "||F best||" ), 'Interpreter', 'none' );
+set( title([ mainStartDatestr " " runFStr " CNVG V STEP" ]), 'Interpreter', 'none' );
+endif
 %
-
+%
 mainCPPElapsedTime = time()-mainStartTime;
 msg( __FILE__, __LINE__, sprintf( "With plots, run suite '%s' with F '%s' completed in %0.3es.", mainStartDatestr, runFStr, time()-mainStartTime ) );
-msg( __FILE__, __LINE__, "Goodbye!" );
-return;
+printf( "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
+msg( __FILE__, __LINE__, "Goodbye!" ); return;
