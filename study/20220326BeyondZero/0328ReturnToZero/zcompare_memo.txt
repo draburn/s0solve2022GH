@@ -8,3 +8,8 @@ See dat/vecX0_10_55323424x50_resume.m.
 
 10_96332192x50: z100 awesome, 800 stall.
 5_86981936x100: 800 better than z100.
+5_52886176x100: z100 stalls, 800 stalls.
+5_70938544x100: 800 stalls, z100 awesome.
+5_56207600x50, etc: z100 slower, shows linear (vs 800's super-linear) cnvg, likely due to tols.
+I'm thinking next version of zlinsolf is in order.
+First, check a few more things: timing,

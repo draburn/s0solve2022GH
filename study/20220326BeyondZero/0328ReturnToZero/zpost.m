@@ -43,6 +43,15 @@ set( title([ mainStartDatestr " " runFStr " CNVG V FEVAL" ]), 'Interpreter', 'no
 %
 %
 if (1)
+	msg( __FILE__, __LINE__, sprintf( "Run suite '%s' with F '%s' completed in %0.3es; post-proc took %0.3es.", ...
+	  mainStartDatestr, runFStr, mainCalcElapsedTime, time()-plotStartTime ) );
+	msg( __FILE__, __LINE__, "Goodbye!" );
+	printf( "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
+	return;
+endif
+%
+%
+if (1)
 numFigs++; figure(numFigs);
 epsViz = 1.0e-18;
 leg = {};
@@ -88,3 +97,4 @@ msg( __FILE__, __LINE__, sprintf( "Run suite '%s' with F '%s' completed in %0.3e
   mainStartDatestr, runFStr, mainCalcElapsedTime, time()-plotStartTime ) );
 msg( __FILE__, __LINE__, "Goodbye!" );
 printf( "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
+return;
