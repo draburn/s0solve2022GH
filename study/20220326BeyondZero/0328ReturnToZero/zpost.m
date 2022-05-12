@@ -1,3 +1,4 @@
+numFigs = 0;
 plotStartTime = time();
 vecF0 = funchF(vecX0);
 %

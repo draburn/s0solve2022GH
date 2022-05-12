@@ -1,6 +1,5 @@
 clear;
 setVerbLevs;
-numFigs = 0;
 mainStartTime = time();
 mainStartDatestr = datestr(now,31);
 printf( "\n\n" );
