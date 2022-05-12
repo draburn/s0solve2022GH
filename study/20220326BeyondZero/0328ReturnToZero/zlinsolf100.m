@@ -1104,6 +1104,20 @@ function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
 	%%%
 	%%%
 	%
+	if (0)
+		msg( __FILE__, __LINE__, "Data dump..." );
+		vecD = diag(matWTW);
+		matD = diag(vecD);
+		dAvg = sum(vecD)/sizeV;
+		dSqAvg = sum(vecD.^2)/sizeV;
+		dVar = sqrt( dSqAvg - dAvg^2 );
+		dMin = min(vecD);
+		dMax = max(vecD);
+		[ sumsq(vecRho), dAvg, dVar, dMin, dMax ]
+		[ sumsq(vecRho)/sumsq(vecY), sumsq(vecRho)*dAvg/sumsq(matW*vecY), sumsq(vecRho)*dAvg/(vecY'*matD*vecY) ]
+		error( "HALT!" );
+	endif
+	%
 	%
 	%
 	fModelDat.matVLocal = [];
