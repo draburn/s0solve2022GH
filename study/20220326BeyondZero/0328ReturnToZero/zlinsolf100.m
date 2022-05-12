@@ -190,10 +190,10 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			if ( ~isempty(vecF_cand) )
 			if ( norm(vecF_trial) >= norm(vecF_cand) )
 				msgif( prm.msgNotice, __FILE__, __LINE__, "Current trial is worse than earlier candidate; forcing acceptance of earlier candidate." );
-				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
+				stepCount++;
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Step %d: Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
 				  fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount ) );
 				fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
-				stepCount++;
 				datOut.iterCountOfSteps(stepCount+1) = iterCount+1;
 				clear vecX_trial;
 				clear vecF_trial;
@@ -217,10 +217,10 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 					bRemoveFactor = mygetfield( prm, "bRemoveFactor", 1.5 );
 					fModelDat = __removeB( bRemoveFactor*fModelDat.vecYIU, fModelDat, prm );
 				endif
-				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
-				  fModelDat.omega, sumsq(vecF_trial)/2.0, fModelDat.omega-sumsq(vecF_trial)/2.0, fevalCount ) );
-				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
 				stepCount++;
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Step %d: Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
+				  stepCount, fModelDat.omega, sumsq(vecF_trial)/2.0, fModelDat.omega-sumsq(vecF_trial)/2.0, fevalCount ) );
+				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
 				datOut.iterCountOfSteps(stepCount+1) = iterCount+1;
 				clear vecX_trial;
 				clear vecF_trial;
@@ -419,10 +419,10 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			if ( ~isempty(vecF_cand) )
 			if ( norm(vecF_trial) >= norm(vecF_cand) )
 				msgif( prm.msgNotice, __FILE__, __LINE__, "Current trial is worse than earlier candidate; forcing acceptance of earlier candidate." );
-				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
-				  fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount ) );
-				fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
 				stepCount++;
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Step %d: Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
+				  stepCount, fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount ) );
+				fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
 				datOut.iterCountOfSteps(stepCount+1) = iterCount+1;
 				clear vecX_trial;
 				clear vecF_trial;
@@ -446,8 +446,9 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 					bRemoveFactor = mygetfield( prm, "bRemoveFactor", 1.5 );
 					fModelDat = __removeB( bRemoveFactor*fModelDat.vecYPB, fModelDat, prm );
 				endif
-				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
-				  fModelDat.omega, sumsq(vecF_trial)/2.0, fModelDat.omega-sumsq(vecF_trial)/2.0, fevalCount ) );
+				stepCount++;
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Step %d: Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
+				  stepCount, fModelDat.omega, sumsq(vecF_trial)/2.0, fModelDat.omega-sumsq(vecF_trial)/2.0, fevalCount ) );
 				%
 				%
 				%%%
@@ -458,7 +459,6 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 				%%%
 				%
 				%
-				stepCount++;
 				datOut.iterCountOfSteps(stepCount+1) = iterCount+1;
 				clear vecX_trial;
 				clear vecF_trial;
@@ -725,8 +725,8 @@ endfunction
 function prm = __initPrm( vecX, vecF, prm )
 	setVerbLevs;
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
-	%verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	prm.msgCopious = mygetfield( prm, "msgCopious", verbLev >= VERBLEV__COPIOUS );
 	prm.msgProgress = mygetfield( prm, "msgProgress", verbLev >= VERBLEV__PROGRESS );
 	prm.msgMain = mygetfield( prm, "msgMain", verbLev >= VERBLEV__MAIN );
