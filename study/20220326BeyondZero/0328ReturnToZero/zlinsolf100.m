@@ -1155,6 +1155,33 @@ function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
 	vecYHat = vecY/yNorm;
 	vecU = matV*vecYHat;
 	vecV = __calcOrthonorm( vecU, matVLocal, prm );
+	%%
+	doSaveMeHack20220511 = true;
+	if (doSaveMeHack20220511)
+		clear vecYHat;
+		if ( 0.0 == norm(vecV) )
+			vecU = matV*fModelDat.vecYPB;
+			vecV = __calcOrthonorm( vecU, matVLocal, prm );
+		endif
+		if ( 0.0 == norm(vecV) )
+			vecU = matV*fModelDat.vecYIB;
+			vecV = __calcOrthonorm( vecU, matVLocal, prm );
+		endif
+		if ( 0.0 == norm(vecV) )
+			vecU = matV*fModelDat.vecYIU;
+			vecV = __calcOrthonorm( vecU, matVLocal, prm );
+		endif
+		% Expand model?
+		if ( 0.0 == norm(vecV) )
+			vecU = matW'*fModelDat.vecF;
+			vecV = __calcOrthonorm( vecU, matVLocal, prm );
+		endif
+		% Try a random vector???
+		if ( 0.0 == norm(vecV) )
+			error( "Failed to generate local subspace basis vector." );
+		endif
+	endif
+	%%
 	if ( 0.0 == norm(vecV) )
 		error( "Failed to generate local subspace basis vector." );
 	endif

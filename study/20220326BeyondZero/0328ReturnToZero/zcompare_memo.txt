@@ -5,3 +5,5 @@
   Screenshot_2022-05-11_14-55-37.png, reloading vecX0 from disk after iterMax=900 with zlinsolf100;
     zlinsolf100 is clearly putting far too many fevals in to second step.
 See dat/vecX0_10_55323424x50_resume.m.
+
+10_96332192x50: z100 awesome, 800 stall.
