@@ -41,7 +41,23 @@ resumeRun = 0;
 else
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prmMemo = "";
-%numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 200; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 200; runList(numRuns).r.prmMemo = "";
+
+numRuns++;
+runList(numRuns).r.runType = 1100;
+runList(numRuns).r.prm = [];
+runList(numRuns).r.prm.useQuadUpdate = true;
+runList(numRuns).r.prm.iterMax = 1000;
+runList(numRuns).r.prmMemo = "quad true";
+
+numRuns++;
+runList(numRuns).r.runType = 1100;
+runList(numRuns).r.prm = [];
+runList(numRuns).r.prm.useQuadUpdate = false;
+runList(numRuns).r.prm.iterMax = 1000;
+runList(numRuns).r.prmMemo = "quad false";
+
+
 resumeRun = numRuns;
 %
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";

@@ -1084,11 +1084,23 @@ function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
 	%
 	%
 	%
-	msgif( prm.msgCopious, __FILE__, __LINE__, "TODO: consider partial quadratic update (OSQU)." );
-	msgif( prm.msgCopious, __FILE__, __LINE__, "  Here, only linear (Broyden) update is applied." );
+	%%%msgif( prm.msgCopious, __FILE__, __LINE__, "TODO: consider partial quadratic update (OSQU)." );
+	%%%msgif( prm.msgCopious, __FILE__, __LINE__, "  Here, only linear (Broyden) update is applied." );
 	vecFModel_trial = vecF + matW*vecY;
 	vecRho = vecF_trial - vecFModel_trial;
+	useQuadUpdate = mygetfield( prm, "useQuadUpdate", true );
+	if (~useQuadUpdate)
 	matW_plus = matW + vecRho * (vecY')/(yNorm^2);
+	else
+	rhoSumsq = sumsq(vecRho);
+	ytay = vecY'*matA*vecY;
+	if ( rhoSumsq <= ytay )
+		s = 1.0;
+	else
+		s = ytay/rhoSumsq;
+	endif
+	matW_plus = matW + (2.0-s) * vecRho * (vecY')/(yNorm^2);
+	endif
 	%
 	%
 	%
