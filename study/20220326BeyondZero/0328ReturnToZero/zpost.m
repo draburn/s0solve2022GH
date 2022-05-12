@@ -86,5 +86,5 @@ mainCPPElapsedTime = time()-mainStartTime;
 
 msg( __FILE__, __LINE__, sprintf( "Run suite '%s' with F '%s' completed in %0.3es; post-proc took %0.3es.", ...
   mainStartDatestr, runFStr, mainCalcElapsedTime, time()-plotStartTime ) );
+msg( __FILE__, __LINE__, "Goodbye!" );
 printf( "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" );
-msg( __FILE__, __LINE__, "Goodbye!" ); return;

@@ -64,10 +64,11 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		%
 		%
 		fModelDat = __analyzeModel( fModelDat, prm );
-		if ( fModelDat.omegaModelVarIU < 0.0 ...
-		  || fModelDat.omegaModelVarIB < 0.0 ...
-		  || fModelDat.omegaModelVarPB < 0.0 )
-			msgif( prm.msgNotice, __FILE__, __LINE__, "WARNING omegaModelVar (of at least one flavor) was negative." );
+		if ( fModelDat.omegaModelVarIU < -sqrt(eps)*fModelDat.omega ...
+		  || fModelDat.omegaModelVarIB < -sqrt(eps)*fModelDat.omega ...
+		  || fModelDat.omegaModelVarPB < -sqrt(eps)*fModelDat.omega )
+			msgif( prm.msgNotice, __FILE__, __LINE__, "WARNING omegaModelVar (of at least one flavor) was significantly negative." );
+			[ fModelDat.omega, fModelDat.omegaModelAvgPB, fModelDat.omegaModelVarIU, fModelDat.omegaModelVarIB, fModelDat.omegaModelVarPB ]
 			fModelDat.omegaModelVarIU = max([ fModelDat.omegaModelVarIU, 0.0 ]);
 			fModelDat.omegaModelVarIB = max([ fModelDat.omegaModelVarIB, 0.0 ]);
 			fModelDat.omegaModelVarPB = max([ fModelDat.omegaModelVarPB, 0.0 ]);

@@ -10,10 +10,10 @@ if ( stopsignalpresent() )
 endif
 %
 %
-sizeX = 50;
-fType = 10;
+sizeX = 100;
+fType = 5;
 %fSeed = 55323424;
-fSeed = -1;
+fSeed = 86981936;
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
@@ -40,7 +40,7 @@ resumeRun = 0;
 else
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 2000; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 200; runList(numRuns).r.prmMemo = "";
 resumeRun = numRuns;
 %
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
