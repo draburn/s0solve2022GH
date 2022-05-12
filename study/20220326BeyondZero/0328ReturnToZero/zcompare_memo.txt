@@ -13,3 +13,6 @@ See dat/vecX0_10_55323424x50_resume.m.
 5_56207600x50, etc: z100 slower, shows linear (vs 800's super-linear) cnvg, likely due to tols.
 I'm thinking next version of zlinsolf is in order.
 First, check a few more things: timing,
+
+2022-05-12
+10_71247648x50: Needs B but converges!

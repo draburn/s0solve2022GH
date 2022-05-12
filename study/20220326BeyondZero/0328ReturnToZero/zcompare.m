@@ -11,11 +11,11 @@ if ( stopsignalpresent() )
 endif
 %
 %
-sizeX = 250;
-fType = 3;
+sizeX = 50;
+fType = 10;
 %fSeed = 55323424;
 %fSeed = 86981936;
-fSeed = 0;
+fSeed = 71247648;
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
@@ -41,7 +41,7 @@ numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 2
 resumeRun = 0;
 else
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 200; runList(numRuns).r.prmMemo = "";
 resumeRun = numRuns;
 %
@@ -66,13 +66,18 @@ msg( __FILE__, __LINE__, "TODO: Run with fsolve for comparison." );
 %
 assert( 0 < numRuns );
 for runIndex = 1 : numRuns
-	if ( stopsignalpresent() )
-		msg( __FILE__, __LINE__, "Received stop signal." );
-		return;
-	endif
 	msg( __FILE__, __LINE__, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" );
 	r = runList(runIndex).r;
 	zcompare__doRun;
+	if ( stopsignalpresent() )
+		msg( __FILE__, __LINE__, "Received stop signal." );
+		msg( __FILE__, __LINE__, sprintf( "Run suite '%s' with F '%s' stopped after %0.3es.", ...
+		  mainStartDatestr, runFStr, time()-mainStartTime ) );
+		msg( __FILE__, __LINE__, "Goodbye!" );
+		msg( __FILE__, __LINE__, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" );
+		printf("\n\n" );
+		return;
+	endif
 	if ( 0 < resumeRun )
 	if ( runIndex == resumeRun )
 		vecX0 = r.vecXF;
