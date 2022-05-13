@@ -297,7 +297,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			%
 			%%%
 			makePlotsAndHalt = false;
-			if (1)
+			if (0)
 			if ( prm.msgCopious && prm.debugMode )
 			makePlotsAndHalt = ( size(fModelDat.matVLocal,2)>=1 && size(fModelDat.matB,2)>=20 );
 			if ( makePlotsAndHalt )
@@ -716,6 +716,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		endif
 		endif
 		%
+		if ( size(fModelDat.matVLocal,2) < size(fModelDat.matV,2) )
 		msgif( prm.msgCopious, __FILE__, __LINE__, "Refreshing subspace." );
 		%%%
 		%%% STUDY ME!
@@ -725,6 +726,18 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		%%%
 		fevalCount += datOut_refresh.fevalCount;
 		continue;
+		endif
+		%
+		% What else can we do?
+		if ( size(fModelDat.matV,2) < size(vecX_initial,1) )
+			msgif( prm.msgCopious, __FILE__, __LINE__, "Expanding subspace." );
+			[ fModelDat, datOut_expandModel ] = __expandModel( fModelDat.vecFModelIU, funchF, fModelDat, prm );
+			fevalCount += datOut_expandModel.fevalCount;
+			continue;
+		endif
+		%
+		%
+		error( "Ran out of candidate actions. (We could do a trial step, but, haven't implemented it here.)" );
 	endwhile
 	%
 	%
@@ -818,7 +831,11 @@ function [ fModelDat, datOut ] = __initModel( funchF, vecX, vecF, prm )
 	fModelDat.matWLocal = [ vecW ];
 	fModelDat.matA = [ 0.0 ];
 	fModelDat.matA0 = [ 0.0 ];
+	if (mygetfield(prm,"useBBall",false))
+	fModelDat.matB = [ 0.0 ];
+	else
 	fModelDat.matB = [];
+	endif
 	%
 	datOut.fevalCount = fevalCount;
 return;
@@ -885,6 +902,11 @@ function fModelDat = __analyzeModel( fModelDat, prm )
 	fModelDat.omegaModelVarIB = vecYIB'*matA*vecYIB;
 	fModelDat.omegaModelVarPB = vecYPB'*matA*vecYPB;
 	%
+	if (mygetfield(prm,"useBBall",false))
+	fModelDat.bIU = norm(matB*vecYIU);
+	fModelDat.bIB = norm(matB*vecYIB);
+	fModelDat.bPB = norm(matB*vecYPB);
+	else
 	if ( isempty(matB) )
 		fModelDat.bIU = 0.0;
 		fModelDat.bIB = 0.0;
@@ -893,6 +915,7 @@ function fModelDat = __analyzeModel( fModelDat, prm )
 		fModelDat.bIU = max(abs(vecYIU'*matB));
 		fModelDat.bIB = max(abs(vecYIB'*matB));
 		fModelDat.bPB = max(abs(vecYPB'*matB));
+	endif
 	endif
 	if (isempty(matVLocal))
 		fModelDat.lIU = 0.0;
@@ -998,7 +1021,13 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 	% WE SHOULD GENERATE A BUNCH OF POINTS AND PULL THEM IN TO THE SURFACES!
 	msgif( prm.msgCopious, __FILE__, __LINE__, "NextVer: Generate many points and pull to satisfy B as in slinsolf200." );
 	funchYOfS = @(s)( ( s*matH + (1.0-s)*matSCurve ) \ (s*vecMG) );
+	%
+	if (mygetfield(prm,"useBBall",false))
+	funchBOfY = @(y)( sumsq(matB*y) );
+	else
 	funchBOfY = @(y)( max(abs(y'*matB)) );
+	endif
+	%
 	vecY1 = funchYOfS(s1);
 	b1 = funchBOfY(vecY1);
 	if ( b1 <= 1.0 )
@@ -1010,7 +1039,14 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 	%
 	s = fzero( funchBM1OfS, [0.0, s1] );
 	vecY = funchYOfS(s);
+	%
+	if (mygetfield(prm,"useBBall",false))
+	%msg( __FILE__, __LINE__, sprintf( "BBall: %f, %f.", sumsq(matB*vecY1), sumsq(matB*vecY) ) );
+	assert( reldiff(norm(matB*vecY),1.0) < sqrt(eps) );
+	assert( reldiff(sumsq(matB*vecY),1.0) < sqrt(eps) );
+	else
 	assert( reldiff(max(abs(vecY'*matB)),1.0) < sqrt(eps) );
+	endif
 return;
 endfunction
 
@@ -1059,7 +1095,12 @@ function [ fModelDat, datOut ] = __expandModel( vecU, funchF, fModelDat, prm )
 	fModelDat.matW = [ matW, vecW ];
 	fModelDat.matA = zeros(sizeV+1,sizeV+1);
 	fModelDat.matA(1:sizeV,1:sizeV) = matA;
+	if (mygetfield(prm,"useBBall",false))
+	fModelDat.matB = zeros(sizeV+1,sizeV+1);
+	fModelDat.matB(1:sizeV,1:sizeV) = matB;
+	else
 	fModelDat.matB = [ matB; zeros(1,sizeB) ];
+	endif
 	fModelDat.matA0 = zeros(sizeV+1,sizeV+1);
 	fModelDat.matA0(1:sizeV,1:sizeV) = matA0;
 	%
@@ -1220,6 +1261,7 @@ function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
 	sizeVLocal = size(matVLocal,2);
 	%sizeB = size(matB,2);
 	%
+	assert( sizeVLocal < sizeV );
 	%
 	yNorm = norm(vecY);
 	assert( 0.0 < yNorm );
@@ -1249,6 +1291,12 @@ function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
 		endif
 		% Try a random vector???
 		if ( 0.0 == norm(vecV) )
+			vecU = (1:sizeV)';
+			vecV = __calcOrthonorm( vecU, matVLocal, prm )
+		endif
+		if ( 0.0 == norm(vecV) )
+			echo__matV = matV
+			echo__matVLocal = matVLocal
 			error( "Failed to generate local subspace basis vector." );
 		endif
 	endif
@@ -1326,6 +1374,27 @@ function fModelDat = __addB( vecY, fModelDat, prm )
 	%sizeV = size(matV,2);
 	%sizeB = size(matB,2);
 	%
+	if (mygetfield(prm,"useBBall",false))
+		assert( norm(matB*vecY) < 0.9 );
+		assert( sumsq(matB*vecY) < 0.9 );
+		%msg( __FILE__, __LINE__, "matB before..." );
+		%matB
+		yNorm = norm(vecY);
+		assert( 0.0 < yNorm );
+		vecYHat = vecY/yNorm;
+		sizeV = size(matB,2);
+		matEY = eye(sizeV,sizeV) - vecYHat*(vecYHat');
+		matB = matEY*matB*matEY + vecYHat*(vecYHat'/yNorm);
+		%msg( __FILE__, __LINE__, "matB after..." );
+		%matB
+		%msg( __FILE__, __LINE__, "matB change..." );
+		%matB - fModelDat.matB
+		assert( reldiff( norm(matB*vecY), 1.0 ) < sqrt(eps) );
+		assert( reldiff( sumsq(matB*vecY), 1.0 ) < sqrt(eps) );
+		fModelDat.matB = matB;
+		return;
+	endif
+	%
 	ysumsq = sumsq(vecY);
 	assert( 0.0 < ysumsq );
 	if (isempty(matB))
@@ -1352,6 +1421,15 @@ function fModelDat = __removeB( vecY, fModelDat, prm )
 	%sizeF = size(vecF,1);
 	%sizeV = size(matV,2);
 	%sizeB = size(matB,2);
+	if (mygetfield(prm,"useBBall",false))
+		yNorm = norm(vecY);
+		assert( 0.0 < yNorm );
+		vecYHat = vecY/yNorm;
+		sizeV = size(matB,2);
+		matEY = eye(sizeV,sizeV) - vecYHat*(vecYHat');
+		fModelDat.matB = matEY*matB*matEY + vecYHat*(vecYHat'/yNorm);
+		return;
+	endif
 	%
 	if ( isempty(matB) )
 		return;

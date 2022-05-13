@@ -12,6 +12,8 @@ endif
 %
 sizeX = 50;
 fType = 10;
+%%%sizeX = 5;
+%%%fType = 60;
 %fSeed = 55323424;
 %fSeed = 86981936;
 fSeed = 71247648;
@@ -20,9 +22,13 @@ runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
 %
 if (0)
+	msg( __FILE__, __LINE__, "Doing one-shot." );
 	numRuns = 0;
 	runIndex = 0;
-	r.runType = 1100; r.prm.iterMax = 1000; r.prmMemo = "it1000";
+	r.runType = 1100;
+	r.prm.iterMax = 1000;
+	r.prm.useBBall = true;
+	r.prmMemo = "BBall";
 	zcompare__doRun;
 	msg( __FILE__, __LINE__, "Goodbye!" ); return;
 endif
@@ -43,19 +49,33 @@ else
 numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 200; runList(numRuns).r.prmMemo = "";
 
+if (1)
+numRuns++;
+runList(numRuns).r.runType = 1100;
+runList(numRuns).r.prm = [];
+runList(numRuns).r.prm.useQuadUpdate = true;
+runList(numRuns).r.prm.iterMax = 1000;
+runList(numRuns).r.prm.useBBall = true;
+runList(numRuns).r.prmMemo = "quad + BBall";
+endif
+
+if (0)
 numRuns++;
 runList(numRuns).r.runType = 1100;
 runList(numRuns).r.prm = [];
 runList(numRuns).r.prm.useQuadUpdate = true;
 runList(numRuns).r.prm.iterMax = 1000;
 runList(numRuns).r.prmMemo = "quad true";
+endif
 
+if (0)
 numRuns++;
 runList(numRuns).r.runType = 1100;
 runList(numRuns).r.prm = [];
 runList(numRuns).r.prm.useQuadUpdate = false;
 runList(numRuns).r.prm.iterMax = 1000;
 runList(numRuns).r.prmMemo = "quad false";
+endif
 
 
 resumeRun = numRuns;

@@ -73,6 +73,12 @@ case 50
 	funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
 	%
 	vecX0 = randn(sizeX,1);
+case 60
+	sizeF = sizeX;
+	vecXE = ones(sizeX,1);
+	vecFE = ones(sizeF,1);
+	funchF = @(x)( vecFE + (x-vecXE).^2 );
+	vecX0 = zeros(sizeX,1);
 otherwise
 	error( "Invalid fType." );
 endswitch

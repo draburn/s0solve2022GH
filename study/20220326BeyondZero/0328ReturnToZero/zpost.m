@@ -1,19 +1,20 @@
 numFigs = 0;
 plotStartTime = time();
+doExtras = true;
 vecF0 = funchF(vecX0);
 %
 msg( __FILE__, __LINE__, sprintf( "Run suite '%s' with F '%s' completed in %0.3es.", mainStartDatestr, runFStr, mainCalcElapsedTime ) );
 %
 msg( __FILE__, __LINE__, sprintf( "norm(vecF0) = %g.", norm(vecF0) ) );
 msg( __FILE__, __LINE__, "Solver results..." );
-msg( __FILE__, __LINE__, sprintf( " %15s:  %11s;  %11s;  %11s;  %11s.", "solver name", "||vecFF||", "stepCount", "fevalCount", "time(s)" ) );
+msg( __FILE__, __LINE__, sprintf( " %25s:  %11s;  %11s;  %11s;  %11s.", "solver name", "||vecFF||", "stepCount", "fevalCount", "time(s)" ) );
 for runIndex = 1 : numRuns
 	r = runList(runIndex).r;
 	if (r.isValid)
-		msg( __FILE__, __LINE__, sprintf( " %15s:  %11.3e;  %11d;  %11d;  %11.3e.", ...
+		msg( __FILE__, __LINE__, sprintf( " %25s:  %11.3e;  %11d;  %11d;  %11.3e.", ...
 		  r.runName, norm(r.vecFF), r.stepCount, r.fevalCount, r.elapsedTime ) );
 	else
-		msg( __FILE__, __LINE__, sprintf( " %15s:  %11.3e;  %11d;  %11d;  %11.3e.", r.runName, -1.0, -1, -1, -1.0 ) );
+		msg( __FILE__, __LINE__, sprintf( " %25s:  %11.3e;  %11d;  %11d;  %11.3e.", r.runName, -1.0, -1, -1, -1.0 ) );
 	endif
 endfor
 %
@@ -43,7 +44,7 @@ set( ylabel( "||F best||" ), 'Interpreter', 'none' );
 set( title([ mainStartDatestr " " runFStr " CNVG V FEVAL" ]), 'Interpreter', 'none' );
 %
 %
-if (1)
+if (~doExtras)
 	msg( __FILE__, __LINE__, sprintf( "Run suite '%s' with F '%s' completed in %0.3es; post-proc took %0.3es.", ...
 	  mainStartDatestr, runFStr, mainCalcElapsedTime, time()-plotStartTime ) );
 	msg( __FILE__, __LINE__, "Goodbye!" );
