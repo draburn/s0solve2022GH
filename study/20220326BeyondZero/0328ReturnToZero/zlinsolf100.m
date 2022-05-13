@@ -959,6 +959,44 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 	endif
 	assert( s1 >= 0.0 );
 	%
+	if ( mygetfield(prm,"useDogLog",false) )
+		error( "Implement Powell's dog-leg here!" );
+		%
+		vecDeltaNewton = matSC * ( matHSCRegu \ (-vecGSC) );
+		pCauchy = calcLinishRootOfQuad( 0.5*(vecGSC'*matHSC*vecGSC), -sumsq(vecGSC), omega );
+		assert( pCauchy > 0.0 );
+		vecDeltaCauchy = pCauchy*matSC*(-vecGSC);
+		%
+		function vecDelta = calcDogLeg( vecDeltaC, vecDeltaN, stepSize )
+			if ( stepSize >= norm(vecDeltaN) )
+				vecDelta = vecDeltaN;
+				return;
+			elseif ( stepSize <= norm(vecDeltaC) )
+				vecDelta = vecDeltaC*stepSize/norm(vecDeltaC);
+				return;
+			endif
+			vecA = vecDeltaC;
+			vecB = vecDeltaN-vecDeltaC;
+			atb = vecA'*vecB;
+			asq = vecA'*vecA;
+			bsq = vecB'*vecB;
+			discrim = atb^2 - (asq-stepSize^2)*bsq;
+			assert( discrim >= 0.0 );
+			s = ( sqrt(discrim) - atb ) / bsq;
+			assert( s >= 0.0 - sqrt(eps) );
+			assert( s <= 1.0 + sqrt(eps) );
+			vecDelta = vecA + s*vecB;
+			assert( reldiff(norm(vecDelta),stepSize) < sqrt(eps) );
+		endfunction
+		%
+		vecY = calcDogLeg( vecDeltaCauchy, vecDeltaNewton, snarglemoof )
+		%
+		return;
+	endif
+	%
+	% NOTE: IF NOT USING DOG-LEG,
+	% WE SHOULD GENERATE A BUNCH OF POINTS AND PULL THEM IN TO THE SURFACES!
+	msgif( prm.msgCopious, __FILE__, __LINE__, "NextVer: Generate many points and pull to satisfy B as in slinsolf200." );
 	funchYOfS = @(s)( ( s*matH + (1.0-s)*matSCurve ) \ (s*vecMG) );
 	funchBOfY = @(y)( max(abs(y'*matB)) );
 	vecY1 = funchYOfS(s1);
