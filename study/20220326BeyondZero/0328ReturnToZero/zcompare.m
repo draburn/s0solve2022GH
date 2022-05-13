@@ -12,11 +12,10 @@ endif
 %
 sizeX = 50;
 fType = 10;
-%%%sizeX = 5;
-%%%fType = 60;
 %fSeed = 55323424;
 %fSeed = 86981936;
 fSeed = 71247648;
+fSeed = 37349312;
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
@@ -47,14 +46,14 @@ resumeRun = 0;
 else
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 200; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prmMemo = "";
 
 if (1)
 numRuns++;
 runList(numRuns).r.runType = 1100;
 runList(numRuns).r.prm = [];
 runList(numRuns).r.prm.useQuadUpdate = true;
-runList(numRuns).r.prm.iterMax = 1000;
+runList(numRuns).r.prm.iterMax = 3000;
 runList(numRuns).r.prm.useBBall = true;
 runList(numRuns).r.prmMemo = "quad + BBall";
 endif
@@ -68,12 +67,12 @@ runList(numRuns).r.prm.iterMax = 1000;
 runList(numRuns).r.prmMemo = "quad true";
 endif
 
-if (0)
+if (1)
 numRuns++;
 runList(numRuns).r.runType = 1100;
 runList(numRuns).r.prm = [];
 runList(numRuns).r.prm.useQuadUpdate = false;
-runList(numRuns).r.prm.iterMax = 1000;
+runList(numRuns).r.prm.iterMax = 3000;
 runList(numRuns).r.prmMemo = "quad false";
 endif
 
@@ -127,4 +126,6 @@ for runIndex = 1 : numRuns
 	msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" );
 endfor
 mainCalcElapsedTime = time()-mainStartTime;
+doExtras = false;
 zpost;
+doExtras = true;

@@ -1,6 +1,5 @@
 numFigs = 0;
 plotStartTime = time();
-doExtras = true;
 vecF0 = funchF(vecX0);
 %
 msg( __FILE__, __LINE__, sprintf( "Run suite '%s' with F '%s' completed in %0.3es.", mainStartDatestr, runFStr, mainCalcElapsedTime ) );

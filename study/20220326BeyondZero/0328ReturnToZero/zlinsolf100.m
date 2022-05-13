@@ -72,7 +72,23 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		  || fModelDat.omegaModelVarIB < -sqrt(eps)*fModelDat.omega ...
 		  || fModelDat.omegaModelVarPB < -sqrt(eps)*fModelDat.omega )
 			msgif( prm.msgNotice, __FILE__, __LINE__, "WARNING omegaModelVar (of at least one flavor) was significantly negative." );
-			[ fModelDat.omega, fModelDat.omegaModelAvgPB, fModelDat.omegaModelVarIU, fModelDat.omegaModelVarIB, fModelDat.omegaModelVarPB ]
+			if (~prm.msgCopious)
+				msgif( prm.msgNotice, __FILE__, __LINE__, sprintf( ...
+				  "  iter: %d/%d;  step: %d;  feval: %d;  omega: %0.2e/%0.2e;  sizeV: %d/%d/%dx%d;  sizeB: %d.", ...
+				  iterCount, prm.iterMax, stepCount, fevalCount, sumsq(fModelDat.vecF)/2.0, prm.omegaTol, ...
+				  size(fModelDat.matVLocal,2), size(fModelDat.matV,2), size(vecX_initial,1), size(vecF_initial,1), size(fModelDat.matB,2) ) );
+				msgif( prm.msgNotice, __FILE__, __LINE__, sprintf( ...
+				  "  omega IU: %8.2e ~ %8.2e (%8.2e);  IB: %8.2e ~ %8.2e (%8.2e);  PB: %8.2e ~ %8.2e (%8.2e).", ...
+				  fModelDat.omegaModelAvgIU, fModelDat.omegaModelVarIU, fModelDat.omega-fModelDat.omegaModelAvgIU, ...
+				  fModelDat.omegaModelAvgIB, fModelDat.omegaModelVarIB, fModelDat.omega-fModelDat.omegaModelAvgIB, ...
+				  fModelDat.omegaModelAvgPB, fModelDat.omegaModelVarPB, fModelDat.omega-fModelDat.omegaModelAvgPB ) );
+				msgif( prm.msgNotice, __FILE__, __LINE__, sprintf( ...
+				  "  step  IU: %8.2e @ %8.2e b %8.2e;  IB: %8.2e @ %8.2e b %8.2e;  PB: %8.2e @ %8.2e b %8.2e.", ...
+				  norm(fModelDat.vecYIU), fModelDat.lIU, fModelDat.bIU, ...
+				  norm(fModelDat.vecYIB), fModelDat.lIB, fModelDat.bIB, ...
+				  norm(fModelDat.vecYPB), fModelDat.lPB, fModelDat.bPB ) );
+			endif
+			%error( "omegaModelVar (of at least one flavor) was significantly negative." );
 			fModelDat.omegaModelVarIU = max([ fModelDat.omegaModelVarIU, 0.0 ]);
 			fModelDat.omegaModelVarIB = max([ fModelDat.omegaModelVarIB, 0.0 ]);
 			fModelDat.omegaModelVarPB = max([ fModelDat.omegaModelVarPB, 0.0 ]);
@@ -301,6 +317,10 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			if ( prm.msgCopious && prm.debugMode )
 			makePlotsAndHalt = ( size(fModelDat.matVLocal,2)>=1 && size(fModelDat.matB,2)>=20 );
 			if ( makePlotsAndHalt )
+				if (~mygetfield(prm,"useBBall",false))
+					msg( __FILE__, __LINE__, "*******************************" );
+					msg( __FILE__, __LINE__, "The old Wall-B is assumed here!" );
+				endif
 				vecY = fModelDat.vecYPB;
 				fModelDat.haltAfterNextReport = true;
 				msg( __FILE__, __LINE__, "Making plots before refreshing and/or adding wall!" );
@@ -759,7 +779,7 @@ function prm = __initPrm( vecX, vecF, prm )
 	setVerbLevs;
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
-	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	%erbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	prm.msgCopious = mygetfield( prm, "msgCopious", verbLev >= VERBLEV__COPIOUS );
 	prm.msgProgress = mygetfield( prm, "msgProgress", verbLev >= VERBLEV__PROGRESS );
 	prm.msgMain = mygetfield( prm, "msgMain", verbLev >= VERBLEV__MAIN );
@@ -1017,14 +1037,14 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 		return;
 	endif
 	%
-	% NOTE: IF NOT USING DOG-LEG,
-	% WE SHOULD GENERATE A BUNCH OF POINTS AND PULL THEM IN TO THE SURFACES!
-	msgif( prm.msgCopious, __FILE__, __LINE__, "NextVer: Generate many points and pull to satisfy B as in slinsolf200." );
 	funchYOfS = @(s)( ( s*matH + (1.0-s)*matSCurve ) \ (s*vecMG) );
 	%
 	if (mygetfield(prm,"useBBall",false))
 	funchBOfY = @(y)( sumsq(matB*y) );
 	else
+	% NOTE: IF NOT USING DOG-LEG,
+	% WE SHOULD GENERATE A BUNCH OF POINTS AND PULL THEM IN TO THE SURFACES!
+	msgif( prm.msgCopious, __FILE__, __LINE__, "NextVer: Generate many points and pull to satisfy B as in slinsolf200." );
 	funchBOfY = @(y)( max(abs(y'*matB)) );
 	endif
 	%
@@ -1094,15 +1114,15 @@ function [ fModelDat, datOut ] = __expandModel( vecU, funchF, fModelDat, prm )
 	fModelDat.matV = [ matV, vecV ];
 	fModelDat.matW = [ matW, vecW ];
 	fModelDat.matA = zeros(sizeV+1,sizeV+1);
-	fModelDat.matA(1:sizeV,1:sizeV) = matA;
+	fModelDat.matA(1:sizeV,1:sizeV) = (matA'+matA)/2.0;
 	if (mygetfield(prm,"useBBall",false))
 	fModelDat.matB = zeros(sizeV+1,sizeV+1);
-	fModelDat.matB(1:sizeV,1:sizeV) = matB;
+	fModelDat.matB(1:sizeV,1:sizeV) = (matB'+matB)/2.0;
 	else
 	fModelDat.matB = [ matB; zeros(1,sizeB) ];
 	endif
 	fModelDat.matA0 = zeros(sizeV+1,sizeV+1);
-	fModelDat.matA0(1:sizeV,1:sizeV) = matA0;
+	fModelDat.matA0(1:sizeV,1:sizeV) = (matA0'+matA0)/2.0;
 	%
 	%
 	datOut.fevalCount = fevalCount;
@@ -1213,6 +1233,7 @@ function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
 	matWTW = matW'*matW;
 	matA0 = 100.0*( diag(diag(matWTW)) + eye(sizeV,sizeV)*max(max(matWTW))*0.1 );
 	%%%matA0 += matA + 0.00001*diag(diag(matWTW));
+	matA0 = (matA0'+matA0)/2.0;
 	%%%
 	%%%
 	%
@@ -1350,7 +1371,21 @@ function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
 	% But, to be safe, let's do this.
 	fModelDat.matW = matW + ( matWLocal - matW*(matV')*matVLocal)*(matVLocal'*matV); % Yeah?
 	%
-	fModelDat.matA = matE * matA0 * matE;
+	matA = matE' * matA0 * matE;
+	%matA += sqrt(eps)*max(max(abs(matA)))*eye(sizeV,sizeV);
+	matA = (matA'+matA)/2.0;
+	fModelDat.matA = matA;
+	if (0)
+		vecLambda0 = eig(matA0);
+		vecLambda = eig(matA);
+		if ( min(vecLambda0) < 0.0 || min(vecLambda) < 0.0 )
+			vecLambda0
+			vecLambda
+			assert( min(vecLambda0) >= 0.0 );
+			assert( min(vecLambda) >= 0.0 );
+		endif
+	endif
+	%
 	%
 	%
 	datOut.fevalCount = fevalCount;
@@ -1375,23 +1410,15 @@ function fModelDat = __addB( vecY, fModelDat, prm )
 	%sizeB = size(matB,2);
 	%
 	if (mygetfield(prm,"useBBall",false))
-		assert( norm(matB*vecY) < 0.9 );
-		assert( sumsq(matB*vecY) < 0.9 );
-		%msg( __FILE__, __LINE__, "matB before..." );
-		%matB
+		assert( sumsq(matB*vecY) < 1.0+sqrt(eps) );
 		yNorm = norm(vecY);
 		assert( 0.0 < yNorm );
 		vecYHat = vecY/yNorm;
 		sizeV = size(matB,2);
 		matEY = eye(sizeV,sizeV) - vecYHat*(vecYHat');
 		matB = matEY*matB*matEY + vecYHat*(vecYHat'/yNorm);
-		%msg( __FILE__, __LINE__, "matB after..." );
-		%matB
-		%msg( __FILE__, __LINE__, "matB change..." );
-		%matB - fModelDat.matB
-		assert( reldiff( norm(matB*vecY), 1.0 ) < sqrt(eps) );
 		assert( reldiff( sumsq(matB*vecY), 1.0 ) < sqrt(eps) );
-		fModelDat.matB = matB;
+		fModelDat.matB = (matB'+matB)/2.0;
 		return;
 	endif
 	%
@@ -1422,12 +1449,26 @@ function fModelDat = __removeB( vecY, fModelDat, prm )
 	%sizeV = size(matV,2);
 	%sizeB = size(matB,2);
 	if (mygetfield(prm,"useBBall",false))
+		if ( sumsq(matB*vecY) < 1.0 )
+			% vecY is already in the trust region; nothing to do.
+			return;
+		endif
+		assert( sumsq(matB*vecY) > 1.0 - sqrt(eps) );
 		yNorm = norm(vecY);
 		assert( 0.0 < yNorm );
 		vecYHat = vecY/yNorm;
 		sizeV = size(matB,2);
 		matEY = eye(sizeV,sizeV) - vecYHat*(vecYHat');
-		fModelDat.matB = matEY*matB*matEY + vecYHat*(vecYHat'/yNorm);
+		matB = matEY*matB*matEY + vecYHat*(vecYHat'/yNorm);
+		if ( reldiff(sumsq(matB*vecY),1.0) >= sqrt(eps) )
+			msg( __FILE__, __LINE__, "Data dump..." );
+			matB
+			vecY
+			sumsq(matB*vecY)
+			reldiff(sumsq(matB*vecY),1.0)
+		endif
+		assert( reldiff( sumsq(matB*vecY), 1.0 ) < sqrt(eps) );
+		fModelDat.matB = (matB'+matB)/2.0;
 		return;
 	endif
 	%

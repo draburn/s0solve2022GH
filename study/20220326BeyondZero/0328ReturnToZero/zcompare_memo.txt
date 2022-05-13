@@ -16,3 +16,5 @@ First, check a few more things: timing,
 
 2022-05-12
 10_71247648x50: Needs B but converges!
+10_37349312x50: Stalls in some cases but not others;
+  Behavior changed after symmetry enforcement fix, but seemed marginal anyway.
