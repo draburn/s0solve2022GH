@@ -66,6 +66,15 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 		datOut.vecFVals(:,iterCount+1) = fModelDat.vecF;
 		iterCount++;
 		%
+		
+		if (0)
+		fooH = fModelDat.matW'*fModelDat.matW;
+		if ( rcond(fooH) < sqrt(eps) )
+			msgif( prm.msgNotice, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Subspace Hessian is near-singular." );
+			break;
+		endif
+		endif
+		
 		%
 		fModelDat = __analyzeModel( fModelDat, prm );
 		if ( fModelDat.omegaModelVarIU < -sqrt(eps)*fModelDat.omega ...
@@ -172,6 +181,7 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			msgif( prm.msgMain, __FILE__, __LINE__, "IMPOSED STOP: Received stop signal." );
 			break;
 		endif
+		%
 		%
 		%%%if ( fModelDat.omegaModelAvgIU > prm.omegaTol )
 		%%%if ( fModelDat.omegaModelAvgIU > fModelDat.omega/100.0 )
@@ -942,7 +952,37 @@ function fModelDat = __analyzeModel( fModelDat, prm )
 	% Basics.
 	matWTW = matW'*matW;
 	vecMG = -(matW'*vecF);
-	matSCurve = eye(sizeV,sizeV);
+	%
+	matIV = eye(sizeV,sizeV);
+	switch ( tolower(mygetfield( prm, "curveType", "1" )) )
+	case { "1", "eye", "i" }
+		matSCurve = matIV;
+	case { "b" }
+		matBTB = matB'*matB;
+		btbMax = max(diag(matBTB));
+		btbMin = min(diag(matBTB));
+		if ( 0.0 == btbMax )
+			matSCurve = matIV;
+		%elseif ( btbMin > 10.0*sqrt(eps)*btbMax );
+		%	matSCurve = matBTB;
+		else
+			matSCurve = matBTB + 10.0*sqrt(eps)*btbMax*matIV;
+		endif
+	case { "m", "marq", "marquardt" }
+		vecD = diag(matWTW);
+		wtwMax = max(vecD);
+		wtwMin = min(vecD);
+		if ( 0.0 == wtwMax )
+			matSCurve = matIV;
+		elseif ( wtwMin > 10.0*sqrt(eps)*wtwMax );
+			matSCurve = diag(vecD);
+		else
+			matSCurve = diag(vecD) + 10.0*sqrt(eps)*wtwMax*matIV;
+		endif
+	otherwise
+		error( "Invalid value of curveType." );
+	endswitch
+	
 	%
 	vecYIU = __calcStep( matWTW, vecMG, prm );
 	vecYIB = __calcBoundStep( matWTW, vecMG, matB, matSCurve, prm );
@@ -1068,12 +1108,18 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 		endif
 		msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "Restricting step to bound (%g).",  sumsq(matB*vecDeltaNewton) ) );
 		%
+		assumeDiagonal = false;
+		if (assumeDiagonal)
 		vecS = diag(matSCurve);
 		matS = diag(vecS);
 		assert( reldiff(matSCurve,matS) < sqrt(eps) );
 		assert( min(vecS) > eps*max(abs(vecS)) );
-		%
 		vecYCauchyDir = vecMG./vecS;
+		else
+		matRCurve = chol(matSCurve);
+		vecYCauchyDir = matRCurve \ (matRCurve'\vecMG);
+		endif
+		%
 		ythy = vecYCauchyDir'*matHRegu*vecYCauchyDir;
 		assert( ythy >= 0.0 );
 		ythmg = vecYCauchyDir'*vecMG;
@@ -1119,10 +1165,10 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 	% Looks like chol isn't accurate enough, and/or "\" triggers a check based on rcond()?
 	% So, we'l use rcond too.
 	rc = rcond( matH );
-	if ( rc > sqrt(eps) )
+	if ( rc > 10.0*sqrt(eps) )
 		s1 = 1.0;
 	else
-		epsRelRegu = mygetfield( prm, "epsRelRegu", sqrt(eps) );
+		epsRelRegu = mygetfield( prm, "epsRelRegu", 10.0*sqrt(eps) );
 		hScale = max(max(abs(matH)));
 		sScale = max(max(abs(matSCurve)));
 		assert( 0.0 < hScale );
@@ -1132,6 +1178,8 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 	assert( s1 >= 0.0 );
 	%
 	funchYOfS = @(s)( ( s*matH + (1.0-s)*matSCurve ) \ (s*vecMG) );
+	assert( rcond(matSCurve) > eps^1.5 );
+	assert( rcond( s1*matH + (1.0-s1)*matSCurve ) > eps^1.5 );
 	%
 	if (prm.useBBall)
 	funchBOfY = @(y)( sumsq(matB*y) );

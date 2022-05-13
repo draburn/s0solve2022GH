@@ -10,11 +10,10 @@ if ( stopsignalpresent() )
 endif
 %
 %
-%sizeX = 100;
-%fType = 5;
-sizeX = 200;
-fType = 91;
-fSeed = 84943088;
+sizeX = 100;
+fType = 5;
+%fSeed = 84943088;
+fSeed = 68716288;
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
@@ -24,9 +23,11 @@ if (0)
 	numRuns = 0;
 	runIndex = 0;
 	r.runType = 1100;
-	r.prm.iterMax = 1000;
+	r.prm = [];
+	r.prm.iterMax = 3000;
 	r.prm.useDogLeg = true;
-	r.prmMemo = "dev one-shot";
+	r.prm.curveType = "b";
+	r.prmMemo = "dogLeg true, curve b";
 	zcompare__doRun;
 	msg( __FILE__, __LINE__, "Goodbye!" ); return;
 endif
@@ -112,6 +113,56 @@ if (0)
 endif
 
 if (1)
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.useDogLeg = false;
+	runList(numRuns).r.prm.curveType = "1";
+	runList(numRuns).r.prmMemo = "Lev*1";
+	%
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.useDogLeg = true;
+	runList(numRuns).r.prm.curveType = "1";
+	runList(numRuns).r.prmMemo = "Powell*1";
+	%
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.useDogLeg = false;
+	runList(numRuns).r.prm.curveType = "b";
+	runList(numRuns).r.prmMemo = "Lev*BTB";
+	%
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.useDogLeg = true;
+	runList(numRuns).r.prm.curveType = "b";
+	runList(numRuns).r.prmMemo = "Powell*BTB";
+	%
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.useDogLeg = false;
+	runList(numRuns).r.prm.curveType = "m";
+	runList(numRuns).r.prmMemo = "Lev*Marq";
+	%
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.useDogLeg = true;
+	runList(numRuns).r.prm.curveType = "m";
+	runList(numRuns).r.prmMemo = "Powell*Marq";
+endif
+
+if (0)
 	numRuns++;
 	runList(numRuns).r.runType = 1100;
 	runList(numRuns).r.prm = [];
