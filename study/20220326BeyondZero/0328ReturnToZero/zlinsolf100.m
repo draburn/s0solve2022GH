@@ -1415,6 +1415,7 @@ function fModelDat = __addB( vecY, fModelDat, prm )
 	%sizeB = size(matB,2);
 	%
 	if (prm.useBBall)
+		msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Increasing B (%g).", sumsq(matB*vecY) ) );
 		assert( sumsq(matB*vecY) < 1.0+sqrt(eps) );
 		yNorm = norm(vecY);
 		assert( 0.0 < yNorm );
@@ -1458,6 +1459,7 @@ function fModelDat = __removeB( vecY, fModelDat, prm )
 			% vecY is already in the trust region; nothing to do.
 			return;
 		endif
+		msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Decreasing B (%g).", sumsq(matB*vecY) ) );
 		assert( sumsq(matB*vecY) > 1.0 - sqrt(eps) );
 		yNorm = norm(vecY);
 		assert( 0.0 < yNorm );

@@ -10,15 +10,9 @@ if ( stopsignalpresent() )
 endif
 %
 %
-sizeX = 50;
-fType = 10;
-fSeed = 71247648;
-fSeed = 37349312;
-if (1)
-	sizeX = 100;
-	fType = 5;
-	fSeed = 46257472;
-endif
+sizeX = 100;
+fType = 5;
+fSeed = 85128912;
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
@@ -49,7 +43,7 @@ resumeRun = 0;
 else
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
-%numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 500; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 500; runList(numRuns).r.prmMemo = "";
 
 if (0)
 	numRuns++;
@@ -67,7 +61,7 @@ if (0)
 	runList(numRuns).r.prmMemo = "quad true";
 endif
 
-if (1)
+if (0)
 	numRuns++;
 	runList(numRuns).r.runType = 1100;
 	runList(numRuns).r.prm = [];
@@ -81,6 +75,56 @@ if (1)
 	runList(numRuns).r.prm.iterMax = 3000;
 	runList(numRuns).r.prm.useBBall = true;
 	runList(numRuns).r.prmMemo = "bball true";
+endif
+
+if (0)
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.useQuadUpdate = false;
+	runList(numRuns).r.prmMemo = "quad false";
+	%
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.useQuadUpdate = true;
+	runList(numRuns).r.prmMemo = "quad true";
+endif
+
+if (0)
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.useQuadUpdate = false;
+	runList(numRuns).r.prm.useBBall = false;
+	runList(numRuns).r.prmMemo = "quad- bball-";
+	%
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.useQuadUpdate = true;
+	runList(numRuns).r.prm.useBBall = false;
+	runList(numRuns).r.prmMemo = "quad+ bball-";
+	%
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.useQuadUpdate = false;
+	runList(numRuns).r.prm.useBBall = true;
+	runList(numRuns).r.prmMemo = "quad- bball+";
+	%
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.useQuadUpdate = true;
+	runList(numRuns).r.prm.useBBall = true;
+	runList(numRuns).r.prmMemo = "quad+ bball+";
 endif
 
 
