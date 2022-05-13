@@ -317,9 +317,10 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, v
 			if ( prm.msgCopious && prm.debugMode )
 			makePlotsAndHalt = ( size(fModelDat.matVLocal,2)>=1 && size(fModelDat.matB,2)>=20 );
 			if ( makePlotsAndHalt )
-				if (~mygetfield(prm,"useBBall",false))
+				if (prm.useBBall)
 					msg( __FILE__, __LINE__, "*******************************" );
 					msg( __FILE__, __LINE__, "The old Wall-B is assumed here!" );
+					msg( __FILE__, __LINE__, "This will probably crash!" );
 				endif
 				vecY = fModelDat.vecYPB;
 				fModelDat.haltAfterNextReport = true;
@@ -785,6 +786,7 @@ function prm = __initPrm( vecX, vecF, prm )
 	prm.msgMain = mygetfield( prm, "msgMain", verbLev >= VERBLEV__MAIN );
 	prm.msgNotice = mygetfield( prm, "msgNotice", verbLev >= VERBLEV__NOTICE );
 	prm.debugMode = mygetfield( prm, "debugMode", true );
+	prm.useBBall = mygetfield( prm, "useBBall", true );
 	%
 	sizeX = size(vecX,1);
 	sizeF = size(vecF,1);
@@ -851,7 +853,7 @@ function [ fModelDat, datOut ] = __initModel( funchF, vecX, vecF, prm )
 	fModelDat.matWLocal = [ vecW ];
 	fModelDat.matA = [ 0.0 ];
 	fModelDat.matA0 = [ 0.0 ];
-	if (mygetfield(prm,"useBBall",false))
+	if (prm.useBBall)
 	fModelDat.matB = [ 0.0 ];
 	else
 	fModelDat.matB = [];
@@ -922,7 +924,7 @@ function fModelDat = __analyzeModel( fModelDat, prm )
 	fModelDat.omegaModelVarIB = vecYIB'*matA*vecYIB;
 	fModelDat.omegaModelVarPB = vecYPB'*matA*vecYPB;
 	%
-	if (mygetfield(prm,"useBBall",false))
+	if (prm.useBBall)
 	fModelDat.bIU = norm(matB*vecYIU);
 	fModelDat.bIB = norm(matB*vecYIB);
 	fModelDat.bPB = norm(matB*vecYPB);
@@ -1003,6 +1005,9 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 	assert( s1 >= 0.0 );
 	%
 	if ( mygetfield(prm,"useDogLog",false) )
+		if (~prm.useBBall)
+			error( "useDogLeg requires useBBall!" );
+		endif
 		error( "Implement Powell's dog-leg here!" );
 		%
 		vecDeltaNewton = matSC * ( matHSCRegu \ (-vecGSC) );
@@ -1039,7 +1044,7 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 	%
 	funchYOfS = @(s)( ( s*matH + (1.0-s)*matSCurve ) \ (s*vecMG) );
 	%
-	if (mygetfield(prm,"useBBall",false))
+	if (prm.useBBall)
 	funchBOfY = @(y)( sumsq(matB*y) );
 	else
 	% NOTE: IF NOT USING DOG-LEG,
@@ -1060,7 +1065,7 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 	s = fzero( funchBM1OfS, [0.0, s1] );
 	vecY = funchYOfS(s);
 	%
-	if (mygetfield(prm,"useBBall",false))
+	if (prm.useBBall)
 	%msg( __FILE__, __LINE__, sprintf( "BBall: %f, %f.", sumsq(matB*vecY1), sumsq(matB*vecY) ) );
 	assert( reldiff(norm(matB*vecY),1.0) < sqrt(eps) );
 	assert( reldiff(sumsq(matB*vecY),1.0) < sqrt(eps) );
@@ -1115,7 +1120,7 @@ function [ fModelDat, datOut ] = __expandModel( vecU, funchF, fModelDat, prm )
 	fModelDat.matW = [ matW, vecW ];
 	fModelDat.matA = zeros(sizeV+1,sizeV+1);
 	fModelDat.matA(1:sizeV,1:sizeV) = (matA'+matA)/2.0;
-	if (mygetfield(prm,"useBBall",false))
+	if (prm.useBBall)
 	fModelDat.matB = zeros(sizeV+1,sizeV+1);
 	fModelDat.matB(1:sizeV,1:sizeV) = (matB'+matB)/2.0;
 	else
@@ -1326,7 +1331,7 @@ function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
 		error( "Failed to generate local subspace basis vector." );
 	endif
 	if (prm.debugMode)
-		prmTemp.orthoTol = sqrt(eps);
+		prmTemp.orthoTol = 10.0*sqrt(eps);
 		foo = __calcOrthonorm( vecV, matV, prmTemp );
 		if ( norm(foo) != 0.0 )
 			msg( __FILE__, __LINE__, "Data dump..." );
@@ -1409,7 +1414,7 @@ function fModelDat = __addB( vecY, fModelDat, prm )
 	%sizeV = size(matV,2);
 	%sizeB = size(matB,2);
 	%
-	if (mygetfield(prm,"useBBall",false))
+	if (prm.useBBall)
 		assert( sumsq(matB*vecY) < 1.0+sqrt(eps) );
 		yNorm = norm(vecY);
 		assert( 0.0 < yNorm );
@@ -1448,7 +1453,7 @@ function fModelDat = __removeB( vecY, fModelDat, prm )
 	%sizeF = size(vecF,1);
 	%sizeV = size(matV,2);
 	%sizeB = size(matB,2);
-	if (mygetfield(prm,"useBBall",false))
+	if (prm.useBBall)
 		if ( sumsq(matB*vecY) < 1.0 )
 			% vecY is already in the trust region; nothing to do.
 			return;

@@ -12,10 +12,13 @@ endif
 %
 sizeX = 50;
 fType = 10;
-%fSeed = 55323424;
-%fSeed = 86981936;
 fSeed = 71247648;
 fSeed = 37349312;
+if (1)
+	sizeX = 100;
+	fType = 5;
+	fSeed = 46257472;
+endif
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
@@ -45,35 +48,39 @@ numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 2
 resumeRun = 0;
 else
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prmMemo = "";
-
-if (1)
-numRuns++;
-runList(numRuns).r.runType = 1100;
-runList(numRuns).r.prm = [];
-runList(numRuns).r.prm.useQuadUpdate = true;
-runList(numRuns).r.prm.iterMax = 3000;
-runList(numRuns).r.prm.useBBall = true;
-runList(numRuns).r.prmMemo = "quad + BBall";
-endif
+numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
+%numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 500; runList(numRuns).r.prmMemo = "";
 
 if (0)
-numRuns++;
-runList(numRuns).r.runType = 1100;
-runList(numRuns).r.prm = [];
-runList(numRuns).r.prm.useQuadUpdate = true;
-runList(numRuns).r.prm.iterMax = 1000;
-runList(numRuns).r.prmMemo = "quad true";
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.useQuadUpdate = false;
+	runList(numRuns).r.prmMemo = "quad false";
+	%
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.useQuadUpdate = true;
+	runList(numRuns).r.prmMemo = "quad true";
 endif
 
 if (1)
-numRuns++;
-runList(numRuns).r.runType = 1100;
-runList(numRuns).r.prm = [];
-runList(numRuns).r.prm.useQuadUpdate = false;
-runList(numRuns).r.prm.iterMax = 3000;
-runList(numRuns).r.prmMemo = "quad false";
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.useBBall = false;
+	runList(numRuns).r.prmMemo = "bball false";
+	%
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.useBBall = true;
+	runList(numRuns).r.prmMemo = "bball true";
 endif
 
 

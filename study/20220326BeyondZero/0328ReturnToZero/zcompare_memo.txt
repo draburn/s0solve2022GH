@@ -18,3 +18,5 @@ First, check a few more things: timing,
 10_71247648x50: Needs B but converges!
 10_37349312x50: Stalls in some cases but not others;
   Behavior changed after symmetry enforcement fix, but seemed marginal anyway.
+5_62423744x100: BBall seems more likely to stall.
+5_46257472x100: BBall converges, others stall.
