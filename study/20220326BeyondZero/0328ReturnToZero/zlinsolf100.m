@@ -780,7 +780,7 @@ function prm = __initPrm( vecX, vecF, prm )
 	setVerbLevs;
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
-	%erbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	prm.msgCopious = mygetfield( prm, "msgCopious", verbLev >= VERBLEV__COPIOUS );
 	prm.msgProgress = mygetfield( prm, "msgProgress", verbLev >= VERBLEV__PROGRESS );
 	prm.msgMain = mygetfield( prm, "msgMain", verbLev >= VERBLEV__MAIN );
@@ -985,6 +985,85 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 		return;
 	endif
 	%
+	if ( mygetfield(prm,"useDogLeg",false) )
+		if (~prm.useBBall)
+			error( "useDogLeg requires useBBall!" );
+		endif
+		%
+		% DRaburn 2022-05-12-2233
+		%  I now believe only S_curve = B^T * B is meaningful;
+		%   this should produce the same point as generating points along a curve and pulling to the surface,
+		%   if not better.
+		%  However, in order to allow a fair comparison to the existing Levenberg curve,
+		%   I'll allow B and S_curve to be independent.
+		%
+		sizeV = size(matH,1);
+		rc = rcond( matH );
+		if ( rc > sqrt(eps) )
+			matHRegu = matH;
+		else
+			epsRelRegu = mygetfield( prm, "epsRelRegu", sqrt(eps) );
+			hScale = max(max(abs(matH)));
+			sScale = max(max(abs(matSCurve)));
+			assert( 0.0 < hScale );
+			assert( 0.0 < sScale );
+			epsRegu = epsRelRegu*hScale/sScale;
+			matHRegu = matH + epsRegu*eye(sizeV,sizeV);
+		endif
+		matR = chol(matHRegu);
+		vecDeltaNewton = matR \ ( matR' \ vecMG );
+		%
+		% If Newton step is in bounds, take it.
+		if ( sumsq(matB*vecDeltaNewton) <= 1.0 )
+			vecY = vecDeltaNewton;
+			return;
+		endif
+		msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "Restricting step to bound (%g).",  sumsq(matB*vecDeltaNewton) ) );
+		%
+		vecS = diag(matSCurve);
+		matS = diag(vecS);
+		assert( reldiff(matSCurve,matS) < sqrt(eps) );
+		assert( min(vecS) > eps*max(abs(vecS)) );
+		%
+		vecYCauchyDir = vecMG./vecS;
+		ythy = vecYCauchyDir'*matHRegu*vecYCauchyDir;
+		assert( ythy >= 0.0 );
+		ythmg = vecYCauchyDir'*vecMG;
+		assert( ythmg > 0.0 );
+		pCauchy = ythmg / ythy;
+		vecDeltaCauchy = pCauchy*vecYCauchyDir;
+		%
+		% If Cauchy step goes OOB, take its intersection with boundary.
+		vecBC = matB*vecDeltaCauchy;
+		bcsq = sumsq( vecBC );
+		if ( bcsq >= 1.0 );
+			vecY = vecDeltaCauchy / sqrt(bcsq);
+			assert( reldiff( sumsq(matB*vecY), 1.0 ) < sqrt(eps) );
+			return;
+		endif
+		%
+		% Find where the second leg intersects the boundary.
+		vecDelta2 = vecDeltaNewton - vecDeltaCauchy;
+		vecB2 = matB*vecDelta2;
+		% We can't use calcLinishRootOfQuad() here!
+		% We want positive root of quad!
+		%   Using y = vecDeltaCauchy + t * vecDelta2,
+		%   ||B*y|| = (t^2)*(b2'*b2) + t*(2.0*b2'*bc) + (bc'*bc) - 1.0,
+		%   where b2 = B*vecDelta2 and bc = B*vecDeltaCauchy.
+		a = sumsq(vecB2);
+		b = 2.0*(vecBC'*vecB2);
+		c = bcsq-1.0;
+		discrim = (b^2) - (4.0*a*c);
+		assert( discrim >= 0.0 );
+		assert( 0.0 < a );
+		t = (-b+sqrt(discrim))/(2.0*a); % Because a must be positive.
+		vecY = vecDeltaCauchy + (t*vecDelta2);
+		assert( reldiff( sumsq(matB*vecY), 1.0 ) < sqrt(eps) );
+		assert( t >= 0.0 );
+		assert( t <= 1.0 );
+		return;
+	endif
+	%
 	%cholSafeTol = mygetfield( prm, "cholSafeTol", sqrt(eps) );
 	%
 	%[ matR, cholFlag ] = chol( matH );
@@ -992,7 +1071,7 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 	% Looks like chol isn't accurate enough, and/or "\" triggers a check based on rcond()?
 	% So, we'l use rcond too.
 	rc = rcond( matH );
-	if ( rcond(matH) > sqrt(eps) )
+	if ( rc > sqrt(eps) )
 		s1 = 1.0;
 	else
 		epsRelRegu = mygetfield( prm, "epsRelRegu", sqrt(eps) );
@@ -1003,44 +1082,6 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 		s1 = 1.0 - (epsRelRegu*hScale/(epsRelRegu*hScale+sScale));
 	endif
 	assert( s1 >= 0.0 );
-	%
-	if ( mygetfield(prm,"useDogLog",false) )
-		if (~prm.useBBall)
-			error( "useDogLeg requires useBBall!" );
-		endif
-		error( "Implement Powell's dog-leg here!" );
-		%
-		vecDeltaNewton = matSC * ( matHSCRegu \ (-vecGSC) );
-		pCauchy = calcLinishRootOfQuad( 0.5*(vecGSC'*matHSC*vecGSC), -sumsq(vecGSC), omega );
-		assert( pCauchy > 0.0 );
-		vecDeltaCauchy = pCauchy*matSC*(-vecGSC);
-		%
-		function vecDelta = calcDogLeg( vecDeltaC, vecDeltaN, stepSize )
-			if ( stepSize >= norm(vecDeltaN) )
-				vecDelta = vecDeltaN;
-				return;
-			elseif ( stepSize <= norm(vecDeltaC) )
-				vecDelta = vecDeltaC*stepSize/norm(vecDeltaC);
-				return;
-			endif
-			vecA = vecDeltaC;
-			vecB = vecDeltaN-vecDeltaC;
-			atb = vecA'*vecB;
-			asq = vecA'*vecA;
-			bsq = vecB'*vecB;
-			discrim = atb^2 - (asq-stepSize^2)*bsq;
-			assert( discrim >= 0.0 );
-			s = ( sqrt(discrim) - atb ) / bsq;
-			assert( s >= 0.0 - sqrt(eps) );
-			assert( s <= 1.0 + sqrt(eps) );
-			vecDelta = vecA + s*vecB;
-			assert( reldiff(norm(vecDelta),stepSize) < sqrt(eps) );
-		endfunction
-		%
-		vecY = calcDogLeg( vecDeltaCauchy, vecDeltaNewton, snarglemoof )
-		%
-		return;
-	endif
 	%
 	funchYOfS = @(s)( ( s*matH + (1.0-s)*matSCurve ) \ (s*vecMG) );
 	%
@@ -1060,6 +1101,7 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 		return;
 	endif
 	%
+	msgif( prm.msgCopious, __FILE__, __LINE__, "Restricting step to bound!" );
 	funchBM1OfS = @(s)( funchBOfY(funchYOfS(s)) - 1.0 );
 	%
 	s = fzero( funchBM1OfS, [0.0, s1] );
@@ -1415,7 +1457,7 @@ function fModelDat = __addB( vecY, fModelDat, prm )
 	%sizeB = size(matB,2);
 	%
 	if (prm.useBBall)
-		msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Increasing B (%g).", sumsq(matB*vecY) ) );
+		msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "Increasing B (%g).", sumsq(matB*vecY) ) );
 		assert( sumsq(matB*vecY) < 1.0+sqrt(eps) );
 		yNorm = norm(vecY);
 		assert( 0.0 < yNorm );
@@ -1459,7 +1501,7 @@ function fModelDat = __removeB( vecY, fModelDat, prm )
 			% vecY is already in the trust region; nothing to do.
 			return;
 		endif
-		msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Decreasing B (%g).", sumsq(matB*vecY) ) );
+		msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "Decreasing B (%g).", sumsq(matB*vecY) ) );
 		assert( sumsq(matB*vecY) > 1.0 - sqrt(eps) );
 		yNorm = norm(vecY);
 		assert( 0.0 < yNorm );

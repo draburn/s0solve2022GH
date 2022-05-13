@@ -12,7 +12,7 @@ endif
 %
 sizeX = 100;
 fType = 5;
-fSeed = 85128912;
+fSeed = 84943088;
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
@@ -23,8 +23,8 @@ if (0)
 	runIndex = 0;
 	r.runType = 1100;
 	r.prm.iterMax = 1000;
-	r.prm.useBBall = true;
-	r.prmMemo = "BBall";
+	r.prm.useDogLeg = true;
+	r.prmMemo = "dev one-shot";
 	zcompare__doRun;
 	msg( __FILE__, __LINE__, "Goodbye!" ); return;
 endif
@@ -91,6 +91,22 @@ if (0)
 	runList(numRuns).r.prm.iterMax = 3000;
 	runList(numRuns).r.prm.useQuadUpdate = true;
 	runList(numRuns).r.prmMemo = "quad true";
+endif
+
+if (1)
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.useDogLeg = false;
+	runList(numRuns).r.prmMemo = "dogLeg false";
+	%
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.useDogLeg = true;
+	runList(numRuns).r.prmMemo = "dogLeg true";
 endif
 
 if (0)
