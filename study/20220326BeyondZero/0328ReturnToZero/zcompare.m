@@ -10,8 +10,10 @@ if ( stopsignalpresent() )
 endif
 %
 %
-sizeX = 100;
-fType = 5;
+%sizeX = 100;
+%fType = 5;
+sizeX = 200;
+fType = 91;
 fSeed = 84943088;
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
@@ -93,7 +95,7 @@ if (0)
 	runList(numRuns).r.prmMemo = "quad true";
 endif
 
-if (1)
+if (0)
 	numRuns++;
 	runList(numRuns).r.runType = 1100;
 	runList(numRuns).r.prm = [];
@@ -107,6 +109,31 @@ if (1)
 	runList(numRuns).r.prm.iterMax = 3000;
 	runList(numRuns).r.prm.useDogLeg = true;
 	runList(numRuns).r.prmMemo = "dogLeg true";
+endif
+
+if (1)
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	[ fooL, fooU ] = lu( matJA );
+	runList(numRuns).r.prm.precon_matL = fooL;
+	runList(numRuns).r.prm.precon_matU = fooU;
+	runList(numRuns).r.prmMemo = "precon:LU";
+	%
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.precon_matJA = matJA;
+	runList(numRuns).r.prmMemo = "precon:JA";
+	%
+	numRuns++;
+	runList(numRuns).r.runType = 1100;
+	runList(numRuns).r.prm = [];
+	runList(numRuns).r.prm.iterMax = 3000;
+	runList(numRuns).r.prm.funchPrecon = @(rhoF,x,f)( matJA \ rhoF );
+	runList(numRuns).r.prmMemo = "precon:funch";
 endif
 
 if (0)

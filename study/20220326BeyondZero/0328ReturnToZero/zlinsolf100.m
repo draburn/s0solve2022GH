@@ -796,6 +796,44 @@ function prm = __initPrm( vecX, vecF, prm )
 	prm.iterMax = mygetfield( prm, "iterMax", ceil(20 + 10*sqrt(sizeX) + 0.01*sizeX) );
 	%
 	prm.omegaTol = fTol^2/2.0;
+	%
+	prm.funchPrecon = mygetfield( prm, "funchPrecon", [] );
+	prm.precon_matL = mygetfield( prm, "precon_matL", [] );
+	prm.precon_matU = mygetfield( prm, "precon_matU", [] );
+	precon_matJA = mygetfield( prm, "precon_matJA", [] );
+	if ( ~isempty(prm.funchPrecon) )
+		assert( isempty(prm.precon_matL) );
+		assert( isempty(prm.precon_matU) );
+		assert( isempty(precon_matJA) );
+	elseif ( ~isempty(prm.precon_matL) || ~isempty(prm.precon_matU) )
+		assert( isempty(prm.funchPrecon) );
+		assert( ~isempty(prm.precon_matL) );
+		assert( ~isempty(prm.precon_matU) );
+		assert( isempty(precon_matJA) );
+		assert( isrealarray(prm.precon_matL) );
+		assert( isrealarray(prm.precon_matU) );
+		assert( size(prm.precon_matL,1) == sizeF );
+		assert( size(prm.precon_matL,2) == size(prm.precon_matU,1) );
+		assert( size(prm.precon_matU,2) == sizeX );
+	elseif ( ~isempty(precon_matJA) )
+		assert( isempty(prm.funchPrecon) );
+		assert( isempty(prm.precon_matL) );
+		assert( isempty(prm.precon_matU) );
+		assert( isrealarray(precon_matJA,[sizeF,sizeX]) );
+		[ prm.precon_matL, prm.precon_matU ] = lu( precon_matJA );
+	endif
+return;
+endfunction
+
+
+function vecU = __precon( vecRhoF, prm, vecX, vecF )
+	if ( ~isempty(prm.funchPrecon) )
+		vecU = prm.funchPrecon( vecRhoF, vecX, vecF );
+	elseif ( ~isempty(prm.precon_matU) )
+		vecU = prm.precon_matU \ ( prm.precon_matL \ vecRhoF );
+	else
+		vecU = vecRhoF;
+	endif
 return;
 endfunction
 
@@ -838,7 +876,17 @@ function [ fModelDat, datOut ] = __initModel( funchF, vecX, vecF, prm )
 	if ( 0.0 == fNorm )
 		error( "Initial vecF is zero." );
 	endif
-	vecV = vecF/fNorm;
+	%
+	vecU = __precon( vecF, prm, vecX, vecF );
+	if ( prm.debugMode )
+		assert( isrealarray(vecU,[sizeX,1]) );
+	endif
+	uNorm = norm(vecU);
+	if ( 0.0 == uNorm )
+		error( "Preconditioner returned a zeo vector." );
+	endif
+	%
+	vecV = vecU/uNorm;
 	vecW = __calcJV( vecV, funchF, vecX, vecF, prm );
 	fevalCount++;
 	if ( 0.0 == norm(vecW) )
@@ -1118,7 +1166,7 @@ return;
 endfunction
 
 
-function [ fModelDat, datOut ] = __expandModel( vecU, funchF, fModelDat, prm )
+function [ fModelDat, datOut ] = __expandModel( vecRhoF, funchF, fModelDat, prm )
 	fevalCount = 0;
 	% Unpack.
 	vecX = fModelDat.vecX;
@@ -1137,8 +1185,9 @@ function [ fModelDat, datOut ] = __expandModel( vecU, funchF, fModelDat, prm )
 	sizeB = size(matB,2);
 	%
 	%
-	uNorm = norm(vecU);
-	assert( 0.0 < uNorm );
+	assert( 0.0 < norm(vecRhoF) );
+	vecU = __precon( vecRhoF, prm, vecX, vecF );
+	assert( 0.0 < norm(vecU) );
 	vecV = __calcOrthonorm( vecU, matV, prm );
 	if ( 0.0 == norm(vecV) )
 		error( "Failed to generate new subspace basis vector." );
