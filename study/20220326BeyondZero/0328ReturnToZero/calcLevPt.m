@@ -92,12 +92,12 @@ endfunction
 %!test
 %!	numFigs = 0;
 %!	setprngstates();
-%!	sizeX = 200;
-%!	sizeF = 100;
+%!	sizeX = 5;
+%!	sizeF = 5;
 %!	%
 %!	vecF = randn(sizeF,1);
 %!	matJ = randn(sizeF,sizeX);
-%!	if (1)
+%!	if (0)
 %!		vecPhi = randn(sizeX,1);
 %!		vecPhi /= norm(vecPhi);
 %!		matJ -= (matJ*vecPhi)*(vecPhi');
@@ -106,6 +106,7 @@ endfunction
 %!	vecG = matJ'*vecF;
 %!	matS = diag(diag(matH));
 %!	matE = sqrt(eps)*matS + (eps*max(diag(matH)))*eye(sizeX,sizeX);
+%!	matS_sing = matS; matS_sing(1:2:end,1:2:end) = 0.0;
 %!	%
 %!	vecY = calcLevPt( vecG, matH, 0.0 );
 %!	vecY = calcLevPt( vecG, matH, 1.0 );
@@ -117,10 +118,13 @@ endfunction
 %!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 1.0, matS, matS );
 %!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 0.0, matS, matE, 0.0, true );
 %!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 1.0, matS, matE, 0.0, true );
+%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 0.0, matS_sing, [], sqrt(eps), true )
+%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 1.0, matS_sing, [], sqrt(eps), true )
 %!	%
 %!	numVals = 101;
 %!	foo = linspace( 1.0, 0.0, numVals );
 %!	tVals = ( 1.0 - (foo.^2) ).^2;
+%!	%
 %!	for n=1:numVals
 %!		[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, tVals(n) );
 %!		vecYVals(:,n) = vecY;
@@ -163,9 +167,29 @@ endfunction
 %!	plot( tVals, sPrimeVals, 'o-' );
 %!	grid on;
 %!	%
-%!	matS = diag(diag(matH));
 %!	for n=1:numVals
 %!		[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, tVals(n), matS, matE );
+%!		vecYVals(:,n) = vecY;
+%!		vecYPrimeVals(:,n) = vecYPrime;
+%!		sVals(n) = s;
+%!		sPrimeVals(n) = sPrime;
+%!	endfor
+%!	n = 1+round( (numVals-1)*0.2 ); sModelVals1 = sVals(n) + sPrimeVals(n)*( tVals - tVals(n) );
+%!	n = 1+round( (numVals-1)*0.5 ); sModelVals2 = sVals(n) + sPrimeVals(n)*( tVals - tVals(n) );
+%!	n = 1+round( (numVals-1)*0.8 ); sModelVals3 = sVals(n) + sPrimeVals(n)*( tVals - tVals(n) );
+%!	numFigs++; figure(numFigs);
+%!	plot( ...
+%!	  tVals, sVals, 'o-', ...
+%!	  tVals, cap( sModelVals1, 0.0, max(sVals) ), 'x-', ...
+%!	  tVals, cap( sModelVals2, 0.0, max(sVals) ), '^-', ...
+%!	  tVals, cap( sModelVals3, 0.0, max(sVals) ), 'v-' );
+%!	grid on;
+%!	numFigs++; figure(numFigs);
+%!	plot( tVals, sPrimeVals, 'o-' );
+%!	grid on;
+%!	%
+%!	for n=1:numVals
+%!		[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, tVals(n), matS_sing );
 %!		vecYVals(:,n) = vecY;
 %!		vecYPrimeVals(:,n) = vecYPrime;
 %!		sVals(n) = s;
