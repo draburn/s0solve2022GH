@@ -95,12 +95,12 @@ endfunction
 %!test
 %!	numFigs = 0;
 %!	setprngstates(0);
-%!	sizeX = 5;
-%!	sizeF = 5;
+%!	sizeX = 200;
+%!	sizeF = 100;
 %!	%
 %!	vecF = randn(sizeF,1);
 %!	matJ = randn(sizeF,sizeX);
-%!	if (0)
+%!	if (1)
 %!		vecPhi = randn(sizeX,1);
 %!		vecPhi /= norm(vecPhi);
 %!		matJ -= (matJ*vecPhi)*(vecPhi');
@@ -136,7 +136,6 @@ endfunction
 %!	if (~hadError)
 %!		error( "calcLevPt failed to throw an error when it should have." );
 %!	endif
-%!	return;
 %!	%
 %!	numVals = 101;
 %!	foo = linspace( 1.0, 0.0, numVals );
