@@ -94,7 +94,7 @@ endfunction
 
 %!test
 %!	numFigs = 0;
-%!	setprngstates();
+%!	setprngstates(0);
 %!	sizeX = 5;
 %!	sizeF = 5;
 %!	%
@@ -121,8 +121,22 @@ endfunction
 %!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 1.0, matS, matS );
 %!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 0.0, matS, matE, 0.0, true );
 %!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 1.0, matS, matE, 0.0, true );
-%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 0.0, matS_sing, [], sqrt(eps), true )
-%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 1.0, matS_sing, [], sqrt(eps), true )
+%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 0.0, matS_sing, [], sqrt(eps), true );
+%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 1.0, matS_sing, [], sqrt(eps), true );
+%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 0.5, matS_sing, [], sqrt(eps), true );
+%!	%
+%!	hadError = false;
+%!	try
+%!		% If t*H + (1-t)*S is npd and E is singular, we should get an error.
+%!		vecY = calcLevPt( vecG, matH, 0.0, matS_sing, matS_sing );
+%!	catch
+%!		hadError = true;
+%!		msg( __FILE__, __LINE__, "calcLevPt correctly threw an error." );
+%!	end
+%!	if (~hadError)
+%!		error( "calcLevPt failed to throw an error when it should have." );
+%!	endif
+%!	return;
 %!	%
 %!	numVals = 101;
 %!	foo = linspace( 1.0, 0.0, numVals );
