@@ -20,10 +20,10 @@ function [ vecY, vecYPrime, s, sPrime ] = calcLevPt( ...
 		assert( t <= 1.0 );
 	endif
 	if ( isempty(matS) )
-		matS = eye(sz,sz);
+		matS = max(diag(matH)) * eye(sz,sz);
 	endif
 	if (isempty(matRegu) )
-		matRegu = 0.1*sqrt(eps)*eye(sz,sz);
+		matRegu = sqrt(eps) * ( matS + sqrt(eps)*max(diag(matS))*eye(sz,sz) );
 	endif
 	if ( doChecks )
 		assert( isrealarray(matS,[sz,sz]) );
@@ -91,7 +91,7 @@ endfunction
 
 %!test
 %!	numFigs = 0;
-%!	setprngstates(0);
+%!	setprngstates();
 %!	sizeX = 200;
 %!	sizeF = 100;
 %!	%
@@ -105,6 +105,7 @@ endfunction
 %!	matH = matJ'*matJ;
 %!	vecG = matJ'*vecF;
 %!	matS = diag(diag(matH));
+%!	matE = sqrt(eps)*matS + (eps*max(diag(matH)))*eye(sizeX,sizeX);
 %!	%
 %!	vecY = calcLevPt( vecG, matH, 0.0 );
 %!	vecY = calcLevPt( vecG, matH, 1.0 );
@@ -114,8 +115,8 @@ endfunction
 %!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 1.0, matS );
 %!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 0.0, matS, matS );
 %!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 1.0, matS, matS );
-%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 0.0, matS, matS, 0.0, true );
-%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 1.0, matS, matS, 0.0, true );
+%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 0.0, matS, matE, 0.0, true );
+%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 1.0, matS, matE, 0.0, true );
 %!	%
 %!	numVals = 101;
 %!	foo = linspace( 1.0, 0.0, numVals );
@@ -137,6 +138,9 @@ endfunction
 %!	  tVals, cap( sModelVals2, 0.0, max(sVals) ), '^-', ...
 %!	  tVals, cap( sModelVals3, 0.0, max(sVals) ), 'v-' );
 %!	grid on;
+%!	numFigs++; figure(numFigs);
+%!	plot( tVals, sPrimeVals, 'o-' );
+%!	grid on;
 %!	%
 %!	for n=1:numVals
 %!		[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, tVals(n), matS );
@@ -155,10 +159,13 @@ endfunction
 %!	  tVals, cap( sModelVals2, 0.0, max(sVals) ), '^-', ...
 %!	  tVals, cap( sModelVals3, 0.0, max(sVals) ), 'v-' );
 %!	grid on;
+%!	numFigs++; figure(numFigs);
+%!	plot( tVals, sPrimeVals, 'o-' );
+%!	grid on;
 %!	%
 %!	matS = diag(diag(matH));
 %!	for n=1:numVals
-%!		[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, tVals(n), matS, matS );
+%!		[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, tVals(n), matS, matE );
 %!		vecYVals(:,n) = vecY;
 %!		vecYPrimeVals(:,n) = vecYPrime;
 %!		sVals(n) = s;
@@ -173,4 +180,7 @@ endfunction
 %!	  tVals, cap( sModelVals1, 0.0, max(sVals) ), 'x-', ...
 %!	  tVals, cap( sModelVals2, 0.0, max(sVals) ), '^-', ...
 %!	  tVals, cap( sModelVals3, 0.0, max(sVals) ), 'v-' );
+%!	grid on;
+%!	numFigs++; figure(numFigs);
+%!	plot( tVals, sPrimeVals, 'o-' );
 %!	grid on;
