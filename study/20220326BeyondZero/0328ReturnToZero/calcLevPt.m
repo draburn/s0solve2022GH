@@ -1,6 +1,6 @@
 % Function...
 
-function [ vecY, vecYPrime, s, sPrime, deltaOmega, deltaOmegaPrime ] = calcLevPt( ...
+function [ vecY, vecYPrime, s, sPrime ] = calcLevPt( ...
   vecG, matH, t = 1.0, matS = [], matRegu = [], cholTol = sqrt(eps), doChecks = false )
 	% Note:
 	%  prime = d/dt; may be unreliable if matrix is singular.
@@ -39,16 +39,11 @@ function [ vecY, vecYPrime, s, sPrime, deltaOmega, deltaOmegaPrime ] = calcLevPt
 		% Try without regularization.
 		[ matR, cholFlag ] = chol( matM );
 		if ( 0 == cholFlag && min(diag(matR)) > cholTol*max(abs(diag(matR))) )
-			switch (nargout)
-			case 1
-				vecY = __fromChol_1( vecG, matH, t, matS, matR );
-			case 2
-				[ vecY, vecYPrime ] = __fromChol_2( vecG, matH, t, matS, matR );
-			case { 3, 4 }
-				[ vecY, vecYPrime, s, sPrime ] = __fromChol_4( vecG, matH, t, matS, matR );
-			otherwise
-				[ vecY, vecYPrime, s, sPrime, deltaOmega, deltaOmegaPrime ] = __fromChol_6( vecG, matH, t, matS, matR );
-			endswitch
+			if ( 1 == nargout )
+				vecY = matR \ ( matR' \ (-t*vecG) );
+			else
+				[ vecY, vecYPrime, s, sPrime ] = __fromChol( vecG, matH, t, matS, matR );
+			endif
 			return;
 		endif
 	endif
@@ -57,16 +52,11 @@ function [ vecY, vecYPrime, s, sPrime, deltaOmega, deltaOmegaPrime ] = calcLevPt
 	if ( 0 ~= cholFlag )
 		error( "Cholesky factorization failed even with regularization matrix." );
 	endif
-	switch (nargout)
-	case 1
-		vecY1 = __fromChol_1( vecG, matH, t, matS, matR );
-	case 2
-		[ vecY1, vecYPrime1 ] = __fromChol_2( vecG, matH, t, matS, matR );
-	case { 3, 4 }
-		[ vecY1, vecYPrime1, s1, sPrime1 ] = __fromChol_4( vecG, matH, t, matS, matR );
-	otherwise
-		[ vecY1, vecYPrime1, s1, sPrime1, deltaOmega1, deltaOmegaPrime1 ] = __fromChol_6( vecG, matH, t, matS, matR );
-	endswitch
+	if ( 1 == nargout )
+		vecY1 = matR \ ( matR' \ (-t*vecG) );
+	else
+		[ vecY1, vecYPrime1, s1, sPrime1 ] = __fromChol( vecG, matH, t, matS, matR );
+	endif
 	%
 	[ matR, cholFlag ] = chol( matM + 2.0*matRegu );
 	if ( 0 ~= cholFlag )
@@ -74,58 +64,33 @@ function [ vecY, vecYPrime, s, sPrime, deltaOmega, deltaOmegaPrime ] = calcLevPt
 	endif
 	switch (nargout)
 	case 1
-		vecY2 = __fromChol_1( vecG, matH, t, matS, matR );
-		vecY = vecY1 - (2.0*vecY2);
-	case 2
-		[ vecY2, vecYPrime2 ] = __fromChol_2( vecG, matH, t, matS, matR );
-		vecY = vecY1 - (2.0*vecY2);
-		vecYPrime = vecYPrime1 - (2.0*vecYPrime2);
-	case { 3, 4 }
-		[ vecY2, vecYPrime2, s2, sPrime2 ] = __fromChol_4( vecG, matH, t, matS, matR );
-		vecY = vecY1 - (2.0*vecY2);
-		vecYPrime = vecYPrime1 - (2.0*vecYPrime2);
-		s = s1 - (2.0*s2);
-		sPrime = sPrime1 - (2.0*sPrime2);
+		vecY2 = matR \ ( matR' \ (-t*vecG) );
+		vecY = 2.0*vecY1 - vecY2;
 	otherwise
-		[ vecY2, vecYPrime2, s2, sPrime2, deltaOmega2, deltaOmegaPrime2 ] = __fromChol_6( vecG, matH, t, matS, matR );
-		vecY = vecY1 - (2.0*vecY2);
-		vecYPrime = vecYPrime1 - (2.0*vecYPrime2);
-		s = s1 - (2.0*s2);
-		sPrime = sPrime1 - (2.0*sPrime2);
-		deltaOmega = deltaOmega1 - (2.0*deltaOmega2);
-		deltaOmegaPrime = deltaOmegaPrime1 - (2.0*deltaOmegaPrime2);
+		[ vecY2, vecYPrime2, s2, sPrime2 ] = __fromChol( vecG, matH, t, matS, matR );
+		vecY = 2.0*vecY1 - vecY2;
+		vecYPrime = 2.0*vecYPrime1 - vecYPrime2;
+		s = 2.0*s1 - s2;
+		sPrime = 2.0*sPrime1 - sPrime2;
 	endswitch
 	return;
 endfunction
 
 
-function vecY = __fromChol_1( vecG, matH, t, matS, matR )
-	vecMING = matR \ ( matR' \ (-vecG) );
-	vecY = t*vecMING;
-return;
-endfunction
-
-
-function [ vecY, vecYPrime ] = __fromChol_2( vecG, matH, t, matS, matR )
-	vecMING = matR \ ( matR' \ (-vecG) );
+function [ vecY, vecYPrime, s, sPrime ] = __fromChol( vecG, matH, t, matS, matR )
+	vecMING = matR \ ( matR' \ (-vecG) ); % Called "gamma" in notes 2022-05-15-2400.
 	vecY = t * vecMING;
 	vecSMING = matS * vecMING;
 	vecYPrime = matR \ ( matR' \ vecSMING );
-return;
-endfunction
-
-
-function [ vecY, vecYPrime, s, sPrime ] = __fromChol_4( vecG, matH, t, matS, matR )
-	vecMING = matR \ ( matR' \ (-vecG) );
-	vecY = t * vecMING;
-	vecSMING = matS * vecMING;
-	vecYPrime = matR \ ( matR' \ vecSMING );
-	s = todo
+	s0 = sqrt(max([ 0.0, vecMING' * vecSMING ]));
+	s = t * s0;
+	sPrime = ( vecYPrime' * vecSMING ) / s0;
 return;
 endfunction
 
 
 %!test
+%!	numFigs = 0;
 %!	setprngstates(0);
 %!	sizeX = 5;
 %!	sizeF = 5;
@@ -140,4 +105,43 @@ endfunction
 %!	matH = matJ'*matJ;
 %!	vecG = matJ'*vecF;
 %!	%
-%!	[ vecY, vecYPrime ] = calcLevPt( vecG, matH, 0.5 )
+%!	numVals = 101;
+%!	foo = linspace( 1.0, 0.0, numVals );
+%!	tVals = ( 1.0 - (foo.^2) ).^2;
+%!	for n=1:numVals
+%!		[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, tVals(n) );
+%!		vecYVals(:,n) = vecY;
+%!		vecYPrimeVals(:,n) = vecYPrime;
+%!		sVals(n) = s;
+%!		sPrimeVals(n) = sPrime;
+%!	endfor
+%!	n = 1+round( (numVals-1)*0.2 ); sModelVals1 = sVals(n) + sPrimeVals(n)*( tVals - tVals(n) );
+%!	n = 1+round( (numVals-1)*0.5 ); sModelVals2 = sVals(n) + sPrimeVals(n)*( tVals - tVals(n) );
+%!	n = 1+round( (numVals-1)*0.8 ); sModelVals3 = sVals(n) + sPrimeVals(n)*( tVals - tVals(n) );
+%!	numFigs++; figure(numFigs);
+%!	plot( ...
+%!	  tVals, sVals, 'o-', ...
+%!	  tVals, cap( sModelVals1, 0.0, max(sVals) ), 'x-', ...
+%!	  tVals, cap( sModelVals2, 0.0, max(sVals) ), '^-', ...
+%!	  tVals, cap( sModelVals3, 0.0, max(sVals) ), 'v-' );
+%!	grid on;
+%!	%
+%!	matS = diag(diag(matH));
+%!	for n=1:numVals
+%!		[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, tVals(n), matS );
+%!		vecYVals(:,n) = vecY;
+%!		vecYPrimeVals(:,n) = vecYPrime;
+%!		sVals(n) = s;
+%!		sPrimeVals(n) = sPrime;
+%!	endfor
+%!	n = 1+round( (numVals-1)*0.2 ); sModelVals1 = sVals(n) + sPrimeVals(n)*( tVals - tVals(n) );
+%!	n = 1+round( (numVals-1)*0.5 ); sModelVals2 = sVals(n) + sPrimeVals(n)*( tVals - tVals(n) );
+%!	n = 1+round( (numVals-1)*0.8 ); sModelVals3 = sVals(n) + sPrimeVals(n)*( tVals - tVals(n) );
+%!	numFigs++; figure(numFigs);
+%!	plot( ...
+%!	  tVals, sVals, 'o-', ...
+%!	  tVals, cap( sModelVals1, 0.0, max(sVals) ), 'x-', ...
+%!	  tVals, cap( sModelVals2, 0.0, max(sVals) ), '^-', ...
+%!	  tVals, cap( sModelVals3, 0.0, max(sVals) ), 'v-' );
+%!	grid on;
+%!	return;
