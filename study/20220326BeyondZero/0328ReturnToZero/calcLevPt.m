@@ -144,4 +144,22 @@ endfunction
 %!	  tVals, cap( sModelVals2, 0.0, max(sVals) ), '^-', ...
 %!	  tVals, cap( sModelVals3, 0.0, max(sVals) ), 'v-' );
 %!	grid on;
-%!	return;
+%!	%
+%!	matS = diag(diag(matH));
+%!	for n=1:numVals
+%!		[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, tVals(n), matS, matS );
+%!		vecYVals(:,n) = vecY;
+%!		vecYPrimeVals(:,n) = vecYPrime;
+%!		sVals(n) = s;
+%!		sPrimeVals(n) = sPrime;
+%!	endfor
+%!	n = 1+round( (numVals-1)*0.2 ); sModelVals1 = sVals(n) + sPrimeVals(n)*( tVals - tVals(n) );
+%!	n = 1+round( (numVals-1)*0.5 ); sModelVals2 = sVals(n) + sPrimeVals(n)*( tVals - tVals(n) );
+%!	n = 1+round( (numVals-1)*0.8 ); sModelVals3 = sVals(n) + sPrimeVals(n)*( tVals - tVals(n) );
+%!	numFigs++; figure(numFigs);
+%!	plot( ...
+%!	  tVals, sVals, 'o-', ...
+%!	  tVals, cap( sModelVals1, 0.0, max(sVals) ), 'x-', ...
+%!	  tVals, cap( sModelVals2, 0.0, max(sVals) ), '^-', ...
+%!	  tVals, cap( sModelVals3, 0.0, max(sVals) ), 'v-' );
+%!	grid on;
