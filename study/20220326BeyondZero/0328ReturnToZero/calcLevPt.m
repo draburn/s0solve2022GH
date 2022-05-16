@@ -85,6 +85,9 @@ function [ vecY, vecYPrime, s, sPrime ] = __fromChol( vecG, matH, t, matS, matR 
 	s0 = sqrt(max([ 0.0, vecMING' * vecSMING ]));
 	s = t * s0;
 	sPrime = max([ 0.0, ( vecYPrime' * vecSMING ) / s0 ]);
+	% Note: If we didn't bother calculating vecYPrime, we could get sPrime using:
+	%sPrime_alt = sumsq( matR' \ ( matS * vecMING ) ) / s0;
+	%assert( reldiff( sPrime, sPrime_alt ) < sqrt(eps) );
 return;
 endfunction
 
