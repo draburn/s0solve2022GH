@@ -92,8 +92,8 @@ endfunction
 %!test
 %!	numFigs = 0;
 %!	setprngstates(0);
-%!	sizeX = 5;
-%!	sizeF = 5;
+%!	sizeX = 200;
+%!	sizeF = 100;
 %!	%
 %!	vecF = randn(sizeF,1);
 %!	matJ = randn(sizeF,sizeX);
@@ -104,6 +104,18 @@ endfunction
 %!	endif
 %!	matH = matJ'*matJ;
 %!	vecG = matJ'*vecF;
+%!	matS = diag(diag(matH));
+%!	%
+%!	vecY = calcLevPt( vecG, matH, 0.0 );
+%!	vecY = calcLevPt( vecG, matH, 1.0 );
+%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 0.0 );
+%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 1.0 );
+%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 0.0, matS );
+%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 1.0, matS );
+%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 0.0, matS, matS );
+%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 1.0, matS, matS );
+%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 0.0, matS, matS, 0.0, true );
+%!	[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, 1.0, matS, matS, 0.0, true );
 %!	%
 %!	numVals = 101;
 %!	foo = linspace( 1.0, 0.0, numVals );
@@ -126,7 +138,6 @@ endfunction
 %!	  tVals, cap( sModelVals3, 0.0, max(sVals) ), 'v-' );
 %!	grid on;
 %!	%
-%!	matS = diag(diag(matH));
 %!	for n=1:numVals
 %!		[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, tVals(n), matS );
 %!		vecYVals(:,n) = vecY;
