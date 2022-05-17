@@ -93,6 +93,7 @@ endfunction
 
 
 %!test
+%!	msg( __FILE__, __LINE__, "Skipping this test." ); return;
 %!	numFigs = 0;
 %!	setprngstates(0);
 %!	sizeX = 200;
@@ -206,6 +207,65 @@ endfunction
 %!	%
 %!	for n=1:numVals
 %!		[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, tVals(n), matS_sing );
+%!		vecYVals(:,n) = vecY;
+%!		vecYPrimeVals(:,n) = vecYPrime;
+%!		sVals(n) = s;
+%!		sPrimeVals(n) = sPrime;
+%!	endfor
+%!	n = 1+round( (numVals-1)*0.2 ); sModelVals1 = sVals(n) + sPrimeVals(n)*( tVals - tVals(n) );
+%!	n = 1+round( (numVals-1)*0.5 ); sModelVals2 = sVals(n) + sPrimeVals(n)*( tVals - tVals(n) );
+%!	n = 1+round( (numVals-1)*0.8 ); sModelVals3 = sVals(n) + sPrimeVals(n)*( tVals - tVals(n) );
+%!	numFigs++; figure(numFigs);
+%!	plot( ...
+%!	  tVals, sVals, 'o-', ...
+%!	  tVals, cap( sModelVals1, 0.0, max(sVals) ), 'x-', ...
+%!	  tVals, cap( sModelVals2, 0.0, max(sVals) ), '^-', ...
+%!	  tVals, cap( sModelVals3, 0.0, max(sVals) ), 'v-' );
+%!	grid on;
+%!	numFigs++; figure(numFigs);
+%!	plot( tVals, sPrimeVals, 'o-' );
+%!	grid on;
+
+%!test
+%!	numFigs = 0;
+%!	setprngstates(0);
+%!	sizeX = 200;
+%!	sizeF = 100;
+%!	%
+%!	vecF = randn(sizeF,1);
+%!	matJ = randn(sizeF,sizeX);
+%!	if (1)
+%!		vecPhi = randn(sizeX,1);
+%!		vecPhi /= norm(vecPhi);
+%!		matJ -= (matJ*vecPhi)*(vecPhi');
+%!	endif
+%!	matB_gen = randn(sizeF,sizeX);
+%!	matB_unscaled = matB_gen'*matB_gen;
+%!	%matB_unscaled = diag(diag(matJ'*matJ));
+%!	bMax_unscaled = sqrt(2.0);
+%!	%
+%!	%
+%!	matH = matJ'*matJ;
+%!	vecG = matJ'*vecF;
+%!	%
+%!	% Regularize things?
+%!	matB_unscaled += sqrt(eps)*max(diag(matB_unscaled))*eye(sizeX,sizeX);
+%!	matH += sqrt(eps)*max(diag(matH))*eye(sizeX,sizeX);
+%!	%
+%!	% Scale B?
+%!	hobScale =  sqrt(max(diag(matH))) / max(diag(matB_unscaled));
+%!	matB_scaled = matB_unscaled * hobScale;
+%!	bMax_scaled = bMax_unscaled * hobScale;
+%!	%
+%!	%
+%!	numVals = 101;
+%!	foo = linspace( 1.0, 0.0, numVals );
+%!	tVals = ( 1.0 - (foo.^2) ).^2;
+%!	%
+%!	matS = matB_scaled' * matB_scaled;
+%!	matRegu = (eps^0.4)*diag(abs(diag(matS))) + (eps^0.7)*eye(sizeX,sizeX);
+%!	for n=1:numVals
+%!		[ vecY, vecYPrime, s, sPrime ] = calcLevPt( vecG, matH, tVals(n), matS, matRegu );
 %!		vecYVals(:,n) = vecY;
 %!		vecYPrimeVals(:,n) = vecYPrime;
 %!		sVals(n) = s;

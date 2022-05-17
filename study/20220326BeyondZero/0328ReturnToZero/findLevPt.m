@@ -73,6 +73,7 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt( vecG, matH, bMax=[], matB=[
 		%bVals = [ bLo, b, bHi, bMax ]
 		if ( abs( b - bMax ) <= bTol )
 			vecYPrime = funchYPrime();
+			%n
 			return;
 		endif
 		if ( b <= bLo || b >= bHi )
