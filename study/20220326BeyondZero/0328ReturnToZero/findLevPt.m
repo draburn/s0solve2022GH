@@ -16,12 +16,15 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt( vecG, matH, bMax=[], matB=[
 	if ( isempty(matRegu) )
 		matRegu = (eps^0.4)*diag(abs(diag(matBTB))) + (eps^0.7)*eye(sz,sz);
 	endif
-	cholRelThresh = mygetfield( prm, "cholRelThresh", sqrt(eps) );
-	bTol = mygetfield( prm, "bTol", 0.1 );
+	%
 	%
 	if ( mygetfield( prm, "useDogLeg", false ) )
 		error( "Not implemented!" );
 	endif
+	%
+	%
+	cholRelThresh = mygetfield( prm, "cholRelThresh", sqrt(eps) );
+	bTol = mygetfield( prm, "bTol", 0.1 );
 	%
 	[ b, bPrime, vecY, funchYPrime ] = __calc( tHi, vecG, matH, matB, matBTB, matRegu, cholRelThresh );
 	if ( isempty(bMax) )
@@ -45,7 +48,47 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt( vecG, matH, bMax=[], matB=[
 	bLo = b;
 	bPrimeLo = bPrime;
 	%
-	error( "Not implemented" );
+	iterMax = mygetfield( prm, "iterMax", 100 );
+	for n = 1 : iterMax
+		if ( bPrimeLo * ( tHi - tLo ) <= 2.0 * ( bMax - bLo ) )
+			deltaTLo = ( tHi - tLo ) / 2.0;
+		else
+			deltaTLo = ( bMax - bLo ) / bPrimeLo;
+		endif
+		if ( bPrimeHi * ( tHi - tLo ) <= 2.0 * ( bHi - bMax ) )
+			deltaTHi = ( tHi - tLo ) / 2.0;
+		else
+			deltaTHi = ( bHi - bMax ) / bPrimeHi;
+		endif
+		%
+		if ( deltaTHi < deltaTLo )
+			t = tHi - deltaTHi;
+		else
+			t = tLo + deltaTLo;
+		endif
+		%tVals = [ tLo, tLo + deltaTLo, t, tHi - deltaTHi, tHi ]
+		[ b, bPrime, vecY, funchYPrime ] = __calc( t, vecG, matH, matB, matBTB, matRegu, cholRelThresh );
+		%bVals = [ bLo, b, bHi, bMax ]
+		if ( abs( b - bMax ) <= bTol )
+			vecYPrime = funchYPrime();
+			return;
+		endif
+		%
+		if ( b < bMax )
+			assert( b > bLo );
+			assert( t > tLo );
+			tLo = t;
+			bLo = b;
+			bPrimeLo = bPrime;
+		else
+			assert( b < bHi );
+			assert( t < tHi );
+			tHi = t;
+			bHi = b;
+			bPrimeHi = bPrime;
+		endif
+	endfor
+	error( "Reached iteration limit."  );
 return;
 endfunction
 
@@ -67,6 +110,7 @@ function [ b, bPrime, vecY, funchYPrime ] = __calc( t, vecG, matH, matB, matS, m
 		endif
 		clear matR;
 	endif
+	msg( __FILE__, __LINE__, "Extrapolating!" );
 	%
 	[ matR1, cholFlag ] = chol( t*matH + (1.0-t)*matS + matE );
 	if ( 0 ~= cholFlag )
@@ -120,29 +164,31 @@ endfunction
 %!test
 %!	numFigs = 0;
 %!	setprngstates(0);
-%!	sizeX = 5;
-%!	sizeF = 5;
+%!	sizeX = 200;
+%!	sizeF = 100;
 %!	%
 %!	vecF = randn(sizeF,1);
 %!	matJ = randn(sizeF,sizeX);
-%!	if (0)
+%!	if (1)
 %!		vecPhi = randn(sizeX,1);
 %!		vecPhi /= norm(vecPhi);
 %!		matJ -= (matJ*vecPhi)*(vecPhi');
 %!	endif
-%!	matB_unscaled = diag(sqrt(diag(matJ'*matJ)));
-%!	bMax_unscaled = 1.0;
+%!	%matB_gen = randn(sizeF,sizeX);
+%!	%matB_unscaled = matB_gen'*matB_gen;
+%!	matB_unscaled = diag(diag(matJ'*matJ));
+%!	bMax_unscaled = sqrt(2.0);
 %!	%
 %!	%
 %!	matH = matJ'*matJ;
 %!	vecG = matJ'*vecF;
-%!	hobScale = 1.0%max(diag(matH)) / max(diag(matB_unscaled));
+%!	hobScale =  max(diag(matH)) / max(diag(matB_unscaled));
 %!	matB_scaled = matB_unscaled * hobScale;
 %!	bMax_scaled = bMax_unscaled * hobScale;
 %!	%
 %!	%
-%!	bMax = 1.0;
 %!	prm = [];
+%!	prm.bTol = 0.001;
 %!	[ vecY, vecYPrime, b, bPrime ] = findLevPt( vecG, matH, bMax_scaled, matB_scaled, prm );
 %!	[ norm(matB_scaled*vecY), bMax_scaled, norm(matB_scaled*vecY) - bMax_scaled ]
 %!	[ norm(matB_unscaled*vecY), bMax_unscaled, norm(matB_unscaled*vecY) - bMax_unscaled ]
