@@ -66,6 +66,8 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt( vecG, matH, bMax=[], matB=[
 		else
 			t = tLo + deltaTLo;
 		endif
+		assert( t > tLo );
+		assert( t < tHi );
 		%tVals = [ tLo, tLo + deltaTLo, t, tHi - deltaTHi, tHi ]
 		[ b, bPrime, vecY, funchYPrime ] = __calc( t, vecG, matH, matB, matBTB, matRegu, cholRelThresh );
 		%bVals = [ bLo, b, bHi, bMax ]
@@ -73,15 +75,16 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt( vecG, matH, bMax=[], matB=[
 			vecYPrime = funchYPrime();
 			return;
 		endif
+		if ( b <= bLo || b >= bHi )
+			error( "Iteration went out of bounds; the system may be poorly scaled." );
+		endif
 		%
 		if ( b < bMax )
-			assert( b > bLo );
 			assert( t > tLo );
 			tLo = t;
 			bLo = b;
 			bPrimeLo = bPrime;
 		else
-			assert( b < bHi );
 			assert( t < tHi );
 			tHi = t;
 			bHi = b;
@@ -174,15 +177,21 @@ endfunction
 %!		vecPhi /= norm(vecPhi);
 %!		matJ -= (matJ*vecPhi)*(vecPhi');
 %!	endif
-%!	%matB_gen = randn(sizeF,sizeX);
-%!	%matB_unscaled = matB_gen'*matB_gen;
-%!	matB_unscaled = diag(diag(matJ'*matJ));
+%!	matB_gen = randn(sizeF,sizeX);
+%!	matB_unscaled = matB_gen'*matB_gen;
+%!	%matB_unscaled = diag(diag(matJ'*matJ));
 %!	bMax_unscaled = sqrt(2.0);
 %!	%
 %!	%
 %!	matH = matJ'*matJ;
 %!	vecG = matJ'*vecF;
-%!	hobScale =  max(diag(matH)) / max(diag(matB_unscaled));
+%!	%
+%!	% Regularize things?
+%!	matB_unscaled += sqrt(eps)*max(diag(matB_unscaled))*eye(sizeX,sizeX);
+%!	matH += sqrt(eps)*max(diag(matH))*eye(sizeX,sizeX);
+%!	%
+%!	% Scale B?
+%!	hobScale =  sqrt(max(diag(matH))) / max(diag(matB_unscaled));
 %!	matB_scaled = matB_unscaled * hobScale;
 %!	bMax_scaled = bMax_unscaled * hobScale;
 %!	%
