@@ -26,6 +26,9 @@
 %    - Automatic scaling in X, (makes subspace basis non-orthogonal)?
 
 function [ vecX_best, vecF_best, datOut ] = zlinsolf100( funchF, vecX_initial, vecF_initial=[], prm=[] )
+
+	error( "This zlinsolf is not up-to-date. Pelase see ../0328ReturnToZero/zlinsolf100.m." );
+
 	% Init...
 	datOut = [];
 	fevalCount = 0;
