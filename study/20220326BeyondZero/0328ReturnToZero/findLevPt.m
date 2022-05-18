@@ -21,17 +21,26 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt( vecG, matH, bMax=[], matB=[
 	if ( mygetfield( prm, "useDogLeg", false ) )
 		error( "Not implemented!" );
 	endif
+	
+	%[ norm( matH\vecG ), vecG'*matH*vecG, norm( matH*vecG), norm( matH*randn(sz,1) ), norm( matH*randn(sz,1) ), norm( matH*randn(sz,1) ) ]
+	%[ norm( matBTB\vecG ), vecG'*matBTB*vecG, norm( matBTB*vecG), norm( matBTB*randn(sz,1) ), norm( matBTB*randn(sz,1) ), norm( matBTB*randn(sz,1) ) ]
+	%foo_b1 = norm( matB * (matH\vecG) )
+	%foo_b0prime = norm( matB * (matBTB\vecG) )
+	%msg( __FILE__, __LINE__, "Goodbye!" ); return;
+	
 	%
 	%
 	cholRelThresh = mygetfield( prm, "cholRelThresh", sqrt(eps) );
-	bTol = mygetfield( prm, "bTol", 0.1 );
+	bTol = mygetfield( prm, "bTol", 0.1*bMax );
 	%
 	[ b, bPrime, vecY, funchYPrime ] = __calc( tHi, vecG, matH, matB, matBTB, matRegu, cholRelThresh );
 	if ( isempty(bMax) )
 		vecYPrime = funchYPrime();
+		msg( __FILE__, __LINE__, "Hey!" );
 		return;
 	elseif ( b <= bMax + bTol )
 		vecYPrime = funchYPrime();
+		msg( __FILE__, __LINE__, "Hey!" );
 		return;
 	endif
 	bHi = b;
@@ -42,7 +51,11 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt( vecG, matH, bMax=[], matB=[
 		if ( b > bMax + bTol )
 			msg( __FILE__, __LINE__, "WARNING: tLo was too large for bMax; returning point for tLo." );
 		endif
+		b
+		bMax
+		bTol
 		vecYPrime = funchYPrime();
+		msg( __FILE__, __LINE__, "Hey!" );
 		return;
 	endif
 	bLo = b;
@@ -61,6 +74,13 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt( vecG, matH, bMax=[], matB=[
 			deltaTHi = ( bHi - bMax ) / bPrimeHi;
 		endif
 		%
+		%if ( 1 == n )
+		%	% Force an over-step on first iteration.
+		%	deltaTHi = max([ 2.0*deltaTHi, (tHi-tLo)*0.0001 ]);
+		%	deltaTLo = max([ 2.0*deltaTLo, (tHi-tLo)*0.0001 ]);
+		%	deltaTHi = min([ deltaTHi, (tHi-tLo)/2.0 ]);
+		%	deltaTLo = min([ deltaTLo, (tHi-tLo)/2.0 ]);
+		%endif
 		if ( deltaTHi < deltaTLo )
 			t = tHi - deltaTHi;
 		else
@@ -68,12 +88,13 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt( vecG, matH, bMax=[], matB=[
 		endif
 		assert( t > tLo );
 		assert( t < tHi );
-		%tVals = [ tLo, tLo + deltaTLo, t, tHi - deltaTHi, tHi ]
+		tVals = [ tLo, tLo + deltaTLo, t, tHi - deltaTHi, tHi ]
 		[ b, bPrime, vecY, funchYPrime ] = __calc( t, vecG, matH, matB, matBTB, matRegu, cholRelThresh );
-		%bVals = [ bLo, b, bHi, bMax ]
+		bVals = [ bLo, b, bHi, bMax ]
 		if ( abs( b - bMax ) <= bTol )
 			vecYPrime = funchYPrime();
-			%n
+			n
+			msg( __FILE__, __LINE__, "Hey!" );
 			return;
 		endif
 		if ( b <= bLo || b >= bHi )
@@ -160,7 +181,9 @@ function [ vecY, b, bPrime, vecRho ] = __calcGivenR( t, vecG, matR, matB, matS )
 	vecRho = matR' \ ( matS * vecGamma );
 	vecY = t * vecGamma;
 	b = t * b0;
-	bPrime = sumsq( vecRho ) / b0;
+	bPrime = sumsq( vecRho ) / b0
+	%myquat = b0/norm(vecRho)
+	%error( "HALT!" );
 return;
 endfunction
 
@@ -192,13 +215,46 @@ endfunction
 %!	matH += sqrt(eps)*max(diag(matH))*eye(sizeX,sizeX);
 %!	%
 %!	% Scale B?
-%!	hobScale =  sqrt(max(diag(matH))) / max(diag(matB_unscaled));
+%!	%hobScale =  sqrt(max(diag(matH))) / max(diag(matB_unscaled));
+%!	%hobScale =  1.0e-4*sqrt(max(diag(matH))) / max(diag(matB_unscaled))
+%!	%bPrime0 = norm(matB_unscaled*( (matB_unscaled'*matB_unscaled) \ vecG ))
+%!	%b1 = norm(matB_unscaled*( matH \ vecG ))
+%!	%hobScale =  sqrt(bPrime0/b1)
+%!	%hobScale = sqrt( norm(matH\vecG) / norm(matH\(matB_unscaled'*(matB_unscaled*(matH\vecG)))) )
+%!	vecHUG = matH\vecG;
+%!	vecSHUG = matB_unscaled' * ( matB_unscaled*vecHUG );
+%!	if (0)
+%!	vecHUSHUG = matH \ vecSHUG;
+%!	[ norm( vecSHUG ), norm(vecHUSHUG) ]
+%!	shugthushug = vecSHUG' * vecHUSHUG
+%!	hobScale2 = norm( matB_unscaled*vecHUG ) / sqrt( shugthushug )
+%!	a = sumsq( matB_unscaled * vecHUSHUG )
+%!	b = 2.0*( vecSHUG' * vecHUSHUG )
+%!	c = sumsq( matB_unscaled * vecHUG ) * 3.0/4.0
+%!	discrim = b^2 - 4 * a * c
+%!	a*(hobScale2^4)
+%!	b*(hobScale2^2)
+%!	return;
+%!	hobScale = hobScale2
+%!	else
+%!		matS_foo = matB_unscaled'*matB_unscaled;
+%!		matS_foo *= sqrt(eps) * max(diag(matH)) / max(diag(matS_foo));
+%!		matR1 = chol( matH + matS_foo );		
+%!		matR2 = chol( matH + 2.0*matS_foo );
+%!		vecRTUSHUG = (2.0*( matR1' \ vecSHUG )) - ( matR2' \ vecSHUG );
+%!		hobScale = norm( matB_unscaled*vecHUG ) / norm( vecRTUSHUG )
+%!		%matR = chol( matH );
+%!		%vecRTUSHUG = matR' \ vecSHUG;
+%!		%hobScale = norm( matB_unscaled*vecHUG ) / norm( vecRTUSHUG )
+%!		%return;
+%!	endif
 %!	matB_scaled = matB_unscaled * hobScale;
 %!	bMax_scaled = bMax_unscaled * hobScale;
+%!	%rcond( matH + matB_scaled'*matB_scaled )
 %!	%
 %!	%
 %!	prm = [];
-%!	prm.bTol = 0.001;
+%!	prm.bTol = 0.001*bMax_scaled;
 %!	[ vecY, vecYPrime, b, bPrime ] = findLevPt( vecG, matH, bMax_scaled, matB_scaled, prm );
 %!	[ norm(matB_scaled*vecY), bMax_scaled, norm(matB_scaled*vecY) - bMax_scaled ]
 %!	[ norm(matB_unscaled*vecY), bMax_unscaled, norm(matB_unscaled*vecY) - bMax_unscaled ]

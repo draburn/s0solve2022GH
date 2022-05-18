@@ -227,6 +227,7 @@ endfunction
 %!	grid on;
 
 %!test
+%!	%msg( __FILE__, __LINE__, "Skipping this test." ); return;
 %!	numFigs = 0;
 %!	setprngstates(0);
 %!	sizeX = 200;
@@ -253,7 +254,19 @@ endfunction
 %!	matH += sqrt(eps)*max(diag(matH))*eye(sizeX,sizeX);
 %!	%
 %!	% Scale B?
-%!	hobScale =  sqrt(max(diag(matH))) / max(diag(matB_unscaled));
+%!	matS = matB_unscaled'*matB_unscaled;
+%!	hobScale =  1.0e-4*sqrt(max(diag(matH))) / max(diag(matB_unscaled))
+%!	%hobScale = sqrt( norm(matH) / norm(matB_unscaled'*matB_unscaled) );
+%!	%hobScale = sqrt( norm(matH) ) / norm(matB_unscaled);
+%!	%hobScale = norm(matJ) / norm(matB_unscaled);
+%!	%eigH = eig(matH); eigS = eig(matB_unscaled'*matB_unscaled);
+%!	%hobScale = eigH(ceil(sqrt(sizeX)))/eigS(sizeX-floor(sqrt(sizeX)))
+%!	bPrime0 = norm(matB_unscaled*( (matB_unscaled'*matB_unscaled) \ vecG ))
+%!	b1 = norm(matB_unscaled*( matH \ vecG ))
+%!	hobScale =  sqrt( bPrime0 / b1 )
+%!	hobScale = sqrt( norm(matH\vecG) / norm(matH\(matS*(matH\vecG))) )
+%!	hobScale = 2.0e-5
+%!	%
 %!	matB_scaled = matB_unscaled * hobScale;
 %!	bMax_scaled = bMax_unscaled * hobScale;
 %!	%
@@ -261,6 +274,7 @@ endfunction
 %!	numVals = 101;
 %!	foo = linspace( 1.0, 0.0, numVals );
 %!	tVals = ( 1.0 - (foo.^2) ).^2;
+%!	tVals *= 1.0e-7;
 %!	%
 %!	matS = matB_scaled' * matB_scaled;
 %!	matRegu = (eps^0.4)*diag(abs(diag(matS))) + (eps^0.7)*eye(sizeX,sizeX);
@@ -271,6 +285,8 @@ endfunction
 %!		sVals(n) = s;
 %!		sPrimeVals(n) = sPrime;
 %!	endfor
+%!	btugNorm = norm( matB_scaled * ( matS \ vecG ) )
+%!	sModelVals0 = btugNorm*tVals./(eps+1.0-tVals);
 %!	n = 1+round( (numVals-1)*0.2 ); sModelVals1 = sVals(n) + sPrimeVals(n)*( tVals - tVals(n) );
 %!	n = 1+round( (numVals-1)*0.5 ); sModelVals2 = sVals(n) + sPrimeVals(n)*( tVals - tVals(n) );
 %!	n = 1+round( (numVals-1)*0.8 ); sModelVals3 = sVals(n) + sPrimeVals(n)*( tVals - tVals(n) );
@@ -279,7 +295,8 @@ endfunction
 %!	  tVals, sVals, 'o-', ...
 %!	  tVals, cap( sModelVals1, 0.0, max(sVals) ), 'x-', ...
 %!	  tVals, cap( sModelVals2, 0.0, max(sVals) ), '^-', ...
-%!	  tVals, cap( sModelVals3, 0.0, max(sVals) ), 'v-' );
+%!	  tVals, cap( sModelVals3, 0.0, max(sVals) ), 'v-', ...
+%!	  tVals, cap( sModelVals0, 0.0, max(sVals) ), 'p-' );
 %!	grid on;
 %!	numFigs++; figure(numFigs);
 %!	plot( tVals, sPrimeVals, 'o-' );
