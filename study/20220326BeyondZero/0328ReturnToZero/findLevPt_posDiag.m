@@ -1,6 +1,9 @@
 % Function...
+%  findLev for positive (positive definite) diagonal matrices.
+%  Had hoped this would provide a good initial guess for the general case,
+%   but, that doesn't seem to be happening.
 
-function [ vecY, vecYPrime, b, bPrime ] = findLevPt_posDiag( vecG, matDH, bMax, matB, matDC, prm=[] )
+function [ vecY, vecYPrime, b, bPrime, t ] = findLevPt_posDiag( vecG, matDH, bMax, matB, matDC, prm=[] )
 	% PARSE INPUT.
 	sz = size( vecG, 1 );
 	assert( isrealarray(vecG,[sz,1]) );
@@ -33,8 +36,8 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt_posDiag( vecG, matDH, bMax, 
 	%
 	%
 	% DO PREP.
-	tHi = 1.0;
-	[ b, bPrime, vecY, vecYPrime ] = __calc( tHi, vecG, matDH, matB, matDC, prm );
+	t = 1.0;
+	[ b, bPrime, vecY, vecYPrime ] = __calc( t, vecG, matDH, matB, matDC, prm );
 	if ( isempty(bMax) )
 		msgif( doMsg, __FILE__, __LINE__, "SUCCESS: Full step was requested." );
 		return;
@@ -42,11 +45,13 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt_posDiag( vecG, matDH, bMax, 
 		msgif( doMsg, __FILE__, __LINE__, "SUCCESS: Full step is within tolerance." );
 		return;
 	endif
+	tHi = t;
 	bHi = b;
 	bPrimeHi = bPrime;
 	%
-	tLo = 0.0;
-	[ b, bPrime, vecY, vecYPrime ] = __calc( tLo, vecG, matDH, matB, matDC, prm );
+	t = 0.0;
+	[ b, bPrime, vecY, vecYPrime ] = __calc( t, vecG, matDH, matB, matDC, prm );
+	tLo = t;
 	bLo = b; % Should be zero.
 	bPrimeLo = bPrime;
 	%
@@ -153,15 +158,20 @@ endfunction
 %!	cScale = norm( matB*(matDC\vecG) ) / norm( matB*(matC\vecG) );
 %!	matDH *= hScale;
 %!	matDC *= cScale;
+%!	%[ norm(matB*(matC\vecG)), norm(matB*(matDC\vecG)) ]
+%!	%[ norm(matB*(matH\vecG)), norm(matB*(matDH\vecG)) ]
 %!	%	
 %!	bMax = 0.1;
 %!	prm = [];
 %!	prm.doMsg = true;
-%!	[ vecY, vecYPrime, b, bPrime ] = findLevPt_posDiag( vecG, matDH, bMax, matB, matDC, prm );
-%!	g_ddh_ddc_y_yp  = [ vecG, diag(matDH), diag(matDC), vecY, vecYPrime ]
+%!	[ vecY, vecYPrime, b, bPrime, t ] = findLevPt_posDiag( vecG, matDH, bMax, matB, matDC, prm );
 %!	bActual = norm(matB*vecY);
-%!	msg( __FILE__, __LINE__, sprintf( "bReported = %g, bDesired = %g,  bActual = %g,  residual = %g; bPrime = %g.", ...
-%!	  b, bMax, bActual, bActual - bMax, bPrime ) );
+%!	vecYWouldBe = ( t*matH + (1.0-t)*matC ) \ (-vecG);
+%!	bWouldBe = norm( matB*vecYWouldBe );
+%!	g_ddh_ddc_y_ywb_yp  = [ vecG, diag(matDH), diag(matDC), vecY, vecYWouldBe, vecYPrime ]
+%!	msg( __FILE__, __LINE__, sprintf( "bPrime = %g;  t = %g.", bPrime, t ) );
+%!	msg( __FILE__, __LINE__, sprintf( "bWouldBe = %f,  bReported = %g,  bDesired = %g,  bActual = %g;  residual = %g.", ...
+%!	  bWouldBe, b, bMax, bActual, bActual - bMax, bPrime ) );
 %!	printf( "\n\n" );
 
 
@@ -188,11 +198,14 @@ endfunction
 %!	bMax = 0.1;
 %!	prm = [];
 %!	prm.doMsg = true;
-%!	[ vecY, vecYPrime, b, bPrime ] = findLevPt_posDiag( vecG, matDH, bMax, matB, matDC, prm );
-%!	g_ddh_ddc_y_yp  = [ vecG, diag(matDH), diag(matDC), vecY, vecYPrime ]
+%!	[ vecY, vecYPrime, b, bPrime, t ] = findLevPt_posDiag( vecG, matDH, bMax, matB, matDC, prm );
 %!	bActual = norm(matB*vecY);
-%!	msg( __FILE__, __LINE__, sprintf( "bReported = %g, bDesired = %g,  bActual = %g,  residual = %g; bPrime = %g.", ...
-%!	  b, bMax, bActual, bActual - bMax, bPrime ) );
+%!	vecYWouldBe = ( t*matH + (1.0-t)*matC ) \ (-vecG);
+%!	bWouldBe = norm( matB*vecYWouldBe );
+%!	g_ddh_ddc_y_ywb_yp  = [ vecG, diag(matDH), diag(matDC), vecY, vecYWouldBe, vecYPrime ]
+%!	msg( __FILE__, __LINE__, sprintf( "bPrime = %g;  t = %g.", bPrime, t ) );
+%!	msg( __FILE__, __LINE__, sprintf( "bWouldBe = %f,  bReported = %g,  bDesired = %g,  bActual = %g;  residual = %g.", ...
+%!	  bWouldBe, b, bMax, bActual, bActual - bMax, bPrime ) );
 %!	printf( "\n\n" );
 
 
@@ -219,10 +232,14 @@ endfunction
 %!	bMax = 0.1;
 %!	prm = [];
 %!	prm.doMsg = true;
-%!	[ vecY, vecYPrime, b, bPrime ] = findLevPt_posDiag( vecG, matDH, bMax, matB, matDC, prm );
+%!	[ vecY, vecYPrime, b, bPrime, t ] = findLevPt_posDiag( vecG, matDH, bMax, matB, matDC, prm );
 %!	bActual = norm(matB*vecY);
-%!	msg( __FILE__, __LINE__, sprintf( "bReported = %g, bDesired = %g,  bActual = %g,  residual = %g; bPrime = %g.", ...
-%!	  b, bMax, bActual, bActual - bMax, bPrime ) );
+%!	vecYWouldBe = ( t*matH + (1.0-t)*matC ) \ (-vecG);
+%!	bWouldBe = norm( matB*vecYWouldBe );
+%!	%g_ddh_ddc_y_ywb_yp  = [ vecG, diag(matDH), diag(matDC), vecY, vecYWouldBe, vecYPrime ]
+%!	msg( __FILE__, __LINE__, sprintf( "bPrime = %g;  t = %g.", bPrime, t ) );
+%!	msg( __FILE__, __LINE__, sprintf( "bWouldBe = %f,  bReported = %g,  bDesired = %g,  bActual = %g;  residual = %g.", ...
+%!	  bWouldBe, b, bMax, bActual, bActual - bMax, bPrime ) );
 %!	printf( "\n\n" );
 
 
@@ -249,8 +266,12 @@ endfunction
 %!	bMax = 0.1;
 %!	prm = [];
 %!	prm.doMsg = true;
-%!	[ vecY, vecYPrime, b, bPrime ] = findLevPt_posDiag( vecG, matDH, bMax, matB, matDC, prm );
+%!	[ vecY, vecYPrime, b, bPrime, t ] = findLevPt_posDiag( vecG, matDH, bMax, matB, matDC, prm );
 %!	bActual = norm(matB*vecY);
-%!	msg( __FILE__, __LINE__, sprintf( "bReported = %g, bDesired = %g,  bActual = %g,  residual = %g; bPrime = %g.", ...
-%!	  b, bMax, bActual, bActual - bMax, bPrime ) );
+%!	vecYWouldBe = ( t*matH + (1.0-t)*matC ) \ (-vecG);
+%!	bWouldBe = norm( matB*vecYWouldBe );
+%!	%g_ddh_ddc_y_ywb_yp  = [ vecG, diag(matDH), diag(matDC), vecY, vecYWouldBe, vecYPrime ]
+%!	msg( __FILE__, __LINE__, sprintf( "bPrime = %g;  t = %g.", bPrime, t ) );
+%!	msg( __FILE__, __LINE__, sprintf( "bWouldBe = %f,  bReported = %g,  bDesired = %g,  bActual = %g;  residual = %g.", ...
+%!	  bWouldBe, b, bMax, bActual, bActual - bMax, bPrime ) );
 %!	printf( "\n\n" );
