@@ -73,6 +73,81 @@ function [ vecY, vecYPrime, b, bPrime, n ] = findLevPt( vecG, matH, bMax=[], mat
 		return;
 	endif
 	%
+	useLoop0518 = true;
+	if (useLoop0518)
+	iterMax = mygetfield( prm, "iterMax", 100 );
+	accelCoeff = 10.0;
+	momentumFactor = 1.0;
+	stepSideCounter = 0;
+	for n = 1 : iterMax
+		if ( bPrimeLo * ( tHi - tLo ) <= 2.0 * ( bMax - bLo ) )
+			deltaTLo = ( tHi - tLo ) / 2.0;
+		else
+			deltaTLo = ( bMax - bLo ) / bPrimeLo;
+			if ( deltaTLo < 100.0*eps )
+				deltaTLo = 100.0*eps;
+			endif
+		endif
+		if ( bPrimeHi * ( tHi - tLo ) <= 2.0 * ( bHi - bMax ) )
+			deltaTHi = ( tHi - tLo ) / 2.0;
+		else
+			deltaTHi = ( bHi - bMax ) / bPrimeHi;
+			if ( deltaTHi < 100.0*eps )
+				deltaTHi = 100.0*eps;
+			endif
+		endif
+		%
+		if ( deltaTHi < deltaTLo )
+			if ( stepSideCounter >= 3 )
+				momentumFactor *= accelCoeff;
+			endif
+			t = tHi - momentumFactor*deltaTHi;
+			stepSideCounter++;
+			if ( t < (tHi+tLo)/2.0 )
+				t = (tHi+tLo)/2.0;
+				stepSideCounter = 0;
+				momentumFactor = 1.0;
+			endif
+		else
+			if ( stepSideCounter <= -3 )
+				momentumFactor *= accelCoeff;
+			endif
+			t = tLo + momentumFactor*deltaTLo;
+			stepSideCounter--;
+			if ( t > (tHi+tLo)/2.0 )
+				t = (tHi+tLo)/2.0;
+				stepSideCounter = 0;
+				momentumFactor = 1.0;
+			endif
+		endif
+		%
+		assert( t > tLo );
+		assert( t < tHi );
+		[ b, bPrime, vecY, funchYPrime ] = __calc( t, vecG, matH, matB, matBTB, matRegu, cholRelThresh );
+		msgif( true, __FILE__, __LINE__, sprintf( "  iter %d:  t: %g ~ %g ~ %g;  (1-t: %g ~ %g ~ %g);  b: %g ~ %g ~ %g (%g).", ...
+		  n, tLo, t, tHi, 1.0-tLo, 1.0-t, 1.0-tHi, bLo, b, bHi, bMax ) );
+		if ( abs( b - bMax ) <= bTol )
+			vecYPrime = funchYPrime();
+			return;
+		endif
+		if ( b <= bLo || b >= bHi )
+			error( "Iteration went out of bounds; the system may be poorly scaled." );
+		endif
+		if ( b < bMax )
+			assert( t > tLo );
+			tLo = t;
+			bLo = b;
+			bPrimeLo = bPrime;
+		else
+			assert( t < tHi );
+			tHi = t;
+			bHi = b;
+			bPrimeHi = bPrime;
+		endif
+	endfor
+	return;
+	endif
+	%
 	iterMax = mygetfield( prm, "iterMax", 100 );
 	for n = 1 : iterMax
 		if ( bPrimeLo * ( tHi - tLo ) <= 2.0 * ( bMax - bLo ) )
@@ -148,7 +223,7 @@ function [ vecY, vecYPrime, b, bPrime, n ] = findLevPt( vecG, matH, bMax=[], mat
 		endif
 		endif
 		%
-		if (1)
+		if (0)
 		if ( 1 == n )
 			mu = norm( matB * (matBTB\vecG) ) / bMax;
 			t = 1.0/(1.0+mu)

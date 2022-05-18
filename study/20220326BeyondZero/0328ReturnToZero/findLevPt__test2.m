@@ -8,9 +8,11 @@
 	% Switc to using exp(randn) but then normalize...
 	%setprngstates(48947952); sizeX = 500; sizeF = 500; sizeB = sizeX; % 14, 9, 6 with old.
 	%setprngstates(81975888); sizeX = 500; sizeF = 500; sizeB = sizeX; % 5, 12, 4 with old.
-	setprngstates(25336720); sizeX = 500; sizeF = 500; sizeB = sizeX; % 8, 3, 17 with _basic(); 21, 6, 3 with old.
+	%setprngstates(25336720); sizeX = 500; sizeF = 500; sizeB = sizeX; % 8, 3, 17 with _basic(); 21, 6, 3 with old.
+	%setprngstates(43606048); sizeX = 500; sizeF = 400; sizeB = sizeX; % 21, 4, 3 with old; 13, 5, 3 with old+useLoop0518 orig.
+	setprngstates(51107136); sizeX = 1000; sizeF = 500; sizeB = sizeX; % 19, 4, 2 with old; 12, 6, 4 with old+useLoop0518 orig, 11, 6, 4 with revised.
 	%
-	useBasic = true;
+	useBasic = false;
 	if (0)
 	vecX = randn(sizeX,1) .* exp(randn(sizeX,1)) .* exp(5.0*randn());
 	matJ = randn(sizeF,sizeX) .* exp(3.0*randn(sizeF,sizeX)) .* exp(5.0*randn());
