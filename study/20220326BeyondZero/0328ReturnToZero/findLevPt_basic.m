@@ -1,14 +1,14 @@
 % Function...
 
-function [ vecY, vecYPrime, b, bPrime, iterCount ] = findLevPt_basic( vecG, matH, bMax=[], matB=[], prm=[] )
+function [ vecY, vecYPrime, b, bPrime, iterCount ] = findLevPt_basic( vecG, matH, bMaxTrgt=[], matB=[], prm=[] )
 	% PARSE INPUT.
 	sz = size( vecG, 1 );
 	assert( isrealarray(vecG,[sz,1]) );
 	assert( isrealarray(matH,[sz,sz]) );
 	assert( issymmetric(matH) );
-	if ( ~isempty(bMax) )
-		assert( isrealscalar(bMax) );
-		assert( 0.0 < bMax );
+	if ( ~isempty(bMaxTrgt) )
+		assert( isrealscalar(bMaxTrgt) );
+		assert( 0.0 < bMaxTrgt );
 	endif
 	if ( isempty(matB) )
 		hScale = norm(diag(matH));
@@ -22,7 +22,7 @@ function [ vecY, vecYPrime, b, bPrime, iterCount ] = findLevPt_basic( vecG, matH
 	assert( isrealscalar(bRelTol) );
 	assert( 0.0 < bRelTol );
 	assert( bRelTol < 1.0 );
-	bTol = bMax * bRelTol;
+	bTol = bMaxTrgt * bRelTol;
 	%
 	iterMax = mygetfield( prm, "iterMax", 100 );
 	assert( isrealscalar(iterMax) );
@@ -40,10 +40,10 @@ function [ vecY, vecYPrime, b, bPrime, iterCount ] = findLevPt_basic( vecG, matH
 	%
 	tHi = 1.0;
 	[ b, bPrime, vecY, vecYPrime ] = __calc( tHi, vecG, matH, matB, matC, prm );
-	if ( isempty(bMax) )
+	if ( isempty(bMaxTrgt) )
 		msgif( doMsg, __FILE__, __LINE__, "SUCCESS: Full step was requested." );
 		return;
-	elseif ( b <= bMax + bTol )
+	elseif ( b <= bMaxTrgt + bTol )
 		msgif( doMsg, __FILE__, __LINE__, "SUCCESS: Full step is within tolerance." );
 		return;
 	endif
@@ -59,18 +59,18 @@ function [ vecY, vecYPrime, b, bPrime, iterCount ] = findLevPt_basic( vecG, matH
 	% DO WORK.
 	for iterCount = 1 : iterMax
 		% Find next guess according to either linear model, but cap to midpoint.
-		if ( bPrimeLo * ( tHi - tLo ) <= 2.0 * ( bMax - bLo ) )
+		if ( bPrimeLo * ( tHi - tLo ) <= 2.0 * ( bMaxTrgt - bLo ) )
 			deltaTLo = ( tHi - tLo ) / 2.0;
 		else
-			deltaTLo = ( bMax - bLo ) / bPrimeLo;
+			deltaTLo = ( bMaxTrgt - bLo ) / bPrimeLo;
 			if ( deltaTLo < sqrt(eps) )
 				deltaTLo = sqrt(eps);
 			endif
 		endif
-		if ( bPrimeHi * ( tHi - tLo ) <= 2.0 * ( bHi - bMax ) )
+		if ( bPrimeHi * ( tHi - tLo ) <= 2.0 * ( bHi - bMaxTrgt ) )
 			deltaTHi = ( tHi - tLo ) / 2.0;
 		else
-			deltaTHi = ( bHi - bMax ) / bPrimeHi;
+			deltaTHi = ( bHi - bMaxTrgt ) / bPrimeHi;
 			if ( deltaTHi < sqrt(eps) )
 				deltaTHi = sqrt(eps);
 			endif
@@ -86,21 +86,22 @@ function [ vecY, vecYPrime, b, bPrime, iterCount ] = findLevPt_basic( vecG, matH
 		endif
 		if ( 0 == mod(iterCount,3) )
 			t = (tLo+tHi)/2.0;
+			%t = (tLo+tHi+deltaTLo-deltaTHi)/2.0;
 		endif
 		assert( t > tLo ); % A few checks, just to be safe.
 		assert( t < tHi );
 		[ b, bPrime, vecY, vecYPrme ] = __calc( t, vecG, matH, matB, matC, prm );
-		if ( abs( b - bMax ) <= bTol )
+		if ( abs( b - bMaxTrgt ) <= bTol )
 			msgif( doMsg, __FILE__, __LINE__, sprintf( "SUCCESS: Converged after %d iterations.", iterCount ) );
 			return;
 		endif
 		msgif( doMsg, __FILE__, __LINE__, sprintf( "  iter %d:  t: %g ~ %g ~ %g;  (1-t: %g ~ %g ~ %g);  b: %g ~ %g ~ %g (%g).", ...
-		  iterCount, tLo, t, tHi, 1.0-tLo, 1.0-t, 1.0-tHi, bLo, b, bHi, bMax ) );
+		  iterCount, tLo, t, tHi, 1.0-tLo, 1.0-t, 1.0-tHi, bLo, b, bHi, bMaxTrgt ) );
 		if ( b <= bLo || b >= bHi )
 			error( "ALGORITHM BREAKDOWN: Iteration went out of bounds; matrices may be poorly scaled." );
 		endif
 		%
-		if ( b < bMax )
+		if ( b < bMaxTrgt )
 			assert( t > tLo );
 			tLo = t;
 			bLo = b;
@@ -167,13 +168,13 @@ endfunction
 %!	matH = matJ'*matJ;
 %!	vecG = matJ'*vecF;
 %!	%	
-%!	bMax = 0.1;
+%!	bMaxTrgt = 0.1;
 %!	prm = [];
 %!	prm.doMsg = true;
-%!	[ vecY, vecYPrime, b, bPrime ] = findLevPt_basic( vecG, matH, bMax, matB, prm )
+%!	[ vecY, vecYPrime, b, bPrime ] = findLevPt_basic( vecG, matH, bMaxTrgt, matB, prm )
 %!	bActual = norm(matB*vecY);
 %!	msg( __FILE__, __LINE__, sprintf( "bDesired = %g,  bReported = %g,  bActual = %g,  residual = %g.", ...
-%!	  bMax, b, bActual, bActual - bMax ) );
+%!	  bMaxTrgt, b, bActual, bActual - bMaxTrgt ) );
 
 
 %!test
@@ -189,10 +190,10 @@ endfunction
 %!	matH = matJ'*matJ;
 %!	vecG = matJ'*vecF;
 %!	%	
-%!	bMax = 0.1;
+%!	bMaxTrgt = 0.1;
 %!	prm = [];
 %!	prm.doMsg = true;
-%!	[ vecY, vecYPrime, b, bPrime ] = findLevPt_basic( vecG, matH, bMax, matB, prm );
+%!	[ vecY, vecYPrime, b, bPrime ] = findLevPt_basic( vecG, matH, bMaxTrgt, matB, prm );
 %!	bActual = norm(matB*vecY);
 %!	msg( __FILE__, __LINE__, sprintf( "bDesired = %g,  bReported = %g,  bActual = %g,  residual = %g.", ...
-%!	  bMax, b, bActual, bActual - bMax ) );
+%!	  bMaxTrgt, b, bActual, bActual - bMaxTrgt ) );

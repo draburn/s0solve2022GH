@@ -62,6 +62,17 @@ function [ vecY, vecYPrime, b, bPrime, n ] = findLevPt( vecG, matH, bMax=[], mat
 	bLo = b;
 	bPrimeLo = bPrime;
 	%
+	if (0)
+		% Worse than what I have.
+		% Also, doesn't use derivatives, and requires extra calc of vecY on end.
+		fzero_fun = @(t)( __calc( t, vecG, matH, matB, matBTB, matRegu, cholRelThresh ) - bMax );
+		fzero_options = optimset( "GradObj", "on" );
+		[ t, fzero_fval, fzero_info, fzero_output ] = fzero( fzero_fun, [tLo, tHi], fzero_options );
+		n = fzero_output.iterations;
+		[ b, bPrime, vecY, vecYPrime ] = __calc( t, vecG, matH, matB, matBTB, matRegu, cholRelThresh );
+		return;
+	endif
+	%
 	iterMax = mygetfield( prm, "iterMax", 100 );
 	for n = 1 : iterMax
 		if ( bPrimeLo * ( tHi - tLo ) <= 2.0 * ( bMax - bLo ) )

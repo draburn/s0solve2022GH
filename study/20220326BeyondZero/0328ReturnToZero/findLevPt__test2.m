@@ -10,7 +10,7 @@
 	%setprngstates(81975888); sizeX = 500; sizeF = 500; sizeB = sizeX; % 5, 12, 4 with old.
 	setprngstates(25336720); sizeX = 500; sizeF = 500; sizeB = sizeX; % 8, 3, 17 with _basic(); 21, 6, 3 with old.
 	%
-	useBasic = false;
+	useBasic = true;
 	if (0)
 	vecX = randn(sizeX,1) .* exp(randn(sizeX,1)) .* exp(5.0*randn());
 	matJ = randn(sizeF,sizeX) .* exp(3.0*randn(sizeF,sizeX)) .* exp(5.0*randn());
