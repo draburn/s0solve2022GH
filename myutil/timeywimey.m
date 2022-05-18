@@ -15,7 +15,7 @@ for n = [ 200, 500, 1000 ]
 	t = time();
 	h = j' * j;
 	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"h = j' * j\".", 1000.0*(time()-t)) );
-	%%%h += norm(diag(h))*(eps^0.9)*eye(n,n);
+	%%%h += norm(diag(h))*(eps^0.8)*eye(n,n);
 	%%%h = diag(diag(j' * j));
 	%
 	t = time();
@@ -25,6 +25,10 @@ for n = [ 200, 500, 1000 ]
 	t = time();
 	x = r \ ( r' \ f );
 	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"x = r \\ ( r' \\ f )\".", 1000.0*(time()-t)) );
+	%
+	t = time();
+	x = h \ f;
+	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"x = h \\ f\".", 1000.0*(time()-t)) );
 	%
 	%
 	%
@@ -64,6 +68,16 @@ for n = [ 200, 500, 1000 ]
 		% And, looks like there's room for speedup!
 		%
 		t = time();
+		q = utorthdrop_turbo_alpha(j);
+		msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"q = utorthdrop_turbo_alpha(j)\".", 1000.0*(time()-t)) );
+		t = time();
+		q = utorthdrop_turbo_beta(j);
+		msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"q = utorthdrop_turbo_beta(j)\".", 1000.0*(time()-t)) );
+		%t = time();
+		%q = utorthdrop_turbo_gamma(j);
+		%msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"q = utorthdrop_turbo_gamma(j)\".", 1000.0*(time()-t)) );
+		%
+		t = time();
 		phi = null(j);
 		msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"phi = null(j)\".", 1000.0*(time()-t)) );
 		%
@@ -89,6 +103,14 @@ for n = [ 200, 500, 1000 ]
 	t = time();
 	c = cond(h);
 	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"c = cond(h)\".", 1000.0*(time()-t)) );
+	%
+	t = time();
+	q = utorth_turbo(j);
+	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"q = utorth_turbo(j)\".", 1000.0*(time()-t)) );
+	%
+	t = time();
+	q = utorthdrop_turbo_delta(j);
+	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"q = utorthdrop_turbo_delta(j)\".", 1000.0*(time()-t)) );
 	%
 	continue;
 	%
