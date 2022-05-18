@@ -76,6 +76,10 @@ function [ vecY, vecYPrime, b, bPrime, t ] = findLevPt_posDiag( vecG, matDH, bMa
 		else
 			t = tLo + deltaTLo;
 		endif
+		if ( 0 == mod(iterCount,3) )
+			% ... or, periodically force a bisection?
+			t = ( tLo + tHi ) / 2.0;
+		endif
 		assert( t > tLo ); % A few checks, just to be safe.
 		assert( t < tHi );
 		[ b, bPrime, vecY, vecYPrme ] = __calc( t, vecG, matDH, matB, matDC, prm );
@@ -83,6 +87,7 @@ function [ vecY, vecYPrime, b, bPrime, t ] = findLevPt_posDiag( vecG, matDH, bMa
 			msgif( doMsg, __FILE__, __LINE__, sprintf( "SUCCESS: Converged after %d iterations.", iterCount ) );
 			return;
 		endif
+		%msgif( doMsg, __FILE__, __LINE__, sprintf( "  iter %d:  t: %g ~ %g ~ %g;  b: %g ~ %g ~ %g.", iterCount, tLo, t, tHi, bLo, bMax, bHi ) );
 		if ( b <= bLo || b >= bHi )
 			error( "ALGORITHM BREAKDOWN: Iteration went out of bounds; matrices may be poorly scaled." );
 		endif

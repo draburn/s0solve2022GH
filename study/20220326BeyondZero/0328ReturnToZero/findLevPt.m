@@ -31,7 +31,7 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt( vecG, matH, bMax=[], matB=[
 	%
 	%
 	cholRelThresh = mygetfield( prm, "cholRelThresh", sqrt(eps) );
-	bTol = mygetfield( prm, "bTol", 0.1*bMax );
+	bTol = mygetfield( prm, "bTol", 0.01*bMax );
 	%
 	[ b, bPrime, vecY, funchYPrime ] = __calc( tHi, vecG, matH, matB, matBTB, matRegu, cholRelThresh );
 	if ( isempty(bMax) )
@@ -86,9 +86,58 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt( vecG, matH, bMax=[], matB=[
 		else
 			t = tLo + deltaTLo;
 		endif
+		%
+		if (0)
+		if ( 0 == mod(n,3) )
+			% ... or, periodically force a bisection?
+			t = ( tLo + tHi ) / 2.0;
+		endif
+		endif
+		%
+		if (0)
+		if ( 1 == n )
+			matC = matBTB + sqrt(eps)*diag(diag(matBTB));
+			matDH = diag( diag(matH) + eps*norm(diag(matH)) );
+			matDC = diag( diag(matC) + eps*norm(diag(matC)) );
+			matDH *= norm( matB*(matDH\vecG) ) / norm( matB*(matH\vecG) );
+			matDC *= norm( matB*(matDC\vecG) ) / norm( matB*(matC\vecG) );
+			posDiag_prm = [];
+			posDiag_prm.doMsg = true;
+			posDiag_prm = mygetfield( prm, "posDiag_prm", posDiag_prm );
+			[ posDiag_vecY, posDiag_vecYPrime, posDiag_b, posDiag_bPrime, t ] = findLevPt_posDiag( vecG, matDH, bMax, matB, matDC, posDiag_prm );
+			[ bMax, norm( t*matB*( (t*matDH + (1.0-t)*matDC)\vecG) ), norm( t*matB*( (t*matH + (1.0-t)*matC)\vecG) ) ]
+			t
+			msg( __FILE__, __LINE__, "HALT!" ); return;
+		endif
+		endif
+		%
+		if (0)
+		if ( 1 == n )
+			matC = matBTB + sqrt(eps)*diag(diag(matBTB));
+			matDH = diag( diag(matH) + eps*norm(diag(matH)) );
+			matDC = diag( diag(matC) + eps*norm(diag(matC)) );
+			matDH *= norm( matB*(matDH\vecG) ) / norm( matB*(matH\vecG) );
+			bHalfzies = norm(matB*( (matH+matC)\vecG ));
+			posDiag_prm = [];
+			posDiag_prm.doMsg = true;
+			posDiag_prm = mygetfield( prm, "posDiag_prm", posDiag_prm );
+			[ posDiag_vecY, posDiag_vecYPrime, posDiag_b, posDiag_bPrime, t ] = findLevPt_posDiag( vecG, matDH, bHalfzies, matB, matDC, posDiag_prm );
+			cScl = (1.0-t)/t
+			matDC *= cScl;
+			posDiag_prm = [];
+			posDiag_prm.doMsg = true;
+			posDiag_prm = mygetfield( prm, "posDiag_prm", posDiag_prm );
+			[ posDiag_vecY, posDiag_vecYPrime, posDiag_b, posDiag_bPrime, t ] = findLevPt_posDiag( vecG, matDH, bMax, matB, matDC, posDiag_prm );
+			[ bMax, norm( t*matB*( (t*matDH + (1.0-t)*matDC)\vecG) ), norm( t*matB*( (t*matH + (1.0-t)*matC)\vecG) ) ]
+			t
+			%msg( __FILE__, __LINE__, "HALT!" ); return;
+		endif
+		endif
+		%
 		assert( t > tLo );
 		assert( t < tHi );
 		tVals = [ tLo, tLo + deltaTLo, t, tHi - deltaTHi, tHi ]
+		t
 		[ b, bPrime, vecY, funchYPrime ] = __calc( t, vecG, matH, matB, matBTB, matRegu, cholRelThresh );
 		bVals = [ bLo, b, bHi, bMax ]
 		if ( abs( b - bMax ) <= bTol )
@@ -243,6 +292,7 @@ endfunction
 %!		matR2 = chol( matH + 2.0*matS_foo );
 %!		vecRTUSHUG = (2.0*( matR1' \ vecSHUG )) - ( matR2' \ vecSHUG );
 %!		hobScale = norm( matB_unscaled*vecHUG ) / norm( vecRTUSHUG )
+%!		%hobScale = 1.0;
 %!		%matR = chol( matH );
 %!		%vecRTUSHUG = matR' \ vecSHUG;
 %!		%hobScale = norm( matB_unscaled*vecHUG ) / norm( vecRTUSHUG )
