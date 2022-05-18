@@ -1,6 +1,6 @@
 % Function...
 
-function [ vecY, vecYPrime, b, bPrime ] = findLevPt_basic( vecG, matH, bMax=[], matB=[], prm=[] )
+function [ vecY, vecYPrime, b, bPrime, iterCount ] = findLevPt_basic( vecG, matH, bMax=[], matB=[], prm=[] )
 	% PARSE INPUT.
 	sz = size( vecG, 1 );
 	assert( isrealarray(vecG,[sz,1]) );
@@ -29,12 +29,13 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt_basic( vecG, matH, bMax=[], 
 	assert( abs( iterMax - round(iterMax) ) < sqrt(eps) );
 	assert( 1 <= iterMax );
 	%
-	doMsg = mygetfield( prm, "doMsg", false );
+	doMsg = mygetfield( prm, "doMsg", true );
 	assert( islogical(doMsg) );
 	assert( isscalar(doMsg) );
 	%
 	%
 	% DO PREP.
+	iterCount = 0;
 	matC = matB'*matB;
 	%
 	tHi = 1.0;
@@ -62,18 +63,29 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt_basic( vecG, matH, bMax=[], 
 			deltaTLo = ( tHi - tLo ) / 2.0;
 		else
 			deltaTLo = ( bMax - bLo ) / bPrimeLo;
+			if ( deltaTLo < sqrt(eps) )
+				deltaTLo = sqrt(eps);
+			endif
 		endif
 		if ( bPrimeHi * ( tHi - tLo ) <= 2.0 * ( bHi - bMax ) )
 			deltaTHi = ( tHi - tLo ) / 2.0;
 		else
 			deltaTHi = ( bHi - bMax ) / bPrimeHi;
+			if ( deltaTHi < sqrt(eps) )
+				deltaTHi = sqrt(eps);
+			endif
 		endif
+		deltaTLo = cap( deltaTLo, 0.0, (tHi-tLo)/2.0 );
+		deltaTHi = cap( deltaTHi, 0.0, (tHi-tLo)/2.0 );
 		%
-		% Take whichever guess one is closer to the generating point.
+		% Take whichever guess one is closer to the generating point.. ish.
 		if ( deltaTHi < deltaTLo )
 			t = tHi - deltaTHi;
 		else
 			t = tLo + deltaTLo;
+		endif
+		if ( 0 == mod(iterCount,3) )
+			t = (tLo+tHi)/2.0;
 		endif
 		assert( t > tLo ); % A few checks, just to be safe.
 		assert( t < tHi );
@@ -82,6 +94,8 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt_basic( vecG, matH, bMax=[], 
 			msgif( doMsg, __FILE__, __LINE__, sprintf( "SUCCESS: Converged after %d iterations.", iterCount ) );
 			return;
 		endif
+		msgif( doMsg, __FILE__, __LINE__, sprintf( "  iter %d:  t: %g ~ %g ~ %g;  (1-t: %g ~ %g ~ %g);  b: %g ~ %g ~ %g (%g).", ...
+		  iterCount, tLo, t, tHi, 1.0-tLo, 1.0-t, 1.0-tHi, bLo, b, bHi, bMax ) );
 		if ( b <= bLo || b >= bHi )
 			error( "ALGORITHM BREAKDOWN: Iteration went out of bounds; matrices may be poorly scaled." );
 		endif

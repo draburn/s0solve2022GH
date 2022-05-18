@@ -74,6 +74,8 @@ function [ vecY, vecYPrime, b, bPrime, n ] = findLevPt( vecG, matH, bMax=[], mat
 		else
 			deltaTHi = ( bHi - bMax ) / bPrimeHi;
 		endif
+		deltaTLo = cap( deltaTLo, 0.0, (tHi-tLo)/2.0 );
+		deltaTHi = cap( deltaTHi, 0.0, (tHi-tLo)/2.0 );
 		%
 		%if ( 1 == n )
 		%	% Force an over-step on first iteration.
