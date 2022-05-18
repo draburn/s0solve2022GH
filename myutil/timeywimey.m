@@ -16,6 +16,7 @@ for n = [ 200, 500, 1000 ]
 	h = j' * j;
 	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"h = j' * j\".", 1000.0*(time()-t)) );
 	%%%h += norm(diag(h))*(eps^0.9)*eye(n,n);
+	%%%h = diag(diag(j' * j));
 	%
 	t = time();
 	r = chol(h);
@@ -89,7 +90,7 @@ for n = [ 200, 500, 1000 ]
 	c = cond(h);
 	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"c = cond(h)\".", 1000.0*(time()-t)) );
 	%
-	%continue;
+	continue;
 	%
 	%
 	% BELOW IS HACKY STUFF....

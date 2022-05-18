@@ -34,7 +34,7 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt_basic( vecG, matH, bMax=[], 
 	assert( isscalar(doMsg) );
 	%
 	%
-	% START WORK.
+	% DO PREP.
 	matC = matB'*matB;
 	%
 	tHi = 1.0;
@@ -55,8 +55,9 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt_basic( vecG, matH, bMax=[], 
 	bPrimeLo = bPrime;
 	%
 	%
+	% DO WORK.
 	for iterCount = 1 : iterMax
-		% Find next t according to either model, but cap to midpoint.
+		% Find next guess according to either linear model, but cap to midpoint.
 		if ( bPrimeLo * ( tHi - tLo ) <= 2.0 * ( bMax - bLo ) )
 			deltaTLo = ( tHi - tLo ) / 2.0;
 		else
@@ -68,13 +69,13 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt_basic( vecG, matH, bMax=[], 
 			deltaTHi = ( bHi - bMax ) / bPrimeHi;
 		endif
 		%
-		% Take which one is closer to the current point.
+		% Take whichever guess one is closer to the generating point.
 		if ( deltaTHi < deltaTLo )
 			t = tHi - deltaTHi;
 		else
 			t = tLo + deltaTLo;
 		endif
-		assert( t > tLo );
+		assert( t > tLo ); % A few checks, just to be safe.
 		assert( t < tHi );
 		[ b, bPrime, vecY, vecYPrme ] = __calc( t, vecG, matH, matB, matC, prm );
 		if ( abs( b - bMax ) <= bTol )
@@ -82,7 +83,7 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt_basic( vecG, matH, bMax=[], 
 			return;
 		endif
 		if ( b <= bLo || b >= bHi )
-			error( "Iteration went out of bounds; the system may be poorly scaled." );
+			error( "ALGORITHM BREAKDOWN: Iteration went out of bounds; matrices may be poorly scaled." );
 		endif
 		%
 		if ( b < bMax )
@@ -97,26 +98,27 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt_basic( vecG, matH, bMax=[], 
 			bPrimeHi = bPrime;
 		endif
 	endfor
-	error( "Reached iteration limit."  );
+	error( "IMPOSED STOP: Reached iteration limit."  );
 return;
 endfunction
 
 
 % Here's how the math works...
-%  S  ==  B^T * B
-%  M  ==  t*H + (1-t)*S  =  R^T * R
-%  d/dt( M^-1 )  =  -M^-1 * ( H - S ) * M^-1
+%  C  ==  B^T * B
+%  M  ==  t*H + (1-t)*C  =  R^T * R
+%  d/dt( M^-1 )  =  -M^-1 * ( H - C ) * M^-1
 %  gamma  ==  M^-1 * (-g)
 %  y  =  t * gamma
-%  b  =  || B * y ||  =  t * sqrt( gamma^T * S * gamma )
-%  d/dt( y )  =  M^-1 * S * gamma
-%  d/dt( b )  =  (S * gamma)^T * M^-1 * (S * gamma)
+%  b  =  || B * y ||  =  t * sqrt( gamma^T * C * gamma )
+%  d/dt( y )  =  M^-1 * C * gamma
+%  d/dt( b )  =  (C * gamma)^T * M^-1 * (C * gamma)
+% Note: "C" used to be called "S".
 %
 % Using Cholesky factorization of M, and being efficient...
 %  M = R^T * R
 %  gamma = R \ ( R^T \ (-g) )
 %  b0 = || B * gamma ||
-%  rho = R^T \ ( S * gamma )
+%  rho = R^T \ ( C * gamma )
 %  y = t * gamma;
 %  b = t * b0;
 %  d/dt( b ) = || rho ||^2 / b0
@@ -125,7 +127,7 @@ endfunction
 function [ b, bPrime, vecY, vecYPrime ] = __calc( t, vecG, matH, matB, matC, prm )
 	[ matR, cholFlag ] = chol( t*matH + (1.0-t)*matC );
 	if ( 0 ~= cholFlag )
-		error( "Cholesky factorization failed; please ensure matrices are positive definite." );
+		error( "ALGORITHM BREAKDOWN: Cholesky factorization failed; please ensure matrices are positive definite." );
 	endif
 	vecGamma = matR \ ( matR' \ (-vecG) );
 	b0 = norm( matB * vecGamma );
@@ -133,7 +135,7 @@ function [ b, bPrime, vecY, vecYPrime ] = __calc( t, vecG, matH, matB, matC, prm
 	vecY = t * vecGamma;
 	b = t * b0;
 	bPrime = sumsq( vecRho ) / b0;
-	vecYPrime = matR \ vecRho;
+	vecYPrime = matR \ vecRho; % Not used internally, but user may want this.
 return;
 endfunction
 

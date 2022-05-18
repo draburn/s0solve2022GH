@@ -274,7 +274,7 @@ endfunction
 %!	numVals = 101;
 %!	foo = linspace( 1.0, 0.0, numVals );
 %!	tVals = ( 1.0 - (foo.^2) ).^2;
-%!	tVals *= 1.0e-7;
+%!	%tVals *= 1.0e-7;
 %!	%
 %!	matS = matB_scaled' * matB_scaled;
 %!	matRegu = (eps^0.4)*diag(abs(diag(matS))) + (eps^0.7)*eye(sizeX,sizeX);
@@ -300,4 +300,15 @@ endfunction
 %!	grid on;
 %!	numFigs++; figure(numFigs);
 %!	plot( tVals, sPrimeVals, 'o-' );
+%!	grid on;
+%!	numFigs++; figure(numFigs);
+%!	plot( ...
+%!	  sVals, 'o-', ...
+%!	  cap( sModelVals1, 0.0, max(sVals) ), 'x-', ...
+%!	  cap( sModelVals2, 0.0, max(sVals) ), '^-', ...
+%!	  cap( sModelVals3, 0.0, max(sVals) ), 'v-', ...
+%!	  cap( sModelVals0, 0.0, max(sVals) ), 'p-' );
+%!	grid on;
+%!	numFigs++; figure(numFigs);
+%!	plot( sPrimeVals, 'o-' );
 %!	grid on;
