@@ -1,9 +1,10 @@
 % Function...
 
-function [ vecY, vecYPrime, b, bPrime ] = findLevPt( vecG, matH, bMax=[], matB=[], prm=[] )
+function [ vecY, vecYPrime, b, bPrime, n ] = findLevPt( vecG, matH, bMax=[], matB=[], prm=[] )
 	sz = size( vecG );
 	tLo = 0.0;
 	tHi = 1.0;
+	n = 0;
 	%
 	if ( isempty(matB) )
 		matB = eye(sz,sz);
@@ -134,14 +135,23 @@ function [ vecY, vecYPrime, b, bPrime ] = findLevPt( vecG, matH, bMax=[], matB=[
 		endif
 		endif
 		%
+		if (1)
+		if ( 1 == n )
+			mu = norm( matB * (matBTB\vecG) ) / bMax;
+			t = 1.0/(1.0+mu)
+		endif
+		endif
+		%
 		assert( t > tLo );
 		assert( t < tHi );
-		tVals = [ tLo, tLo + deltaTLo, t, tHi - deltaTHi, tHi ]
-		t
+		%tVals = [ tLo, tLo + deltaTLo, t, tHi - deltaTHi, tHi ]
+		%t
 		[ b, bPrime, vecY, funchYPrime ] = __calc( t, vecG, matH, matB, matBTB, matRegu, cholRelThresh );
-		bVals = [ bLo, b, bHi, bMax ]
+		%bVals = [ bLo, b, bHi, bMax ]
 		if ( abs( b - bMax ) <= bTol )
 			vecYPrime = funchYPrime();
+			t
+			omt = 1.0 - t
 			n
 			msg( __FILE__, __LINE__, "Hey!" );
 			return;
@@ -230,7 +240,7 @@ function [ vecY, b, bPrime, vecRho ] = __calcGivenR( t, vecG, matR, matB, matS )
 	vecRho = matR' \ ( matS * vecGamma );
 	vecY = t * vecGamma;
 	b = t * b0;
-	bPrime = sumsq( vecRho ) / b0
+	bPrime = sumsq( vecRho ) / b0;
 	%myquat = b0/norm(vecRho)
 	%error( "HALT!" );
 return;
