@@ -140,6 +140,7 @@ endfunction
 
 
 %!test
+%!	%msg( __FILE__, __LINE__, "Skipping this test." ); return;
 %!	numFigs = 0;
 %!	setprngstates(0);
 %!	sizeX = 5;
@@ -160,22 +161,28 @@ endfunction
 %!	matDC *= cScale;
 %!	%[ norm(matB*(matC\vecG)), norm(matB*(matDC\vecG)) ]
 %!	%[ norm(matB*(matH\vecG)), norm(matB*(matDH\vecG)) ]
-%!	%	
+%!	%
 %!	bMax = 0.1;
 %!	prm = [];
 %!	prm.doMsg = true;
 %!	[ vecY, vecYPrime, b, bPrime, t ] = findLevPt_posDiag( vecG, matDH, bMax, matB, matDC, prm );
 %!	bActual = norm(matB*vecY);
-%!	vecYWouldBe = ( t*matH + (1.0-t)*matC ) \ (-vecG);
+%!	vecYShouldBe = ( t*matDH + (1.0-t)*matDC ) \ (-t*vecG);
+%!	vecYWouldBe = ( t*matH + (1.0-t)*matC ) \ (-t*vecG);
 %!	bWouldBe = norm( matB*vecYWouldBe );
-%!	g_ddh_ddc_y_ywb_yp  = [ vecG, diag(matDH), diag(matDC), vecY, vecYWouldBe, vecYPrime ]
+%!	bShouldBe = norm( matB*vecYShouldBe );
+%!	if ( sizeX <= 5 )
+%!		g_ddh_ddc_y_ywb_yp  = [ vecG, diag(matDH), diag(matDC), vecY, vecYShouldBe, vecYWouldBe, vecYPrime ]
+%!	endif
 %!	msg( __FILE__, __LINE__, sprintf( "bPrime = %g;  t = %g.", bPrime, t ) );
-%!	msg( __FILE__, __LINE__, sprintf( "bWouldBe = %f,  bReported = %g,  bDesired = %g,  bActual = %g;  residual = %g.", ...
-%!	  bWouldBe, b, bMax, bActual, bActual - bMax, bPrime ) );
+%!	msg( __FILE__, __LINE__, sprintf( "bWouldBe = %f,  bShouldBe = %f,  bReported = %g,  bDesired = %g,  bActual = %g;  residual = %g.", ...
+%!	  bWouldBe, bShouldBe, b, bMax, bActual, bActual - bMax ) );
 %!	printf( "\n\n" );
 
 
+
 %!test
+%!	%msg( __FILE__, __LINE__, "Skipping this test." ); return;
 %!	numFigs = 0;
 %!	setprngstates(0);
 %!	sizeX = 5;
@@ -194,22 +201,28 @@ endfunction
 %!	cScale = norm( matB*(matDC\vecG) ) / norm( matB*(matC\vecG) );
 %!	matDH *= hScale;
 %!	matDC *= cScale;
-%!	%	
+%!	%
 %!	bMax = 0.1;
 %!	prm = [];
 %!	prm.doMsg = true;
 %!	[ vecY, vecYPrime, b, bPrime, t ] = findLevPt_posDiag( vecG, matDH, bMax, matB, matDC, prm );
 %!	bActual = norm(matB*vecY);
-%!	vecYWouldBe = ( t*matH + (1.0-t)*matC ) \ (-vecG);
+%!	vecYShouldBe = ( t*matDH + (1.0-t)*matDC ) \ (-t*vecG);
+%!	vecYWouldBe = ( t*matH + (1.0-t)*matC ) \ (-t*vecG);
 %!	bWouldBe = norm( matB*vecYWouldBe );
-%!	g_ddh_ddc_y_ywb_yp  = [ vecG, diag(matDH), diag(matDC), vecY, vecYWouldBe, vecYPrime ]
+%!	bShouldBe = norm( matB*vecYShouldBe );
+%!	if ( sizeX <= 5 )
+%!		g_ddh_ddc_y_ywb_yp  = [ vecG, diag(matDH), diag(matDC), vecY, vecYShouldBe, vecYWouldBe, vecYPrime ]
+%!	endif
 %!	msg( __FILE__, __LINE__, sprintf( "bPrime = %g;  t = %g.", bPrime, t ) );
-%!	msg( __FILE__, __LINE__, sprintf( "bWouldBe = %f,  bReported = %g,  bDesired = %g,  bActual = %g;  residual = %g.", ...
-%!	  bWouldBe, b, bMax, bActual, bActual - bMax, bPrime ) );
+%!	msg( __FILE__, __LINE__, sprintf( "bWouldBe = %f,  bShouldBe = %f,  bReported = %g,  bDesired = %g,  bActual = %g;  residual = %g.", ...
+%!	  bWouldBe, bShouldBe, b, bMax, bActual, bActual - bMax ) );
 %!	printf( "\n\n" );
 
 
+
 %!test
+%!	%msg( __FILE__, __LINE__, "Skipping this test." ); return;
 %!	numFigs = 0;
 %!	setprngstates(0);
 %!	sizeX = 500;
@@ -228,22 +241,28 @@ endfunction
 %!	cScale = norm( matB*(matDC\vecG) ) / norm( matB*(matC\vecG) );
 %!	matDH *= hScale;
 %!	matDC *= cScale;
-%!	%	
+%!	%
 %!	bMax = 0.1;
 %!	prm = [];
 %!	prm.doMsg = true;
 %!	[ vecY, vecYPrime, b, bPrime, t ] = findLevPt_posDiag( vecG, matDH, bMax, matB, matDC, prm );
 %!	bActual = norm(matB*vecY);
-%!	vecYWouldBe = ( t*matH + (1.0-t)*matC ) \ (-vecG);
+%!	vecYShouldBe = ( t*matDH + (1.0-t)*matDC ) \ (-t*vecG);
+%!	vecYWouldBe = ( t*matH + (1.0-t)*matC ) \ (-t*vecG);
 %!	bWouldBe = norm( matB*vecYWouldBe );
-%!	%g_ddh_ddc_y_ywb_yp  = [ vecG, diag(matDH), diag(matDC), vecY, vecYWouldBe, vecYPrime ]
+%!	bShouldBe = norm( matB*vecYShouldBe );
+%!	if ( sizeX <= 5 )
+%!		g_ddh_ddc_y_ywb_yp  = [ vecG, diag(matDH), diag(matDC), vecY, vecYShouldBe, vecYWouldBe, vecYPrime ]
+%!	endif
 %!	msg( __FILE__, __LINE__, sprintf( "bPrime = %g;  t = %g.", bPrime, t ) );
-%!	msg( __FILE__, __LINE__, sprintf( "bWouldBe = %f,  bReported = %g,  bDesired = %g,  bActual = %g;  residual = %g.", ...
-%!	  bWouldBe, b, bMax, bActual, bActual - bMax, bPrime ) );
+%!	msg( __FILE__, __LINE__, sprintf( "bWouldBe = %f,  bShouldBe = %f,  bReported = %g,  bDesired = %g,  bActual = %g;  residual = %g.", ...
+%!	  bWouldBe, bShouldBe, b, bMax, bActual, bActual - bMax ) );
 %!	printf( "\n\n" );
 
 
+
 %!test
+%!	%msg( __FILE__, __LINE__, "Skipping this test." ); return;
 %!	numFigs = 0;
 %!	setprngstates(0);
 %!	sizeX = 500;
@@ -262,16 +281,63 @@ endfunction
 %!	cScale = norm( matB*(matDC\vecG) ) / norm( matB*(matC\vecG) );
 %!	matDH *= hScale;
 %!	matDC *= cScale;
+%!	%
+%!	bMax = 0.1;
+%!	prm = [];
+%!	prm.doMsg = true;
+%!	[ vecY, vecYPrime, b, bPrime, t ] = findLevPt_posDiag( vecG, matDH, bMax, matB, matDC, prm );
+%!	bActual = norm(matB*vecY);
+%!	vecYShouldBe = ( t*matDH + (1.0-t)*matDC ) \ (-t*vecG);
+%!	vecYWouldBe = ( t*matH + (1.0-t)*matC ) \ (-t*vecG);
+%!	bWouldBe = norm( matB*vecYWouldBe );
+%!	bShouldBe = norm( matB*vecYShouldBe );
+%!	if ( sizeX <= 5 )
+%!		g_ddh_ddc_y_ywb_yp  = [ vecG, diag(matDH), diag(matDC), vecY, vecYShouldBe, vecYWouldBe, vecYPrime ]
+%!	endif
+%!	msg( __FILE__, __LINE__, sprintf( "bPrime = %g;  t = %g.", bPrime, t ) );
+%!	msg( __FILE__, __LINE__, sprintf( "bWouldBe = %f,  bShouldBe = %f,  bReported = %g,  bDesired = %g,  bActual = %g;  residual = %g.", ...
+%!	  bWouldBe, bShouldBe, b, bMax, bActual, bActual - bMax ) );
+%!	printf( "\n\n" );
+
+
+
+%!test
+%!	numFigs = 0;
+%!	setprngstates(0);
+%!	sizeX = 500;
+%!	%
+%!	sizeF = sizeX;
+%!	vecF = randn(sizeF,1);
+%!	matJ = randn(sizeF,sizeX).*exp(3.0*randn(sizeF,sizeX));
+%!	matB = randn(sizeF,sizeX).*exp(3.0*randn(sizeF,sizeX))*exp(3.0*randn());
+%!	matJ = diag(diag(matJ));
+%!	matB = diag(diag(matB));
+%!	%
+%!	matH = matJ'*matJ;
+%!	vecG = matJ'*vecF;
+%!	matC = matB'*matB;
+%!	matDH = diag(diag(matH));
+%!	matDC = diag(diag(matC));
+%!	hScale = norm( matB*(matDH\vecG) ) / norm( matB*(matH\vecG) );
+%!	cScale = norm( matB*(matDC\vecG) ) / norm( matB*(matC\vecG) );
+%!	matDH *= hScale;
+%!	matDC *= cScale;
+%!	assert( reldiff(matH,matDH) < sqrt(eps) );
+%!	assert( reldiff(matC,matDC) < sqrt(eps) );
 %!	%	
 %!	bMax = 0.1;
 %!	prm = [];
 %!	prm.doMsg = true;
 %!	[ vecY, vecYPrime, b, bPrime, t ] = findLevPt_posDiag( vecG, matDH, bMax, matB, matDC, prm );
 %!	bActual = norm(matB*vecY);
-%!	vecYWouldBe = ( t*matH + (1.0-t)*matC ) \ (-vecG);
+%!	vecYShouldBe = ( t*matDH + (1.0-t)*matDC ) \ (-t*vecG);
+%!	vecYWouldBe = ( t*matH + (1.0-t)*matC ) \ (-t*vecG);
 %!	bWouldBe = norm( matB*vecYWouldBe );
-%!	%g_ddh_ddc_y_ywb_yp  = [ vecG, diag(matDH), diag(matDC), vecY, vecYWouldBe, vecYPrime ]
+%!	bShouldBe = norm( matB*vecYShouldBe );
+%!	if ( sizeX <= 5 )
+%!		g_ddh_ddc_y_ywb_yp  = [ vecG, diag(matDH), diag(matDC), vecY, vecYShouldBe, vecYWouldBe, vecYPrime ]
+%!	endif
 %!	msg( __FILE__, __LINE__, sprintf( "bPrime = %g;  t = %g.", bPrime, t ) );
-%!	msg( __FILE__, __LINE__, sprintf( "bWouldBe = %f,  bReported = %g,  bDesired = %g,  bActual = %g;  residual = %g.", ...
-%!	  bWouldBe, b, bMax, bActual, bActual - bMax, bPrime ) );
+%!	msg( __FILE__, __LINE__, sprintf( "bWouldBe = %f,  bShouldBe = %f,  bReported = %g,  bDesired = %g,  bActual = %g;  residual = %g.", ...
+%!	  bWouldBe, bShouldBe, b, bMax, bActual, bActual - bMax ) );
 %!	printf( "\n\n" );
