@@ -58,14 +58,14 @@ function [ matB, prm, dat ] = __init( vecG, matH, bTrgt=[], matB=[], prmIn=[], d
 	%
 	prm.verbLev = VERBLEV__FLAGGED; prm.valdLev = VALDLEV__ZERO; % Production.
 	prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__MEDIUM; % Integration.
-	prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Dev.
+	%prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Dev.
 	prm.bRelTol = 1.0E-4;
 	prm.cholRelTol = sqrt(eps);
 	prm.extrapThresh0 = 100.0*eps;
 	prm.extrapThresh1 = 1.0 - 100.0*eps;
 	prm.iterMax = 100;
 	prm.minStepCoeff = 0.1;
-	prm.applyMinStepThresh = 0.1;
+	prm.minStepFallThresh = 0.1;
 	prm = overwritefields( prm, prmIn );
 	%
 	matC = mygetfield( datIn, "matC", [] );
@@ -134,14 +134,14 @@ function [ matB, prm, dat ] = __init( vecG, matH, bTrgt=[], matB=[], prmIn=[], d
 		%
 		if ( min(eigH) < -sqrt(eps)*max(abs(eigH)) )
 			error( "Hessian matrix has a clearly negative eigenvalue." );
-		elseif ( min(eigC) < -eps*max(abs(eigC)) )
-			error( "Constraint matrix appears to have a non-positive eigenvalue." );
-		elseif ( min(eigE0) < -eps*max(abs(eigE0)) )
-			error( "Regularization matrix E0 appears to have a non-positive eigenvalue." );
-		elseif ( min(eigEX) < -eps*max(abs(eigEX)) )
-			error( "Regularization matrix EX appears to have a non-positive eigenvalue." );
-		elseif ( min(eigE1) < -eps*max(abs(eigE1)) )
-			error( "Regularization matrix E1 appears to have a non-positive eigenvalue." );
+		elseif ( min(eigC) < -sqrt(eps)*max(abs(eigC)) )
+			error( "Constraint matrix has a clearly negative eigenvalue." );
+		elseif ( min(eigE0) < -eps*max(abs(eigE0)) && min(eigC) < -eps*max(abs(eigC)) )
+			error( "Constraint and E0 regularization matrices appear to have non-positive eigenvalues." );
+		elseif ( min(eigEX) < -eps*max(abs(eigEX)) && min(eigH) < -eps*max(abs(eigH)) && min(eigC) < -eps*max(abs(eigC)) )
+			error( "Hessian, constraint, and EX regularization matrices appear to have non-positive eigenvalues." );
+		elseif ( min(eigE1) < -eps*max(abs(eigE1)) && min(eigH) < -eps*max(abs(eigH)) )
+			error( "Hessian and E1 regularization matrices appear to have non-positive eigenvalues." );
 		endif
 	endif
 	return;
@@ -161,7 +161,7 @@ function [ b, bPrime, vecY, funchYPrime ] = __calc( t, vecG, matH, matB, prm, da
 	endif
 	endif
 	%
-	msgif( prm.msgInfo, __FILE__, __LINE__, sprintf( "Extrapolation is necessary for t = %g.", t ) );
+	msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( "Extrapolation is necessary for t = %g.", t ) );
 	if ( t <= prm.extrapThresh0 )
 		[ matR1, cholFlag1 ] = chol( t*matH + (1.0-t)*dat.matC + dat.matE0 );
 		[ matR2, cholFlag2 ] = chol( t*matH + (1.0-t)*dat.matC + 2.0*dat.matE0 );
@@ -249,15 +249,12 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 		endif
 		[ t, bModel ] = __cubicRoot( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, bTrgt, tMin, tMax );
 		if ( ~isempty(t) )
-			% Nothing to do.
 			stepTypeStr = "c";
 		elseif ( abs(bLo-bTrgt) < abs(bHi-bTrgt) )
-			%t = tLo + median([ prm.minStepCoeff*(tHi-tLo), (bTrgt-bLo)/bPrimeLo, 0.5*(tHi-tLo) ] );
 			t = median([ tMin, tLo + (bTrgt-bLo)/bPrimeLo, (tHi+tLo)/2.0 ]);
 			bModel = bLo + bPrimeLo*(t-tLo);
 			stepTypeStr = "l";
 		else
-			%t = tHi - median([ prm.minStepCoeff*(tHi-tLo), (bHi-bTrgt)/bPrimeHi, 0.5*(tHi-tLo) ] );
 			t = median([ (tHi+tLo)/2.0, tHi - (bHi-bTrgt)/bPrimeHi, tMax ] );
 			bModel = bHi + bPrimeHi*(t-tHi);
 			stepTypeStr = "h";
@@ -270,6 +267,11 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 			break;
 		endif
 		[ b, bPrime, vecY, funchYPrime ] = __calc( t, vecG, matH, matB, prm, dat );
+		msgif( prm.verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( ...
+		  "  %2d: %s %d;  t: %g ~ %g ~ %g,  1-t: %g ~ %g ~ %g,  b: %g ~ %g (e %g, w %g) ~ %g;  b-bT: %g (e %g).", ...
+		  iterCount, stepTypeStr, applyMinStepConstraint, ...
+		  tLo, t, tHi, 1.0-tLo, 1.0-t, 1.0-tHi, ...
+		  bLo, b, bModel, bTrgt, bHi, b-bTrgt, bModel-bTrgt ) );
 		if ( abs(b-bTrgt) < bTrgt*prm.bRelTol )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( "SUCCESS: Converged in %d iterations.", iterCount ) );
 			datOut.retCode = RETCODE__SUCCESS;
@@ -282,12 +284,9 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 			datOut.retCode = RETCODE__NUMERICAL_ISSUE;
 			break;
 		endif
-		msgif( prm.verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( ...
-		  "  iter %d:  %s %d;  t: %g ~ %g ~ %g;  (1-t: %g ~ %g ~ %g);  b: %g ~ %g ( expect %g, want %g ) ~ %g.", ...
-		  iterCount, stepTypeStr, applyMinStepConstraint, tLo, t, tHi, 1.0-tLo, 1.0-t, 1.0-tHi, bLo, b, bModel, bTrgt, bHi ) );
 		%
 		if ( b < bTrgt )
-			if ( ~applyMinStepConstraint && abs(b-bModel) > 0.1*abs(bHi-bLo) )
+			if ( ~applyMinStepConstraint && abs(b-bModel) > prm.minStepFallThresh*abs(bHi-bLo) )
 				applyMinStepConstraint = true;
 			else
 				applyMinStepConstraint = false;
@@ -296,7 +295,7 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 			bLo = b;
 			bPrimeLo = bPrime;
 		else
-			if ( ~applyMinStepConstraint && abs(b-bModel) > 0.1*abs(bHi-bLo) )
+			if ( ~applyMinStepConstraint && abs(b-bModel) > prm.minStepFallThresh*abs(bHi-bLo) )
 				applyMinStepConstraint = true;
 			else
 				applyMinStepConstraint = false;
@@ -386,7 +385,8 @@ endfunction
 %!	%
 %!	matH = matJ'*matJ;
 %!	vecG = matJ'*vecF;
-%!	bTrgt = abs(randn())*norm(matB*(matH\vecG));
+%!	b1 = norm(matB*((matH+eye(size(matH))*max(diag(matH))*sqrt(eps))\vecG));
+%!	bTrgt = min([ 0.5*abs(randn())*b1, b1 ]);
 %!	%
 %!	prm = [];
 %!	dat = [];
@@ -398,20 +398,25 @@ endfunction
 %!test
 %!	%msg( __FILE__, __LINE__, "SKIPPING TEST." ); return;
 %!	numFigs = 0;
-%!	setprngstates(0);
-%!	sizeX = 500;
+%!	setprngstates(47290048);
+%!	sizeX = 1000;
 %!	%
-%!	sizeF = sizeX;
+%!	sizeF = 900;
 %!	vecF = randn(sizeF,1);
 %!	matJ = randn(sizeF,sizeX);
-%!	matB = randn(sizeF,sizeX);
+%!	matB = randn(sizeX,sizeX);
 %!	%
 %!	matH = matJ'*matJ;
 %!	vecG = matJ'*vecF;
-%!	bTrgt = abs(randn())*norm(matB*(matH\vecG));
+%!	b1 = norm(matB*((matH+eye(size(matH))*max(diag(matH))*sqrt(eps))\vecG));
+%!	bTrgt = min([ 0.5*abs(randn())*b1, b1 ]);
 %!	%
 %!	prm = [];
+%!	%prm.bRelTol = 0.1;
 %!	dat = [];
+%!	%dat.matC = matB'*matB;
+%!	tic();
 %!	[ vecY, datOut ] = findLevPt_0519( vecG, matH, bTrgt, matB, prm, dat );
+%!	toc();
 %!	bActual = norm(matB*vecY);
 %!	msg( __FILE__, __LINE__, sprintf( "bDesired = %g,  bActual = %g,  residual = %g.", bTrgt, bActual, bActual - bTrgt ) );
