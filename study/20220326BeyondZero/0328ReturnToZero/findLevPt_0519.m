@@ -56,7 +56,6 @@ function [ matB, prm, dat ] = __init( vecG, matH, bTrgt=[], matB=[], prmIn=[], d
 		matB = eye(size(matH));
 	endif
 	%
-	prm = struct();
 	prm.verbLev = VERBLEV__FLAGGED; prm.valdLev = VALDLEV__ZERO; % Production.
 	prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__MEDIUM; % Integration.
 	prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Dev.
@@ -90,6 +89,9 @@ function [ matB, prm, dat ] = __init( vecG, matH, bTrgt=[], matB=[], prmIn=[], d
 		assert( 0.0 <= prm.extrapThresh0 );
 		assert( prm.extrapThresh0 <= prm.extrapThresh1 );
 		assert( prm.extrapThresh1 <= 1.0 );
+		assert( isrealscalar(prm.iterMax) );
+		assert( abs(prm.iterMax-round(prm.iterMax)) < sqrt(eps) );
+		assert( 1 <= prm.iterMax );
 		%
 		sz = size( vecG, 1 );
 		assert( isrealarray(vecG,[sz,1]) );
@@ -214,13 +216,6 @@ endfunction
 
 
 function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG, matH, bTrgt, matB, prm, dat )
-	[ vecY, datOut ] = __find_bisection( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG, matH, bTrgt, matB, prm, dat );
-	return;
-endfunction
-
-
-% Placeholder.
-function [ vecY, datOut ] = __find_bisection( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG, matH, bTrgt, matB, prm, dat )
 	mydefs;
 	if ( prm.valdLev >= VALDLEV__LOW )
 		assert( tLo < tHi );
@@ -230,28 +225,38 @@ function [ vecY, datOut ] = __find_bisection( tLo, bLo, bPrimeLo, tHi, bHi, bPri
 		assert( bPrimeHi > 0.0 );
 	endif
 	%
-	for iterCount = 1 : prm.iterMax
+	iterCount = 0;
+	while (1)
+		if ( iterCount >= prm.iterMax )
+			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( "IMPOSED STOP: Reached iterMax (%d).", prm.iterMax ) );
+			datOut.retCode = RETCODE__IMPOSED_STOP;
+			break;
+		endif
+		iterCount++;
+		%
+		% Build cubic model.
+		% See where the exterma are.
+		% If none are in our interval, take the (possibly constrained) root;
+		%  else, take the constrained linear model from the lower residual point.
+		%
+		% Below is simple bisection placeholder.
 		t = (tLo+tHi)/2.0;
 		[ b, bPrime, vecY, funchYPrime ] = __calc( t, vecG, matH, matB, prm, dat );
 		if ( abs(b-bTrgt) < bTrgt*prm.bRelTol )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( "SUCCESS: Converged in %d iterations.", iterCount ) );
 			datOut.retCode = RETCODE__SUCCESS;
-			datOut.t = t;
-			datOut.b = b;
-			datOut.bPrime = bPrime;
-			datOut.vecYPrime = funchYPrime();
-			datOut.iterCount = iterCount;
-			return;
+			break;
 		endif
 		if ( t <= tLo || t >= tHi )
-			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "NUMERICAL ISSUE: Went out of bounds." );
+			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( ...
+			  "NUMERICAL ISSUE: Went out of bounds ( %g ~ %g ~ %g).", tLo, t, tHi )  );
 			datOut.retCode = RETCODE__NUMERICAL_ISSUE;
-			datOut.t = t;
-			datOut.b = b;
-			datOut.bPrime = bPrime;
-			datOut.vecYPrime = funchYPrime();
-			datOut.iterCount = iterCount;
-			return;
+			break;
+		elseif ( b <= bLo || b >= bHi )
+			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( ...
+			  "NUMERICAL ISSUE: Function was non-monotonic ( %g ~ %g ~ %g).", bLo, b, bHi )  );
+			datOut.retCode = RETCODE__NUMERICAL_ISSUE;
+			break;
 		endif
 		if ( b < bTrgt )
 			tLo = t;
@@ -262,10 +267,8 @@ function [ vecY, datOut ] = __find_bisection( tLo, bLo, bPrimeLo, tHi, bHi, bPri
 			bHi = b;
 			bPrimeHi = bPrime;
 		endif
-	endfor
+	endwhile
 	%
-	msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: Reached iterMax." );
-	datOut.retCode = RETCODE__IMPOSED_STOP;
 	datOut.t = t;
 	datOut.b = b;
 	datOut.bPrime = bPrime;
