@@ -250,11 +250,19 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 		[ t, bModel ] = __cubicRoot( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, bTrgt, tCubicMin, tCubicMax );
 		if ( ~isempty(t) )
 			% Nothing to do.
+			msgif( prm.verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "Using cubic." );
 		elseif ( abs(bLo-bTrgt) < abs(bHi-bTrgt) )
-			t = tLo + median([ prm.minStepCoeff*(tHi-tLo), (bTrgt-bLo)/bPrimeLo, 0.5*(tHi-tLo) ] );
-			bModel = [];
+			%t = tLo + median([ prm.minStepCoeff*(tHi-tLo), (bTrgt-bLo)/bPrimeLo, 0.5*(tHi-tLo) ] );
+			t = median([ tCubicMin, tLo + (bTrgt-bLo)/bPrimeLo, (tHi+tLo)/2.0 ]);
+			bModel = bLo + bPrimeLo*(t-tLo);
+			msgif( prm.verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "Using linear lo." );
 		else
-			t = tHi - median([ prm.minStepCoeff*(tHi-tLo), (bHi-bTrgt)/bPrimeHi, 0.5*(tHi-tLo) ] );
+			%t = tHi - median([ prm.minStepCoeff*(tHi-tLo), (bHi-bTrgt)/bPrimeHi, 0.5*(tHi-tLo) ] );
+			t = median([ (tHi+tLo)/2.0, tHi - (bHi-bTrgt)/bPrimeHi, tCubicMax ] );
+			bModel = bHi + bPrimeHi*(t-tHi);
+			msgif( prm.verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "Using linear hi." );
+		endif
+		if ( bModel <= bLo || bModel >= bHi );
 			bModel = [];
 		endif
 		%
@@ -280,14 +288,16 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 		%
 		if ( ~isempty(bModel) )
 		msg( __FILE__, __LINE__, "Data dump..." );
-		[ tLo, tHi, t ]
-		[ bLo, bHi, bModel, b ]
+		[ tLo, t, tHi ]
+		1.0 - [ tLo, t, tHi ]
+		[ bLo, bModel, bHi, b ]
 		if ( abs(b-bModel) < prm.applyMinStepThresh*abs(bHi-bLo) )
-			applyMinStepConstraintToCubic = false;
+			%applyMinStepConstraintToCubic = false;
 		else
-			applyMinStepConstraintToCubic = true;
+			%applyMinStepConstraintToCubic = true;
 		endif
 		endif
+		%applyMinStepConstraintToCubic
 		if ( b < bTrgt )
 			tLo = t;
 			bLo = b;
