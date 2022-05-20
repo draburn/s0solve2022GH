@@ -1,5 +1,5 @@
 %  Function...
-%   "ut" mean "upper-triangular".
+%   "ut" means "upper-triangular".
 
 function [ matV ] = utorth_turbo( matV, tol=0.9999 )
 	matV(:,1) /= norm(matV(:,1));

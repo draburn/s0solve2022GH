@@ -1,7 +1,7 @@
 %  Function...
 %   "ut" mean "upper-triangular".
 
-function [ matV, rvecDrop ] = utorthdrop_turbo_delta( matV, dropThresh = 1.0e-4 )
+function [ matV, rvecDrop ] = utorthdrop_turbo( matV, dropThresh = 1.0e-4 )
 	sizeV = size(matV,2);
 	rvecDrop = logical(zeros(1,sizeV));
 	matV ./= ( eps + sqrt(sum(matV.^2,1)) );
@@ -43,7 +43,7 @@ end
 %!	sizeX = 1000;
 %!	sizeK = 100;
 %!	matU = randn(sizeX,sizeK);
-%!	matV = utorthdrop_turbo_delta(matU);
+%!	matV = utorthdrop_turbo(matU);
 %!	assert( isrealarray(matV,[sizeX,sizeK]) );
 %!	assert( matV'*matV, eye(sizeK), (eps^0.75)*(sizeK^2) );
 %!	toc();
@@ -53,7 +53,7 @@ end
 %!	sizeX = 10;
 %!	sizeU = 50;
 %!	matU = randn(sizeX,sizeU);
-%!	[ matV, rvecDrop ] = utorthdrop_turbo_delta(matU);
+%!	[ matV, rvecDrop ] = utorthdrop_turbo(matU);
 %!	sizeV = size(matV,2);
 %!	assert( matV'*matV, eye(sizeV), (eps^0.75)*(sizeV^2) );
 %!	toc();

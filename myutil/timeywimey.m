@@ -109,8 +109,8 @@ for n = [ 200, 500, 1000 ]
 	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"q = utorth_turbo(j)\".", 1000.0*(time()-t)) );
 	%
 	t = time();
-	q = utorthdrop_turbo_delta(j);
-	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"q = utorthdrop_turbo_delta(j)\".", 1000.0*(time()-t)) );
+	q = utorthdrop_turbo(j);
+	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"q = utorthdrop_turbo(j)\".", 1000.0*(time()-t)) );
 	%
 	continue;
 	%
