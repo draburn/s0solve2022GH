@@ -20,3 +20,6 @@ VERBLEV__UNLIMITED = 800;
 % "warn" and "notify" are verbs, the rest aren't...
 VERBLEV__WARN = 300;
 VERBLEV__NOTIFY = 400;
+%
+VERBLEV__INFO = 550;
+VERBLEV__PROG = 600;
