@@ -48,6 +48,7 @@
 	alpha_hDom = (3.0/8.0)*sumsq(matB*vecYN)/(vecCYN'*(matH\vecCYN));
 	alpha_cDom = 2.0*norm(matB*(matC\vecG))/norm(matB*vecYN);
 	%[ norm(matH), alpha_hDom*norm(matC), alpha_cDom*norm(matC) ]
+	%alpha = alpha_cDom; matC *= alpha; matB *= sqrt(alpha); bN *= sqrt(alpha);
 	%
 	msg( __FILE__, __LINE__, "--- Please ignore any warnings above this line! ---" );
 	if (1)

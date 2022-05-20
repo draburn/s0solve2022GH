@@ -58,9 +58,10 @@ function [ matB, prm, dat ] = __init( vecG, matH, bTrgt=[], matB=[], prmIn=[], d
 	%
 	prm.verbLev = VERBLEV__FLAGGED; prm.valdLev = VALDLEV__ZERO; % Production.
 	prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__MEDIUM; % Integration.
+	prm.verbLev = VERBLEV__DETAILS; prm.valdLev = VALDLEV__HIGH; % Performance testing.
 	%prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Dev.
-	%prm.bRelTol = 1.0E-4;
-	prm.bRelTol = 0.01;
+	prm.bRelTol = 1.0E-4;
+	%prm.bRelTol = 0.01;
 	prm.cholRelTol = sqrt(eps);
 	prm.extrapThresh0 = 100.0*eps;
 	prm.extrapThresh1 = 1.0 - 100.0*eps;
@@ -103,6 +104,8 @@ function [ matB, prm, dat ] = __init( vecG, matH, bTrgt=[], matB=[], prmIn=[], d
 		assert( isrealarray(vecG,[sz,1]) );
 		assert( isrealarray(matH,[sz,sz]) );
 		assert( issymmetric(matH) );
+		assert( min(diag(matH)) >= 0.0 );
+		assert( max(diag(matH)) >= max(max(matH)) );
 		if (~isempty(bTrgt))
 			assert( isscalar(bTrgt) );
 			assert( 0.0 <= bTrgt );			
@@ -111,17 +114,25 @@ function [ matB, prm, dat ] = __init( vecG, matH, bTrgt=[], matB=[], prmIn=[], d
 		assert( isrealarray(matB,[szb,sz]) );
 		assert( isrealarray(dat.matC,[sz,sz]) );
 		assert( issymmetric(dat.matC) );
+		assert( min(diag(dat.matC)) >= 0.0 );
+		assert( max(diag(dat.matC)) >= max(max(dat.matC)) );
 		assert( isrealarray(dat.matE0,[sz,sz]) );
-		assert( issymmetric(dat.matE0) );
-		assert( isrealarray(dat.matE1,[sz,sz]) );
-		assert( issymmetric(dat.matE1) );
 		assert( isrealarray(dat.matEX,[sz,sz]) );
+		assert( isrealarray(dat.matE1,[sz,sz]) );
+		assert( issymmetric(dat.matE0) );
 		assert( issymmetric(dat.matEX) );
+		assert( issymmetric(dat.matE1) );
+		assert( min(diag(dat.matE0)) >= 0.0 );
+		assert( min(diag(dat.matEX)) >= 0.0 );
+		assert( min(diag(dat.matE1)) >= 0.0 );
+		assert( max(diag(dat.matE0)) >= max(max(dat.matE0)) );
+		assert( max(diag(dat.matEX)) >= max(max(dat.matEX)) );
+		assert( max(diag(dat.matE1)) >= max(max(dat.matE1)) );
 	endif
 	if ( prm.valdLev >= VALDLEV__MEDIUM );
 		assert( reldiff(dat.matC,matB'*matB) < sqrt(eps) );
 	endif
-	if ( prm.valdLev >= VALDLEV__VERY_HIGH )
+	if ( prm.valdLev >= VALDLEV__UNLIMITED )
 		eigH = eig(matH);
 		msgif( prm.verbLev >= VERBLEV__NOTE, __FILE__, __LINE__, sprintf( "eig(matH): %g ~ %g", min(eigH), max(eigH) ) );
 		eigC = eig(dat.matC);
