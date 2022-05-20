@@ -11,7 +11,11 @@
 	%setprngstates(25336720); sizeX = 500; sizeF = 500; sizeB = sizeX; % 8, 3, 17 with _basic(); 21, 6, 3 with old.
 	%setprngstates(43606048); sizeX = 500; sizeF = 400; sizeB = sizeX; % 21, 4, 3 with old; 13, 5, 3 with old+useLoop0518 orig.
 	%setprngstates(51107136); sizeX = 1000; sizeF = 500; sizeB = sizeX; % 19, 4, 2 with old; 12, 6, 4 with old+useLoop0518 orig, 11, 6, 4 with revised.
-	setprngstates(65757664); sizeX = 1000; sizeF = 900; sizeB = sizeX; %0519 is horrid.
+	%setprngstates(65757664); sizeX = 1000; sizeF = 900; sizeB = sizeX; %0519 wass horrid.
+	%setprngstates(64609504); sizeX = 1000; sizeF = 900; sizeB = sizeX; %0519 meh.
+	%setprngstates(92034128); sizeX = 1000; sizeF = 900; sizeB = sizeX; %0519 better.
+	setprngstates(12629168); sizeX = 500; sizeF = 200; sizeB = sizeX; %0519 is 9x13x13; old (null) just fails.
+	%setprngstates(91450512); sizeX = 1000; sizeF = 900; sizeB = sizeX; %0519 is 7x10x10; old (null) just fails.
 	%
 	useBasic = false;
 	use0519 = true;
@@ -45,6 +49,7 @@
 	alpha_cDom = 2.0*norm(matB*(matC\vecG))/norm(matB*vecYN);
 	%[ norm(matH), alpha_hDom*norm(matC), alpha_cDom*norm(matC) ]
 	%
+	msg( __FILE__, __LINE__, "--- Please ignore any warnings above this line! ---" );
 	if (1)
 	tic();
 	prm = [];
@@ -67,10 +72,10 @@
 	[ vecY5, vecYPrime5, b5, bPrime5, n5 ] = findLevPt_basic( vecG, matH, bTrgt5, matB, prm );
 	elseif (use0519)
 	mydefs;
-	prm.verbLev = VERBLEV__COPIOUS;
+	%prm.verbLev = VERBLEV__COPIOUS;
 	[ vecY5, datOut ] = findLevPt_0519( vecG, matH, bTrgt5, matB, prm, dat );
 	n5 = datOut.iterCount;
-	msg( __FILE__, __LINE__, "Goodbye!" ); return;
+	%msg( __FILE__, __LINE__, "Goodbye!" ); return;
 	else
 	[ vecY5, vecYPrime5, b5, bPrime5, n5 ] = findLevPt( vecG, matH, bTrgt5, matB, prm );
 	endif

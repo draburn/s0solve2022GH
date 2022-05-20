@@ -66,7 +66,7 @@ function [ matB, prm, dat ] = __init( vecG, matH, bTrgt=[], matB=[], prmIn=[], d
 	prm.extrapThresh1 = 1.0 - 100.0*eps;
 	prm.iterMax = 100;
 	prm.minStepCoeff = 0.1;
-	prm.minStepFallThresh = 0.1;
+	prm.minStepFallThresh = 0.5;
 	prm = overwritefields( prm, prmIn );
 	%
 	matC = mygetfield( datIn, "matC", [] );
@@ -242,18 +242,18 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 		iterCount++;
 		%
 		if ( applyMinStepConstraint )
-			tMin = tLo + prm.minStepCoeff*(tHi-tLo);
-			tMax = tHi - prm.minStepCoeff*(tHi-tLo);
+			tMin = tLo * ( 1.0 + eps^0.8 ) + prm.minStepCoeff*(tHi-tLo);
+			tMax = tHi * ( 1.0 - eps^0.8 ) - prm.minStepCoeff*(tHi-tLo);
 		else
-			tMin = tLo;
-			tMax = tHi;
+			tMin = tLo * ( 1.0 + eps^0.8 );
+			tMax = tHi * ( 1.0 - eps^0.8 );
 		endif
 		[ t, bModel ] = __cubicRoot( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, bTrgt, tMin, tMax );
-		%%%p = 1.5;
+		p = 1.5;
 		if ( ~isempty(t) )
 			stepTypeStr = "c";
-		%%%elseif ( abs(bLo-bTrgt)^p*abs(bPrimeHi) < abs(bHi-bTrgt)^p*abs(bPrimeLo) )
-		elseif ( abs(bLo-bTrgt) < abs(bHi-bTrgt) )
+		elseif ( abs(bLo-bTrgt)^p*abs(bPrimeHi) < abs(bHi-bTrgt)^p*abs(bPrimeLo) )
+		%%%elseif ( abs(bLo-bTrgt) < abs(bHi-bTrgt) )
 			t = median([ tMin, tLo + (bTrgt-bLo)/bPrimeLo, (tHi+tLo)/2.0 ]);
 			bModel = bLo + bPrimeLo*(t-tLo);
 			stepTypeStr = "l";
@@ -290,8 +290,9 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 		endif
 		%
 		if ( b < bTrgt )
-			if ( ~applyMinStepConstraint && abs(b-bModel) > prm.minStepFallThresh*abs(bHi-bLo) )
+			%%%if ( ~applyMinStepConstraint && abs(b-bModel) > prm.minStepFallThresh*abs(bHi-bLo) )
 			%%%if ( ~applyMinStepConstraint && abs(b-bTrgt) > prm.minStepFallThresh*min([ abs(bLo-bTrgt), abs(bHi-bTrgt) ]) )
+			if ( ~applyMinStepConstraint && abs(b-bModel) > prm.minStepFallThresh*min([ abs(bLo-bTrgt), abs(bHi-bTrgt) ]) )
 				applyMinStepConstraint = true;
 			else
 				applyMinStepConstraint = false;
@@ -300,8 +301,9 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 			bLo = b;
 			bPrimeLo = bPrime;
 		else
-			if ( ~applyMinStepConstraint && abs(b-bModel) > prm.minStepFallThresh*abs(bHi-bLo) )
+			%%%if ( ~applyMinStepConstraint && abs(b-bModel) > prm.minStepFallThresh*abs(bHi-bLo) )
 			%%%if ( ~applyMinStepConstraint && abs(b-bTrgt) > prm.minStepFallThresh*min([ abs(bLo-bTrgt), abs(bHi-bTrgt) ]) )
+			if ( ~applyMinStepConstraint && abs(b-bModel) > prm.minStepFallThresh*min([ abs(bLo-bTrgt), abs(bHi-bTrgt) ]) )
 				applyMinStepConstraint = true;
 			else
 				applyMinStepConstraint = false;
