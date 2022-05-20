@@ -124,7 +124,7 @@ function [ vecY, vecYPrime, b, bPrime, n ] = findLevPt( vecG, matH, bMax=[], mat
 		assert( t > tLo );
 		assert( t < tHi );
 		[ b, bPrime, vecY, funchYPrime ] = __calc( t, vecG, matH, matB, matBTB, matRegu, cholRelThresh );
-		msgif( true, __FILE__, __LINE__, sprintf( "  iter %d:  t: %g ~ %g ~ %g;  (1-t: %g ~ %g ~ %g);  b: %g ~ %g ~ %g (%g).", ...
+		msgif( false, __FILE__, __LINE__, sprintf( "  iter %d:  t: %g ~ %g ~ %g;  (1-t: %g ~ %g ~ %g);  b: %g ~ %g ~ %g (%g).", ...
 		  n, tLo, t, tHi, 1.0-tLo, 1.0-t, 1.0-tHi, bLo, b, bHi, bMax ) );
 		if ( abs( b - bMax ) <= bTol )
 			vecYPrime = funchYPrime();

@@ -59,7 +59,8 @@ function [ matB, prm, dat ] = __init( vecG, matH, bTrgt=[], matB=[], prmIn=[], d
 	prm.verbLev = VERBLEV__FLAGGED; prm.valdLev = VALDLEV__ZERO; % Production.
 	prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__MEDIUM; % Integration.
 	%prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Dev.
-	prm.bRelTol = 1.0E-4;
+	%prm.bRelTol = 1.0E-4;
+	prm.bRelTol = 0.01;
 	prm.cholRelTol = sqrt(eps);
 	prm.extrapThresh0 = 100.0*eps;
 	prm.extrapThresh1 = 1.0 - 100.0*eps;
@@ -248,8 +249,10 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 			tMax = tHi;
 		endif
 		[ t, bModel ] = __cubicRoot( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, bTrgt, tMin, tMax );
+		%%%p = 1.5;
 		if ( ~isempty(t) )
 			stepTypeStr = "c";
+		%%%elseif ( abs(bLo-bTrgt)^p*abs(bPrimeHi) < abs(bHi-bTrgt)^p*abs(bPrimeLo) )
 		elseif ( abs(bLo-bTrgt) < abs(bHi-bTrgt) )
 			t = median([ tMin, tLo + (bTrgt-bLo)/bPrimeLo, (tHi+tLo)/2.0 ]);
 			bModel = bLo + bPrimeLo*(t-tLo);
@@ -262,7 +265,8 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 		%
 		if ( t <= tLo || t >= tHi )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( ...
-			  "NUMERICAL ISSUE: Guess is out of bounds ( %g ~ %g ~ %g).", tLo, t, tHi )  );
+			  "NUMERICAL ISSUE: Guess is out of bounds ( t: %g ~ %g ~ %g; 1-t: %g ~ %g ~ %g ).", ...
+			  tLo, t, tHi, 1.0-tLo, 1.0-t, 1.0-tHi )  );
 			datOut.retCode = RETCODE__NUMERICAL_ISSUE;
 			break;
 		endif
@@ -279,14 +283,15 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 		endif
 		if ( b <= bLo || b >= bHi || bPrime <= 0.0 )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( ...
-			  "NUMERICAL ISSUE: Function was non-monotonic ( %g ~ %g ~ %g, %g ~ %g ~ %g).", ...
-			  bLo, b, bHi, bPrimeLo, bPrime, bPrimeHi )  );
+			  "NUMERICAL ISSUE: Function was non-monotonic ( %g + %g ~ %g ~ %g;  %g ~ %g ~ %g ).", ...
+			  bTrgt, bLo-bTrgt, b-bTrgt, bHi-bTrgt, bPrimeLo, bPrime, bPrimeHi)  );
 			datOut.retCode = RETCODE__NUMERICAL_ISSUE;
 			break;
 		endif
 		%
 		if ( b < bTrgt )
 			if ( ~applyMinStepConstraint && abs(b-bModel) > prm.minStepFallThresh*abs(bHi-bLo) )
+			%%%if ( ~applyMinStepConstraint && abs(b-bTrgt) > prm.minStepFallThresh*min([ abs(bLo-bTrgt), abs(bHi-bTrgt) ]) )
 				applyMinStepConstraint = true;
 			else
 				applyMinStepConstraint = false;
@@ -296,6 +301,7 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 			bPrimeLo = bPrime;
 		else
 			if ( ~applyMinStepConstraint && abs(b-bModel) > prm.minStepFallThresh*abs(bHi-bLo) )
+			%%%if ( ~applyMinStepConstraint && abs(b-bTrgt) > prm.minStepFallThresh*min([ abs(bLo-bTrgt), abs(bHi-bTrgt) ]) )
 				applyMinStepConstraint = true;
 			else
 				applyMinStepConstraint = false;

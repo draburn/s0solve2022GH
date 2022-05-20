@@ -10,9 +10,11 @@
 	%setprngstates(81975888); sizeX = 500; sizeF = 500; sizeB = sizeX; % 5, 12, 4 with old.
 	%setprngstates(25336720); sizeX = 500; sizeF = 500; sizeB = sizeX; % 8, 3, 17 with _basic(); 21, 6, 3 with old.
 	%setprngstates(43606048); sizeX = 500; sizeF = 400; sizeB = sizeX; % 21, 4, 3 with old; 13, 5, 3 with old+useLoop0518 orig.
-	setprngstates(51107136); sizeX = 1000; sizeF = 500; sizeB = sizeX; % 19, 4, 2 with old; 12, 6, 4 with old+useLoop0518 orig, 11, 6, 4 with revised.
+	%setprngstates(51107136); sizeX = 1000; sizeF = 500; sizeB = sizeX; % 19, 4, 2 with old; 12, 6, 4 with old+useLoop0518 orig, 11, 6, 4 with revised.
+	setprngstates(65757664); sizeX = 1000; sizeF = 900; sizeB = sizeX; %0519 is horrid.
 	%
 	useBasic = false;
+	use0519 = true;
 	if (0)
 	vecX = randn(sizeX,1) .* exp(randn(sizeX,1)) .* exp(5.0*randn());
 	matJ = randn(sizeF,sizeX) .* exp(3.0*randn(sizeF,sizeX)) .* exp(5.0*randn());
@@ -44,11 +46,16 @@
 	%[ norm(matH), alpha_hDom*norm(matC), alpha_cDom*norm(matC) ]
 	%
 	if (1)
+	tic();
 	prm = [];
 	prm.matBTB = matC;
+	dat.matC = matC;
 	bTrgt0 = 0.001*bN;
 	if ( useBasic )
 	[ vecY0, vecYPrime0, b0, bPrime0, n0 ] = findLevPt_basic( vecG, matH, bTrgt0, matB, prm );
+	elseif (use0519)
+	[ vecY0, datOut ] = findLevPt_0519( vecG, matH, bTrgt0, matB, prm, dat );
+	n0 = datOut.iterCount;
 	else
 	[ vecY0, vecYPrime0, b0, bPrime0, n0 ] = findLevPt( vecG, matH, bTrgt0, matB, prm );
 	endif
@@ -58,6 +65,12 @@
 	bTrgt5 = 0.5*bN;
 	if ( useBasic )
 	[ vecY5, vecYPrime5, b5, bPrime5, n5 ] = findLevPt_basic( vecG, matH, bTrgt5, matB, prm );
+	elseif (use0519)
+	mydefs;
+	prm.verbLev = VERBLEV__COPIOUS;
+	[ vecY5, datOut ] = findLevPt_0519( vecG, matH, bTrgt5, matB, prm, dat );
+	n5 = datOut.iterCount;
+	msg( __FILE__, __LINE__, "Goodbye!" ); return;
 	else
 	[ vecY5, vecYPrime5, b5, bPrime5, n5 ] = findLevPt( vecG, matH, bTrgt5, matB, prm );
 	endif
@@ -67,6 +80,9 @@
 	bTrgt9 = 0.9*bN;
 	if ( useBasic )
 	[ vecY9, vecYPrime9, b9, bPrime9, n9 ] = findLevPt_basic( vecG, matH, bTrgt9, matB, prm );
+	elseif (use0519)
+	[ vecY9, datOut ] = findLevPt_0519( vecG, matH, bTrgt9, matB, prm, dat );
+	n9 = datOut.iterCount;
 	else
 	[ vecY9, vecYPrime9, b9, bPrime9, n9 ] = findLevPt( vecG, matH, bTrgt9, matB, prm );
 	endif
@@ -79,6 +95,7 @@
 	[ bAct9, bTrgt9, bAct9 - bTrgt9 ]
 	msg( __FILE__, __LINE__, sprintf( "Num iter: %d, %d, %d.", n0, n5, n9 ) );
 	msg( __FILE__, __LINE__, sprintf( "Rel res: %0.3e, %0.3e, %0.3e.", bAct0/bTrgt0 - 1.0, bAct5/bTrgt5 - 1.0, bAct9/bTrgt9 - 1.0 ) );
+	toc();
 	return;
 	endif
 	%
