@@ -231,7 +231,7 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 	endif
 	%
 	iterCount = 0;
-	applyMinStepConstraintToCubic = false;
+	applyMinStepConstraint = false;
 	while (1)
 		if ( iterCount >= prm.iterMax )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( "IMPOSED STOP: Reached iterMax (%d).", prm.iterMax ) );
@@ -240,30 +240,27 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 		endif
 		iterCount++;
 		%
-		if ( applyMinStepConstraintToCubic )
-			tCubicMin = tLo + prm.minStepCoeff*(tHi-tLo);
-			tCubicMax = tHi - prm.minStepCoeff*(tHi-tLo);
+		if ( applyMinStepConstraint )
+			tMin = tLo + prm.minStepCoeff*(tHi-tLo);
+			tMax = tHi - prm.minStepCoeff*(tHi-tLo);
 		else
-			tCubicMin = tLo;
-			tCubicMax = tHi;
+			tMin = tLo;
+			tMax = tHi;
 		endif
-		[ t, bModel ] = __cubicRoot( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, bTrgt, tCubicMin, tCubicMax );
+		[ t, bModel ] = __cubicRoot( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, bTrgt, tMin, tMax );
 		if ( ~isempty(t) )
 			% Nothing to do.
-			msgif( prm.verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "Using cubic." );
+			stepTypeStr = "c";
 		elseif ( abs(bLo-bTrgt) < abs(bHi-bTrgt) )
 			%t = tLo + median([ prm.minStepCoeff*(tHi-tLo), (bTrgt-bLo)/bPrimeLo, 0.5*(tHi-tLo) ] );
-			t = median([ tCubicMin, tLo + (bTrgt-bLo)/bPrimeLo, (tHi+tLo)/2.0 ]);
+			t = median([ tMin, tLo + (bTrgt-bLo)/bPrimeLo, (tHi+tLo)/2.0 ]);
 			bModel = bLo + bPrimeLo*(t-tLo);
-			msgif( prm.verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "Using linear lo." );
+			stepTypeStr = "l";
 		else
 			%t = tHi - median([ prm.minStepCoeff*(tHi-tLo), (bHi-bTrgt)/bPrimeHi, 0.5*(tHi-tLo) ] );
-			t = median([ (tHi+tLo)/2.0, tHi - (bHi-bTrgt)/bPrimeHi, tCubicMax ] );
+			t = median([ (tHi+tLo)/2.0, tHi - (bHi-bTrgt)/bPrimeHi, tMax ] );
 			bModel = bHi + bPrimeHi*(t-tHi);
-			msgif( prm.verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "Using linear hi." );
-		endif
-		if ( bModel <= bLo || bModel >= bHi );
-			bModel = [];
+			stepTypeStr = "h";
 		endif
 		%
 		if ( t <= tLo || t >= tHi )
@@ -285,24 +282,25 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 			datOut.retCode = RETCODE__NUMERICAL_ISSUE;
 			break;
 		endif
+		msgif( prm.verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( ...
+		  "  iter %d:  %s %d;  t: %g ~ %g ~ %g;  (1-t: %g ~ %g ~ %g);  b: %g ~ %g ( expect %g, want %g ) ~ %g.", ...
+		  iterCount, stepTypeStr, applyMinStepConstraint, tLo, t, tHi, 1.0-tLo, 1.0-t, 1.0-tHi, bLo, b, bModel, bTrgt, bHi ) );
 		%
-		if ( ~isempty(bModel) )
-		msg( __FILE__, __LINE__, "Data dump..." );
-		[ tLo, t, tHi ]
-		1.0 - [ tLo, t, tHi ]
-		[ bLo, bModel, bHi, b ]
-		if ( abs(b-bModel) < prm.applyMinStepThresh*abs(bHi-bLo) )
-			%applyMinStepConstraintToCubic = false;
-		else
-			%applyMinStepConstraintToCubic = true;
-		endif
-		endif
-		%applyMinStepConstraintToCubic
 		if ( b < bTrgt )
+			if ( ~applyMinStepConstraint && abs(b-bModel) > 0.1*abs(bHi-bLo) )
+				applyMinStepConstraint = true;
+			else
+				applyMinStepConstraint = false;
+			endif
 			tLo = t;
 			bLo = b;
 			bPrimeLo = bPrime;
 		else
+			if ( ~applyMinStepConstraint && abs(b-bModel) > 0.1*abs(bHi-bLo) )
+				applyMinStepConstraint = true;
+			else
+				applyMinStepConstraint = false;
+			endif
 			tHi = t;
 			bHi = b;
 			bPrimeHi = bPrime;
