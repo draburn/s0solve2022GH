@@ -64,6 +64,8 @@ function [ matB, prm, dat ] = __init( vecG, matH, bTrgt=[], matB=[], prmIn=[], d
 	prm.extrapThresh0 = 100.0*eps;
 	prm.extrapThresh1 = 1.0 - 100.0*eps;
 	prm.iterMax = 100;
+	prm.minStepCoeff = 0.1;
+	prm.applyMinStepThresh = 0.1;
 	prm = overwritefields( prm, prmIn );
 	%
 	matC = mygetfield( datIn, "matC", [] );
@@ -92,6 +94,9 @@ function [ matB, prm, dat ] = __init( vecG, matH, bTrgt=[], matB=[], prmIn=[], d
 		assert( isrealscalar(prm.iterMax) );
 		assert( abs(prm.iterMax-round(prm.iterMax)) < sqrt(eps) );
 		assert( 1 <= prm.iterMax );
+		assert( isrealscalar(prm.minStepCoeff) );
+		assert( 0.0 <= prm.minStepCoeff )
+		assert( prm.minStepCoeff <= 0.5 );
 		%
 		sz = size( vecG, 1 );
 		assert( isrealarray(vecG,[sz,1]) );
@@ -226,6 +231,7 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 	endif
 	%
 	iterCount = 0;
+	applyMinStepConstraintToCubic = false;
 	while (1)
 		if ( iterCount >= prm.iterMax )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( "IMPOSED STOP: Reached iterMax (%d).", prm.iterMax ) );
@@ -234,29 +240,53 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 		endif
 		iterCount++;
 		%
-		% Build cubic model.
-		% See where the exterma are.
-		% If none are in our interval, take the (possibly constrained) root;
-		%  else, take the constrained linear model from the lower residual point.
+		if ( applyMinStepConstraintToCubic )
+			tCubicMin = tLo + prm.minStepCoeff*(tHi-tLo);
+			tCubicMax = tHi - prm.minStepCoeff*(tHi-tLo);
+		else
+			tCubicMin = tLo;
+			tCubicMax = tHi;
+		endif
+		[ t, bModel ] = __cubicRoot( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, bTrgt, tCubicMin, tCubicMax );
+		if ( ~isempty(t) )
+			% Nothing to do.
+		elseif ( abs(bLo-bTrgt) < abs(bHi-bTrgt) )
+			t = tLo + median([ prm.minStepCoeff*(tHi-tLo), (bTrgt-bLo)/bPrimeLo, 0.5*(tHi-tLo) ] );
+			bModel = [];
+		else
+			t = tHi - median([ prm.minStepCoeff*(tHi-tLo), (bHi-bTrgt)/bPrimeHi, 0.5*(tHi-tLo) ] );
+			bModel = [];
+		endif
 		%
-		% Below is simple bisection placeholder.
-		t = (tLo+tHi)/2.0;
+		if ( t <= tLo || t >= tHi )
+			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( ...
+			  "NUMERICAL ISSUE: Guess is out of bounds ( %g ~ %g ~ %g).", tLo, t, tHi )  );
+			datOut.retCode = RETCODE__NUMERICAL_ISSUE;
+			break;
+		endif
 		[ b, bPrime, vecY, funchYPrime ] = __calc( t, vecG, matH, matB, prm, dat );
 		if ( abs(b-bTrgt) < bTrgt*prm.bRelTol )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( "SUCCESS: Converged in %d iterations.", iterCount ) );
 			datOut.retCode = RETCODE__SUCCESS;
 			break;
 		endif
-		if ( t <= tLo || t >= tHi )
+		if ( b <= bLo || b >= bHi || bPrime <= 0.0 )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( ...
-			  "NUMERICAL ISSUE: Went out of bounds ( %g ~ %g ~ %g).", tLo, t, tHi )  );
+			  "NUMERICAL ISSUE: Function was non-monotonic ( %g ~ %g ~ %g, %g ~ %g ~ %g).", ...
+			  bLo, b, bHi, bPrimeLo, bPrime, bPrimeHi )  );
 			datOut.retCode = RETCODE__NUMERICAL_ISSUE;
 			break;
-		elseif ( b <= bLo || b >= bHi )
-			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( ...
-			  "NUMERICAL ISSUE: Function was non-monotonic ( %g ~ %g ~ %g).", bLo, b, bHi )  );
-			datOut.retCode = RETCODE__NUMERICAL_ISSUE;
-			break;
+		endif
+		%
+		if ( ~isempty(bModel) )
+		msg( __FILE__, __LINE__, "Data dump..." );
+		[ tLo, tHi, t ]
+		[ bLo, bHi, bModel, b ]
+		if ( abs(b-bModel) < prm.applyMinStepThresh*abs(bHi-bLo) )
+			applyMinStepConstraintToCubic = false;
+		else
+			applyMinStepConstraintToCubic = true;
+		endif
 		endif
 		if ( b < bTrgt )
 			tLo = t;
@@ -278,7 +308,65 @@ function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG
 endfunction
 
 
+function [ t, bModel ] = __cubicRoot( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, bTrgt, tMin, tMax )
+	[ x, fModel ] = __cubicRootScaled( ...
+	  bLo - bTrgt, bPrimeLo*(tHi-tLo), bHi - bTrgt, bPrimeHi*(tHi-tLo), (tMin-tLo)/(tHi-tLo), (tMax-tLo)/(tHi-tLo) );
+	if ( isempty(x) )
+		t = [];
+		bModel = [];
+	else
+		t = tLo + (tHi-tLo)*x;
+		bModel = bTrgt + fModel;
+	endif
+	return;
+endfunction
+% f = a*(x^3) + b*(x^2) + fp0*x + f0.
+% fp = 3*a*(x^2) + 2*b*x + fp0.
+% fpp = 6*a + 2*b
+% THIS IS HACKY!
+function [ x, fModel ] = __cubicRootScaled( f0, fp0, f1, fp1, xMin, xMax )
+	a = (fp1-fp0) - 2.0*(f1-f0-fp0);
+	b = 3.0*(f1-f0-fp0) - (fp1-fp0);
+	% since fp0, fp1 > 0, f' > 0 where f'' = 0 => no quad roots.
+	xe = -b/(3.0*a);
+	if ( 3.0*a*(xe^2) + 2.0*b*xe + fp0 <= 0.0 )
+		x = [];
+		fModel = [];
+		return;
+	endif
+	%
+	r = roots([ a, b, fp0, f0 ]);
+	x = [];
+	for n=1:length(r)
+	if ( isreal(r(n)) && 0.0 < r(n) && r(n) < 1.0 )
+		if ( isempty(x) )
+			x = r(n);
+		else
+			msg( __FILE__, __LINE__, "Data dump..." );
+			[ f0, fp0, f1, fp1 ]
+			[ a, b, fp0, f0 ]
+			r
+			x
+			error( "Inconsistency error calculating cubic root." );
+		endif
+	endif
+	endfor
+	if ( isempty(x) )
+		msg( __FILE__, __LINE__, "Data dump..." );
+		[ f0, fp0, f1, fp1 ]
+		[ a, b, fp0, f0 ]
+		r
+		x
+		error( "Inconsistency error calculating cubic root." );
+	endif
+	x = median([ xMin, x, xMax ]);
+	fModel = a*(x^3) + b*(x^2) + fp0*x + f0;
+	return;
+endfunction
+
+
 %!test
+%!	msg( __FILE__, __LINE__, "SKIPPING TEST." ); return;
 %!	numFigs = 0;
 %!	setprngstates(0);
 %!	sizeX = 5;
@@ -300,6 +388,7 @@ endfunction
 
 
 %!test
+%!	%msg( __FILE__, __LINE__, "SKIPPING TEST." ); return;
 %!	numFigs = 0;
 %!	setprngstates(0);
 %!	sizeX = 500;
