@@ -6,20 +6,24 @@ function [ vecY, datOut ] = findLevPt_0519( vecG, matH, bTrgt=[], matB=[], prmIn
 	%
 	t1 = 1.0;
 	[ b1, bPrime1, vecY1, funchYPrime1 ] = __calc( t1, vecG, matH, matB, prm, dat );
-	accept1 = false;
 	if ( isempty(bTrgt) )
-		accept1 = true;
 		msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCESS: Full step was requested." );
-	elseif ( b1 <= bTrgt + bTrgt*prm.bRelTol )
-		accept1 = true;
-		msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCESS: Full step is within tolerance." );
-	endif
-	if ( accept1 )
 		vecY = vecY1;
-		datOut.vecYPrime = funchYPrime1();
+		datOut.retCode = RETCODE__SUCCESS;
+		datOut.t = t1;
 		datOut.b = b1;
 		datOut.bPrime = bPrime1;
+		datOut.vecYPrime = funchYPrime1();
+		datOut.iterCount = 0;
+		return;
+	elseif ( b1 <= bTrgt + bTrgt*prm.bRelTol )
+		msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCESS: Full step is within tolerance." );
+		vecY = vecY1;
+		datOut.retCode = RETCODE__SUCCESS;
 		datOut.t = t1;
+		datOut.b = b1;
+		datOut.bPrime = bPrime1;
+		datOut.vecYPrime = funchYPrime1();
 		datOut.iterCount = 0;
 		return;
 	endif
@@ -27,24 +31,20 @@ function [ vecY, datOut ] = findLevPt_0519( vecG, matH, bTrgt=[], matB=[], prmIn
 	%
 	t0 = 0.0;
 	[ b0, bPrime0, vecY0, funchYPrime0 ] = __calc( t0, vecG, matH, matB, prm, dat );
-	accept0 = false;
 	if ( b0 >= bTrgt - bTrgt*prm.bRelTol )
-		accept0 = true;
 		msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCESS: Zero step is within tolerance." );
-	endif
-	if ( accept0 )
 		vecY = vecY0;
-		datOut.vecYPrime = funchYPrime0();
+		datOut.retCode = RETCODE__SUCCESS;
+		datOut.t = t0;
 		datOut.b = b0;
 		datOut.bPrime = bPrime0;
-		datOut.t = t0;
+		datOut.vecYPrime = funchYPrime0();
 		datOut.iterCount = 0;
 		return;
 	endif
 	%
 	%
 	[ vecY, datOut ] = __find( t0, b0, bPrime0, t1, b1, bPrime1, vecG, matH, bTrgt, matB, prm, dat );
-	msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCESS?: Completed __find()." );
 	return;
 endfunction
 
@@ -64,6 +64,7 @@ function [ matB, prm, dat ] = __init( vecG, matH, bTrgt=[], matB=[], prmIn=[], d
 	prm.cholRelTol = sqrt(eps);
 	prm.extrapThresh0 = 100.0*eps;
 	prm.extrapThresh1 = 1.0 - 100.0*eps;
+	prm.iterMax = 100;
 	prm = overwritefields( prm, prmIn );
 	%
 	matC = mygetfield( datIn, "matC", [] );
@@ -212,8 +213,65 @@ function [ b, bPrime, vecY, vecRho ] = __calcFromChol( t, vecG, matR, matB, matC
 endfunction
 
 
-function [ vecY, datOut ] = __find( t0, b0, bPrime0, t1, b1, bPrime1, vecG, matH, bTrgt, matB, prm, dat )
-	error( "Not implemented!" );
+function [ vecY, datOut ] = __find( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG, matH, bTrgt, matB, prm, dat )
+	[ vecY, datOut ] = __find_bisection( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG, matH, bTrgt, matB, prm, dat );
+	return;
+endfunction
+
+
+% Placeholder.
+function [ vecY, datOut ] = __find_bisection( tLo, bLo, bPrimeLo, tHi, bHi, bPrimeHi, vecG, matH, bTrgt, matB, prm, dat )
+	mydefs;
+	if ( prm.valdLev >= VALDLEV__LOW )
+		assert( tLo < tHi );
+		assert( bLo < bTrgt );
+		assert( bHi > bTrgt );
+		assert( bPrimeLo > 0.0 );
+		assert( bPrimeHi > 0.0 );
+	endif
+	%
+	for iterCount = 1 : prm.iterMax
+		t = (tLo+tHi)/2.0;
+		[ b, bPrime, vecY, funchYPrime ] = __calc( t, vecG, matH, matB, prm, dat );
+		if ( abs(b-bTrgt) < bTrgt*prm.bRelTol )
+			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( "SUCCESS: Converged in %d iterations.", iterCount ) );
+			datOut.retCode = RETCODE__SUCCESS;
+			datOut.t = t;
+			datOut.b = b;
+			datOut.bPrime = bPrime;
+			datOut.vecYPrime = funchYPrime();
+			datOut.iterCount = iterCount;
+			return;
+		endif
+		if ( t <= tLo || t >= tHi )
+			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "NUMERICAL ISSUE: Went out of bounds." );
+			datOut.retCode = RETCODE__NUMERICAL_ISSUE;
+			datOut.t = t;
+			datOut.b = b;
+			datOut.bPrime = bPrime;
+			datOut.vecYPrime = funchYPrime();
+			datOut.iterCount = iterCount;
+			return;
+		endif
+		if ( b < bTrgt )
+			tLo = t;
+			bLo = b;
+			bPrimeLo = bPrime;
+		else
+			tHi = t;
+			bHi = b;
+			bPrimeHi = bPrime;
+		endif
+	endfor
+	%
+	msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: Reached iterMax." );
+	datOut.retCode = RETCODE__IMPOSED_STOP;
+	datOut.t = t;
+	datOut.b = b;
+	datOut.bPrime = bPrime;
+	datOut.vecYPrime = funchYPrime();
+	datOut.iterCount = iterCount;
+	return;
 endfunction
 
 
@@ -229,8 +287,7 @@ endfunction
 %!	%
 %!	matH = matJ'*matJ;
 %!	vecG = matJ'*vecF;
-%!	%bTrgt = abs(randn())*norm(matB*(matH\vecG));
-%!	bTrgt = 1.0*norm(matB*(matH\vecG));
+%!	bTrgt = abs(randn())*norm(matB*(matH\vecG));
 %!	%
 %!	prm = [];
 %!	dat = [];
@@ -251,8 +308,7 @@ endfunction
 %!	%
 %!	matH = matJ'*matJ;
 %!	vecG = matJ'*vecF;
-%!	%bTrgt = abs(randn())*norm(matB*(matH\vecG));
-%!	bTrgt = 1.0*norm(matB*(matH\vecG));
+%!	bTrgt = abs(randn())*norm(matB*(matH\vecG));
 %!	%
 %!	prm = [];
 %!	dat = [];
