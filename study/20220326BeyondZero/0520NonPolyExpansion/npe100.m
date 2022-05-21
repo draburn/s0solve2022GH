@@ -40,7 +40,7 @@ endfor
 clear matR;
 nuSize = 101;
 foo = linspace( 1.0, 0.0, nuSize );
-nuVals = 1.0-(1.0-foo.^2).^2;
+nuVals = 1.0-(1.0-foo.^4).^2;
 for n=1:nuSize
 	matR = chol( nuVals(n)*matH + s*matC );
 	bOfNuVals(n) = nuVals(n) * norm( matB * ( matR \ ( matR' \ vecG ) ) );
@@ -142,7 +142,73 @@ plot( funchVuOfMu(1.0/nu0), b0, 'o', 'linewidth', 6, 'markersize', 15 );
 plot( funchVuOfMu(1.0/nu1), b1, 'o', 'linewidth', 6, 'markersize', 15 );
 plot( funchVuOfMu(1.0/nuC), bC, 's', 'linewidth', 6, 'markersize', 15 );
 hold off;
-
+%
+%
+b0 = 0.0;
+nu = muEps;
+matR = chol( nu*matH + s*matC );
+b1 = nu*norm(matB*(matR\(matR'\vecG)));
+nu = 2.0*muEps;
+matR = chol( nu*matH + s*matC );
+b2 = nu*norm(matB*(matR\(matR'\vecG)));
+bp = (b2-b0)/(2.0*muEps)
+%bp = (b1-b0)/muEps
+bpp = (b0+b2-2.0*b1)/(muEps^2);
+P = bp
+Q = -bpp/(2.0*bp)
+bModelPPPts = P*nuVals./( 1.0 + Q*nuVals );
+%
+numFigs++; figure(numFigs);
+plot( ...
+  2.0-nuVals, bOfNuVals, 'o-' );
+grid on;
+hold on;
+plot( 2.0-nuVals, bModelPPPts, '^-', 'linewidth', 2 );
+hold off;
+%
+%
+% Consider reallly close to nu = 0...
+% Look at this again...
+nu = muEps;
+matR = chol( nu*matH + s*matC );
+nuA = nu;
+bA = nu*norm(matB*(matR\(matR'\vecG)));
+nuA = (0.0+nu)/2.0;
+bpA = bA/nu;
+%
+nu = 0.01;
+matR = chol( nu*matH + s*matC );
+nuB = nu;
+bB = nu*norm(matB*(matR\(matR'\vecG)));
+bModelABPts = bpA*nuVals./( 1.0 + ((bpA/bB)-(1.0/nuB))*(nuVals-0.0) );
+%
+bModel0P = bpA*nuVals;
+%
+%
+b0 = 0.0;
+nu = muEps;
+matR = chol( nu*matH + s*matC );
+b1 = nu*norm(matB*(matR\(matR'\vecG)));
+nu = 2.0*muEps;
+matR = chol( nu*matH + s*matC );
+b2 = nu*norm(matB*(matR\(matR'\vecG)));
+bp = (b2-b0)/(2.0*muEps)
+%bp = (b1-b0)/muEps
+bpp = (b0+b2-2.0*b1)/(muEps^2);
+P = bp
+Q = -bpp/(2.0*bp)
+bModelPPPts = P*nuVals./( 1.0 + Q*nuVals );
+%
+%
+numFigs++; figure(numFigs);
+plot( ...
+  2.0-nuVals, bOfNuVals, 'o-' );
+grid on;
+hold on;
+plot( 2.0-nuVals, bModelABPts, 'x-', 'linewidth', 2 );
+plot( 2.0-nuVals, bModel0P, 'x-', 'linewidth', 2 );
+plot( 2.0-nuVals, bModelPPPts, '^-', 'linewidth', 2 );
+hold off;
 
 
 msg( __FILE__, __LINE__, "Goodbye!" ); return;
