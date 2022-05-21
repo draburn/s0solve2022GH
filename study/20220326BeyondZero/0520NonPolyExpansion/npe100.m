@@ -57,6 +57,37 @@ plot( ...
 grid on;
 %
 %
+% Let's do something simpler. (NPE stuff is below, after return.)
+mu0 = 0.5;
+matR0 = chol( matH + mu0*s*matC );
+vecY0 = matR0\(matR0'\(-vecG));
+b0 = norm(matB*vecY0);
+muEps = 1.0e-4;
+matR0P = chol( matH + (mu0+muEps)*s*matC );
+vecY0P = matR0P\(matR0P'\(-vecG));
+b0P = norm(matB*vecY0P);
+bp0 = (b0P-b0)/muEps;
+bModel00Pts = b0 ./ ( 1.0 + (-bp0/b0)*(muPts-mu0) );
+%
+mu1 = 2.0;
+matR1 = chol( matH + mu1*s*matC );
+vecY1 = matR1\(matR1'\(-vecG));
+b1 = norm(matB*vecY1);
+bModel01Pts = b0 ./ ( 1.0 + ((b0/b1)-1.0)*(muPts-mu0)/(mu1-mu0) );
+hold on;
+plot( vuPts, bModel00Pts, 'x-', 'linewidth', 2 );
+plot( vuPts, bModel01Pts, '-', 'linewidth', 2 );
+plot( funchVuOfMu(mu0), b0, 'o', 'linewidth', 6, 'markersize', 15 );
+plot( funchVuOfMu(mu1), b1, 'o', 'linewidth', 6, 'markersize', 15);
+hold off;
+%
+
+
+
+msg( __FILE__, __LINE__, "Goodbye!" ); return;
+
+
+
 % Look at impact of alpha.
 mu0 = 0.5;
 matR0 = chol( matH + mu0*s*matC );
