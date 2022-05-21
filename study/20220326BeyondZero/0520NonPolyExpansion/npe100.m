@@ -5,8 +5,8 @@
 %   M = ( 1 + a * d ) * M0 - d * ( a*M0 - c ).
 clear;
 numFigs = 0;
-setprngstates(0); sizeX = 5; sizeF = sizeX; sizeB = sizeX; sxexp = 0.0; sfexp = 0.0; sbexp = 0.0; bexp = 0.0; jexp = 0.0; x0exp = 0.0;
-%setprngstates(0); sizeX = 100; sizeF = sizeX; sizeB = sizeX; sxexp = 2.0; sfexp = 1.0; sbexp = 1.0; bexp = 1.0; jexp = 1.0; x0exp = 1.0;
+%setprngstates(0); sizeX = 5; sizeF = sizeX; sizeB = sizeX; sxexp = 0.0; sfexp = 0.0; sbexp = 0.0; bexp = 0.0; jexp = 0.0; x0exp = 0.0;
+setprngstates(0); sizeX = 100; sizeF = sizeX; sizeB = sizeX; sxexp = 0.0; sfexp = 0.0; sbexp = 0.0; bexp = 0.0; jexp = 0.0; x0exp = 0.0;
 %
 matSX = diag(exp(sxexp*randn(sizeX,1)));
 matSF = diag(exp(sfexp*randn(sizeF,1)));
