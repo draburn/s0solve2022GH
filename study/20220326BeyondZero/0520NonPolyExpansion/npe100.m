@@ -7,6 +7,7 @@ clear;
 numFigs = 0;
 %setprngstates(0); sizeX = 5; sizeF = sizeX; sizeB = sizeX; sxexp = 0.0; sfexp = 0.0; sbexp = 0.0; bexp = 0.0; jexp = 0.0; x0exp = 0.0;
 setprngstates(0); sizeX = 100; sizeF = sizeX; sizeB = sizeX; sxexp = 0.0; sfexp = 0.0; sbexp = 0.0; bexp = 0.0; jexp = 0.0; x0exp = 0.0;
+setprngstates(0); sizeX = 100; sizeF = sizeX; sizeB = sizeX; sxexp = 0.0; sfexp = 0.0; sbexp = 0.0; bexp = 0.0; jexp = 0.0; x0exp = 0.0;
 %
 matSX = diag(exp(sxexp*randn(sizeX,1)));
 matSF = diag(exp(sfexp*randn(sizeF,1)));
@@ -81,6 +82,66 @@ plot( funchVuOfMu(mu0), b0, 'o', 'linewidth', 6, 'markersize', 15 );
 plot( funchVuOfMu(mu1), b1, 'o', 'linewidth', 6, 'markersize', 15);
 hold off;
 %
+%
+%
+%
+numFigs++; figure(numFigs);
+plot( ...
+  muVals, bOfMuVals, 'o-', ...
+  2.0-nuVals, bOfNuVals, 'o-' );
+grid on;
+%
+nu = muEps;
+matR = chol( nu*matH + s*matC );
+nuA = nu;
+bA = nu*norm(matB*(matR\(matR'\vecG)));
+nuA = (0.0+nu)/2.0;
+bpA = bA/nu;
+%
+nu = 1.0;
+matR = chol( nu*matH + s*matC );
+nuB = nu;
+bB = nu*norm(matB*(matR\(matR'\vecG)));
+bModelABPts = bpA*nuPts./( 1.0 + ((bpA/bB)-(1.0/nuB))*(nuPts-0.0) );
+%
+%
+nu = 0.1;
+matR = chol( nu*matH + s*matC );
+nu0 = nu;
+b0 = nu*norm(matB*(matR\(matR'\vecG)));
+%
+nu = 2.0;
+matR = chol( nu*matH + s*matC );
+nu1 = nu;
+b1 = nu*norm(matB*(matR\(matR'\vecG)));
+P = b0/nu0;
+Q = ((b0*nu1)/(b1*nu0)-1.0)/(nu1-nu0);
+bModel01Pts = P*nuPts./( 1.0 + Q*(nuPts-nu0) );
+%
+%
+nu = 0.3;
+matR = chol( nu*matH + s*matC );
+nuC = nu;
+bC = nu*norm(matB*(matR\(matR'\vecG)));
+%
+nu = nu+muEps;
+matR = chol( nu*matH + s*matC );
+bCP = nu*norm(matB*(matR\(matR'\vecG)));
+bpC = (bCP-bC)/muEps;
+P = bC/nuC;
+Q = bpC/bC;
+bModelCCPts = P*nuPts./( 1.0 + Q*(nuPts-nuC) );
+%
+%
+hold on;
+plot( vuPts, bModelABPts, 'x-', 'linewidth', 2 );
+plot( vuPts, bModel01Pts, 'o-', 'linewidth', 2 );
+plot( vuPts, bModelCCPts, 's-', 'linewidth', 2 );
+plot( funchVuOfMu(1.0/nuB), bB, 'x', 'linewidth', 6, 'markersize', 15 );
+plot( funchVuOfMu(1.0/nu0), b0, 'o', 'linewidth', 6, 'markersize', 15 );
+plot( funchVuOfMu(1.0/nu1), b1, 'o', 'linewidth', 6, 'markersize', 15 );
+plot( funchVuOfMu(1.0/nuC), bC, 's', 'linewidth', 6, 'markersize', 15 );
+hold off;
 
 
 
