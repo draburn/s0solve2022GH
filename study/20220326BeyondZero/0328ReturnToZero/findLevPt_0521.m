@@ -32,7 +32,7 @@ function [ vecY, datOut ] = findLevPt_0521( vecG, matH, bTrgt=[], matB=[], prmIn
 		return;
 	endif
 	%
-	[ vecY, datOut ] = __find( bNewt, bPrimeNewt, vecG, matH, bTrgt, matB, prm, dat );
+	[ vecY, datOut ] = __find( 0.0, bNewt, bPrimeNewt, vecYNewt, funchYPrimeNewt, vecG, matH, bTrgt, matB, prm, dat );
 	return;
 endfunction
 
@@ -190,21 +190,25 @@ function [ b, bPrime, vecY, vecRho ] = __calcFromChol( vecG, matR, matB, matC )
 endfunction
 
 
-function [ vecY, datOut ] = __find( bNewt, bPrimeNewt, vecG, matH, bTrgt, matB, prm, dat )
+function [ vecY, datOut ] = __find( mu0, b0, bPrime0, vecY0, funchYPrime0, vecG, matH, bTrgt, matB, prm, dat )
 	mydefs;
 	if ( prm.valdLev >= VALDLEV__LOW )
 		assert( 0.0 < bTrgt );
-		assert( bTrgt < bNewt );
-		assert( bPrimeNewt < 0.0 );
+		assert( bTrgt < b0 );
+		assert( bPrime0 < 0.0 );
 	endif
 	%
-	mu0 = 0.0;
-	b0 = bNewt;
-	bPrime0 = bPrimeNewt;
+	mu = mu0;
+	b = b0;
+	bPrime = bPrime0;
+	vecY = vecY0;
+	funchYPrime = funchYPrime0;
 	haveFinite1 = false;
 	mu1 = +Inf;
 	b1 = 0.0;
 	bPrime1 = 0.0;
+	vecY1 = zeros(size(vecG));
+	funchYPrime1 = @()( zeros(size(vecG)) );
 	iterCount = 0;
 	while (1)
 		if ( iterCount >= prm.iterMax )
@@ -214,25 +218,27 @@ function [ vecY, datOut ] = __find( bNewt, bPrimeNewt, vecG, matH, bTrgt, matB, 
 		endif
 		iterCount++;
 		%
+		% Selection of next guess can probably be improved.
 		if (haveFinite1)
-			msg( __FILE__, __LINE__, "haveFinite1 is unsupported." );
-			break;
+			mu = mu0 + ( (b0/bTrgt) - 1.0 ) * ( mu1 - mu0 ) / ( (b0/b1) - 1.0 );
 		else
-			mu = mu0 - ( (b0/bTrgt) - 1.0 ) * b0 / bPrime0;
+			mu = mu0 + ( (b0/bTrgt) - 1.0 ) * b0 / (-bPrime0);
 		endif
 		%
-		[ mu0, mu, mu1 ]
+		%[ mu0, mu, mu1, mu0-mu, mu1-mu ]
 		if ( mu <= mu0 || mu >= mu1 )
 			error( "NUMERICAL ISSUE: Guess went out of bounds." );
 		endif
 		[ b, bPrime, vecY, funchYPrime ] = __calc( mu, vecG, matH, matB, prm, dat );
+		%[ b0, b, b1, b0-bTrgt, b-bTrgt, b1-bTrgt ]
 		if ( abs(b-bTrgt) < bTrgt*prm.bRelTol )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( "SUCCESS: Converged in %d iterations.", iterCount ) );
 			datOut.retCode = RETCODE__SUCCESS;
 			break;
 		endif
 		if ( b >= b0 || b <= b1 || bPrime >= 0.0 )
-			error( "NUMERICAL ISSUE: Function became non-monotonic." );
+			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "NUMERICAL ISSUE: Function became non-monotonic." );
+			break;
 		endif
 		%
 		if ( b < bTrgt )
@@ -240,12 +246,36 @@ function [ vecY, datOut ] = __find( bNewt, bPrimeNewt, vecG, matH, bTrgt, matB, 
 			mu1 = mu;
 			b1 = b;
 			bPrime1 = bPrime;
+			vecY1 = vecY;
+			funchYPrime1 = funchYPrime;
 		else
 			mu0 = mu;
 			b0 = b;
 			bPrime0 = bPrime;
+			vecY0 = vecY;
+			funchYPrime0 = funchYPrime;
+		endif
+		if ( haveFinite1 && abs(mu1-mu0) < 100.0*eps*(abs(mu1)+abs(mu0)) )
+			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "NUMERICAL ISSUE: Relative mu range reached precision limit." );
+			break;
 		endif
 	endwhile
+	%
+	% Make sure we're returning the best solution.
+	if ( abs(b0-bTrgt) < abs(b-bTrgt) )
+		mu = mu0;
+		b = b0;
+		bPrime = bPrime0;
+		vecY = vecY0;
+		funchYPrime = funchYPrime0;
+	endif
+	if ( abs(b1-bTrgt) < abs(b-bTrgt) )
+		mu = mu1;
+		b = b1;
+		bPrime = bPrime1;
+		vecY = vecY1;
+		funchYPrime = funchYPrime1;
+	endif
 	%
 	datOut.mu = mu;
 	datOut.b = b;
