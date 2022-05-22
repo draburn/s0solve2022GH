@@ -14,8 +14,8 @@
 	%setprngstates(65757664); sizeX = 1000; sizeF = 900; sizeB = sizeX; %0519 wass horrid.
 	%setprngstates(64609504); sizeX = 1000; sizeF = 900; sizeB = sizeX; %0519 meh.
 	%setprngstates(92034128); sizeX = 1000; sizeF = 900; sizeB = sizeX; %0519 better.
-	setprngstates(12629168); sizeX = 500; sizeF = 200; sizeB = sizeX; %0519 is 9x13x13; old (null) just fails.
-	%setprngstates(91450512); sizeX = 1000; sizeF = 900; sizeB = sizeX; %0519 is 7x10x10; old (null) just fails.
+	%setprngstates(12629168); sizeX = 500; sizeF = 200; sizeB = sizeX; %0519 is 9x13x13; old (null) just fails.
+	setprngstates(91450512); sizeX = 1000; sizeF = 900; sizeB = sizeX; %0519 is 7x10x10; old (null) just fails.
 	%
 	useBasic = false;
 	use0521 = true;

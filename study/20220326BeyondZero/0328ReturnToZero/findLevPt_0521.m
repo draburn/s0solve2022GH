@@ -47,8 +47,9 @@ function [ matB, prm, dat ] = __init( vecG, matH, bTrgt=[], matB=[], prmIn=[], d
 	prm.verbLev = VERBLEV__FLAGGED; prm.valdLev = VALDLEV__ZERO; % Production.
 	prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__MEDIUM; % Integration.
 	prm.verbLev = VERBLEV__DETAILS; prm.valdLev = VALDLEV__HIGH; % Performance testing.
-	prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Dev.
+	%prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Dev.
 	prm.bRelTol = sqrt(eps);
+	%prm.bRelTol = 1.0e-4;
 	prm.cholRelTol = sqrt(eps);
 	prm.epsReguRel = sqrt(eps);
 	prm.iterMax = 100;
@@ -209,6 +210,21 @@ function [ vecY, datOut ] = __find( mu0, b0, bPrime0, vecY0, funchYPrime0, vecG,
 	bPrime1 = 0.0;
 	vecY1 = zeros(size(vecG));
 	funchYPrime1 = @()( zeros(size(vecG)) );
+	
+	
+	%%%
+	% HACK THAT WORKS
+	if (bTrgt<0.01*b0)
+		matR = chol( dat.matC );
+		mu1 = norm(matB*(matR\(matR'\vecG)))/bTrgt;
+		assert( mu1 > mu0 );
+		[ b1, bPrime1, vecY1, funchYPrime1 ] = __calc( mu1, vecG, matH, matB, prm, dat );
+		haveFinite1 = true;
+	endif
+	%%%
+	
+	
+	%
 	iterCount = 0;
 	while (1)
 		if ( iterCount >= prm.iterMax )
@@ -218,9 +234,23 @@ function [ vecY, datOut ] = __find( mu0, b0, bPrime0, vecY0, funchYPrime0, vecG,
 		endif
 		iterCount++;
 		%
-		% Selection of next guess can probably be improved.
 		if (haveFinite1)
-			mu = mu0 + ( (b0/bTrgt) - 1.0 ) * ( mu1 - mu0 ) / ( (b0/b1) - 1.0 );
+		
+		
+			%%%
+			% HACK THAT WORKS
+			mu_from0 = mu0 + ( (b0/bTrgt) - 1.0 ) * b0 / (-bPrime0);
+			mu_from1 = mu1 + ( (b1/bTrgt) - 1.0 ) * b1 / (-bPrime1);
+			if ( mu_from0 < sqrt(mu0*mu1) && mu_from1 < sqrt(mu0*mu1) )
+				mu = mu_from0;
+			elseif ( mu_from0 > sqrt(mu0*mu1) && mu_from1 > sqrt(mu0*mu1) )
+				mu = mu_from1;
+			else
+				mu = mu0 + ( (b0/bTrgt) - 1.0 ) * ( mu1 - mu0 ) / ( (b0/b1) - 1.0 );
+			endif
+			%%%
+			
+			
 		else
 			mu = mu0 + ( (b0/bTrgt) - 1.0 ) * b0 / (-bPrime0);
 		endif
