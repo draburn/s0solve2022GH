@@ -15,11 +15,14 @@
 	%setprngstates(64609504); sizeX = 1000; sizeF = 900; sizeB = sizeX; %0519 meh.
 	%setprngstates(92034128); sizeX = 1000; sizeF = 900; sizeB = sizeX; %0519 better.
 	%setprngstates(12629168); sizeX = 500; sizeF = 200; sizeB = sizeX; %0519 is 9x13x13; old (null) just fails.
-	setprngstates(91450512); sizeX = 1000; sizeF = 900; sizeB = sizeX; %0519 is 7x10x10; old (null) just fails.
+	%setprngstates(91450512); sizeX = 1000; sizeF = 900; sizeB = sizeX; %0519 is 7x10x10; old (null) just fails.
+	%setprngstates(31746976); sizeX = 1000; sizeF = 900; sizeB = sizeX;
+	%setprngstates(98014544); sizeX = 1000; sizeF = 500; sizeB = sizeX;
+	setprngstates(65738160); sizeX = 1000; sizeF = 500; sizeB = sizeX; %0521 is 10x5x5
 	%
 	useBasic = false;
 	use0521 = true;
-	use0519 = true;
+	use0519 = false;
 	if (0)
 	vecX = randn(sizeX,1) .* exp(randn(sizeX,1)) .* exp(5.0*randn());
 	matJ = randn(sizeF,sizeX) .* exp(3.0*randn(sizeF,sizeX)) .* exp(5.0*randn());
