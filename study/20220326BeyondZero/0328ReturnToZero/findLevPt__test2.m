@@ -18,6 +18,7 @@
 	%setprngstates(91450512); sizeX = 1000; sizeF = 900; sizeB = sizeX; %0519 is 7x10x10; old (null) just fails.
 	%
 	useBasic = false;
+	use0521 = true;
 	use0519 = true;
 	if (0)
 	vecX = randn(sizeX,1) .* exp(randn(sizeX,1)) .* exp(5.0*randn());
@@ -59,6 +60,9 @@
 	bTrgt0 = 0.001*bN;
 	if ( useBasic )
 	[ vecY0, vecYPrime0, b0, bPrime0, n0 ] = findLevPt_basic( vecG, matH, bTrgt0, matB, prm );
+	elseif (use0521)
+	[ vecY0, datOut ] = findLevPt_0521( vecG, matH, bTrgt0, matB, prm, dat );
+	n0 = datOut.iterCount;
 	elseif (use0519)
 	[ vecY0, datOut ] = findLevPt_0519( vecG, matH, bTrgt0, matB, prm, dat );
 	n0 = datOut.iterCount;
@@ -71,6 +75,9 @@
 	bTrgt5 = 0.5*bN;
 	if ( useBasic )
 	[ vecY5, vecYPrime5, b5, bPrime5, n5 ] = findLevPt_basic( vecG, matH, bTrgt5, matB, prm );
+	elseif (use0521)
+	[ vecY5, datOut ] = findLevPt_0521( vecG, matH, bTrgt5, matB, prm, dat );
+	n5 = datOut.iterCount;
 	elseif (use0519)
 	mydefs;
 	%prm.verbLev = VERBLEV__COPIOUS;
@@ -86,6 +93,9 @@
 	bTrgt9 = 0.9*bN;
 	if ( useBasic )
 	[ vecY9, vecYPrime9, b9, bPrime9, n9 ] = findLevPt_basic( vecG, matH, bTrgt9, matB, prm );
+	elseif (use0521)
+	[ vecY9, datOut ] = findLevPt_0521( vecG, matH, bTrgt9, matB, prm, dat );
+	n9 = datOut.iterCount;
 	elseif (use0519)
 	[ vecY9, datOut ] = findLevPt_0519( vecG, matH, bTrgt9, matB, prm, dat );
 	n9 = datOut.iterCount;

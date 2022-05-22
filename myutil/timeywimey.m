@@ -12,6 +12,20 @@ for n = [ 200, 500, 1000 ]
 	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"j = randn(%d,%d)\".", 1000.0*(time()-t), n, n) );
 	%%%j .*= exp( 3.0*randn(n,n) );
 	%
+	j2_temp = randn(n,n);
+	t = time();
+	j3_temp = j + j2_temp;
+	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"j3 = j1 + j2\".", 1000.0*(time()-t)) );
+	clear j2_temp;
+	clear j3_temp;
+	%
+	x_temp = randn(n,1);
+	t = time();
+	f_temp = j * x_temp;
+	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"f = j * x\".", 1000.0*(time()-t)) );
+	clear x_temp;
+	clear f_temp;
+	%
 	t = time();
 	h = j' * j;
 	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"h = j' * j\".", 1000.0*(time()-t)) );
@@ -44,6 +58,7 @@ for n = [ 200, 500, 1000 ]
 	lambda = eig(h);
 	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"lambda = eig(h)\".", 1000.0*(time()-t)) );
 	%
+	continue
 	if ( n <= 500 )
 		t = time();
 		[ v, lambda ] = eig(h);
