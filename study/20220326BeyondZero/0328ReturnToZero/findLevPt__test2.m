@@ -21,6 +21,7 @@
 	setprngstates(65738160); sizeX = 1000; sizeF = 500; sizeB = sizeX; %0521 is 10x5x5
 	%
 	useBasic = false;
+	use0522 = true;
 	use0521 = true;
 	use0519 = false;
 	if (0)
@@ -60,9 +61,13 @@
 	prm = [];
 	prm.matBTB = matC;
 	dat.matC = matC;
-	bTrgt0 = 0.001*bN;
+	%bTrgt0 = 0.001*bN;
+	bTrgt0 = 1.0e-4*bN;
 	if ( useBasic )
 	[ vecY0, vecYPrime0, b0, bPrime0, n0 ] = findLevPt_basic( vecG, matH, bTrgt0, matB, prm );
+	elseif (use0522)
+	[ vecY0, datOut ] = findLevPt_0522( vecG, matH, bTrgt0, matB, prm, dat );
+	n0 = datOut.iterCount;
 	elseif (use0521)
 	[ vecY0, datOut ] = findLevPt_0521( vecG, matH, bTrgt0, matB, prm, dat );
 	n0 = datOut.iterCount;
@@ -78,6 +83,9 @@
 	bTrgt5 = 0.5*bN;
 	if ( useBasic )
 	[ vecY5, vecYPrime5, b5, bPrime5, n5 ] = findLevPt_basic( vecG, matH, bTrgt5, matB, prm );
+	elseif (use0522)
+	[ vecY5, datOut ] = findLevPt_0522( vecG, matH, bTrgt5, matB, prm, dat );
+	n5 = datOut.iterCount;
 	elseif (use0521)
 	[ vecY5, datOut ] = findLevPt_0521( vecG, matH, bTrgt5, matB, prm, dat );
 	n5 = datOut.iterCount;
@@ -96,6 +104,9 @@
 	bTrgt9 = 0.9*bN;
 	if ( useBasic )
 	[ vecY9, vecYPrime9, b9, bPrime9, n9 ] = findLevPt_basic( vecG, matH, bTrgt9, matB, prm );
+	elseif (use0522)
+	[ vecY9, datOut ] = findLevPt_0522( vecG, matH, bTrgt9, matB, prm, dat );
+	n9 = datOut.iterCount;
 	elseif (use0521)
 	[ vecY9, datOut ] = findLevPt_0521( vecG, matH, bTrgt9, matB, prm, dat );
 	n9 = datOut.iterCount;
