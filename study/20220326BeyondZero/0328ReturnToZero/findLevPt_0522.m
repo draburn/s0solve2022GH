@@ -216,46 +216,17 @@ function [ levDat, retCode, iterCount ] = __findLev( levDat0, vecG, matH, bTrgt,
 		assert( levDat0.bPrime < 0.0 );
 	endif
 	levDat_best = levDat0;
+	%
+	msgif( prm.verbLev >= VERBLEV__NOTE, __FILE__, __LINE__, "NOTE: Hack calculation of bGrad here." );
+	bGrad = norm(matB*(dat.matC\vecG)); %HACK!
+	%
 	haveFinite1 = false;
 	iterCount = 0;
-	%
-	if ( bTrgt < 0.1*levDat0.b )
-	%if ( 1 )
-		% Try large-mu form.
-		[ matR, cholFlag ] = chol( dat.matC );
-		if ( 0~=cholFlag )
-			error( "Cholesky factorization of constraint matrix failed." );
-		endif
-		mu = norm(matB*(matR\(matR'\vecG)))/bTrgt;
-		if ( mu > levDat0.mu )
-			levDat = __calcLev( mu, vecG, matH, matB, prm, dat );
-			if ( abs(levDat.b-bTrgt) < abs(levDat_best.b-bTrgt) )
-				levDat_best = levDat;
-				if ( abs(levDat_best.b-bTrgt) < prm.bRelTol*bTrgt )
-					msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCESS: Large-mu form was within tolerance." );
-					retCode = RETCODE__SUCCESS;
-					return;
-				endif
-			endif
-			if ( levDat.b >= levDat0.b || levDat.bPrime >= 0.0 )
-				msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, "NUMERICAL ISSUE: Function became non-monotonic." );
-				retCode = RETCODE__NUMERICAL_ISSUE;
-				return;
-			endif
-			if ( levDat.b < bTrgt )
-				levDat1 = levDat;
-				haveFinite1 = true;
-			else
-				levDat0 = levDat;
-			endif
-		endif
-	endif
-	%
 	while (~haveFinite1)
 		if ( iterCount >= prm.iterMax )
 			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, sprintf( "IMPOSED STOP: Reached iterMax (%d).", prm.iterMax ) );
 			levDat.retCode = RETCODE__IMPOSED_STOP;
-			break;
+			return;
 		endif
 		iterCount++;
 		%
@@ -265,16 +236,29 @@ function [ levDat, retCode, iterCount ] = __findLev( levDat0, vecG, matH, bTrgt,
 		mu1 = +Inf;
 		b1 = 0.0;
 		bPrime1 = 0.0;
-		mu = mu0 - ( (b0/bTrgt) - 1.0 ) * b0 / bPrime0;
-		stepTypeStr = "0";
-		if ( mu <= levDat0.mu )
-			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, "NUMERICAL ISSUE: Guess went out of bounds." );
+		if (bTrgt < 0.1*b0)
+			mu = mu0 + bGrad*( (1.0/bTrgt) - (1.0/b0) );
+			stepTypeStr = "G";
+		else
+			mu = mu0 + 10.0*( (b0/bTrgt) - 1.0 ) * b0 / (-bPrime0); % Intentional overshoot.
+			stepTypeStr = "O";
+		endif
+		%
+		if ( mu <= mu0 )
+			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, "NUMERICAL ISSUE:Guess went out of bounds." );
 			retCode = RETCODE__NUMERICAL_ISSUE;
+			return;
 		endif
 		levDat = __calcLev( mu, vecG, matH, matB, prm, dat );
 		msgif( prm.verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( ...
-		  " %3d:  mu: %9.3e ~ %9.3e (%8.3e);  b: %9.3e ~ %10.3e;  trial: %s, %9.3e, %10.3e.", ...
+		  " %3d:  mu: %9.3e ~ %9.3e (%9.3e);  b: %9.3e ~ %10.3e;  trial: %2s, %9.3e, %10.3e.", ...
 		  iterCount, mu0, mu1, mu1-mu0, b0-bTrgt, b1-bTrgt, stepTypeStr, mu, levDat.b-bTrgt ) );
+		if ( levDat.b >= b0 || levDat.bPrime >= 0.0 )
+			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, "NUMERICAL ISSUE: Function became non-monotonic." );
+			retCode = RETCODE__NUMERICAL_ISSUE;
+			return;
+		endif
+		%
 		if ( abs(levDat.b-bTrgt) < abs(levDat_best.b-bTrgt) )
 			levDat_best = levDat;
 			if ( abs(levDat_best.b-bTrgt) < prm.bRelTol*bTrgt )
@@ -283,63 +267,71 @@ function [ levDat, retCode, iterCount ] = __findLev( levDat0, vecG, matH, bTrgt,
 				return;
 			endif
 		endif
-		if ( levDat.b >= levDat0.b || levDat.bPrime >= 0.0 )
-			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, "NUMERICAL ISSUE: Function became non-monotonic." );
-			retCode = RETCODE__NUMERICAL_ISSUE;
-			break;
-		endif
 		%
 		if ( levDat.b < bTrgt )
-			haveFinite1 = true;
 			levDat1 = levDat;
+			haveFinite1 = true;
 		else
 			levDat0 = levDat;
 		endif
 	endwhile
 	%
+	applyConstraints = false;
 	while (1)
 		if ( iterCount >= prm.iterMax )
-			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( "IMPOSED STOP: Reached iterMax (%d).", prm.iterMax ) );
-			datOut.retCode = RETCODE__IMPOSED_STOP;
-			break;
+			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, sprintf( "IMPOSED STOP: Reached iterMax (%d).", prm.iterMax ) );
+			levDat.retCode = RETCODE__IMPOSED_STOP;
+			return;
 		endif
 		iterCount++;
-		
-		%%%
-		% This part needs work!
+		%
 		mu0 = levDat0.mu;
 		b0 = levDat0.b;
 		bPrime0 = levDat0.bPrime;
 		mu1 = levDat1.mu;
 		b1 = levDat1.b;
 		bPrime1 = levDat1.bPrime;
-		mu_from0 = mu0 - ( (b0/bTrgt) - 1.0 ) * b0 / bPrime0;
-		mu_from1 = mu1 - ( (b1/bTrgt) - 1.0 ) * b1 / bPrime1;
+		mu_from0 = mu0 + ( (b0/bTrgt) - 1.0 ) * b0 / (-bPrime0);
+		mu_from1 = mu1 + ( (b1/bTrgt) - 1.0 ) * b1 / (-bPrime1);
 		mu_fromX = mu0 + ( (b0/bTrgt) - 1.0 ) * ( mu1 - mu0 ) / ( (b0/b1) - 1.0 );
-		mu_for0 = mu0 + 0.3*(mu1-mu0);
-		mu_for1 = mu0 + 0.7*(mu1-mu0);
-		%if ( mu_from0 < mu_for0 && mu_from1 < mu_for0 && mu_fromX < mu_for0 )
-		if ( abs(b0-bTrgt)*sqrt(sqrt(mu_from0-mu0)) < abs(b1-bTrgt)*sqrt(sqrt(mu1-mu_from1)) && mu_from0 < 0.9*mu1 )
+		%if ( abs(b0-bTrgt)^2*abs(bPrime1)^0.5 < abs(b1-bTrgt)^2*abs(bPrime0)^0.5 && mu_from0 < mu1 )
+		if ( abs(b0-bTrgt) < abs(b1-bTrgt) && mu_from0 < mu1 )
 			mu = mu_from0;
 			stepTypeStr = "0";
-		%elseif ( mu_from0 > mu_for1 && mu_from1 > mu_for1 && mu_fromX > mu_for1 )
-		elseif ( abs(b1-bTrgt)*sqrt(sqrt(mu1-mu_from1)) < abs(b0-bTrgt)*sqrt(sqrt(mu_from0-mu0)) && mu_from1 > 1.1*mu0 )
+		%elseif ( abs(b0-bTrgt)^2*abs(bPrime1)^0.5 > abs(b1-bTrgt)^2*abs(bPrime0)^0.5 && mu_from1 > mu0 )
+		elseif ( abs(b0-bTrgt) > abs(b1-bTrgt) && mu_from1 > mu0 )
 			mu = mu_from1;
 			stepTypeStr = "1";
 		else
 			mu = mu_fromX;
 			stepTypeStr = "X";
 		endif
-		%%%
-		
-		if ( mu <= levDat0.mu || mu >= levDat1.mu )
-			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, "NUMERICAL ISSUE: Guess went out of bounds." );
+		if ( applyConstraints )
+			mu = median([ mu0+0.1*(mu1-mu0), mu, mu1-0.1*(mu1-mu0) ]);
+			stepTypeStr = [ stepTypeStr, "c" ];
+		endif
+		%
+		if ( mu <= mu0 || mu >= mu1 )
+			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, "NUMERICAL ISSUE:Guess went out of bounds." );
 			retCode = RETCODE__NUMERICAL_ISSUE;
+			return;
 		endif
 		levDat = __calcLev( mu, vecG, matH, matB, prm, dat );
 		msgif( prm.verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( ...
-		  " %3d:  mu: %9.3e ~ %9.3e (%8.3e);  b: %9.3e ~ %10.3e;  trial: %s, %9.3e, %10.3e.", ...
+		  " %3d:  mu: %9.3e ~ %9.3e (%9.3e);  b: %9.3e ~ %10.3e;  trial: %2s, %9.3e, %10.3e.", ...
 		  iterCount, mu0, mu1, mu1-mu0, b0-bTrgt, b1-bTrgt, stepTypeStr, mu, levDat.b-bTrgt ) );
+		if ( levDat.b >= b0 || levDat.bPrime >= 0.0 || levDat.b <= b1 )
+			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, "NUMERICAL ISSUE: Function became non-monotonic." );
+			retCode = RETCODE__NUMERICAL_ISSUE;
+			return;
+		endif
+		%
+		if ( ~applyConstraints && abs(levDat.b-bTrgt) > 0.5 * abs(levDat_best.b-bTrgt) )
+			applyConstraints = true;
+		else
+			applyConstraints = false;
+		endif
+		%
 		if ( abs(levDat.b-bTrgt) < abs(levDat_best.b-bTrgt) )
 			levDat_best = levDat;
 			if ( abs(levDat_best.b-bTrgt) < prm.bRelTol*bTrgt )
@@ -347,11 +339,6 @@ function [ levDat, retCode, iterCount ] = __findLev( levDat0, vecG, matH, bTrgt,
 				retCode = RETCODE__SUCCESS;
 				return;
 			endif
-		endif
-		if ( levDat.b >= levDat0.b || levDat.bPrime >= 0.0 || levDat.b <= levDat1.b )
-			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, "NUMERICAL ISSUE: Function became non-monotonic." );
-			retCode = RETCODE__NUMERICAL_ISSUE;
-			break;
 		endif
 		%
 		if ( levDat.b < bTrgt )

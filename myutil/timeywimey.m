@@ -58,8 +58,12 @@ for n = [ 200, 500, 1000 ]
 	lambda = eig(h);
 	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"lambda = eig(h)\".", 1000.0*(time()-t)) );
 	%
-	continue
+	t = time();
+	x = r \ ( r' \ h );
+	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"x = r \\ ( r' \\ h )\".", 1000.0*(time()-t)) );
+	%
 	if ( n <= 500 )
+		%
 		t = time();
 		[ v, lambda ] = eig(h);
 		msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"[ v, lambda ] = eig(h)\".", 1000.0*(time()-t)) );

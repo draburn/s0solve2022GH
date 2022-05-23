@@ -18,7 +18,12 @@
 	%setprngstates(91450512); sizeX = 1000; sizeF = 900; sizeB = sizeX; %0519 is 7x10x10; old (null) just fails.
 	%setprngstates(31746976); sizeX = 1000; sizeF = 900; sizeB = sizeX;
 	%setprngstates(98014544); sizeX = 1000; sizeF = 500; sizeB = sizeX;
-	setprngstates(65738160); sizeX = 1000; sizeF = 500; sizeB = sizeX; %0521 is 10x5x5
+	%setprngstates(65738160); sizeX = 1000; sizeF = 500; sizeB = sizeX; %0521 is 10x5x5
+	%
+	%%%setprngstates(57428304); sizeX = 100; sizeF = 99; sizeB = sizeX;
+	%setprngstates(11053568); sizeX = 500; sizeF = 500; sizeB = sizeX;
+	setprngstates(22617792); sizeX = 500; sizeF = 500; sizeB = sizeX;
+	%
 	%
 	useBasic = false;
 	use0522 = true;
@@ -47,7 +52,7 @@
 	matH += sqrt(eps)*diag(diag(matH));
 	%
 	vecYN = matH\vecG;
-	bN = norm(matB*vecYN);
+	bN = norm(matB*vecYN)
 	%
 	vecCYN = matC*vecYN;
 	alpha_hDom = (3.0/8.0)*sumsq(matB*vecYN)/(vecCYN'*(matH\vecCYN));
@@ -55,14 +60,47 @@
 	%[ norm(matH), alpha_hDom*norm(matC), alpha_cDom*norm(matC) ]
 	%alpha = alpha_cDom; matC *= alpha; matB *= sqrt(alpha); bN *= sqrt(alpha);
 	%
+	%
+	if (0)
+		numPts = 1001;
+		%muPts = 100.0*linspace(1000.0,2000.0,numPts)';
+		muPts = 1.0e8*(0.0+linspace(0.0,1.0,numPts).^4);
+		for n=1:numPts
+			matR = chol( matH + muPts(n)*matC );
+			bPts(n) = norm(matB*(matR\(matR'\vecG)));
+		endfor
+		%
+		n0 = 800;
+		mu0 = muPts(n0)+sqrt(eps)
+		b0 = bPts(n0);
+		bPrime0 = (bPts(n0+1)-bPts(n0-1))/(muPts(n0+1)-muPts(n0-1));
+		bModel0Pts = b0 ./ ( 1.0 - (bPrime0/b0)*(muPts-mu0) );
+		msk0 = (bModel0Pts<max(bPts))&(bModel0Pts>0.0);
+		%
+		n1 = 500;
+		mu1 = muPts(n1);
+		b1 = bPts(n1);
+		bPrime1 = (bPts(n1+1)-bPts(n1-1))/(muPts(n1+1)-muPts(n1-1));
+		Q = (b0/b1-1.0)/(mu1-mu0);
+		bModel01Pts = b0 ./ ( 1.0 + Q*(muPts-mu0) );
+		msk01 = (bModel01Pts<max(bPts))&(bModel01Pts>0.0);
+		%
+		tPts = 1.0./(1.0+muPts);
+		vuPts = 1+muPts;
+		numFigs++; figure(numFigs);
+		funchViz = @(x)( 1.0./x - 1.0/max(bPts) );
+		plot( vuPts, funchViz(bPts), 'o-', vuPts(msk0), funchViz(bModel0Pts(msk0)), '-', vuPts(msk01), funchViz(bModel01Pts(msk01)), '-' );
+		grid on;
+	endif
+	%
+	%
 	msg( __FILE__, __LINE__, "--- Please ignore any warnings above this line! ---" );
 	if (1)
 	tic();
 	prm = [];
 	prm.matBTB = matC;
 	dat.matC = matC;
-	%bTrgt0 = 0.001*bN;
-	bTrgt0 = 1.0e-4*bN;
+	bTrgt0 = 0.001*bN;
 	if ( useBasic )
 	[ vecY0, vecYPrime0, b0, bPrime0, n0 ] = findLevPt_basic( vecG, matH, bTrgt0, matB, prm );
 	elseif (use0522)
