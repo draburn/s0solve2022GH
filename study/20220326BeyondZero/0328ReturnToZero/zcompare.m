@@ -11,7 +11,7 @@ endif
 %
 %
 sizeX = 100;
-fType = 5;
+fType = 7;
 %fSeed = 84943088;
 %fSeed = 68716288;
 fSeed = 22083744;
@@ -48,8 +48,8 @@ resumeRun = 0;
 else
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 500; runList(numRuns).r.prmMemo = "";
+%numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
+%numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 500; runList(numRuns).r.prmMemo = "";
 
 if (0)
 	numRuns++;

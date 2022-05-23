@@ -984,8 +984,12 @@ function vecU = __precon( vecRhoF, prm, vecX, vecF )
 		vecU = prm.funchPrecon( vecRhoF, vecX, vecF );
 	elseif ( ~isempty(prm.precon_matU) )
 		vecU = prm.precon_matU \ ( prm.precon_matL \ vecRhoF );
-	else
+	elseif( size(vecX,1) == size(vecF,1) )
 		vecU = vecRhoF;
+	else
+		sizeX = size(vecX,1);
+		sizeF = size(vecF,1);
+		vecU = interp1( (0:sizeF-1), vecRhoF, linspace(0.0,sizeF-1.0,sizeX)' );
 	endif
 return;
 endfunction
@@ -1472,16 +1476,6 @@ endfunction
 
 
 function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
-	msg( __FILE__, __LINE__, "Will I throw an exception???" );
-	if (0)
-	re = rand()
-	if ( abs(re-0.8288) < 0.001 )
-		msg( __FILE__, __LINE__, "YEAH, LET'S GO EXCEPTION!" );
-		error( "YES, I THROW AN EXCEPTION!" );
-	else
-		msg( __FILE__, __LINE__, "No, no exception this time." );
-	endif
-	endif
 	vecX = fModelDat.vecX;
 	vecF = fModelDat.vecF;
 	%omega = fModelDat.omega;
