@@ -14,7 +14,7 @@ function [ vecY, datOut ] = findLevPt_0522( vecG, matH, bTrgt=[], matB=[], prmIn
 	%
 	levDat_newt = __calcLev_newt( vecG, matH, matB, prm, dat );
 	datOut.levDat_newt = levDat_newt;
-	if ( isempty(bTrgt) || abs(bTrgt-levDat_newt.b) <= bTrgt*prm.bRelTol )
+	if ( isempty(bTrgt) || levDat_newt.b <= bTrgt + bTrgt*prm.bRelTol )
 		vecY = levDat_newt.vecY;
 		datOut.levDat = levDat_newt;
 		datOut.iterCount = 0;

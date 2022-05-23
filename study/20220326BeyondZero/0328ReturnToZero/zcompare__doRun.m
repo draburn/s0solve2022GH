@@ -65,6 +65,14 @@ case 1100
 	%%%r.fevalCountOfStep = r.datOut.fevalCountVals(r.datOut.iterCountOfSteps);
 	%%%r.fBestNormOfStep = r.datOut.fNormVals(r.datOut.iterCountOfSteps);
 	r.isValid = true;
+case 1150
+	r.runTypeDescrip = "z150";
+	[ r.vecXF, r.vecFF, r.datOut ] = zlinsolf150( funchF, vecX0, [], r.prm );
+	r.fevalCount = r.datOut.fevalCount;
+	r.stepCount = r.datOut.stepCount;
+	r.fevalCountOfStep = r.datOut.fevalCountOfSteps;
+	r.fBestNormOfStep = r.datOut.fNormOfSteps;
+	r.isValid = true;
 otherwise
 	msg( __FILE__, __LINE__, sprintf( "ERROR: Invalid runType (%d)", r.runType ) );
 	r.isValid = false;
