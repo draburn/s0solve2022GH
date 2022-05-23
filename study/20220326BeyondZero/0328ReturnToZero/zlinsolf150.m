@@ -40,11 +40,25 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 		vecF_initial = funchF( vecX_initial );
 		fevalCount++;
 	endif
-	prm = __initPrm( vecX_initial, vecF_initial, prm );
+	try
+		prm = __initPrm( vecX_initial, vecF_initial, prm );
+	catch
+		datOut.fevalCount = fevalCount;
+		datOut.stepCount = stepCount;
+		msg( __FILE__, __LINE__, "Caught an error." );
+		return;
+	end_try_catch
 	%
 	msgif( prm.msgCopious, __FILE__, __LINE__, "Initializing subspace." );
-	[ fModelDat, datOut_initModel ] = __initModel( funchF, vecX_initial, vecF_initial, prm );
-	fevalCount += datOut_initModel.fevalCount;
+	try
+		[ fModelDat, datOut_initModel ] = __initModel( funchF, vecX_initial, vecF_initial, prm );
+		fevalCount += datOut_initModel.fevalCount;
+	catch
+		datOut.fevalCount = fevalCount;
+		datOut.stepCount = stepCount;
+		msg( __FILE__, __LINE__, "Caught an error." );
+		return;
+	end_try_catch
 	%
 	% Current local vecX and vecF are stored only in fModelDat to avoid redundancy.
 	iterCount = 0;
@@ -78,9 +92,15 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 			break;
 		endif
 		endif
-		
 		%
-		fModelDat = __analyzeModel( fModelDat, prm );
+		try
+			fModelDat = __analyzeModel( fModelDat, prm );
+		catch
+			datOut.fevalCount = fevalCount;
+			datOut.stepCount = stepCount;
+			msg( __FILE__, __LINE__, "Caught an error." );
+			return;
+		end_try_catch
 		if ( fModelDat.omegaModelVarIU < -sqrt(eps)*fModelDat.omega ...
 		  || fModelDat.omegaModelVarIB < -sqrt(eps)*fModelDat.omega ...
 		  || fModelDat.omegaModelVarPB < -sqrt(eps)*fModelDat.omega )
@@ -197,9 +217,16 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 			%  alternatively, we could be more conservative about expanding the subspace.
 			% This is an area for future analysis.
 			msgif( prm.msgCopious, __FILE__, __LINE__, "Expanding subspace." );
-			[ fModelDat, datOut_expandModel ] = __expandModel( fModelDat.vecFModelIU, funchF, fModelDat, prm );
-			fevalCount += datOut_expandModel.fevalCount;
-			continue;
+			try
+				[ fModelDat, datOut_expandModel ] = __expandModel( fModelDat.vecFModelIU, funchF, fModelDat, prm );
+				fevalCount += datOut_expandModel.fevalCount;
+				continue;
+			catch
+				datOut.fevalCount = fevalCount;
+				datOut.stepCount = stepCount;
+				msg( __FILE__, __LINE__, "Caught an error." );
+				return;
+			end_try_catch
 		endif
 		endif
 		%
@@ -227,7 +254,14 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 				stepCount++;
 				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Step %d: Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
 				  fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount ) );
-				fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
+				try
+					fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
+				catch
+					datOut.fevalCount = fevalCount;
+					datOut.stepCount = stepCount;
+					msg( __FILE__, __LINE__, "Caught an error." );
+					return;
+				end_try_catch
 				datOut.iterCountOfSteps(stepCount+1) = iterCount+1;
 				datOut.fevalCountOfSteps(stepCount+1) = fevalCount;
 				datOut.fNormOfSteps(stepCount+1) = norm(vecF_best);
@@ -253,13 +287,27 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 				if ( norm(vecF_trial-fModelDat.vecFModelIU) <= excellentThresh*norm(fModelDat.vecFModelIU) )
 					msgif( prm.msgCopious, __FILE__, __LINE__, "  Model was very accurate; removing wall(s)." );
 					bRemoveFactor = mygetfield( prm, "bRemoveFactor", 1.5 );
-					fModelDat = __removeB( bRemoveFactor*fModelDat.vecYIU, fModelDat, prm );
+					try
+						fModelDat = __removeB( bRemoveFactor*fModelDat.vecYIU, fModelDat, prm );
+					catch
+						datOut.fevalCount = fevalCount;
+						datOut.stepCount = stepCount;
+						msg( __FILE__, __LINE__, "Caught an error." );
+						return;
+					end_try_catch
 				endif
 				stepCount++;
 				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Step %d: Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
 				  stepCount, fModelDat.omega, sumsq(vecF_trial)/2.0, fModelDat.omega-sumsq(vecF_trial)/2.0, fevalCount ) );
-				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
-				datOut.iterCountOfSteps(stepCount+1) = iterCount+1;
+				try
+					fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
+				catch
+					datOut.fevalCount = fevalCount;
+					datOut.stepCount = stepCount;
+					msg( __FILE__, __LINE__, "Caught an error." );
+					return;
+				end_try_catch
+			datOut.iterCountOfSteps(stepCount+1) = iterCount+1;
 				datOut.fevalCountOfSteps(stepCount+1) = fevalCount;
 				datOut.fNormOfSteps(stepCount+1) = norm(vecF_best);
 				datOut.vecXOfSteps(:,stepCount+1) = fModelDat.vecX;
@@ -283,11 +331,25 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 			% But, first, make sure uncertainty in W was not the issue.
 			vecY = fModelDat.vecYIU;
 			vecU = fModelDat.matV*vecY;
-			vecV = __calcOrthonorm( vecU, fModelDat.matVLocal, prm );
+			try
+				vecV = __calcOrthonorm( vecU, fModelDat.matVLocal, prm );
+			catch
+				datOut.fevalCount = fevalCount;
+				datOut.stepCount = stepCount;
+				msg( __FILE__, __LINE__, "Caught an error." );
+				return;
+			end_try_catch
 			refreshedTrialStep = false;
 			if ( 0.0 ~= norm(vecV) )
 				msgif( prm.msgCopious, __FILE__, __LINE__, "  Refreshing trial step before adding wall." );
-				[ fModelDat, datOut_refresh ] = __refresh( vecY, funchF, fModelDat, prm );
+				try
+					[ fModelDat, datOut_refresh ] = __refresh( vecY, funchF, fModelDat, prm );
+				catch
+					datOut.fevalCount = fevalCount;
+					datOut.stepCount = stepCount;
+					msg( __FILE__, __LINE__, "Caught an error." );
+					return;
+				end_try_catch
 				fevalCount += datOut_refresh.fevalCount;
 				refreshedTrialStep = true;
 			endif
@@ -296,11 +358,25 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 			if ( norm( vecF_trial - vecFModel ) > badThresh * norm(vecFModel) )
 				msgif( prm.msgCopious, __FILE__, __LINE__, "  Model was very bad; adding wall." );
 				bAddFactor = mygetfield( prm, "bAddFactor", 0.5 );
-				fModelDat = __addB( bAddFactor*vecY, fModelDat, prm );
+				try
+					fModelDat = __addB( bAddFactor*vecY, fModelDat, prm );
+				catch
+					datOut.fevalCount = fevalCount;
+					datOut.stepCount = stepCount;
+					msg( __FILE__, __LINE__, "Caught an error." );
+					return;
+				end_try_catch
 			elseif (~refreshedTrialStep)
 				msgif( prm.msgCopious, __FILE__, __LINE__, "  Did not refresh trial step but model was bed enough; adding wall." );
 				bAddFactor = mygetfield( prm, "bAddFactor", 0.5 );
-				fModelDat = __addB( bAddFactor*vecY, fModelDat, prm );
+				try
+					fModelDat = __addB( bAddFactor*vecY, fModelDat, prm );
+				catch
+					datOut.fevalCount = fevalCount;
+					datOut.stepCount = stepCount;
+					msg( __FILE__, __LINE__, "Caught an error." );
+					return;
+				end_try_catch
 			endif
 			%
 			clear vecX_trial;
@@ -469,7 +545,14 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 				stepCount++;
 				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Step %d: Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
 				  stepCount, fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount ) );
-				fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
+				try
+					fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
+				catch
+					datOut.fevalCount = fevalCount;
+					datOut.stepCount = stepCount;
+					msg( __FILE__, __LINE__, "Caught an error." );
+					return;
+				end_try_catch
 				datOut.iterCountOfSteps(stepCount+1) = iterCount+1;
 				datOut.fevalCountOfSteps(stepCount+1) = fevalCount;
 				datOut.fNormOfSteps(stepCount+1) = norm(vecF_best);
@@ -495,7 +578,14 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 				if ( norm(vecF_trial-fModelDat.vecFModelPB) <= excellentThresh*norm(fModelDat.vecFModelPB) )
 					msgif( prm.msgCopious, __FILE__, __LINE__, "  Model was very accurate; removing wall(s)." );
 					bRemoveFactor = mygetfield( prm, "bRemoveFactor", 1.5 );
-					fModelDat = __removeB( bRemoveFactor*fModelDat.vecYPB, fModelDat, prm );
+					try
+						fModelDat = __removeB( bRemoveFactor*fModelDat.vecYPB, fModelDat, prm );
+					catch
+						datOut.fevalCount = fevalCount;
+						datOut.stepCount = stepCount;
+						msg( __FILE__, __LINE__, "Caught an error." );
+						return;
+					end_try_catch
 				endif
 				stepCount++;
 				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Step %d: Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
@@ -503,7 +593,14 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 				%
 				%
 				%%%
-				fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
+				try
+					fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
+				catch
+					datOut.fevalCount = fevalCount;
+					datOut.stepCount = stepCount;
+					msg( __FILE__, __LINE__, "Caught an error." );
+					return;
+				end_try_catch
 				%msg( __FILE__, __LINE__, "HACK! Reinitializing fModelDat!" );
 				%[ fModelDat, datOut_initModel ] = __initModel( funchF, vecX_trial, vecF_trial, prm );
 				%fevalCount += datOut_initModel.fevalCount;
@@ -535,7 +632,14 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 			% But, first, make sure uncertainty in W was not the issue.
 			vecY = fModelDat.vecYPB;
 			vecU = fModelDat.matV*vecY;
-			vecV = __calcOrthonorm( vecU, fModelDat.matVLocal, prm );
+			try
+				vecV = __calcOrthonorm( vecU, fModelDat.matVLocal, prm );
+			catch
+				datOut.fevalCount = fevalCount;
+				datOut.stepCount = stepCount;
+				msg( __FILE__, __LINE__, "Caught an error." );
+				return;
+			end_try_catch
 			refreshedTrialStep = false;
 			if ( 0.0 ~= norm(vecV) )
 				msgif( prm.msgCopious, __FILE__, __LINE__, "  Refreshing trial step before adding wall." );
@@ -543,7 +647,14 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 				%assert( reldiff( norm(fModelDat.matVLocal'*vecV), 0.0, eps ) < sqrt(eps) );
 				%assert( 0.0 ~= norm(vecV) );
 				%assert( fModelDat.lPB < 1.0-sqrt(eps) ); % Conceptually equiv to 0=norm(vecV), but less reliable?
-				[ fModelDat, datOut_refresh ] = __refresh( vecY, funchF, fModelDat, prm );
+				try
+					[ fModelDat, datOut_refresh ] = __refresh( vecY, funchF, fModelDat, prm );
+				catch
+					datOut.fevalCount = fevalCount;
+					datOut.stepCount = stepCount;
+					msg( __FILE__, __LINE__, "Caught an error." );
+					return;
+				end_try_catch
 				fevalCount += datOut_refresh.fevalCount;
 				refreshedTrialStep = true;
 			endif
@@ -552,11 +663,25 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 			if ( norm( vecF_trial - vecFModel ) > badThresh * norm(vecFModel) )
 				msgif( prm.msgCopious, __FILE__, __LINE__, "  Model was very bad; adding wall." );
 				bAddFactor = mygetfield( prm, "bAddFactor", 0.5 );
-				fModelDat = __addB( bAddFactor*vecY, fModelDat, prm );
+				try
+					fModelDat = __addB( bAddFactor*vecY, fModelDat, prm );
+				catch
+					datOut.fevalCount = fevalCount;
+					datOut.stepCount = stepCount;
+					msg( __FILE__, __LINE__, "Caught an error." );
+					return;
+				end_try_catch
 			elseif (~refreshedTrialStep)
 				msgif( prm.msgCopious, __FILE__, __LINE__, "  Did not refresh trial step but model was bed enough; adding wall." );
 				bAddFactor = mygetfield( prm, "bAddFactor", 0.5 );
-				fModelDat = __addB( bAddFactor*vecY, fModelDat, prm );
+				try
+					fModelDat = __addB( bAddFactor*vecY, fModelDat, prm );
+				catch
+					datOut.fevalCount = fevalCount;
+					datOut.stepCount = stepCount;
+					msg( __FILE__, __LINE__, "Caught an error." );
+					return;
+				end_try_catch
 			endif
 			%
 			%
@@ -756,7 +881,14 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 		%%%
 		%%% STUDY ME!
 		%%%[ fModelDat, datOut_refresh ] = __refresh( fModelDat.vecYPB, funchF, fModelDat, prm );
-		[ fModelDat, datOut_refresh ] = __refresh( fModelDat.vecYIB, funchF, fModelDat, prm );
+		try
+			[ fModelDat, datOut_refresh ] = __refresh( fModelDat.vecYIB, funchF, fModelDat, prm );
+		catch
+			datOut.fevalCount = fevalCount;
+			datOut.stepCount = stepCount;
+			msg( __FILE__, __LINE__, "Caught an error." );
+			return;
+		end_try_catch
 		%%%
 		%%%
 		fevalCount += datOut_refresh.fevalCount;
@@ -766,9 +898,16 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 		% What else can we do?
 		if ( size(fModelDat.matV,2) < size(vecX_initial,1) )
 			msgif( prm.msgCopious, __FILE__, __LINE__, "Expanding subspace." );
-			[ fModelDat, datOut_expandModel ] = __expandModel( fModelDat.vecFModelIU, funchF, fModelDat, prm );
-			fevalCount += datOut_expandModel.fevalCount;
-			continue;
+			try
+				[ fModelDat, datOut_expandModel ] = __expandModel( fModelDat.vecFModelIU, funchF, fModelDat, prm );
+				fevalCount += datOut_expandModel.fevalCount;
+				continue;
+			catch
+				datOut.fevalCount = fevalCount;
+				datOut.stepCount = stepCount;
+				msg( __FILE__, __LINE__, "Caught an error." );
+				return;
+			end_try_catch
 		endif
 		%
 		%
@@ -1333,6 +1472,16 @@ endfunction
 
 
 function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
+	msg( __FILE__, __LINE__, "Will I throw an exception???" );
+	if (0)
+	re = rand()
+	if ( abs(re-0.8288) < 0.001 )
+		msg( __FILE__, __LINE__, "YEAH, LET'S GO EXCEPTION!" );
+		error( "YES, I THROW AN EXCEPTION!" );
+	else
+		msg( __FILE__, __LINE__, "No, no exception this time." );
+	endif
+	endif
 	vecX = fModelDat.vecX;
 	vecF = fModelDat.vecF;
 	%omega = fModelDat.omega;
