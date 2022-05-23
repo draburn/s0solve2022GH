@@ -22,12 +22,14 @@
 	%
 	%%%setprngstates(57428304); sizeX = 100; sizeF = 99; sizeB = sizeX;
 	%setprngstates(11053568); sizeX = 500; sizeF = 500; sizeB = sizeX;
-	setprngstates(22617792); sizeX = 500; sizeF = 500; sizeB = sizeX;
+	%setprngstates(22617792); sizeX = 500; sizeF = 500; sizeB = sizeX;
+	%setprngstates(17078064); sizeX = 500; sizeF = 400; sizeB = sizeX;
+	setprngstates(1255056); sizeX = 1000; sizeF = 900; sizeB = sizeX;
 	%
 	%
 	useBasic = false;
 	use0522 = true;
-	use0521 = true;
+	use0521 = false;
 	use0519 = false;
 	if (0)
 	vecX = randn(sizeX,1) .* exp(randn(sizeX,1)) .* exp(5.0*randn());

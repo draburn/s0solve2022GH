@@ -43,9 +43,9 @@ function [ matB, prm, dat ] = __init( vecG, matH, bTrgt=[], matB=[], prmIn=[], d
 	endif
 	%
 	prm.verbLev = VERBLEV__FLAGGED; prm.valdLev = VALDLEV__ZERO; % Production.
-	prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__MEDIUM; % Integration.
-	prm.verbLev = VERBLEV__DETAILS; prm.valdLev = VALDLEV__HIGH; % Performance testing.
-	prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Dev.
+	%prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__MEDIUM; % Integration.
+	%prm.verbLev = VERBLEV__DETAILS; prm.valdLev = VALDLEV__HIGH; % Performance testing.
+	%prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Dev.
 	prm.bRelTol = sqrt(eps);
 	%prm.bRelTol = 1.0e-4;
 	prm.cholRelTol = sqrt(eps);
@@ -217,8 +217,6 @@ function [ levDat, retCode, iterCount ] = __findLev( levDat0, vecG, matH, bTrgt,
 	endif
 	levDat_best = levDat0;
 	%
-	msgif( prm.verbLev >= VERBLEV__NOTE, __FILE__, __LINE__, "NOTE: Hack calculation of bGrad here." );
-	bGrad = norm(matB*(dat.matC\vecG)); %HACK!
 	%
 	haveFinite1 = false;
 	iterCount = 0;
@@ -236,13 +234,13 @@ function [ levDat, retCode, iterCount ] = __findLev( levDat0, vecG, matH, bTrgt,
 		mu1 = +Inf;
 		b1 = 0.0;
 		bPrime1 = 0.0;
-		if (bTrgt < 0.1*b0)
-			mu = mu0 + bGrad*( (1.0/bTrgt) - (1.0/b0) );
-			stepTypeStr = "G";
-		else
-			mu = mu0 + 10.0*( (b0/bTrgt) - 1.0 ) * b0 / (-bPrime0); % Intentional overshoot.
-			stepTypeStr = "O";
-		endif
+		%
+		mu = mu0 + 10.0*( (b0/bTrgt) - 1.0 ) * b0 / (-bPrime0); % Intentional overshoot.
+		stepTypeStr = "O";
+		% Draburn 2022-05-22: We could also consider a step like...
+		%bGrad = norm(matB*(dat.matC\vecG));
+		%mu = mu0 + bGrad*( (1.0/bTrgt) - (1.0/b0) );
+		% but, POITROME.
 		%
 		if ( mu <= mu0 )
 			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, "NUMERICAL ISSUE:Guess went out of bounds." );
