@@ -15,6 +15,7 @@ function [ vecY, datOut ] = findLevPt_0522( vecG, matH, bTrgt=[], matB=[], prmIn
 	levDat_newt = __calcLev_newt( vecG, matH, matB, prm, dat );
 	datOut.levDat_newt = levDat_newt;
 	if ( isempty(bTrgt) || levDat_newt.b <= bTrgt + bTrgt*prm.bRelTol )
+		%[ bTrgt, norm(matB*vecY), levDat_newt.b ]
 		vecY = levDat_newt.vecY;
 		datOut.levDat = levDat_newt;
 		datOut.iterCount = 0;
@@ -46,7 +47,8 @@ function [ matB, prm, dat ] = __init( vecG, matH, bTrgt=[], matB=[], prmIn=[], d
 	%prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__MEDIUM; % Integration.
 	%prm.verbLev = VERBLEV__DETAILS; prm.valdLev = VALDLEV__HIGH; % Performance testing.
 	%prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Dev.
-	prm.bRelTol = sqrt(eps);
+	prm.bRelTol = 100.0*eps;
+	%prm.bRelTol = sqrt(eps);
 	%prm.bRelTol = 1.0e-4;
 	prm.cholRelTol = sqrt(eps);
 	prm.epsReguRel = sqrt(eps);

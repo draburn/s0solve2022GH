@@ -1162,19 +1162,20 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 		return;
 	endif
 	%
-	if (~prm.useBBall)
-		error( "useBBall is required." );
+	if (1)
+		% DRaburn 2022-05-22...
+		%  New to zlinsolf150.
+		if (~prm.useBBall)
+			error( "useBBall is required." );
+		endif
+		%%%assert( reldiff(matB'*matB,matSCurve) < sqrt(eps) );
+		% In princple, we should be able to short-circuit form here.
+		% DRaburn 2022-05-22:
+		%  Looks like findLevPt_0522 makes things worse,
+		%  perhaps because it semi-requires the constrant matrix to be positive-definite?
+		vecY = findLevPt_0522( -vecMG, matH, 1.0, matB );
+		return;
 	endif
-	% DRaburn 2022-05-22:
-	%  Looks like findLevPt_0522 makes things worse,
-	%  perhaps because it semi-requires the constrant matrix to be positive-definite?
-	vecY = findLevPt_0522( -vecMG, matH, 1.0, matB );
-	%
-	%msg( __FILE__, __LINE__, sprintf( "||B*y||: %f.", norm(matB*vecY) ) );
-	%assert( reldiff(norm(matB*vecY),1.0) < sqrt(eps) );
-	%assert( reldiff(sumsq(matB*vecY),1.0) < sqrt(eps) );
-	return;
-	
 	%
 	%cholSafeTol = mygetfield( prm, "cholSafeTol", sqrt(eps) );
 	%
@@ -1218,8 +1219,19 @@ function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
 	msgif( prm.msgCopious, __FILE__, __LINE__, "Restricting step to bound!" );
 	funchBM1OfS = @(s)( funchBOfY(funchYOfS(s)) - 1.0 );
 	%
-	s = fzero( funchBM1OfS, [0.0, s1] );
-	vecY = funchYOfS(s);
+	%
+	if (1)
+		% DRaburn 2022-05-22...
+		%  New to zlinsolf150.
+		if (~prm.useBBall)
+			error( "useBBall is required." );
+		endif
+		%%%assert( reldiff(matB'*matB,matSCurve) < sqrt(eps) );
+		vecY = findLevPt_0522( -vecMG, matH, 1.0, matB );
+	else
+		s = fzero( funchBM1OfS, [0.0, s1] );
+		vecY = funchYOfS(s);
+	endif
 	%
 	if (prm.useBBall)
 	%msg( __FILE__, __LINE__, sprintf( "BBall: %f, %f.", sumsq(matB*vecY1), sumsq(matB*vecY) ) );
