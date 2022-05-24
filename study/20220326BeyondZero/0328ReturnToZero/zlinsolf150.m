@@ -1101,10 +1101,12 @@ function fModelDat = __analyzeModel( fModelDat, prm )
 	vecMG = -(matW'*vecF);
 	%
 	matIV = eye(sizeV,sizeV);
-	switch ( tolower(mygetfield( prm, "curveType", "1" )) )
+	switch ( tolower(mygetfield( prm, "curveType", "b" )) )
 	case { "1", "eye", "i" }
 		matSCurve = matIV;
 	case { "b" }
+		% DRaburn 2022-05-24-1510:
+		%  This is essentially required by findLevPt_0522.
 		matBTB = matB'*matB;
 		btbMax = max(diag(matBTB));
 		btbMin = min(diag(matBTB));

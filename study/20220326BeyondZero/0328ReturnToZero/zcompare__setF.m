@@ -29,7 +29,7 @@ case 3
 	%
 	vecX0 = randn(sizeX,1);
 case 5
-	sizeF = ceil(sizeX/2.0);
+	sizeF = sizeX;
 	vecXE = randn(sizeX,1);
 	matJE = eye(sizeF,sizeX) + 1.0e-2*randn(sizeF,sizeX);
 	matA0 = 1.0e-4*randn(sizeF,sizeX);

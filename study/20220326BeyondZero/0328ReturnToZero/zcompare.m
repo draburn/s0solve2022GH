@@ -11,10 +11,11 @@ endif
 %
 %
 sizeX = 100;
-fType = 7;
+fType = 5;
+%fType = 7;
 %fSeed = 84943088;
-%fSeed = 68716288;
-fSeed = 22083744;
+fSeed = 68716288;
+%fSeed = 22083744;
 %fSeed = -1;
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
@@ -47,9 +48,10 @@ numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 2
 resumeRun = 0;
 else
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
-%numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
-%numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 500; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 500; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prm. curveType = "b"; runList(numRuns).r.prmMemo = "curve b";
+numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "(curve b)";
 
 if (0)
 	numRuns++;
