@@ -53,7 +53,7 @@ function [ matB, prm, dat ] = __init( vecG, matH, bTrgt=[], matB=[], prmIn=[], d
 	%prm.bRelTol = 1.0e-4;
 	prm.cholRelTol = sqrt(eps);
 	prm.epsReguRel = sqrt(eps);
-	prm.iterMax = 100;
+	prm.iterMax = 10;
 	prm = overwritefields( prm, prmIn );
 	%
 	matC = mygetfield( datIn, "matC", [] );
@@ -207,7 +207,7 @@ function levDat = __calcLev( mu, vecG, matH, matB, prm, dat )
 	levDat.b = b;
 	levDat.bPrime = -sumsq( vecRho ) / b;
 	levDat.vecY = vecY;
-	levDat.funchYPrime = @()( matR \ vecRho );
+	levDat.funchYPrime = @()( matR \ vecRho ); % Is this right?
 endfunction
 
 
@@ -227,6 +227,14 @@ function [ levDat_best, retCode, iterCount ] = __findLev( levDat0, vecG, matH, b
 	
 	USE_3SEG = true;
 	if (USE_3SEG)
+	while (1)
+		if ( iterCount >= prm.iterMax )
+			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, sprintf( "IMPOSED STOP: Reached iterMax (%d).", prm.iterMax ) );
+			retCode = RETCODE__IMPOSED_STOP;
+			return;
+		endif
+		iterCount++;
+		
 		% Rem: mu0 < mu1, b0 > b1.
 		if (~haveFinite1)
 			mu1 = +Inf;
@@ -234,9 +242,9 @@ function [ levDat_best, retCode, iterCount ] = __findLev( levDat0, vecG, matH, b
 			vecY1 = zeros(size(vecG));
 			vecV1 = -(dat.matC\vecG);
 		else
-			mu1 = ldat1.mu;
-			b1 = lDat1.b;
-			vecY1 = lDat1.vecY;
+			mu1 = levDat1.mu;
+			b1 = levDat1.b;
+			vecY1 = levDat1.vecY;
 			vecV1 = levDat1.funchYPrime();
 		endif
 		vecV1 /= norm(vecV1);
@@ -260,7 +268,7 @@ function [ levDat_best, retCode, iterCount ] = __findLev( levDat0, vecG, matH, b
 		endif
 		discrim = (c1^2) - (4.0*c0*c2);
 		assert( discrim >= 0.0 );
-		p1_capB = ( -c1 + sqrt(discrim) ) / (2.0*c2)
+		p1_capB = ( -c1 + sqrt(discrim) ) / (2.0*c2);
 		%
 		% Conider deltaOmega = g^T*y + 0.5*(y^T*H*y),
 		% Critical point is at: (g+H*y)^T * v1 = 0
@@ -272,7 +280,7 @@ function [ levDat_best, retCode, iterCount ] = __findLev( levDat0, vecG, matH, b
 			retCode = RETCODE__BAD_INPUT;
 			return;
 		endif
-		p1_capH = -(vecG+(matH*vecY1))'*vecV1/v1thv1
+		p1_capH = -(vecG+(matH*vecY1))'*vecV1/v1thv1;
 		%
 		%%%p1Min = 0.1*min([ p1_capB, p1_capH ]);
 		p1Min = 0.0;
@@ -295,19 +303,34 @@ function [ levDat_best, retCode, iterCount ] = __findLev( levDat0, vecG, matH, b
 		%  and constraining it is probably good enough for us:
 		%  this is jus a model anyway.
 		% So...
-		% Minimize || y0 - y1 + p0*v0 - p1*v1 ||^2 w.r.t p0 and p1...
-		%  d/dp0:  v0'*( y0-y1+p0*v0-p1*v1 ) = 0;
-		%  d/dp1: -v1'*( y0-y1+p0*v0-p1*v1 ) = 0;
-		% Ergo...
-		%   ( v0'*v0) * p0 + (-v1'*v0) * p1 =  v0'*(y1-y0);
-		%   (-v1'*v0) * p0 + ( v1'*v1) * p1 = -v1'*(y1-y0);
-		p01 = [ sumsq(vecV0), -(vecV1'*vecV0); -(vecV1'*vecV0), sumsq(vecV1) ] \ [ vecV0'*(vecY1-vecY0); -(vecV1'*(vecY1-vecY0)) ];
-		p0 = p01(1)
-		p1 = p01(2)
-		p1 = median([ p1Min, p1, p1Max ])
+		if (0)
+			% Minimize || y0 - y1 + p0*v0 - p1*v1 ||^2 w.r.t p0 and p1...
+			%  d/dp0:  v0'*( y0-y1+p0*v0-p1*v1 ) = 0;
+			%  d/dp1: -v1'*( y0-y1+p0*v0-p1*v1 ) = 0;
+			% Ergo...
+			%   ( v0'*v0) * p0 + (-v1'*v0) * p1 =  v0'*(y1-y0);
+			%   (-v1'*v0) * p0 + ( v1'*v1) * p1 = -v1'*(y1-y0);
+			%[ sumsq(vecV0), -(vecV1'*vecV0), sumsq(vecV1) ]
+			p01 = [ sumsq(vecV0), -(vecV1'*vecV0); -(vecV1'*vecV0), sumsq(vecV1) ] \ [ vecV0'*(vecY1-vecY0); -(vecV1'*(vecY1-vecY0)) ];
+			p0 = p01(1);
+			p1 = p01(2);
+		else
+			% Minimize || B* ( y0 - y1 + p0*v0 - p1*v1 ) ||^2 w.r.t p0 and p1...
+			%  d/dp0:  v0'*C*( y0-y1+p0*v0-p1*v1 ) = 0;
+			%  d/dp1: -v1'*C*( y0-y1+p0*v0-p1*v1 ) = 0;
+			% Ergo...
+			%   ( v0'*C*v0) * p0 + (-v1'*C*v0) * p1 =  v0'*C*(y1-y0);
+			%   (-v1'*C*v0) * p0 + ( v1'*C*v1) * p1 = -v1'*C*(y1-y0);
+			%[ sumsq(matB*vecV0), -(vecV1'*dat.matC*vecV0), sumsq(matB*vecV1) ]
+			p01 = [ sumsq(matB*vecV0), -(vecV1'*dat.matC*vecV0); -(vecV1'*vecV0), sumsq(vecV1'*dat.matC*vecV0) ] ...
+			  \ [ vecV0'*dat.matC*(vecY1-vecY0); -(vecV1'*dat.matC*(vecY1-vecY0)) ];
+			p0 = p01(1);
+			p1 = p01(2);
+		endif
+		p1 = median([ p1Min, p1, p1Max ]);
 		%%%p0Min = 0.1*p1Min;
 		p0Min = 0.0;
-		p0 = max([ p0, p0Min ])
+		p0 = max([ p0, p0Min ]);
 		%
 		% We know have the four points of our 3-segment model:
 		%  vecY1, vecYA, vecYB, vecY0.
@@ -333,7 +356,7 @@ function [ levDat_best, retCode, iterCount ] = __findLev( levDat0, vecG, matH, b
 			discrim = (c1^2) - (4.0*c0*c2);
 			assert( discrim >= 0.0 );
 			assert( c2 >= 0.0 );
-			q = ( (-c1) + sqrt(discrim) ) / (2.0*c2)
+			q = ( (-c1) + sqrt(discrim) ) / (2.0*c2);
 			%qM = ( (-c1) - sqrt(discrim) ) / (2.0*c2)
 			assert( q >= 0.0 );
 			assert( q <= 1.0 );
@@ -368,19 +391,39 @@ function [ levDat_best, retCode, iterCount ] = __findLev( levDat0, vecG, matH, b
 		vecW1 = matB*( matM0\(matH*vecY3Seg+vecG) );
 		vecW2 = matB*( matM0\(dat.matC*vecY3Seg) );
 		%  d/dmu || w1 + mu*w2 ||^2 = 0...
-		mu = (-vecW1'*vecW2)/(vecW2'*vecW2)
-		[ norm(vecY3Seg), norm((matH+mu*dat.matC)\vecG) ]
-		[ norm(matB*vecY3Seg), norm(matB*((matH+mu*dat.matC)\vecG)) ]
-		[ norm(vecW1), mu*norm(vecW2) ]
-		norm(matB*((matH+mu*dat.matC)\vecG))
+		mu = (-vecW1'*vecW2)/(vecW2'*vecW2);
+		%[ norm(vecY3Seg), norm((matH+mu*dat.matC)\vecG) ]
+		%[ norm(matB*vecY3Seg), norm(matB*((matH+mu*dat.matC)\vecG)) ]
+		%[ norm(vecW1), mu*norm(vecW2) ]
+		norm(matB*((matH+mu*dat.matC)\vecG));
 		stepTypeStr = "3";
 		levDat = __calcLev( mu, vecG, matH, matB, prm, dat );
 		msgif( prm.verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( ...
 		  " %3d:  mu: %9.3e ~ %9.3e (%9.3e);  b: %9.3e ~ %10.3e;  trial: %2s, %9.3e, %10.3e.", ...
 		  iterCount, mu0, mu1, mu1-mu0, b0-bTrgt, b1-bTrgt, stepTypeStr, mu, levDat.b-bTrgt ) );
-		
-		retCode = RETCODE__NOT_SET;
-		return;
+		%
+		if ( levDat.b >= b0 || levDat.bPrime >= 0.0 )
+			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, "NUMERICAL ISSUE: Function became non-monotonic." );
+			retCode = RETCODE__NUMERICAL_ISSUE;
+			return;
+		endif
+		%
+		if ( abs(levDat.b-bTrgt) < abs(levDat_best.b-bTrgt) )
+			levDat_best = levDat;
+			if ( abs(levDat_best.b-bTrgt) < prm.bRelTol*bTrgt )
+				msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( "SUCCESS: Converged in %d iterations.", iterCount ) );
+				retCode = RETCODE__SUCCESS;
+				return;
+			endif
+		endif
+		%
+		if ( levDat.b < bTrgt )
+			levDat1 = levDat;
+			haveFinite1 = true;
+		else
+			levDat0 = levDat;
+		endif
+	endwhile
 	endif
 	
 	
