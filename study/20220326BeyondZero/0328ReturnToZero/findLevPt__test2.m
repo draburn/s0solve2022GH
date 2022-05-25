@@ -65,7 +65,7 @@
 	%alpha = alpha_cDom; matC *= alpha; matB *= sqrt(alpha); bN *= sqrt(alpha);
 	%
 	%
-	if (0)
+	if (1)
 		numPts = 1001;
 		%muPts = 100.0*linspace(1000.0,2000.0,numPts)';
 		muPts = 1.0e8*(0.0+linspace(0.0,1.0,numPts).^4);
@@ -73,7 +73,41 @@
 			matR = chol( matH + muPts(n)*matC );
 			bPts(n) = norm(matB*(matR\(matR'\vecG)));
 		endfor
+	endif
+	if (1)
+		n0 = 100;
+		mu0 = muPts(n0)
+		b0 = bPts(n0)
+		bPrime0 = (bPts(n0+1)-bPts(n0-1))/(muPts(n0+1)-muPts(n0-1));
+		mu_plus  = muPts(n0+1)-muPts(n0);
+		bP_plus  = (bPts(n0+1)-bPts(n0))/(muPts(n0+1)-muPts(n0));
+		mu_minus = muPts(n0)-muPts(n0-1);
+		bP_minus = (bPts(n0)-bPts(n0-1))/(muPts(n0)-muPts(n0-1));
+		bPrimePrime0 = (bP_plus-bP_minus)/(mu_plus-mu_minus)
+		P = b0;
+		assert( bPrimePrime0 > 0.0 );
+		%Q = sqrt( 0.5 * bPrimePrime0 / b0 );
+		%R = bPrime0 + sqrt( 0.5 * bPrimePrime0 * b0 );
+		c0 = bPrimePrime0;
+		c1 = 4.0*bPrime0;
+		c2 = 2.0*b0;
+		discrim = (c1^2) - (4.0*c0*c2);
+		if ( discrim < 0 )
+			msg( __FILE__, __LINE__, "Forcing discrim to zero." );
+			discrim = 0.0;
+		endif
+		Q = ( (-c1) + sqrt(discrim) )/(2.0*c2);
+		R = bPrime0 + Q*P;
+		bModelPts = P./(1.0+Q*(muPts-mu0)) + R*muPts./((1.0+Q*(muPts-mu0)).^2);
+		2.0*(Q^2)*P - 4.0*Q*R
 		%
+		numFigs++; figure(numFigs);
+		funchVizF = @(f)( f );
+		funchVizX = @(x)( x );
+		plot( funchVizX(muPts), funchVizF(bPts), 'o-', 'linewidth', 2, funchVizX(muPts), funchVizF(bModelPts), 'x-' );
+		grid on;
+		return
+	elseif (0)
 		n0 = 800;
 		mu0 = muPts(n0)+sqrt(eps)
 		b0 = bPts(n0);
@@ -95,6 +129,7 @@
 		funchViz = @(x)( 1.0./x - 1.0/max(bPts) );
 		plot( vuPts, funchViz(bPts), 'o-', vuPts(msk0), funchViz(bModel0Pts(msk0)), '-', vuPts(msk01), funchViz(bModel01Pts(msk01)), '-' );
 		grid on;
+		return;
 	endif
 	%
 	%

@@ -48,10 +48,18 @@ numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 2
 resumeRun = 0;
 else
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 500; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prm. curveType = "b"; runList(numRuns).r.prmMemo = "curve b";
-numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "(curve b)";
+%numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 500; runList(numRuns).r.prmMemo = "";
+%numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
+%numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prm. curveType = "b"; runList(numRuns).r.prmMemo = "curve b";
+numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prm.epsFD = 1.0E-6; runList(numRuns).r.prmMemo = "eps-6";
+numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prm.epsFD = 1.0E-5; runList(numRuns).r.prmMemo = "eps-5";
+numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prm.epsFD = 1.0E-4; runList(numRuns).r.prmMemo = "eps-4";
+numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prm.epsFD = 1.0E-3; runList(numRuns).r.prmMemo = "eps-3";
+numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prm.epsFD = 1.0E-2; runList(numRuns).r.prmMemo = "eps-2";
+numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prm.epsFD = 1.0E-1; runList(numRuns).r.prmMemo = "eps-1";
+numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prm.epsFD = 1.0E0; runList(numRuns).r.prmMemo = "eps0";
+numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prm.epsFD = 1.0E+1; runList(numRuns).r.prmMemo = "eps+1";
 
 if (0)
 	numRuns++;

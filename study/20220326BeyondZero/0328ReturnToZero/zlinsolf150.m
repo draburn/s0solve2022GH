@@ -252,8 +252,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 			if ( norm(vecF_trial) >= norm(vecF_cand) )
 				msgif( prm.msgNotice, __FILE__, __LINE__, "Current trial is worse than earlier candidate; forcing acceptance of earlier candidate." );
 				stepCount++;
-				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Step %d: Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
-				  fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount ) );
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Step %2d: Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d, size = %10.3e).", ...
+				  stepCount, fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount, norm(vecX_cand-fModelDat.vecX) ) );
 				try
 					fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
 				catch
@@ -297,8 +297,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 					end_try_catch
 				endif
 				stepCount++;
-				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Step %d: Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
-				  stepCount, fModelDat.omega, sumsq(vecF_trial)/2.0, fModelDat.omega-sumsq(vecF_trial)/2.0, fevalCount ) );
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Step %2d: Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d, size = %10.3e).", ...
+				  stepCount, fModelDat.omega, sumsq(vecF_trial)/2.0, fModelDat.omega-sumsq(vecF_trial)/2.0, fevalCount, norm(vecX_trial-fModelDat.vecX) ) );
 				try
 					fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm );
 				catch
@@ -543,8 +543,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 			if ( norm(vecF_trial) >= norm(vecF_cand) )
 				msgif( prm.msgNotice, __FILE__, __LINE__, "Current trial is worse than earlier candidate; forcing acceptance of earlier candidate." );
 				stepCount++;
-				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Step %d: Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
-				  stepCount, fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount ) );
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Step %2d: Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d, size = %10.3e).", ...
+				  stepCount, fModelDat.omega, sumsq(vecF_cand)/2.0, fModelDat.omega-sumsq(vecF_cand)/2.0, fevalCount, norm(vecX_cand-fModelDat.vecX) ) );
 				try
 					fModelDat = __moveTo( vecX_cand, vecF_cand, fModelDat, prm );
 				catch
@@ -588,8 +588,8 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 					end_try_catch
 				endif
 				stepCount++;
-				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Step %d: Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d).", ...
-				  stepCount, fModelDat.omega, sumsq(vecF_trial)/2.0, fModelDat.omega-sumsq(vecF_trial)/2.0, fevalCount ) );
+				msgif( prm.msgProgress, __FILE__, __LINE__, sprintf( "Step %2d: Moving from %10.3e to %10.3e (fall = %10.3e, fevalCount = %d, size = %10.3e).", ...
+				  stepCount, fModelDat.omega, sumsq(vecF_trial)/2.0, fModelDat.omega-sumsq(vecF_trial)/2.0, fevalCount, norm(vecX_trial-fModelDat.vecX) ) );
 				%
 				%
 				%%%
