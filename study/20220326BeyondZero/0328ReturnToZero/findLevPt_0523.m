@@ -53,7 +53,7 @@ function [ matB, prm, dat ] = __init( vecG, matH, bTrgt=[], matB=[], prmIn=[], d
 	%prm.bRelTol = 1.0e-4;
 	prm.cholRelTol = sqrt(eps);
 	prm.epsReguRel = sqrt(eps);
-	prm.iterMax = 10;
+	prm.iterMax = 100;
 	prm = overwritefields( prm, prmIn );
 	%
 	matC = mygetfield( datIn, "matC", [] );
@@ -148,7 +148,7 @@ function levDat = __calcLev_newt( vecG, matH, matB, prm, dat )
 		levDat.b = b;
 		levDat.bPrime = bPrime;
 		levDat.vecY = vecY;
-		levDat.funchYPrime = @()( matR \ vecRho );
+		levDat.funchYPrime = @()( matR \ (-vecRho) );
 		return;
 	endif
 	endif
@@ -171,7 +171,7 @@ function levDat = __calcLev_newt( vecG, matH, matB, prm, dat )
 	levDat.b = (2.0*b1) - b2;
 	levDat.bPrime = (2.0*bPrime1) - bPrime2;
 	levDat.vecY = (2.0*vecY1) - vecY2;
-	levDat.funchYPrime = @()(  (2.0*( matR1 \ vecRho1 )) - ( matR2 \ vecRho2 )  );
+	levDat.funchYPrime = @()(  (2.0*( matR1 \ (-vecRho1) )) - ( matR2 \ (-vecRho2) )  );
 	return;
 endfunction
 
@@ -207,7 +207,7 @@ function levDat = __calcLev( mu, vecG, matH, matB, prm, dat )
 	levDat.b = b;
 	levDat.bPrime = -sumsq( vecRho ) / b;
 	levDat.vecY = vecY;
-	levDat.funchYPrime = @()( matR \ vecRho ); % Is this right?
+	levDat.funchYPrime = @()( matR \ (-vecRho) );
 endfunction
 
 
@@ -225,7 +225,191 @@ function [ levDat_best, retCode, iterCount ] = __findLev( levDat0, vecG, matH, b
 	iterCount = 0;
 	
 	
-	USE_3SEG = true;
+	if (0)
+		levDat1 = __calcLev( 1.0-sqrt(eps), vecG, matH, matB, prm, dat );
+		levDat2 = __calcLev( 1.0+sqrt(eps), vecG, matH, matB, prm, dat );
+		vecYPrime = ( levDat1.funchYPrime() + levDat2.funchYPrime() )/2.0;
+		vecYPrime_alt = ( levDat2.vecY - levDat1.vecY ) / (2.0*sqrt(eps) );
+		[ norm(vecYPrime), norm(vecYPrime_alt), norm(vecYPrime-vecYPrime_alt) ]
+		retCode = RETCODE__IMPOSED_STOP;
+		return
+	endif
+	
+	USE_FOOSEG = false;
+	if ( USE_FOOSEG )
+	while (~haveFinite1 )
+		if ( iterCount >= prm.iterMax )
+			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, sprintf( "IMPOSED STOP: Reached iterMax (%d).", prm.iterMax ) );
+			retCode = RETCODE__IMPOSED_STOP;
+			return;
+		endif
+		iterCount++;
+		%
+		%
+		mu1 = +Inf;
+		b1 = 0.0;
+		b0 = levDat0.b;
+		mu0 = levDat0.mu;
+		vecY0 = levDat0.vecY;
+		vecYPrime0 = levDat0.funchYPrime();
+		%
+		%%%%%%%%%%%%%%%%%%%%
+		
+		
+		mu = mu0 + ((b0/bTrgt)-1.0)*norm(vecG)/norm(dat.matC\vecY0);
+		
+		vecYModel = 0.1*(bTrgt/b0)*vecY0;
+		matMTyp = matH + mu0*dat.matC;
+		% ||B*MTyp^-1*( (H+mu*C)*yModel + g )||^2
+		% = || B*MTyp^-1*( H*yModel + g ) + mu*B*MTyp^-1*C*yModel ||^2
+		vecW1 = matB*( matMTyp\(matH*vecYModel+vecG) );
+		vecW2 = matB*( matMTyp\(dat.matC*vecYModel) );
+		%  d/dmu || w1 + mu*w2 ||^2 = 0...
+		mu = (-vecW1'*vecW2)/(vecW2'*vecW2);
+		
+		stepTypeStr = "?";
+		
+
+		%%%%%%%%%%%%%%%%%%%%
+		%
+		if ( mu <= mu0 )
+			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, "NUMERICAL ISSUE:Guess went out of bounds." );
+			[ mu, mu0 ]
+			retCode = RETCODE__NUMERICAL_ISSUE;
+			return;
+		endif
+		levDat = __calcLev( mu, vecG, matH, matB, prm, dat );
+		msgif( prm.verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( ...
+		  " %3d:  mu: %9.3e ~ %9.3e (%9.3e);  b: %9.3e ~ %10.3e;  trial: %2s, %9.3e, %10.3e.", ...
+		  iterCount, mu0, mu1, mu1-mu0, b0-bTrgt, b1-bTrgt, stepTypeStr, mu, levDat.b-bTrgt ) );
+		%
+		if ( levDat.b >= b0 || levDat.bPrime >= 0.0 )
+			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, "NUMERICAL ISSUE: Function became non-monotonic." );
+			[ levDat.b, b0 ]
+			levDat.bPrime
+			retCode = RETCODE__NUMERICAL_ISSUE;
+			return;
+		endif
+		%
+		if ( abs(levDat.b-bTrgt) < abs(levDat_best.b-bTrgt) )
+			levDat_best = levDat;
+			if ( abs(levDat_best.b-bTrgt) < prm.bRelTol*bTrgt )
+				msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( "SUCCESS: Converged in %d iterations.", iterCount ) );
+				retCode = RETCODE__SUCCESS;
+				return;
+			endif
+		endif
+		%
+		if ( levDat.b < bTrgt )
+			levDat1 = levDat;
+			haveFinite1 = true;
+		else
+			levDat0 = levDat;
+		endif
+	endwhile
+	endif
+	
+	
+	USE_1SEG = false;
+	if (USE_1SEG)
+	while (~haveFinite1)
+		if ( iterCount >= prm.iterMax )
+			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, sprintf( "IMPOSED STOP: Reached iterMax (%d).", prm.iterMax ) );
+			retCode = RETCODE__IMPOSED_STOP;
+			return;
+		endif
+		iterCount++;
+		%
+		%
+		mu1 = +Inf;
+		b1 = 0.0;
+		b0 = levDat0.b;
+		mu0 = levDat0.mu;
+		vecY0 = levDat0.vecY;
+		vecYPrime0 = levDat0.funchYPrime();
+		% y = y0 + s*yprime0.
+		% Find where this ray (s>0) intersects boundary, or where it gets closest...
+		% Intersection: || B*(y0+s*yPrime0) || = bTrgt
+		alpha = 0.5;
+		bTemp = max([ bTrgt, alpha*norm(matB*vecY0) ]);
+		c0 = sumsq(matB*vecY0) - bTemp^2;
+		c1 = 2.0 * vecYPrime0' * dat.matC * vecY0;
+		c2 = sumsq(matB*vecYPrime0);
+		discrim = (c1^2)-4.0*c0*c2;
+		if ( discrim >= 0.0 )
+			% Find lower intersection.
+			s = ( -c1 - sqrt(discrim) ) / (2.0*c2);
+		else
+			% Find closest point.
+			s = -c1/(2.0*c2);
+		endif
+		assert( s >= 0.0 );
+		vecY1Seg = vecY0 + s*vecYPrime0;
+		[ norm(matB*vecY0), norm(matB*vecY1Seg), bTrgt, norm(matB*(vecY1Seg-vecY0)) ]
+		%
+		%
+		% Now find pt on Lev curve that closest(ish) to vecY1Seg...
+		%  Idealy, we should ahve y1Seg = -(H+mu*C)\g for some mu,
+		%   or, equivalently: mu*C*y1Seg = -(g+H*y1Seg) for some mu.
+		%  But, since it's not exact, we could min || y1Seg + (H+mu*C)\g ||,
+		%   which, if zero, would be the same as min'zing || (H+mu*C)*y1Seg + g ||,
+		%  With scaling, this would be || B * ( y1Seg + (H+mu*C)\g ) ||,
+		%   but, this is no easier than our original problem!
+		%  So, instead, we'll min || B * M \ ( (H+mu*C)*y1Seg + g ) ||
+		%   for some sensible M.
+		% We'll use M = M0 for now...
+		%  || B*M\(H*y1Seg+g) + mu*B\M*(C*y1Seg) ||^2...
+		matM0 = matH + mu0*dat.matC;
+		vecW1 = matB*( matM0\(matH*vecY1Seg+vecG) );
+		vecW2 = matB*( matM0\(dat.matC*vecY1Seg) );
+		%  d/dmu || w1 + mu*w2 ||^2 = 0...
+		mu = (-vecW1'*vecW2)/(vecW2'*vecW2);
+		%[ norm(vecY1Seg), norm((matH+mu*dat.matC)\vecG) ]
+		%[ norm(matB*vecY1Seg), norm(matB*((matH+mu*dat.matC)\vecG)) ]
+		%[ norm(vecW1), mu*norm(vecW2) ]
+		%norm(matB*((matH+mu*dat.matC)\vecG));
+		%
+		stepTypeStr = "1S";
+		%
+		if ( mu <= mu0 )
+			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, "NUMERICAL ISSUE:Guess went out of bounds." );
+			[ mu, mu0 ]
+			retCode = RETCODE__NUMERICAL_ISSUE;
+			return;
+		endif
+		levDat = __calcLev( mu, vecG, matH, matB, prm, dat );
+		msgif( prm.verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( ...
+		  " %3d:  mu: %9.3e ~ %9.3e (%9.3e);  b: %9.3e ~ %10.3e;  trial: %2s, %9.3e, %10.3e.", ...
+		  iterCount, mu0, mu1, mu1-mu0, b0-bTrgt, b1-bTrgt, stepTypeStr, mu, levDat.b-bTrgt ) );
+		%
+		if ( levDat.b >= b0 || levDat.bPrime >= 0.0 )
+			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, "NUMERICAL ISSUE: Function became non-monotonic." );
+			[ levDat.b, b0 ]
+			levDat.bPrime
+			retCode = RETCODE__NUMERICAL_ISSUE;
+			return;
+		endif
+		%
+		if ( abs(levDat.b-bTrgt) < abs(levDat_best.b-bTrgt) )
+			levDat_best = levDat;
+			if ( abs(levDat_best.b-bTrgt) < prm.bRelTol*bTrgt )
+				msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( "SUCCESS: Converged in %d iterations.", iterCount ) );
+				retCode = RETCODE__SUCCESS;
+				return;
+			endif
+		endif
+		%
+		if ( levDat.b < bTrgt )
+			levDat1 = levDat;
+			haveFinite1 = true;
+		else
+			levDat0 = levDat;
+		endif
+	endwhile
+	endif
+	
+	
+	USE_3SEG = false;
 	if (USE_3SEG)
 	while (1)
 		if ( iterCount >= prm.iterMax )
@@ -245,7 +429,7 @@ function [ levDat_best, retCode, iterCount ] = __findLev( levDat0, vecG, matH, b
 			mu1 = levDat1.mu;
 			b1 = levDat1.b;
 			vecY1 = levDat1.vecY;
-			vecV1 = levDat1.funchYPrime();
+			vecV1 = -levDat1.funchYPrime();
 		endif
 		vecV1 /= norm(vecV1);
 		% Consider ray: y = y1 + p1 * v1 for p1 >= 0.
@@ -287,13 +471,19 @@ function [ levDat_best, retCode, iterCount ] = __findLev( levDat0, vecG, matH, b
 		p1Max = max([ p1Min, min([ p1_capB, p1_capH ]) ]);
 		%
 		%
+		
+		
+		levDat0 = __calcLev( 1e0, vecG, matH, matB, prm, dat );
+		
+		
 		%
 		mu0 = levDat0.mu;
 		b0 = levDat0.b;
 		vecY0 = levDat0.vecY;
 		vecV0 = levDat0.funchYPrime();
 		vecV0 /= norm(vecV0);
-		assert( b0 > bTrgt );
+		norm(matB*vecV1)*norm(matB*vecV0)
+		vecV1'*dat.matC*vecV0
 		% Find p0 which minimizes distance between y0 + p0*v0 and y1+p1*v1,
 		%  for p1 between p1Min and p1Max, and p0 >= 0.0.
 		% Let's solver for the unconstrained case, then cap sensibly --
@@ -331,6 +521,7 @@ function [ levDat_best, retCode, iterCount ] = __findLev( levDat0, vecG, matH, b
 		%%%p0Min = 0.1*p1Min;
 		p0Min = 0.0;
 		p0 = max([ p0, p0Min ]);
+		msg( __FILE__, __LINE__, sprintf( "vecV1'*dat.matC*vecV0 = %g;  p0 = %g, p1 = %g.", vecV1'*dat.matC*vecV0, p0, p1 ) );
 		%
 		% We know have the four points of our 3-segment model:
 		%  vecY1, vecYA, vecYB, vecY0.
@@ -397,11 +588,16 @@ function [ levDat_best, retCode, iterCount ] = __findLev( levDat0, vecG, matH, b
 		%[ norm(vecW1), mu*norm(vecW2) ]
 		norm(matB*((matH+mu*dat.matC)\vecG));
 		stepTypeStr = "3";
+		%
+		if ( mu <= mu0 )
+			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, "NUMERICAL ISSUE:Guess went out of bounds." );
+			retCode = RETCODE__NUMERICAL_ISSUE;
+			return;
+		endif
 		levDat = __calcLev( mu, vecG, matH, matB, prm, dat );
 		msgif( prm.verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( ...
 		  " %3d:  mu: %9.3e ~ %9.3e (%9.3e);  b: %9.3e ~ %10.3e;  trial: %2s, %9.3e, %10.3e.", ...
 		  iterCount, mu0, mu1, mu1-mu0, b0-bTrgt, b1-bTrgt, stepTypeStr, mu, levDat.b-bTrgt ) );
-		%
 		if ( levDat.b >= b0 || levDat.bPrime >= 0.0 )
 			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, "NUMERICAL ISSUE: Function became non-monotonic." );
 			retCode = RETCODE__NUMERICAL_ISSUE;

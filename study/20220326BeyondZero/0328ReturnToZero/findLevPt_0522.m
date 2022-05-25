@@ -147,7 +147,7 @@ function levDat = __calcLev_newt( vecG, matH, matB, prm, dat )
 		levDat.b = b;
 		levDat.bPrime = bPrime;
 		levDat.vecY = vecY;
-		levDat.funchYPrime = @()( matR \ vecRho );
+		levDat.funchYPrime = @()( matR \ (-vecRho) );
 		return;
 	endif
 	endif
@@ -170,7 +170,7 @@ function levDat = __calcLev_newt( vecG, matH, matB, prm, dat )
 	levDat.b = (2.0*b1) - b2;
 	levDat.bPrime = (2.0*bPrime1) - bPrime2;
 	levDat.vecY = (2.0*vecY1) - vecY2;
-	levDat.funchYPrime = @()(  (2.0*( matR1 \ vecRho1 )) - ( matR2 \ vecRho2 )  );
+	levDat.funchYPrime = @()(  (2.0*( matR1 \ (-vecRho1) )) - ( matR2 \ (-vecRho2) )  );
 	return;
 endfunction
 
@@ -206,7 +206,7 @@ function levDat = __calcLev( mu, vecG, matH, matB, prm, dat )
 	levDat.b = b;
 	levDat.bPrime = -sumsq( vecRho ) / b;
 	levDat.vecY = vecY;
-	levDat.funchYPrime = @()( matR \ vecRho );
+	levDat.funchYPrime = @()( matR \ (-vecRho) );
 endfunction
 
 
