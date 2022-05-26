@@ -21,16 +21,13 @@ zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
 %
-if (0)
+if (1)
 	msg( __FILE__, __LINE__, "Doing one-shot." );
 	numRuns = 0;
 	runIndex = 0;
-	r.runType = 1100;
+	r.runType = 1200;
 	r.prm = [];
-	r.prm.iterMax = 3000;
-	r.prm.useDogLeg = true;
-	r.prm.curveType = "b";
-	r.prmMemo = "dogLeg true, curve b";
+	r.prmMemo = "";
 	zcompare__doRun;
 	msg( __FILE__, __LINE__, "Goodbye!" ); return;
 endif

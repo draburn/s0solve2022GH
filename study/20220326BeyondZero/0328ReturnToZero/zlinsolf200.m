@@ -1,39 +1,6 @@
-% DRaburn 2022.05.07
-%  zlinsolf150
-%
-% DRaburn 2022.05.22...
-%  THIS UPDATE LOG IS HORRIBLY NOT-UPDATED!
-%
-%  First concrete attempt at MVP.
-%
-% DRaburn 2022.05.09...
-%   Oh, I've been forgetting to update this change list. Whoops.
-%
-% DRaburn 2022.05.08...
-%   - Overhaulled trust region / boundary stuff.
-%
-% DRaburn 2022.05.07...
-%   Todo:
-%    - Implement partial-quadratic update to A when taking a step.
-%    - Refactor trial step handling.
-%   Soon:
-%    - Implement halding of BLM / overly small TR as momentum / restart jump, consider quadratic terms?
-%    - Allow for a constant matrix preconditioner.
-%    - Allow dog-leg intstead of Levenberg curve.
-%    - Refactor from scratch, test, compare, etc.
-%   Much later:
-%    - Optimize Octave code.
-%    - Code in C/C++.
-%    - Try with PIES.
-%    - Test against available solvers.
-%   Post-MVP:
-%    ~ Reconsider anything and everything.
-%    - Sepratrix domain enumeration for "basin" BLM handling?
-%    - Non-smooth functions: automatically adjust epsFD for differentiation, what else?
-%    - Automatic scaling in X, (makes subspace basis non-orthogonal)?
-
-function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, vecF_initial=[], prm=[] )
+function [ vecX_best, vecF_best, datOut ] = zlinsolf200( funchF, vecX_initial, vecF_initial=[], prmIN=[] )
 	% Init...
+	mydefs;
 	datOut = [];
 	fevalCount = 0;
 	stepCount = 0;
@@ -42,13 +9,14 @@ function [ vecX_best, vecF_best, datOut ] = zlinsolf150( funchF, vecX_initial, v
 		fevalCount++;
 	endif
 	try
-		prm = __initPrm( vecX_initial, vecF_initial, prm );
+		prm = __initPrm( vecX_initial, vecF_initial, prmIn );
 	catch
+		msg( __FILE__, __LINE__, "Caught an error." );
 		datOut.fevalCount = fevalCount;
 		datOut.stepCount = stepCount;
-		msg( __FILE__, __LINE__, "Caught an error." );
 		return;
 	end_try_catch
+	error( "DRABURN: 2022-05-26: HIT OLDVER CODE." );
 	%
 	msgif( prm.msgCopious, __FILE__, __LINE__, "Initializing subspace." );
 	try
@@ -930,8 +898,25 @@ return;
 endfunction
 
 
-function prm = __initPrm( vecX, vecF, prm )
-	setVerbLevs;
+function prm = __initPrm( vecX, vecF, prmIn )
+	mydefs;
+	sizeX = size(vecX,1);
+	sizeF = size(vecF,1);
+	%
+	prm.verbLev = VERBLEV__FLAGGED; prm.valdLev = VALDLEV__ZERO; % Production.
+	prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__MEDIUM; % Integration.
+	prm.verbLev = VERBLEV__DETAILS; prm.valdLev = VALDLEV__HIGH; % Performance testing.
+	prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Dev.
+	%
+	% SET DEFAULT Params here...
+	prm.fTol = 100.0*eps;
+	prm.iterMax = ceil( 100 + 10*sqrt(sizeX) + sizeX )
+	prm.epsFD = 1.0e-3;
+	prm = overwritefields( prm, prmIn );
+	error( "DRABURN: 2022-05-26: HIT OLDVER CODE." );
+	
+	
+	
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
 	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
@@ -981,6 +966,7 @@ endfunction
 
 
 function vecU = __precon( vecRhoF, prm, vecX, vecF )
+	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
 	if ( ~isempty(prm.funchPrecon) )
 		vecU = prm.funchPrecon( vecRhoF, vecX, vecF );
 	elseif ( ~isempty(prm.precon_matU) )
@@ -997,6 +983,7 @@ endfunction
 
 
 function [ fModelDat, datOut ] = __initModel( funchF, vecX, vecF, prm )
+	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
 	datOut = [];
 	fevalCount = 0;
 	%
@@ -1072,6 +1059,7 @@ endfunction
 
 
 function vecW = __calcJV( vecV, funchF, vecX, vecF, prm )
+	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
 	v = norm(vecV);
 	assert( 0.0 < v );
 	epsFD = mygetfield( prm, "epsFD", eps^0.3 );
@@ -1083,6 +1071,7 @@ endfunction
 
 
 function fModelDat = __analyzeModel( fModelDat, prm )
+	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
 	% Unpack.
 	%matVLocal = fModelDat.matVLocal;
 	vecX = fModelDat.vecX;
@@ -1193,6 +1182,7 @@ endfunction
 
 
 function vecY = __calcStep( matH, vecMG, prm )
+	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
 	[ matR, cholFlag ] = chol( matH );
 	%
 	cholSafeTol = mygetfield( prm, "cholSafeTol", sqrt(eps) );
@@ -1218,6 +1208,7 @@ endfunction
 
 
 function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
+	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
 	if ( isempty(matB) || 0.0==max(max(abs(matB))) )
 		vecY = __calcStep( matH, vecMG, prm );
 		return;
@@ -1391,6 +1382,7 @@ endfunction
 
 
 function [ fModelDat, datOut ] = __expandModel( vecRhoF, funchF, fModelDat, prm )
+	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
 	fevalCount = 0;
 	% Unpack.
 	vecX = fModelDat.vecX;
@@ -1452,6 +1444,7 @@ endfunction
 
 
 function vecV = __calcOrthonorm( vecU, matV, prm )
+	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
 	numPasses = 2;
 	u0 = norm(vecU);
 	if (0.0==u0)
@@ -1479,6 +1472,7 @@ endfunction
 
 
 function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
+	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
 	vecX = fModelDat.vecX;
 	vecF = fModelDat.vecF;
 	%omega = fModelDat.omega;
@@ -1585,6 +1579,7 @@ endfunction
 
 
 function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
+	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
 	fevalCount = 0;
 	% Unpack.
 	vecX = fModelDat.vecX;
@@ -1715,6 +1710,7 @@ endfunction
 
 
 function fModelDat = __addB( vecY, fModelDat, prm )
+	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
 	% Unpack.
 	%vecX = fModelDat.vecX;
 	%vecF = fModelDat.vecF;
@@ -1756,6 +1752,7 @@ endfunction
 
 
 function fModelDat = __removeB( vecY, fModelDat, prm )
+	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
 	% Unpack.
 	%vecX = fModelDat.vecX;
 	%vecF = fModelDat.vecF;
@@ -1803,6 +1800,7 @@ return;
 endfunction
 
 function __dumpModel( fModelDat, prm )
+	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
 	msg( __FILE__, __LINE__, "vvvvvvvvvvvvvvvvvvvv Begin __dumpModel()..." );
 	vecX = fModelDat.vecX;
 	vecF = fModelDat.vecF;
