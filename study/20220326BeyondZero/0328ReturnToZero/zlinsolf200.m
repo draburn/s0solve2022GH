@@ -1,4 +1,10 @@
 function [ vecX_best, vecF_best, retCode, fevalCount, stepsCount, datOut ] = zlinsolf200( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
+	startTime = time();
+	if ( stopsignalpresent() )
+		msg(__FILE__, __LINE__, "ERROR: Stop signal already present." );
+		retCode = RETCODE__IMPOSED_STOP;
+		break;
+	endif
 	% INIT
 	mydefs;
 	vecX_best = [];
@@ -29,15 +35,19 @@ function [ vecX_best, vecF_best, retCode, fevalCount, stepsCount, datOut ] = zli
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCESS: norm(vecF_best) <= prm.fTol." );
 			retCode = RETCODE__SUCCESS;
 			break;
-		elseif ( iterCount >= prm.iterMax )
+		elseif ( prm.timeMax >= 0.0 && time()-startTime >= prm.timeMax )
+			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: time()-startTime >= prm.timeMax." );
+			retCode = RETCODE__IMPOSED_STOP;
+			break;
+		elseif ( prm.iterMax >= 0 & iterCount >= prm.iterMax )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: iterCount >= prm.iterMax." );
 			retCode = RETCODE__IMPOSED_STOP;
 			break;
-		elseif ( fevalCount >= prm.fevalMax )
+		elseif ( prm.fevalMax >= 0 && fevalCount >= prm.fevalMax )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: fevalCount >= prm.fevalMax." );
 			retCode = RETCODE__IMPOSED_STOP;
 			break;
-		elseif ( stepsCount >= prm.stepsMax )
+		elseif ( prm.stepsMax >= 0 && stepsCount >= prm.stepsMax )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: stepsCount >= prm.stepsMax." );
 			retCode = RETCODE__IMPOSED_STOP;
 			break;
@@ -49,6 +59,12 @@ function [ vecX_best, vecF_best, retCode, fevalCount, stepsCount, datOut ] = zli
 		%
 		%
 		iterCount++;
+		if ( prm.verbLev >= VERBLEV__PROGRESS )
+			msg( __FILE__, __LINE__, "Progress..." );
+			msg( __FILE__, __LINE__, sprintf( ...
+			  "  elapsed time: %10.3e/%10.3e;  iter: %5d/%5d;  feval: %5d/%5d;  steps: %5d/%5d.", ...
+			  time()-startTime, prm.timeMax, iterCount, prm.iterMax, fevalCount, prm.fevalMax, stepsCount, prm.stepsMax ) );
+		endif
 		%
 		%
 		% Tier 0b actions: mandatory actions.
@@ -99,6 +115,12 @@ function [ vecX_best, vecF_best, retCode, fevalCount, stepsCount, datOut ] = zli
 		msgif( prm.verbLev >= VERBLEV__ERROR, __FILE__, __LINE__, "ERROR: No acceptable action." );
 		break;
 	endwhile
+	if ( prm.verbLev >= VERBLEV__PROGRESS )
+		msg( __FILE__, __LINE__, "Final..." );
+		msg( __FILE__, __LINE__, sprintf( ...
+		  "  elapsed time: %10.3e/%10.3e;  iter: %5d/%5d;  feval: %5d/%5d;  steps: %5d/%5d.", ...
+		  time()-startTime, prm.timeMax, iterCount, prm.iterMax, fevalCount, prm.fevalMax, stepsCount, prm.stepsMax ) );
+	endif
 return;
 endfunction
 
@@ -121,28 +143,37 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	prm.verbLev = VERBLEV__FLAGGED; prm.valdLev = VALDLEV__ZERO; % Production.
 	prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__MEDIUM; % Integration.
 	prm.verbLev = VERBLEV__DETAILS; prm.valdLev = VALDLEV__HIGH; % Performance testing.
-	prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Dev.
+	prm.verbLev = VERBLEV__COPIOUS; prm.valdLev = VALDLEV__UNLIMITED; % Dev.
+	%prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Debug.
+	%
+	%%%prm.timeMax = -1.0; %%%
+	prm.timeMax = 3.0; %%%
 	prm.iterMax = ceil( 100 + 10*sqrt(sizeX+sizeF) + sizeX );
 	prm.fevalMax = prm.iterMax;
 	prm.stepsMax = 100;
 	prm.fTol = sizeF*100.0*eps;
+	%
 	prm.fModelDat_initial = [];
-	prm.epsB = sqrt(eps);
-	prm.epsFD = 1.0e-3;
-	prm.orthoTol = 1.0e-10;
-	%%%prm.curveType = "lev";
-	prm.curveType = "powell"; %%%
-	prm.curveScaling = "b";
+	%
 	prm.precon_funchPrecon = [];
 	prm.precon_matL = [];
 	prm.precon_matU = [];
 	prm.precon_matJA = [];
+	%
+	prm.epsFD = 1.0e-3;
+	prm.orthoTol = 1.0e-10;
+	%
+	prm.epsB = sqrt(eps);
+	prm.curveType = "lev"; %%%
+	%%%prm.curveType = "powell"; %%%
+	prm.curveScaling = "b";
 	prm.matC = [];
 	prm.cholRelTol = sqrt(eps);
 	prm.epsRegu = sqrt(eps);
 	%%%prm.candStepRelTol = 0.2;
 	prm.candStepRelTol = 1000.0*eps;
 	prm.levIterMax = 100;
+	%
 	prm = overwritefields( prm, prmIn );
 	%
 	if ( ~isempty(prm.precon_matJA) )
@@ -163,15 +194,13 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 		assert( isrealarray(vecX_initial,[sizeX,1]) );
 		assert( isrealarray(vecF_initial,[sizeF,1]) );
 		%
+		assert( isrealscalar(prm.timeMax) );
 		assert( isrealscalar(prm.iterMax) );
 		assert( isrealscalar(prm.fevalMax) );
 		assert( isrealscalar(prm.stepsMax) );
 		assert( abs(prm.iterMax-round(prm.iterMax)) < sqrt(eps) );
 		assert( abs(prm.fevalMax-round(prm.fevalMax)) < sqrt(eps) );
 		assert( abs(prm.stepsMax-round(prm.stepsMax)) < sqrt(eps) );
-		assert( 0 <= prm.iterMax );
-		assert( 0 <= prm.fevalMax );
-		assert( 0 <= prm.stepsMax );
 		%
 		assert( isrealscalar(prm.fTol) );
 		assert( isrealscalar(prm.epsFD) );
@@ -323,12 +352,12 @@ function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( funchF, fModelDat, 
 	if ( prm.valdLev >= VALDLEV__HIGH )
 		assert( sizeB == sizeV ); % Not strictly required, but it's what we're doing.
 		assert( isrealarray(matV,[sizeX,sizeV]) );
-		assert( isrealarray(matW,[sizeX,sizeV]) );
+		assert( isrealarray(matW,[sizeF,sizeV]) );
 		assert( isrealarray(matALo,[sizeV,sizeV]) );
 		assert( isrealarray(matAHi,[sizeV,sizeV]) );
 		assert( isrealarray(matB,[sizeB,sizeV]) );
 		assert( isrealarray(matVLocal,[sizeX,sizeVLocal]) );
-		assert( isrealarray(matWLocal,[sizeX,sizeVLocal]) );
+		assert( isrealarray(matWLocal,[sizeF,sizeVLocal]) );
 		assert( isrealarray(matALo_frozen,[sizeV,sizeV]) );
 		assert( isrealarray(matAHi_frozen,[sizeV,sizeV]) );
 		assert( isrealarray(matB_frozen,[sizeB,sizeV]) );
@@ -366,12 +395,12 @@ function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( funchF, fModelDat, 
 		endswitch
 		cScale = norm(diag(matC));
 		if ( 0.0 == cScale )
-			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "Curve scaling matrix was zero; setting to I." );
+			msgif( prm.verbLev >= VERBLEV__UNLIMITED, __FILE__, __LINE__, "Curve scaling matrix was zero; setting to I." );
 			matC = matIV;
 		else
 			[ matRC, cholFlag ] = chol(matC);
 			if ( 0 ~= cholFlag || min(diag(matRC)) < prm.cholRelTol * max(abs(diag(matRC))) )
-				msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "Curve scaling matrix was non positive-definite; applying regularization." );
+				msgif( prm.verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "Curve scaling matrix was non positive-definite; applying regularization." );
 				matC += cScale * prm.epsRegu * matIV;
 			endif
 			cScale = norm(diag(matC));
@@ -400,11 +429,11 @@ function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( funchF, fModelDat, 
 	endif
 	if ( prm.valdLev >= VALDLEV__UNLIMITED )
 	switch ( tolower(prm.curveScaling) )
-	%%%case { "b", "btb", "boundary", "optimal" }
-	otherwise %%%
+	case { "b", "btb", "boundary", "optimal" }
+	%%%otherwise %%%
 	switch ( prm.curveType )
-	%%%case { "l", "lev", "levenberg" }
-	otherwise %%%
+	case { "l", "lev", "levenberg" }
+	%%%otherwise %%%
 		state0 = rand( "state" );
 		rand( "state", 0 );
 		for m = 1 : 4
@@ -427,19 +456,19 @@ function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( funchF, fModelDat, 
 			b = norm(matB*vecY);
 			eta = funchEta( vecY );
 			yNorm = norm(vecY);
-			vecY_temp = vecY + yNorm * 0.1*(2.0*rand(sizeV,1)-1.0);
+			vecY_temp = vecY + yNorm * sqrt(eps)*(2.0*rand(sizeV,1)-1.0);
 			b_temp = norm(matB*vecY_temp);
 			eta_temp = funchEta(vecY_temp);
-			assert( eta_temp >= eta || b_temp >= b );
+			assert( eta_temp >= eta-1000.0*eps*eta || b_temp >= b-1000.0*eps*b );
 			eta_temp_etaTempMin = eta_temp;
 			b_temp_etaTempMin = b_temp;
 			eta_temp_bTempMin = eta_temp;
 			b_temp_bTempMin = b_temp;
 			for n=1:100
-				vecY_temp = vecY + yNorm * 0.1*(2.0*rand(sizeV,1)-1.0);
+				vecY_temp = vecY + yNorm * sqrt(eps)*(2.0*rand(sizeV,1)-1.0);
 				b_temp = norm(matB*vecY_temp);
 				eta_temp = funchEta(vecY_temp);
-				assert( eta_temp >= eta || b_temp >= b );
+				assert( eta_temp >= eta-1000.0*eps*eta || b_temp >= b-1000.0*eps*b );
 			endfor
 			clear eta_temp;
 			clear b_temp;
@@ -507,9 +536,9 @@ function vecY = __findCandStep( matH, vecG, matC, matB, bTrgt, prm )
 	endif
 	if ( prm.valdLev >= VALDLEV__UNLIMITED )
 		eigH = eig(matH);
-		msgif( prm.verbLev >= VERBLEV__NOTE, __FILE__, __LINE__, sprintf( "eig(matH): %0.3e ~ %0.3e", min(eigH), max(eigH) ) );
+		msgif( prm.verbLev >= VERBLEV__UNLIMITED, __FILE__, __LINE__, sprintf( "eig(matH): %0.3e ~ %0.3e", min(eigH), max(eigH) ) );
 		eigC = eig(matC);
-		msgif( prm.verbLev >= VERBLEV__NOTE, __FILE__, __LINE__, sprintf( "eig(matC): %0.3e ~ %0.3e", min(eigC), max(eigC) ) );
+		msgif( prm.verbLev >= VERBLEV__UNLIMITED, __FILE__, __LINE__, sprintf( "eig(matC): %0.3e ~ %0.3e", min(eigC), max(eigC) ) );
 		%
 		if ( min(eigH) < -sqrt(eps)*max(abs(eigH)) )
 			error( "Hessian matrix has a clearly negative eigenvalue." );
@@ -529,6 +558,10 @@ function vecY = __findCandStep( matH, vecG, matC, matB, bTrgt, prm )
 		vecY = __findCandStep_lev( matH, vecG, matC, matB, bTrgt, prm );
 	case { "p", "powell", "dog", "dog leg", "dog-leg", "dl" }
 		vecY = __findCandStep_pow( matH, vecG, matC, matB, bTrgt, prm );
+		%vecYLev = __findCandStep_lev( matH, vecG, matC, matB, bTrgt, prm );
+		%norm(vecY-vecYLev)
+		%deltaEtaPow = vecG'*vecY + (vecY'*matH*vecY)/2.0
+		%deltaEtaLev = vecG'*vecYLev + (vecYLev'*matH*vecYLev)/2.0
 	case { "g", "grad", "gradient", "gradient descent", "gradient-descent", "gradescent" }
 		error( "Gradient curve is not (yet?) supported." );
 	otherwise
@@ -695,7 +728,7 @@ function vecY = __findCandStep_pow( matH, vecG, matC, matB, bTrgt, prm )
 	dthd = vecD'*matH*vecD;
 	assert( dthd > 0.0 );
 	assert( gtd <= 0.0 );
-	s = -gtd/gthd;
+	s = -gtd/dthd;
 	vecY_cauchy = s*vecD;
 	vecBeta_cauchy = matB*vecY_cauchy;
 	b_cauchy = norm(vecBeta_cauchy);
@@ -828,18 +861,16 @@ function [ retCode, fevalIncr, fModelDat ] = __expandModel( funchF, fModelDat, p
 	if ( prm.valdLev >= VALDLEV__HIGH )
 		assert( sizeB == sizeV ); % Not strictly required, but it's what we're doing.
 		assert( isrealarray(matV,[sizeX,sizeV]) );
-		assert( isrealarray(matW,[sizeX,sizeV]) );
+		assert( isrealarray(matW,[sizeF,sizeV]) );
 		assert( isrealarray(matALo,[sizeV,sizeV]) );
 		assert( isrealarray(matAHi,[sizeV,sizeV]) );
 		assert( isrealarray(matB,[sizeB,sizeV]) );
 		assert( isrealarray(matVLocal,[sizeX,sizeVLocal]) );
-		assert( isrealarray(matWLocal,[sizeX,sizeVLocal]) );
+		assert( isrealarray(matWLocal,[sizeF,sizeVLocal]) );
 		assert( isrealarray(matALo_frozen,[sizeV,sizeV]) );
 		assert( isrealarray(matAHi_frozen,[sizeV,sizeV]) );
 		assert( isrealarray(matB_frozen,[sizeB,sizeV]) );
 		%
-		assert( reldiff(fModelDat.matV'*fModelDat.matV,eye(sizeV+1,sizeV+1)) < sqrt(eps) );
-		assert( reldiff(fModelDat.matVLocal'*fModelDat.matVLocal,eye(sizeVLocal+1,sizeVLocal+1)) < sqrt(eps) );
 		assert( issymmetric(fModelDat.matALo) );
 		assert( issymmetric(fModelDat.matAHi) );
 		assert( issymmetric(fModelDat.matALo_frozen) );
@@ -847,6 +878,10 @@ function [ retCode, fevalIncr, fModelDat ] = __expandModel( funchF, fModelDat, p
 		% We're making matB sym too...
 		assert( issymmetric(fModelDat.matB) );
 		assert( issymmetric(fModelDat.matB_frozen) );
+	endif
+	if ( prm.valdLev >= VALDLEV__VERY_HIGH )
+		assert( reldiff(fModelDat.matV'*fModelDat.matV,eye(sizeV+1,sizeV+1)) < sqrt(eps) );
+		assert( reldiff(fModelDat.matVLocal'*fModelDat.matVLocal,eye(sizeVLocal+1,sizeVLocal+1)) < sqrt(eps) );
 	endif
 	%
 	retCode = RETCODE__SUCCESS;
