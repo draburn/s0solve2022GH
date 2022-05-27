@@ -124,9 +124,11 @@ function [ retCode, fevalIncr, vecF_initial, prm ] = __initPrm( funchF, vecX_ini
 	prm.precon_matJA = [];
 	prm.fModelDat_initial = [];
 	prm.matC = [];
-	prm.cholTol = sqrt(eps);
+	prm.cholRelTol = sqrt(eps);
 	prm.epsRegu = sqrt(eps);
-	prm.candidateStepSizeRelTol = 0.2;
+	%%%prm.candStepRelTol = 0.2;
+	prm.candStepRelTol = 1000.0*eps;
+	prm.levIterMax = 100;
 	prm = overwritefields( prm, prmIn );
 	%
 	if ( ~isempty(prm.precon_matJA) )
@@ -331,6 +333,9 @@ function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( fModelDat, prm )
 		case { "1", "eye", "i" }
 			matC = matIV;
 		case { "b", "btb", "boundary", "optimal" }
+			% This is "optimal" in that, used with the Levenberg curve,
+			%  it will produce the point on the boundary which minimizes
+			%  the (estimated) objective function.
 			matC = matBTB;
 		case { "ddbtb" }
 			matC = diag(diag(matBTB));
@@ -347,7 +352,7 @@ function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( fModelDat, prm )
 			matC = matIV;
 		else
 			[ matRC, cholFlag ] = chol(matC);
-			if ( 0 ~= cholFlag || min(diag(matRC)) < prm.cholTol * max(abs(diag(matRC))) )
+			if ( 0 ~= cholFlag || min(diag(matRC)) < prm.cholRelTol * max(abs(diag(matRC))) )
 				msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "Curve scaling matrix was non positive-definite; applying regularization." );
 				matC += cScale * prm.epsRegu * matIV;
 			endif
@@ -356,18 +361,24 @@ function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( fModelDat, prm )
 		endif
 	endif
 	%
-	vecY_ideal = __findCandidateStep( matH, vecG, matC, [], [], prm );
-	vecY_zeroV = __findCandidateStep( matH, vecG, matC, matB, 1.0, prm );
-	vecY_loVar = __findCandidateStep( matH + matALo, vecG, matC, matB, 1.0, prm );
-	verY_hiVar = __findCandidateStep( matH + matAHi, vecG, matC, matB, 1.0, prm );
+	vecY_ideal = __findCandStep( matH, vecG, matC, [], [], prm );
+	vecY_zeroV = __findCandStep( matH, vecG, matC, matB, 1.0, prm );
+	vecY_loVar = __findCandStep( matH + matALo, vecG, matC, matB, 1.0, prm );
+	vecY_hiVar = __findCandStep( matH + matAHi, vecG, matC, matB, 1.0, prm );
 	if ( prm.valdLev >= VALDLEV__MEDIUM )
-		assert( norm(matB*vecY_zeroV) <= 1.0 + prm.candidateStepSizeRelTol );
-		assert( norm(matB*vecY_loVar) <= 1.0 + prm.candidateStepSizeRelTol );
-		assert( norm(matB*vecY_hiVar) <= 1.0 + prm.candidateStepSizeRelTol );
-		assert( funchEta_zeroV(vecY_ideal) <= (1.0+sqrt(eps))*abs(funchEta_zeroV(vecY_zeroV)) + eps*sumsq(vecF) );
-		assert( funchEta_zeroV(vecY_zeroV) <= (1.0+sqrt(eps))*abs(funchEta_zeroV(vecY_loVar)) + eps*sumsq(vecF) );
-		assert( funchEta_zeroV(vecY_loVar) <= (1.0+sqrt(eps))*abs(funchEta_zeroV(vecY_hiVar)) + eps*sumsq(vecF) );
-		assert( funchEta_zeroV(vecY_hiVar) <= (1.0+sqrt(eps))*sumsq(vecF)/2.0 );
+		assert( norm(matB*vecY_zeroV) <= 1.0 + prm.candStepRelTol );
+		assert( norm(matB*vecY_loVar) <= 1.0 + prm.candStepRelTol );
+		assert( norm(matB*vecY_hiVar) <= 1.0 + prm.candStepRelTol );
+		if ( prm.candStepRelTol <= 1000.0*eps );
+			assert( funchEta_zeroV(vecY_ideal) <= (1.0+sqrt(eps))*abs(funchEta_zeroV(vecY_zeroV)) + eps*sumsq(vecF) );
+			assert( funchEta_zeroV(vecY_zeroV) <= (1.0+sqrt(eps))*abs(funchEta_zeroV(vecY_loVar)) + eps*sumsq(vecF) );
+			assert( funchEta_zeroV(vecY_loVar) <= (1.0+sqrt(eps))*abs(funchEta_zeroV(vecY_hiVar)) + eps*sumsq(vecF) );
+			assert( funchEta_zeroV(vecY_hiVar) <= (1.0+sqrt(eps))*sumsq(vecF)/2.0 );
+			assert( funchEta_loVar(vecY_loVar) <= (1.0+sqrt(eps))*abs(funchEta_loVar(vecY_zeroV)) + eps*sumsq(vecF) );
+			assert( funchEta_loVar(vecY_loVar) <= (1.0+sqrt(eps))*abs(funchEta_loVar(vecY_hiVar)) + eps*sumsq(vecF) );
+			assert( funchEta_hiVar(vecY_hiVar) <= (1.0+sqrt(eps))*abs(funchEta_hiVar(vecY_zeroV)) + eps*sumsq(vecF) );
+			assert( funchEta_hiVar(vecY_hiVar) <= (1.0+sqrt(eps))*abs(funchEta_hiVar(vecY_loVar)) + eps*sumsq(vecF) );
+		endif
 	endif
 	if ( prm.valdLev >= VALDLEV__UNLIMITED )
 		state0 = rand( "state" );
@@ -392,8 +403,16 @@ function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( fModelDat, prm )
 			b = norm(matB*vecY);
 			eta = funchEta( vecY );
 			yNorm = norm(vecY);
+			vecY_temp = vecY + yNorm * 0.1*(2.0*rand(sizeV,1)-1.0);
+			b_temp = norm(matB*vecY_temp);
+			eta_temp = funchEta(vecY_temp);
+			assert( eta_temp >= eta || b_temp >= b );
+			eta_temp_etaTempMin = eta_temp;
+			b_temp_etaTempMin = b_temp;
+			eta_temp_bTempMin = eta_temp;
+			b_temp_bTempMin = b_temp;
 			for n=1:100
-				vecY_temp = yNorm + 0.1*(2.0*rand(sizeX,1)-1.0);
+				vecY_temp = vecY + yNorm * 0.1*(2.0*rand(sizeV,1)-1.0);
 				b_temp = norm(matB*vecY_temp);
 				eta_temp = funchEta(vecY_temp);
 				assert( eta_temp >= eta || b_temp >= b );
@@ -434,649 +453,178 @@ function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( fModelDat, prm )
 	%
 	return;
 endfunction
-%prm.curveType = "lev";
-%prm.curveScaling = "b";
 
 
+function vecY = __findCandStep( matH, vecG, matC, matB, bTrgt, prm )
+	switch ( prm.curveType )
+	case { "l", "lev", "levenberg" }
+		vecY = __findCandStep_lev( matH, vecG, matC, matB, bTrgt, prm );
+	case { "p", "powell", "dog", "dog leg", "dog-leg", "dl" }
+		error( "Powell's dog-leg curve is not yet supported." );
+	case { "g", "grad", "gradient", "gradient descent", "gradient-descent", "gradescent" }
+		error( "Gradient curve is not (yet?) supported." );
+	otherwise
+		error( "Unsupported value of curveType." );
+	endswitch
+	return;
+endfunction
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-function vecY = __calcStep( matH, vecMG, prm )
-	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
+function vecY = __findCandStep_lev( matH, vecG, matC, matB, bTrgt, prm )
+	mydefs;
+	if ( prm.valdLev >= VALDLEV__HIGH )
+		sz = size(matH,1);
+		assert( isrealarray(matH,[sz,sz]) );
+		assert( issymmetric(matH) );
+		assert( isrealarray(vecG,[sz,1]) );
+		assert( isrealarray(matC,[sz,sz]) );
+		assert( issymmetric(matC) );
+		if ( ~isempty(matB) )
+			szb = size(matB,1);
+			assert( isrealarray(matB,[szb,sz]) );
+			clear szb;
+			assert( ~isempty(bTrgt) );
+		endif
+		assert( min(diag(matH)) >= 0.0 );
+		assert( min(diag(matC)) > 0.0 );
+		if ( ~isempty(bTrgt) )
+			assert( ~isempty(matB) );
+			assert( bTrgt > 0.0 );
+		endif
+		clear sz;
+	endif
+	if ( prm.valdLev >= VALDLEV__UNLIMITED )
+		eigH = eig(matH);
+		msgif( prm.verbLev >= VERBLEV__NOTE, __FILE__, __LINE__, sprintf( "eig(matH): %0.3e ~ %0.3e", min(eigH), max(eigH) ) );
+		eigC = eig(matC);
+		msgif( prm.verbLev >= VERBLEV__NOTE, __FILE__, __LINE__, sprintf( "eig(matC): %0.3e ~ %0.3e", min(eigC), max(eigC) ) );
+		%
+		if ( min(eigH) < -sqrt(eps)*max(abs(eigH)) )
+			error( "Hessian matrix has a clearly negative eigenvalue." );
+		elseif ( min(eigC) < -sqrt(eps)*max(abs(eigC)) )
+			error( "Constraint matrix has a clearly negative eigenvalue." );
+		endif
+		if ( min(eigC) <= 0.0 )
+			msgif ( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, ...
+			  "WARNING: Constraint matrix appears to have a near-zero eigenvalue." );
+		endif
+		clear eigC;
+		clear eigH;
+	endif
+	%
+	hScale = norm(diag(matH));
+	cScale = norm(diag(matC));
 	[ matR, cholFlag ] = chol( matH );
-	%
-	cholSafeTol = mygetfield( prm, "cholSafeTol", sqrt(eps) );
-	if ( 0 == cholFlag && min(diag(matR)) > cholSafeTol*max(abs(diag(matR))) )
-		vecY = matR \ (matR'\vecMG);
+	newtNeedsExtrap = ( 0 ~= cholFlag || min(diag(matR)) < prm.cholRelTol * max(abs(diag(matR))) );
+	if ( newtNeedsExtrap )
+		matR1 = chol( matH + matC * (1.0*prm.epsRegu*hScale/cScale) );
+		matR2 = chol( matH + matC * (2.0*prm.epsRegu*hScale/cScale) );
+		vecY1 = matR1 \ (matR1'\(-vecG));
+		vecY2 = matR2 \ (matR2'\(-vecG));
+		vecY_newt = (2.0*vecY1) - vecY2;
+		vecYPrime1 = -( matR1 \ (matR1'\(matC*vecY1)) );
+		vecYPrime2 = -( matR2 \ (matR2'\(matC*vecY1)) );
+		vecYPime_newt = (2.0*vecYPrime1) - vecYPrime2;
 	else
-		msgif( prm.msgNotice, __FILE__, __LINE__, "Extrapolating step to singular point. (Perhaps should bail instead?)" );
-		hScale = max(max(abs(matH)));
-		assert( 0.0 < hScale );
-		sizeV = size(matH,1);
-		matIV = eye(sizeV,sizeV);
-		epsRelRegu = mygetfield( prm, "epsRelRegu", sqrt(eps) );
-		matH1 = matH + ( 1.0 * epsRelRegu * hScale ) * matIV;
-		matH2 = matH + ( 2.0 * epsRelRegu * hScale ) * matIV;
-		matR1 = chol( matH1 );
-		matR2 = chol( matH2 );
-		vecY1 = matR1 \ (matR1'\vecMG);
-		vecY2 = matR2 \ (matR2'\vecMG);
-		vecY = (2.0*vecY1) - vecY2;
+		vecY_newt = matR \ (matR'\(-vecG));
+		vecYPrime_newt = -( matR \ (matR'\(matC*vecY_newt)) );
 	endif
-return;
-endfunction
-
-
-function vecY = __calcBoundStep( matH, vecMG, matB, matSCurve, prm );
-	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
-	if ( isempty(matB) || 0.0==max(max(abs(matB))) )
-		vecY = __calcStep( matH, vecMG, prm );
+	vecBeta_newt = matB*vecY_newt;
+	b_newt = norm(vecBeta_newt);
+	if ( isempty(bTrgt) || b_newt <= bTrgt * (1.0+prm.candStepRelTol) )
+		vecY = vecY_newt;
 		return;
 	endif
+	bPrime_newt = (matB*vecY_newt)'*(matB*vecYPrime_newt)/b_newt;
 	%
-	if ( mygetfield(prm,"useDogLeg",false) )
-		if (~prm.useBBall)
-			error( "useDogLeg requires useBBall!" );
+	pt0.mu = 0.0;
+	pt0.vecY = vecY_newt;
+	pt0.b = b_newt;
+	pt0.bPrime = bPrime_newt;
+	havePt1 = false;
+	%
+	levIterCount = 0;
+	while (~havePt1)
+		levIterCount++;
+		assert( levIterCount <= prm.levIterMax );
+		%
+		mu0 = pt0.mu;
+		b0 = pt0.b;
+		bPrime0 = pt0.bPrime;
+		% Intentionally overshoot in mu.
+		mu = mu0 + 10.0 * ( (b0/bTrgt) - 1.0 ) * b0 / (-bPrime0);
+		%
+		assert( mu0 < mu );
+		pt = __calcLevPtFromMu( matH, vecG, matC, matB, mu );
+		assert( pt.b < pt0.b );
+		%
+		if ( abs(pt.b-bTrgt) < prm.candStepRelTol * bTrgt )
+			vecY = pt.vecY;
+			return;
+		elseif ( pt.b > bTrgt )
+			pt0 = pt;
+		elseif ( pt.b < bTrgt )
+			havePt1 = true;
+			pt1 = pt;
 		endif
+	endwhile
+	%
+	applyConstraints = false;
+	while (1)
+		levIterCount++;
+		assert( levIterCount <= prm.levIterMax );
 		%
-		% DRaburn 2022-05-12-2233
-		%  I now believe only S_curve = B^T * B is meaningful;
-		%   this should produce the same point as generating points along a curve and pulling to the surface,
-		%   if not better.
-		%  However, in order to allow a fair comparison to the existing Levenberg curve,
-		%   I'll allow B and S_curve to be independent.
-		%
-		sizeV = size(matH,1);
-		rc = rcond( matH );
-		if ( rc > sqrt(eps) )
-			matHRegu = matH;
+		mu0 = pt0.mu;
+		b0 = pt0.b;
+		bPrime0 = pt0.bPrime;
+		mu1 = pt1.mu;
+		b1 = pt1.b;
+		bPrime1 = pt1.bPrime;
+		mu_from0 = mu0 + ( (b0/bTrgt) - 1.0 ) * b0 / (-bPrime0);
+		mu_from1 = mu1 + ( (b1/bTrgt) - 1.0 ) * b1 / (-bPrime1);
+		mu_fromX = mu0 + ( (b0/bTrgt) - 1.0 ) * ( mu1 - mu0 ) / ( (b0/b1) - 1.0 );
+		if ( abs(b0-bTrgt) < abs(b1-bTrgt) && mu_from0 < mu1 )
+			mu = mu_from0;
+		elseif ( abs(b0-bTrgt) > abs(b1-bTrgt) && mu_from1 > mu0 )
+			mu = mu_from1;
 		else
-			epsRelRegu = mygetfield( prm, "epsRelRegu", sqrt(eps) );
-			hScale = max(max(abs(matH)));
-			sScale = max(max(abs(matSCurve)));
-			assert( 0.0 < hScale );
-			assert( 0.0 < sScale );
-			epsRegu = epsRelRegu*hScale/sScale;
-			matHRegu = matH + epsRegu*eye(sizeV,sizeV);
+			mu = mu_fromX;
 		endif
-		matR = chol(matHRegu);
-		vecDeltaNewton = matR \ ( matR' \ vecMG );
-		%
-		% If Newton step is in bounds, take it.
-		if ( sumsq(matB*vecDeltaNewton) <= 1.0 )
-			vecY = vecDeltaNewton;
-			return;
+		if ( applyConstraints )
+			mu = median([ mu0+0.1*(mu1-mu0), mu, mu1-0.1*(mu1-mu0) ]);
 		endif
-		msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "Restricting step to bound (%g).",  sumsq(matB*vecDeltaNewton) ) );
 		%
-		assumeDiagonal = false;
-		if (assumeDiagonal)
-		vecS = diag(matSCurve);
-		matS = diag(vecS);
-		assert( reldiff(matSCurve,matS) < sqrt(eps) );
-		assert( min(vecS) > eps*max(abs(vecS)) );
-		vecYCauchyDir = vecMG./vecS;
+		assert( mu0 < mu && mu < mu1 );
+		pt = __calcLevPtFromMu( matH, vecG, matC, matB, mu );
+		assert( pt1.b < pt.b && pt.b < pt0.b );
+		%
+		%
+		if ( ~applyConstraints && abs(pt.b-bTrgt) > 0.5 * min([ abs(pt0.b-bTrgt), abs(pt1.b-bTrgt) ]) )
+			applyConstraints = true;
 		else
-		matRCurve = chol(matSCurve);
-		vecYCauchyDir = matRCurve \ (matRCurve'\vecMG);
+			applyConstraints = false;
 		endif
-		%
-		ythy = vecYCauchyDir'*matHRegu*vecYCauchyDir;
-		assert( ythy >= 0.0 );
-		ythmg = vecYCauchyDir'*vecMG;
-		assert( ythmg > 0.0 );
-		pCauchy = ythmg / ythy;
-		vecDeltaCauchy = pCauchy*vecYCauchyDir;
-		%
-		% If Cauchy step goes OOB, take its intersection with boundary.
-		vecBC = matB*vecDeltaCauchy;
-		bcsq = sumsq( vecBC );
-		if ( bcsq >= 1.0 );
-			vecY = vecDeltaCauchy / sqrt(bcsq);
-			assert( reldiff( sumsq(matB*vecY), 1.0 ) < sqrt(eps) );
+		if ( abs(pt.b-bTrgt) < prm.candStepRelTol * bTrgt )
+			vecY = pt.vecY;
 			return;
+		elseif ( pt.b > bTrgt )
+			pt0 = pt;
+		elseif ( pt.b < bTrgt )
+			pt1 = pt;
 		endif
-		%
-		% Find where the second leg intersects the boundary.
-		vecDelta2 = vecDeltaNewton - vecDeltaCauchy;
-		vecB2 = matB*vecDelta2;
-		% We can't use calcLinishRootOfQuad() here!
-		% We want positive root of quad!
-		%   Using y = vecDeltaCauchy + t * vecDelta2,
-		%   ||B*y|| = (t^2)*(b2'*b2) + t*(2.0*b2'*bc) + (bc'*bc) - 1.0,
-		%   where b2 = B*vecDelta2 and bc = B*vecDeltaCauchy.
-		a = sumsq(vecB2);
-		b = 2.0*(vecBC'*vecB2);
-		c = bcsq-1.0;
-		discrim = (b^2) - (4.0*a*c);
-		assert( discrim >= 0.0 );
-		assert( 0.0 < a );
-		t = (-b+sqrt(discrim))/(2.0*a); % Because a must be positive.
-		vecY = vecDeltaCauchy + (t*vecDelta2);
-		assert( reldiff( sumsq(matB*vecY), 1.0 ) < sqrt(eps) );
-		assert( t >= 0.0 );
-		assert( t <= 1.0 );
-		return;
-	endif
+	endwhile
 	%
-	if (1)
-		% DRaburn 2022-05-22...
-		%  New to zlinsolf150.
-		if (~prm.useBBall)
-			error( "useBBall is required." );
-		endif
-		%%%assert( reldiff(matB'*matB,matSCurve) < sqrt(eps) );
-		% In princple, we should be able to short-circuit form here.
-		% DRaburn 2022-05-22:
-		%  Looks like findLevPt_0522 makes things worse,
-		%  perhaps because it semi-requires the constrant matrix to be positive-definite?
-		vecY = findLevPt_0522( -vecMG, matH, 1.0, matB );
-		return;
-	endif
-	%
-	%cholSafeTol = mygetfield( prm, "cholSafeTol", sqrt(eps) );
-	%
-	%[ matR, cholFlag ] = chol( matH );
-	%if ( 0 == cholFlag && min(diag(matR)) > cholSafeTol*max(abs(diag(matR))) )
-	% Looks like chol isn't accurate enough, and/or "\" triggers a check based on rcond()?
-	% So, we'l use rcond too.
-	rc = rcond( matH );
-	if ( rc > 10.0*sqrt(eps) )
-		s1 = 1.0;
-	else
-		epsRelRegu = mygetfield( prm, "epsRelRegu", 10.0*sqrt(eps) );
-		hScale = max(max(abs(matH)));
-		sScale = max(max(abs(matSCurve)));
-		assert( 0.0 < hScale );
-		assert( 0.0 < sScale );
-		s1 = 1.0 - (epsRelRegu*hScale/(epsRelRegu*hScale+sScale));
-	endif
-	assert( s1 >= 0.0 );
-	%
-	funchYOfS = @(s)( ( s*matH + (1.0-s)*matSCurve ) \ (s*vecMG) );
-	assert( rcond(matSCurve) > eps^1.5 );
-	assert( rcond( s1*matH + (1.0-s1)*matSCurve ) > eps^1.5 );
-	%
-	if (prm.useBBall)
-	funchBOfY = @(y)( sumsq(matB*y) );
-	else
-	% NOTE: IF NOT USING DOG-LEG,
-	% WE SHOULD GENERATE A BUNCH OF POINTS AND PULL THEM IN TO THE SURFACES!
-	msgif( prm.msgCopious, __FILE__, __LINE__, "NextVer: Generate many points and pull to satisfy B as in slinsolf200." );
-	funchBOfY = @(y)( max(abs(y'*matB)) );
-	endif
-	%
-	vecY1 = funchYOfS(s1);
-	b1 = funchBOfY(vecY1);
-	if ( b1 <= 1.0 )
-		vecY = vecY1;
-		return;
-	endif
-	%
-	msgif( prm.msgCopious, __FILE__, __LINE__, "Restricting step to bound!" );
-	funchBM1OfS = @(s)( funchBOfY(funchYOfS(s)) - 1.0 );
-	%
-	%
-	if (1)
-		% DRaburn 2022-05-22...
-		%  New to zlinsolf150.
-		if (~prm.useBBall)
-			error( "useBBall is required." );
-		endif
-		%%%assert( reldiff(matB'*matB,matSCurve) < sqrt(eps) );
-		vecY = findLevPt_0522( -vecMG, matH, 1.0, matB );
-	else
-		s = fzero( funchBM1OfS, [0.0, s1] );
-		vecY = funchYOfS(s);
-	endif
-	%
-	if (prm.useBBall)
-	%msg( __FILE__, __LINE__, sprintf( "BBall: %f, %f.", sumsq(matB*vecY1), sumsq(matB*vecY) ) );
-	assert( reldiff(norm(matB*vecY),1.0) < sqrt(eps) );
-	assert( reldiff(sumsq(matB*vecY),1.0) < sqrt(eps) );
-	else
-	assert( reldiff(max(abs(vecY'*matB)),1.0) < sqrt(eps) );
-	endif
-return;
+	return;
+endfunction
+function pt = __calcLevPtFromMu( matH, vecG, matC, matB, mu );
+	pt.mu = mu;
+	matR = chol( matH + mu*matC );
+	pt.vecY = -( matR \ (matR'\vecG) );
+	vecBeta = matB*pt.vecY;
+	pt.vecYPrime = -( matR \ (matR'\(matC*pt.vecY)) );
+	pt.b = norm(vecBeta);
+	pt.bPrime = (matB*pt.vecY)'*(matB*pt.vecYPrime)/pt.b;
+	return;
 endfunction
 
 
-function [ fModelDat, datOut ] = __expandModel( vecRhoF, funchF, fModelDat, prm )
-	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
-	fevalCount = 0;
-	% Unpack.
-	vecX = fModelDat.vecX;
-	vecF = fModelDat.vecF;
-	%omega = fModelDat.omega;
-	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
-	matWLocal = fModelDat.matWLocal; % Locally evaluated subspace basis matrix.
-	matV = fModelDat.matV; % Subspace basis matrix.
-	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
-	matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
-	matA0 = fModelDat.matA0;
-	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify max(abs(y'*B)) <= 1.
-	%sizeX = size(vecX,1);
-	%sizeF = size(vecF,1);
-	sizeV = size(matV,2);
-	sizeB = size(matB,2);
-	%
-	%
-	assert( 0.0 < norm(vecRhoF) );
-	vecU = __precon( vecRhoF, prm, vecX, vecF );
-	assert( 0.0 < norm(vecU) );
-	vecV = __calcOrthonorm( vecU, matV, prm );
-	if ( 0.0 == norm(vecV) )
-		error( "Failed to generate new subspace basis vector." );
-	endif
-	vecW = __calcJV( vecV, funchF, vecX, vecF, prm );
-	fevalCount++;
-	if ( 0.0 == norm(vecV) )
-		error( "Jacobian along new subspace basis vector is zero." );
-	endif
-	%
-	%
-	if (isempty(matVLocal))
-		fModelDat.matVLocal = [ vecV ];
-		fModelDat.matWLocal = [ vecW ];
-	else
-		fModelDat.matVLocal = [ matVLocal, vecV ];
-		fModelDat.matWLocal = [ matWLocal, vecW ];
-	endif
-	%
-	fModelDat.matV = [ matV, vecV ];
-	fModelDat.matW = [ matW, vecW ];
-	fModelDat.matA = zeros(sizeV+1,sizeV+1);
-	fModelDat.matA(1:sizeV,1:sizeV) = (matA'+matA)/2.0;
-	if (prm.useBBall)
-	fModelDat.matB = zeros(sizeV+1,sizeV+1);
-	fModelDat.matB(1:sizeV,1:sizeV) = (matB'+matB)/2.0;
-	else
-	fModelDat.matB = [ matB; zeros(1,sizeB) ];
-	endif
-	fModelDat.matA0 = zeros(sizeV+1,sizeV+1);
-	fModelDat.matA0(1:sizeV,1:sizeV) = (matA0'+matA0)/2.0;
-	%
-	%
-	datOut.fevalCount = fevalCount;
-return;
-endfunction
-
-
-function fModelDat = __moveTo( vecX_trial, vecF_trial, fModelDat, prm )
-	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
-	vecX = fModelDat.vecX;
-	vecF = fModelDat.vecF;
-	%omega = fModelDat.omega;
-	%matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
-	matV = fModelDat.matV; % Subspace basis matrix.
-	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
-	matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
-	matA0 = fModelDat.matA0;
-	%matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify max(abs(y'*B)) <= 1.
-	%sizeX = size(vecX,1);
-	%sizeF = size(vecF,1);
-	sizeV = size(matV,2);
-	%sizeB = size(matB,2);
-	%
-	msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( " ( ||F||: %10.3e -> %10.3e. )", norm(vecF), norm(vecF_trial) ) );
-	%
-	%
-	vecDeltaX = vecX_trial - vecX;
-	vecY = matV'*vecDeltaX;
-	yNorm = norm(vecY);
-	assert( 0.0 < yNorm );
-	%
-	%
-	%
-	%%%msgif( prm.msgCopious, __FILE__, __LINE__, "TODO: consider partial quadratic update (OSQU)." );
-	%%%msgif( prm.msgCopious, __FILE__, __LINE__, "  Here, only linear (Broyden) update is applied." );
-	vecFModel_trial = vecF + matW*vecY;
-	vecRho = vecF_trial - vecFModel_trial;
-	useQuadUpdate = mygetfield( prm, "useQuadUpdate", true );
-	if (~useQuadUpdate)
-	matW_plus = matW + vecRho * (vecY')/(yNorm^2);
-	else
-	rhoSumsq = sumsq(vecRho);
-	ytay = vecY'*matA*vecY;
-	if ( rhoSumsq <= ytay )
-		s = 1.0;
-	else
-		s = ytay/rhoSumsq;
-	endif
-	matW_plus = matW + (2.0-s) * vecRho * (vecY')/(yNorm^2);
-	endif
-	%
-	%
-	%
-	%%%
-	%%% STUDY ME!
-	vecYHat = vecY/yNorm;
-	if (0)
-	stepUpdateAccuracyCoeff = mygetfield( prm, "stepUpdateAccuracyCoeff", 0.0 );
-	assert( 0.0 <= stepUpdateAccuracyCoeff );
-	assert( stepUpdateAccuracyCoeff <= 1.0 );
-	matE = eye(sizeV,sizeV) - (stepUpdateAccuracyCoeff*vecYHat)*(vecYHat');
-	%
-	matD = diag(max([ abs(diag(matW'*matW)), abs(diag(matW_plus'*matW_plus)) ]'));
-	foo1 = sumsq( matW_plus*vecY - matW*vecY ) - vecY'*matA*vecY;
-	foo2 = vecY'*matD*vecY;
-	if ( foo1 <= 0.0 )
-		s = 0.0;
-	elseif ( foo2 <= foo1 )
-		s = 1.0;
-	else
-		s = foo1 / foo2;
-		assert( 0.0 <= s );
-		assert( s <= 1.0 );
-	endif
-	coeffD = mygetfield( prm, "coeffD", 10.0 );
-	s*=coeffD;
-	matA0 = matE*( matA + s*matD )*matE;
-	endif
-	%%%matA0 = matA + s*matD;
-	%
-	matWTW = matW'*matW;
-	matA0 = 100.0*( diag(diag(matWTW)) + eye(sizeV,sizeV)*max(max(matWTW))*0.1 );
-	%%%matA0 += matA + 0.00001*diag(diag(matWTW));
-	matA0 = (matA0'+matA0)/2.0;
-	%%%
-	%%%
-	%
-	if (0)
-		msg( __FILE__, __LINE__, "Data dump..." );
-		vecD = diag(matWTW);
-		matD = diag(vecD);
-		dAvg = sum(vecD)/sizeV;
-		dSqAvg = sum(vecD.^2)/sizeV;
-		dVar = sqrt( dSqAvg - dAvg^2 );
-		dMin = min(vecD);
-		dMax = max(vecD);
-		[ sumsq(vecRho), dAvg, dVar, dMin, dMax ]
-		[ sumsq(vecRho)/sumsq(vecY), sumsq(vecRho)*dAvg/sumsq(matW*vecY), sumsq(vecRho)*dAvg/(vecY'*matD*vecY) ]
-		error( "HALT!" );
-	endif
-	%
-	%
-	%
-	fModelDat.matVLocal = [];
-	fModelDat.matWLocal = [];
-	fModelDat.vecX = vecX_trial;
-	fModelDat.vecF = vecF_trial;
-	fModelDat.matW = matW_plus;
-	fModelDat.matA = matA0;
-	fModelDat.matA0 = matA0;
-return;
-endfunction
-
-
-function [ fModelDat, datOut ] = __refresh( vecY, funchF, fModelDat, prm )
-	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
-	fevalCount = 0;
-	% Unpack.
-	vecX = fModelDat.vecX;
-	vecF = fModelDat.vecF;
-	%omega = fModelDat.omega;
-	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
-	matWLocal = fModelDat.matWLocal;
-	matV = fModelDat.matV; % Subspace basis matrix.
-	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
-	matA0 = fModelDat.matA0; % Hessian variation matrix, < (delta W)' * (delta W) >.
-	%matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify max(abs(y'*B)) <= 1.
-	%sizeX = size(vecX,1);
-	%sizeF = size(vecF,1);
-	sizeV = size(matV,2);
-	sizeVLocal = size(matVLocal,2);
-	%sizeB = size(matB,2);
-	%
-	assert( sizeVLocal < sizeV );
-	%
-	yNorm = norm(vecY);
-	assert( 0.0 < yNorm );
-	vecYHat = vecY/yNorm;
-	vecU = matV*vecYHat;
-	vecV = __calcOrthonorm( vecU, matVLocal, prm );
-	%%
-	doSaveMeHack20220511 = true;
-	if (doSaveMeHack20220511)
-		clear vecYHat;
-		if ( 0.0 == norm(vecV) )
-			vecU = matV*fModelDat.vecYPB;
-			vecV = __calcOrthonorm( vecU, matVLocal, prm );
-		endif
-		if ( 0.0 == norm(vecV) )
-			vecU = matV*fModelDat.vecYIB;
-			vecV = __calcOrthonorm( vecU, matVLocal, prm );
-		endif
-		if ( 0.0 == norm(vecV) )
-			vecU = matV*fModelDat.vecYIU;
-			vecV = __calcOrthonorm( vecU, matVLocal, prm );
-		endif
-		% Expand model?
-		if ( 0.0 == norm(vecV) )
-			vecU = matW'*fModelDat.vecF;
-			vecV = __calcOrthonorm( vecU, matVLocal, prm );
-		endif
-		% Try a random vector???
-		if ( 0.0 == norm(vecV) )
-			vecU = (1:sizeV)';
-			vecV = __calcOrthonorm( vecU, matVLocal, prm )
-		endif
-		if ( 0.0 == norm(vecV) )
-			echo__matV = matV
-			echo__matVLocal = matVLocal
-			error( "Failed to generate local subspace basis vector." );
-		endif
-	endif
-	%%
-	if ( 0.0 == norm(vecV) )
-		error( "Failed to generate local subspace basis vector." );
-	endif
-	if (prm.debugMode)
-		prmTemp.orthoTol = 10.0*sqrt(eps);
-		foo = __calcOrthonorm( vecV, matV, prmTemp );
-		if ( norm(foo) != 0.0 )
-			msg( __FILE__, __LINE__, "Data dump..." );
-			[ norm(vecU), norm(vecV), norm(foo) ]
-			[ norm(vecU), norm(vecV), norm(foo) ] - 1.0
-			[ vecV'*vecU, foo'*vecU, foo'*vecV ]
-			[ norm( matV'*vecU ), norm( matV'*vecV ), norm( matV'*foo ) ]
-			[ norm( vecV - matV*(matV'*vecV) ), norm( vecU - matV*(matV'*vecU) ), norm( foo - matV*(matV'*foo) ) ]
-			[ norm( vecV - matV*(matV'*vecV) ), norm( vecU - matV*(matV'*vecU) ), norm( foo - matV*(matV'*foo) ) ] - 1.0
-			error( "Subspace basis vector was thrown out of own space?!?!" );
-		endif
-	endif
-	%
-	vecW = __calcJV( vecV, funchF, vecX, vecF, prm );
-	fevalCount++;
-	if ( 0.0 == norm(vecW) )
-		error( "Jacobian along local subspace basis vector is zero." );
-	endif
-	%
-	matVLocal = [ matVLocal, vecV ];
-	matWLocal = [ matWLocal, vecW ];
-	sizeVLocal++;
-	if ( prm.debugMode )
-		assert( reldiff( matVLocal, matV*(matV'*matVLocal), eps ) < sqrt(eps) );
-		assert( reldiff( eye(sizeVLocal,sizeVLocal), matVLocal'*matVLocal, eps ) < sqrt(eps) );
-	endif
-	matVLocal = matV*(matV'*matVLocal);
-	for n=1:sizeVLocal
-		matVLocal(:,n) /= norm(matVLocal(:,n));
-	endfor
-	%
-	matE = eye(sizeV,sizeV) - matV'*matVLocal*(matVLocal')*matV;
-	%
-	fModelDat.matVLocal = matVLocal;
-	fModelDat.matWLocal = matWLocal;
-	%
-	%%% The yHats are NOT perpendicular!
-	%%%fModelDat.matW = matW + (vecW - matW*vecYHat)*(vecYHat');
-	%%% This z thing also works..
-	%%%vecZ = matV'*vecV;
-	%%%fModelDat.matW = matW + (vecW - matW*vecZ)*(vecZ');
-	% But, to be safe, let's do this.
-	fModelDat.matW = matW + ( matWLocal - matW*(matV')*matVLocal)*(matVLocal'*matV); % Yeah?
-	%
-	matA = matE' * matA0 * matE;
-	%matA += sqrt(eps)*max(max(abs(matA)))*eye(sizeV,sizeV);
-	matA = (matA'+matA)/2.0;
-	fModelDat.matA = matA;
-	if (0)
-		vecLambda0 = eig(matA0);
-		vecLambda = eig(matA);
-		if ( min(vecLambda0) < 0.0 || min(vecLambda) < 0.0 )
-			vecLambda0
-			vecLambda
-			assert( min(vecLambda0) >= 0.0 );
-			assert( min(vecLambda) >= 0.0 );
-		endif
-	endif
-	%
-	%
-	%
-	datOut.fevalCount = fevalCount;
-return;
-endfunction
-
-
-
-function fModelDat = __addB( vecY, fModelDat, prm )
-	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
-	% Unpack.
-	%vecX = fModelDat.vecX;
-	%vecF = fModelDat.vecF;
-	%omega = fModelDat.omega;
-	%matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
-	%matV = fModelDat.matV; % Subspace basis matrix.
-	%matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
-	%matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
-	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify max(abs(y'*B)) <= 1.
-	%sizeX = size(vecX,1);
-	%sizeF = size(vecF,1);
-	%sizeV = size(matV,2);
-	%sizeB = size(matB,2);
-	%
-	if (prm.useBBall)
-		msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "Increasing B (%g).", sumsq(matB*vecY) ) );
-		assert( sumsq(matB*vecY) < 1.0+sqrt(eps) );
-		yNorm = norm(vecY);
-		assert( 0.0 < yNorm );
-		vecYHat = vecY/yNorm;
-		sizeV = size(matB,2);
-		matEY = eye(sizeV,sizeV) - vecYHat*(vecYHat');
-		matB = matEY*matB*matEY + vecYHat*(vecYHat'/yNorm);
-		assert( reldiff( sumsq(matB*vecY), 1.0 ) < sqrt(eps) );
-		fModelDat.matB = (matB'+matB)/2.0;
-		return;
-	endif
-	%
-	ysumsq = sumsq(vecY);
-	assert( 0.0 < ysumsq );
-	if (isempty(matB))
-		fModelDat.matB = vecY/ysumsq;
-	else
-		fModelDat.matB = [ matB, vecY/ysumsq ];
-	endif
-return;
-endfunction
-
-
-
-function fModelDat = __removeB( vecY, fModelDat, prm )
-	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
-	% Unpack.
-	%vecX = fModelDat.vecX;
-	%vecF = fModelDat.vecF;
-	%omega = fModelDat.omega;
-	%matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
-	%matV = fModelDat.matV; % Subspace basis matrix.
-	%matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
-	%matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
-	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify max(abs(y'*B)) <= 1.
-	%sizeX = size(vecX,1);
-	%sizeF = size(vecF,1);
-	%sizeV = size(matV,2);
-	%sizeB = size(matB,2);
-	if (prm.useBBall)
-		if ( sumsq(matB*vecY) < 1.0 )
-			% vecY is already in the trust region; nothing to do.
-			return;
-		endif
-		msgif( prm.msgCopious, __FILE__, __LINE__, sprintf( "Decreasing B (%g).", sumsq(matB*vecY) ) );
-		assert( sumsq(matB*vecY) > 1.0 - sqrt(eps) );
-		yNorm = norm(vecY);
-		assert( 0.0 < yNorm );
-		vecYHat = vecY/yNorm;
-		sizeV = size(matB,2);
-		matEY = eye(sizeV,sizeV) - vecYHat*(vecYHat');
-		matB = matEY*matB*matEY + vecYHat*(vecYHat'/yNorm);
-		if ( reldiff(sumsq(matB*vecY),1.0) >= sqrt(eps) )
-			msg( __FILE__, __LINE__, "Data dump..." );
-			matB
-			vecY
-			sumsq(matB*vecY)
-			reldiff(sumsq(matB*vecY),1.0)
-		endif
-		assert( reldiff( sumsq(matB*vecY), 1.0 ) < sqrt(eps) );
-		fModelDat.matB = (matB'+matB)/2.0;
-		return;
-	endif
-	%
-	if ( isempty(matB) )
-		return;
-	endif
-	msk = logical( abs(vecY'*matB) >= 1.0 );
-	fModelDat.matB = matB( :, msk );
-return;
-endfunction
-
-function __dumpModel( fModelDat, prm )
-	error( "DRABURN: 2022-05-26: HIT OLDVER CODE!" );
-	msg( __FILE__, __LINE__, "vvvvvvvvvvvvvvvvvvvv Begin __dumpModel()..." );
-	vecX = fModelDat.vecX;
-	vecF = fModelDat.vecF;
-	omega = fModelDat.omega;
-	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
-	matV = fModelDat.matV; % Subspace basis matrix.
-	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
-	matA = fModelDat.matA; % Hessian variation matrix, < (delta W)' * (delta W) >.
-	matB = fModelDat.matB; % Boundary / trust region matrix; steps must satify max(abs(y'*B)) <= 1.
-	sizeX = size(vecX,1);
-	sizeF = size(vecF,1);
-	sizeV = size(matV,2);
-	sizeB = size(matB,2);
-	%
-	echo__omega = omega
-	sizeVLocal = size(matVLocal,2)
-	sizeV = size(matV,2)
-	%
-	vecYIU = fModelDat.vecYIU;
-	vecYIB = fModelDat.vecYIB;
-	vecYPB = fModelDat.vecYPB;
-	%
-	vecFModelIU = vecF + (matW*vecYIU);
-	vecFModelIB = vecF + (matW*vecYIB);
-	vecFModelPB = vecF + (matW*vecYPB);
-	%
-	omegaModelAvgIU = sumsq(vecFModelIU)/2.0
-	omegaModelAvgIB = sumsq(vecFModelIB)/2.0
-	omegaModelAvgPB = sumsq(vecFModelPB)/2.0
-	%
-	omegaModelVarIU = vecYIU'*matA*vecYIU
-	omegaModelVarIB = vecYIB'*matA*vecYIB
-	omegaModelVarPB = vecYPB'*matA*vecYPB
-	%
-	if (isempty(matB))
-		bIU = 0.0
-		bIB = 0.0
-		bPB = 0.0
-	else
-		bIU = max(abs(vecYIU'*matB))
-		bIB = max(abs(vecYIB'*matB))
-		bPB = max(abs(vecYPB'*matB))
-	endif
-	%
-	msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^ End __dumpModel()." );
-return;
-endfunction
