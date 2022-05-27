@@ -8,7 +8,7 @@ function [ vecX_best, vecF_best, retCode, fevalCount, stepsCount, datOut ] = zli
 	stepsCount = 0;
 	datOut = [];
 	%
-	[ retCode, fevalIncr, vecF_initial, prm ] = __initPrm( funchF, vecX_initial, vecF_initial, prmIn );
+	[ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funchF, vecX_initial, vecF_initial, prmIn );
 	fevalCount += fevalIncr; clear fevalIncr;
 	if ( 0~= retCode )
 		msgretcodeif( true, __FILE__, __LINE__, retCode );
@@ -22,7 +22,6 @@ function [ vecX_best, vecF_best, retCode, fevalCount, stepsCount, datOut ] = zli
 	vecF = vecF_initial;
 	vecX_next = [];
 	vecF_next = [];
-	fModelDat = [];
 	iterCount = 0;
 	while (1)
 		% Tier 0a actions: simple stoping criteria.
@@ -63,7 +62,7 @@ function [ vecX_best, vecF_best, retCode, fevalCount, stepsCount, datOut ] = zli
 			continue;
 		endif
 		%
-		[ retCode, fevalIncr, fModelDat ] = __analyzeModel( fModelDat, prm );
+		[ retCode, fevalIncr, fModelDat ] = __analyzeModel( funchF, fModelDat, prm );
 		fevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
 			msgretcodeif( true, __FILE__, __LINE__, retCode );
@@ -86,12 +85,14 @@ function [ vecX_best, vecF_best, retCode, fevalCount, stepsCount, datOut ] = zli
 		
 		% If hivar omega of hivar (b) step offer suffic reduction, try it.
 		
+		msgif( prm.verbLev >= VERBLEV__ERROR, __FILE__, __LINE__, "ERROR: No acceptable action." );
+		break;
 	endwhile
 return;
 endfunction
 
 
-function [ retCode, fevalIncr, vecF_initial, prm ] = __initPrm( funchF, vecX_initial, vecF_initial, prmIn )
+function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funchF, vecX_initial, vecF_initial, prmIn )
 	% If an error is thrown during init, let it be thrown for useful reporting to the command window.
 	mydefs;
 	retCode = RETCODE__NOT_SET;
@@ -114,6 +115,8 @@ function [ retCode, fevalIncr, vecF_initial, prm ] = __initPrm( funchF, vecX_ini
 	prm.fevalMax = prm.iterMax;
 	prm.stepsMax = 100;
 	prm.fTol = sizeF*100.0*eps;
+	prm.fModelDat_initial = [];
+	prm.epsB = sqrt(eps);
 	prm.epsFD = 1.0e-3;
 	prm.orthoTol = 1.0e-10;
 	%%%prm.curveType = "lev";
@@ -123,7 +126,6 @@ function [ retCode, fevalIncr, vecF_initial, prm ] = __initPrm( funchF, vecX_ini
 	prm.precon_matL = [];
 	prm.precon_matU = [];
 	prm.precon_matJA = [];
-	prm.fModelDat_initial = [];
 	prm.matC = [];
 	prm.cholRelTol = sqrt(eps);
 	prm.epsRegu = sqrt(eps);
@@ -180,6 +182,9 @@ function [ retCode, fevalIncr, vecF_initial, prm ] = __initPrm( funchF, vecX_ini
 			assert( isempty(prm.precon_matU) );
 		endif
 	endif
+	%
+	fModelDat = prm.fModelDat_initial;
+	%
 	retCode = RETCODE__SUCCESS;
 	return;
 endfunction
@@ -195,7 +200,7 @@ function [ retCode, fevalIncr, fModelDat ] = __initModel( funchF, vecX, vecF, pr
 	vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
 	vecV = __calcOrthonorm( vecU, [], prm );
 	if ( norm(vecV) <= sqrt(eps) )
-		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "Krylov failed to generate an linearly independent vector." );
+		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "__applyPrecon() failed to generate an linearly independent vector." );
 		sizeX = size(vecX,1);
 		for n=1:sizeX
 			vecU = zeros(size(vecX));
@@ -207,7 +212,7 @@ function [ retCode, fevalIncr, fModelDat ] = __initModel( funchF, vecX, vecF, pr
 		endfor
 	endif
 	vecW = __calcJV( vecV, funchF, vecX, vecF, prm );
-	fevalIncr ++;
+	fevalIncr++;
 	%
 	fModelDat.matV = [ vecV ];
 	fModelDat.matW = [ vecW ];
@@ -281,7 +286,7 @@ function vecW = __calcJV( vecV, funchF, vecX, vecF, prm )
 endfunction
 
 
-function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( fModelDat, prm )
+function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( funchF, fModelDat, prm )
 	mydefs;
 	retCode = RETCODE__NOT_SET;
 	fevalIncr = 0;
@@ -303,6 +308,7 @@ function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( fModelDat, prm )
 	sizeV = size(matV,2);
 	sizeB = size(matB,1);
 	sizeVLocal = size(matVLocal,2);
+	%
 	if ( prm.valdLev >= VALDLEV__HIGH )
 		assert( sizeB == sizeV ); % Not strictly required, but it's what we're doing.
 		assert( isrealarray(matV,[sizeX,sizeV]) );
@@ -696,5 +702,91 @@ function vecY = __findCandStep_pow( matH, vecG, matC, matB, bTrgt, prm )
 	assert( 0.0 < a );
 	t = (-b+sqrt(discrim))/(2.0*a); % Because a must be positive.
 	vecY = vecY_cauchy + (t*Y2);
+	return;
+endfunction
+
+
+function [ retCode, fevalIncr, fModelDat ] = __moveTo( funchF, vecX_next, vecF_next, fModelDat, prm )
+	mydefs;
+	retCode = RETCODE__NOT_SET;
+	fevalIncr = 0;
+	return;
+endfunction
+
+
+function [ retCode, fevalIncr, fModelDat ] = __moveTo( vecX_next, vecF_next, fModelDat, prm )
+	error( "To-do!" );
+	mydefs;
+	retCode = RETCODE__NOT_SET;
+	fevalIncr = 0;
+	return;
+endfunction
+
+
+function [ retCode, fevalIncr, fModelDat ] = __expandModel( funchF, fModelDat, prm )
+	mydefs;
+	retCode = RETCODE__NOT_SET;
+	fevalIncr = 0;
+	%
+	matV = fModelDat.matV; % Subspace basis matrix.
+	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
+	matALo = fModelDat.matALo; % Low estimate for Hessian variation matrix, < (delta W)' * (delta W) >.
+	matAHi = fModelDat.matAHi; % High estimate for Hessian variation matrix, < (delta W)' * (delta W) >.
+	matB = fModelDat.matB; % Boundary / trust region matrix; (bound) candidate steps must satify ||B*y|| <= 1.
+	vecX = fModelDat.vecX; % Current guess.
+	vecF = fModelDat.vecF; % Function at current guess.
+	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
+	matWLocal = fModelDat.matWLocal; % Only for dev/debug?
+	matALo_frozen = fModelDat.matALo_frozen; % Only for dev/debug?
+	matAHi_frozen = fModelDat.matAHi_frozen; % Only for dev/debug?
+	matB_frozen = fModelDat.matB_frozen; % Only for dev/debug?
+	%sizeX = size(vecX,1);
+	%sizeF = size(vecF,1);
+	sizeV = size(matV,2);
+	%sizeB = size(matB,1);
+	%sizeVLocal = size(matVLocal,2);
+	%
+	vecRhoF = vecF;
+	vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
+	vecV = __calcOrthonorm( vecU, matV, prm );
+	if ( norm(vecV) <= sqrt(eps) )
+		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "__applyPrecon() failed to generate an linearly independent vector." );
+		sizeX = size(vecX,1);
+		for n=1:sizeX
+			vecU = zeros(size(vecX));
+			vecU(n) = 1.0;
+			vecV = __calcOrthonorm( vecU, [], prm );
+			if ( norm(vecV) > sqrt(eps) )
+				break;
+			endif
+		endfor
+	endif
+	vecW = __calcJV( vecV, funchF, vecX, vecF, prm );
+	fevalIncr++;
+	%
+	fModelDat.matV = [ matV, vecV ];
+	fModelDat.matW = [ matW, vecW ];
+	fModelDat.matALo = zeros(sizeV+1,sizeV+1);
+	fModelDat.matALo(1:sizeV,1:sizeV) = matALo;
+	fModelDat.matAHi = zeros(sizeV+1,sizeV+1);
+	fModelDat.matAHi(1:sizeV,1:sizeV) = matAHi;
+	fModelDat.matB = zeros(sizeV+1,sizeV+1);
+	fModelDat.matB(1:sizeV,1:sizeV) = matB;
+	fModelDat.matB(sizeV,sizeV) = norm(diag(matB))*prm.epsB;
+	%
+	%fModelDat.vecX = vecX;
+	%fModelDat.vecF = vecF;
+	fModelDat.matVLocal = [ matVLocal, vecV ];
+	fModelDat.matWLocal = [ matWLocal, vecW ]; % Only for dev/debug?
+	%
+	fModelDat.matALo_frozen = zeros(sizeV+1,sizeV+1);
+	fModelDat.matALo_frozen(1:sizeV,1:sizeV) = matALo_frozen;
+	fModelDat.matAHi_frozen = zeros(sizeV+1,sizeV+1);
+	fModelDat.matAHi_frozen(1:sizeV,1:sizeV) = matAHi_frozen;
+	fModelDat.matB_frozen = zeros(sizeV+1,sizeV+1);
+	fModelDat.matB(1:sizeV,1:sizeV) = matB_frozen;
+	fModelDat.matB_frozen(sizeV,sizeV) = norm(diag(matB))*prm.epsB; % Note: expand per non-frozen.
+	%
+	retCode = RETCODE__SUCCESS;
 	return;
 endfunction
