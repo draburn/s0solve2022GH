@@ -79,6 +79,17 @@ function [ vecX_best, vecF_best, retCode, fevalCount, stepsCount, datOut ] = zli
 		% If zero variation omega of (zero variation) unbounded step is large, expand subspace.
 		% We'll be particularly inclined to do this if we have yet to take a step.
 		% But we cannot do this is we've already explored the full X space.
+		if ( 0 == stepsCount )
+		if ( fModelDat.etaZeroV_ideal > sqrt( prm.omegaTol*sumsq(vecF)/2.0 ) )
+			[ retCode, fevalIncr, fModelDat ] = __expandModel( funchF, fModelDat, prm );
+			fevalCount += fevalIncr;
+			if ( 0~= retCode )
+				msgretcodeif( true, __FILE__, __LINE__, retCode );
+				break
+			endif
+			continue;
+		endif
+		endif
 		
 		% If zero variation omega of zero variation (bounded) step offers only a too small decrease,
 		%  declare that the trust region size has gotten too small.
@@ -200,7 +211,7 @@ function [ retCode, fevalIncr, fModelDat ] = __initModel( funchF, vecX, vecF, pr
 	vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
 	vecV = __calcOrthonorm( vecU, [], prm );
 	if ( norm(vecV) <= sqrt(eps) )
-		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "__applyPrecon() failed to generate an linearly independent vector." );
+		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "__applyPrecon() failed to generate a linearly independent vector." );
 		sizeX = size(vecX,1);
 		for n=1:sizeX
 			vecU = zeros(size(vecX));
@@ -546,9 +557,13 @@ function vecY = __findCandStep_lev( matH, vecG, matC, matB, bTrgt, prm )
 		vecY_newt = matR \ (matR'\(-vecG));
 		vecYPrime_newt = -( matR \ (matR'\(matC*vecY_newt)) );
 	endif
+	if ( isempty(bTrgt) )
+		vecY = vecY_newt;
+		return;
+	endif
 	vecBeta_newt = matB*vecY_newt;
 	b_newt = norm(vecBeta_newt);
-	if ( isempty(bTrgt) || b_newt <= bTrgt * (1.0+prm.candStepRelTol) )
+	if ( b_newt <= bTrgt * (1.0+prm.candStepRelTol) )
 		vecY = vecY_newt;
 		return;
 	endif
@@ -663,9 +678,13 @@ function vecY = __findCandStep_pow( matH, vecG, matC, matB, bTrgt, prm )
 		vecY_newt = matR \ (matR'\(-vecG));
 		vecYPrime_newt = -( matR \ (matR'\(matC*vecY_newt)) );
 	endif
+	if ( isempty(bTrgt) )
+		vecY = vecY_newt;
+		return;
+	endif
 	vecBeta_newt = matB*vecY_newt;
 	b_newt = norm(vecBeta_newt);
-	if ( isempty(bTrgt) || b_newt <= bTrgt * (1.0+prm.candStepRelTol) )
+	if ( b_newt <= bTrgt * (1.0+prm.candStepRelTol) )
 		vecY = vecY_newt;
 		return;
 	endif
@@ -740,22 +759,41 @@ function [ retCode, fevalIncr, fModelDat ] = __expandModel( funchF, fModelDat, p
 	matALo_frozen = fModelDat.matALo_frozen; % Only for dev/debug?
 	matAHi_frozen = fModelDat.matAHi_frozen; % Only for dev/debug?
 	matB_frozen = fModelDat.matB_frozen; % Only for dev/debug?
-	%sizeX = size(vecX,1);
-	%sizeF = size(vecF,1);
+	sizeX = size(vecX,1);
+	sizeF = size(vecF,1);
 	sizeV = size(matV,2);
-	%sizeB = size(matB,1);
-	%sizeVLocal = size(matVLocal,2);
+	sizeB = size(matB,1);
+	sizeVLocal = size(matVLocal,2);
 	%
-	vecRhoF = vecF;
+	vecRhoF = vecF - matW*(fModelDat.vecY_ideal);
 	vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
 	vecV = __calcOrthonorm( vecU, matV, prm );
 	if ( norm(vecV) <= sqrt(eps) )
-		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "__applyPrecon() failed to generate an linearly independent vector." );
-		sizeX = size(vecX,1);
+		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "__applyPrecon() failed to generate a linearly independent vector." );
+		for n=1:sizeVLocal
+			vecY = fModelDat.matWLocal(:,1+sizeVLocal-n);
+			vecV = __calcOrthonorm( vecU, matV, prm );
+			if ( norm(vecV) > sqrt(eps) )
+				break;
+			endif
+		endfor
+	endif
+	if ( norm(vecV) <= sqrt(eps) )
+		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "__applyPrecon() still failed to generate a linearly independent vector." );
+		for n=1:sizeV
+			vecY = fModelDat.matW(:,1+sizeVLocal-n);
+			vecV = __calcOrthonorm( vecU, matV, prm );
+			if ( norm(vecV) > sqrt(eps) )
+				break;
+			endif
+		endfor
+	endif
+	if ( norm(vecV) <= sqrt(eps) )
+		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "__applyPrecon() yet again failed to generate a linearly independent vector." );
 		for n=1:sizeX
 			vecU = zeros(size(vecX));
 			vecU(n) = 1.0;
-			vecV = __calcOrthonorm( vecU, [], prm );
+			vecV = __calcOrthonorm( vecU, matV, prm );
 			if ( norm(vecV) > sqrt(eps) )
 				break;
 			endif
@@ -786,6 +824,30 @@ function [ retCode, fevalIncr, fModelDat ] = __expandModel( funchF, fModelDat, p
 	fModelDat.matB_frozen = zeros(sizeV+1,sizeV+1);
 	fModelDat.matB(1:sizeV,1:sizeV) = matB_frozen;
 	fModelDat.matB_frozen(sizeV,sizeV) = norm(diag(matB))*prm.epsB; % Note: expand per non-frozen.
+	%
+	if ( prm.valdLev >= VALDLEV__HIGH )
+		assert( sizeB == sizeV ); % Not strictly required, but it's what we're doing.
+		assert( isrealarray(matV,[sizeX,sizeV]) );
+		assert( isrealarray(matW,[sizeX,sizeV]) );
+		assert( isrealarray(matALo,[sizeV,sizeV]) );
+		assert( isrealarray(matAHi,[sizeV,sizeV]) );
+		assert( isrealarray(matB,[sizeB,sizeV]) );
+		assert( isrealarray(matVLocal,[sizeX,sizeVLocal]) );
+		assert( isrealarray(matWLocal,[sizeX,sizeVLocal]) );
+		assert( isrealarray(matALo_frozen,[sizeV,sizeV]) );
+		assert( isrealarray(matAHi_frozen,[sizeV,sizeV]) );
+		assert( isrealarray(matB_frozen,[sizeB,sizeV]) );
+		%
+		assert( reldiff(fModelDat.matV'*fModelDat.matV,eye(sizeV+1,sizeV+1)) < sqrt(eps) );
+		assert( reldiff(fModelDat.matVLocal'*fModelDat.matVLocal,eye(sizeVLocal+1,sizeVLocal+1)) < sqrt(eps) );
+		assert( issymmetric(fModelDat.matALo) );
+		assert( issymmetric(fModelDat.matAHi) );
+		assert( issymmetric(fModelDat.matALo_frozen) );
+		assert( issymmetric(fModelDat.matAHi_frozen) );
+		% We're making matB sym too...
+		assert( issymmetric(fModelDat.matB) );
+		assert( issymmetric(fModelDat.matB_frozen) );
+	endif
 	%
 	retCode = RETCODE__SUCCESS;
 	return;
