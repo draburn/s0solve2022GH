@@ -279,12 +279,6 @@ function [ retCode, fevalIncr, fModelDat ] = __initModel( funchF, vecX, vecF, pr
 	fModelDat.matVLocal = [ vecV ];
 	fModelDat.matWLocal = [ vecW ]; % Only for dev/debug?
 	%
-	fModel.sizeX = size(vecX,1);
-	fModel.sizeF = size(vecF,1);
-	fModel.sizeV = 1;
-	fModel.sizeVLocal = 1;
-	fModel.sizeB = 1;
-	%
 	retCode = RETCODE__SUCCESS;
 	return;
 endfunction
@@ -1039,5 +1033,76 @@ function [ retCode, fevalIncr, fModelDat ] = __refreshGivenDirection( vecY, func
 	endif
 	%
 	retCode = RETCODE__SUCCESS;
+	return;
+endfunction
+
+
+function [ retCode, fevalIncr, fModelDat ] = __moveTo( vecX_next, vecF_next, funchF, fModelDat, prm )
+	mydefs;
+	retCode = RETCODE__NOT_SET;
+	fevalIncr = 0;
+	%
+	matV = fModelDat.matV; % Subspace basis matrix.
+	matW_frozen = fModelDat.matW_frozen;
+	matALo_frozen = fModelDat.matALo_frozen; % Only for dev/debug?
+	matAHi_frozen = fModelDat.matAHi_frozen; % Only for dev/debug?
+	matB_frozen = fModelDat.matB_frozen; % Only for dev/debug?
+	%
+	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
+	matALo = fModelDat.matALo; % Low estimate for Hessian variation matrix, < (delta W)' * (delta W) >.
+	matAHi = fModelDat.matAHi; % High estimate for Hessian variation matrix, < (delta W)' * (delta W) >.
+	matB = fModelDat.matB; % Boundary / trust region matrix; (bound) candidate steps must satify ||B*y|| <= 1.
+	%
+	vecX = fModelDat.vecX; % Current guess.
+	vecF = fModelDat.vecF; % Function at current guess.
+	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
+	matWLocal = fModelDat.matWLocal; % Only for dev/debug?
+	%
+	sizeX = size(vecX,1);
+	sizeF = size(vecF,1);
+	sizeV = size(matV,2);
+	sizeB = size(matB,1);
+	sizeVLocal = size(matVLocal,2);
+	%
+	vecY = matV*(vecX_next-vecX);
+	yNorm = norm(vecY);
+	vecFModel_next = vecF + matW*vecY;
+	vecRhoF = vecF_next - vecFModel_next;
+	if ( prm.valdLev >= VALDLEV__LOW )
+		assert( 0.0 < yNorm )
+		assert( norm(vecFModel_next) <= norm(vecF) );
+		assert( norm(vecF_next) <= norm(vecF) );
+	endif
+	useQuadUpdate = true;
+	if (~useQuadUpdate)
+		matW_plus = matW + vecRhoF * (vecY')/(yNorm^2);
+	else
+		rhoSumsq = sumsq(vecRho);
+		ytay = vecY'*matAHi*vecY;
+		if ( rhoSumsq <= ytay )
+			s = 1.0;
+		else
+			s = ytay/rhoSumsq;
+		endif
+		matW_plus = matW + (2.0-s) * vecRho * (vecY')/(yNorm^2);
+	endif
+	matW = matW_plus
+	%
+	% Frozen quantities are set here...
+	fModelDat.matW_frozen = matW;
+	fModelDat.matALo_frozen = matALo;
+	fModelDat.matAHi_frozen = matAHi;
+	fModelDat.matB = matB;
+	%
+	fModelDat.matW = matW;
+	fModelDat.matALo = matALo;
+	fModelDat.matAHi = matAHi;
+	fModelDat.matB = matB;
+	%
+	fModelDat.vecX = vecX_next;
+	fModelDat.vecF = vecF_next;
+	fModelDat.matWLocal = [];
+	fModeLDat.matVLocal = [];
+	%
 	return;
 endfunction
