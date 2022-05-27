@@ -117,7 +117,7 @@ function [ retCode, fevalIncr, vecF_initial, prm ] = __initPrm( funchF, vecX_ini
 	prm.epsFD = 1.0e-3;
 	prm.orthoTol = 1.0e-10;
 	%%%prm.curveType = "lev";
-	prm.curveType = "powell";
+	prm.curveType = "powell"; %%%
 	prm.curveScaling = "b";
 	prm.precon_funchPrecon = [];
 	prm.precon_matL = [];
@@ -383,11 +383,11 @@ function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( fModelDat, prm )
 	endif
 	if ( prm.valdLev >= VALDLEV__UNLIMITED )
 	switch ( tolower(prm.curveScaling) )
-	%case { "b", "btb", "boundary", "optimal" }
-	otherwise
+	%%%case { "b", "btb", "boundary", "optimal" }
+	otherwise %%%
 	switch ( prm.curveType )
-	%case { "l", "lev", "levenberg" }
-	otherwise
+	%%%case { "l", "lev", "levenberg" }
+	otherwise %%%
 		state0 = rand( "state" );
 		rand( "state", 0 );
 		for m = 1 : 4
