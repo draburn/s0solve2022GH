@@ -1104,5 +1104,57 @@ function [ retCode, fevalIncr, fModelDat ] = __moveTo( vecX_next, vecF_next, fun
 	fModelDat.matWLocal = [];
 	fModeLDat.matVLocal = [];
 	%
+	retCode = RETCODE__SUCCESS;
+	return;
+endfunction
+
+
+function [ retCode, fevalIncr, fModelDat ] = __constrictTR( funchF, vecY, fModelDat, prm )
+	% Same as expand.
+	mydefs;
+	retCode = RETCODE__NOT_SET;
+	fevalIncr = 0;
+	%
+	matB = fModelDat.matB;
+	sizeV = size(vecY,1);
+	yNorm = norm(vecY);
+	if ( valdLev >= VALDLEV__MEDIUM )
+		sizeB = size(matB,1);
+		assert( isrealarray(vecY,[sizeV,1]) );
+		assert( 0.0 < yNorm );
+		assert( isrealarray(matB,[sizeB,sizeV]) );
+	endif
+	vecYHat = vecY/yNorm;
+	matEY = eye(sizeV,sizeV) - vecYHat*(vecYHat');
+	matB = matEY'*matB*matEY + vecYHat*(vecYHat');
+	fModelDat.matB = (matB'+matB)/2.0;
+	%
+	retCode = RETCODE__SUCCESS;
+	return;
+endfunction
+
+
+
+function [ retCode, fevalIncr, fModelDat ] = __expandTR( funchF, vecY, fModelDat, prm )
+	% Same as constrict.
+	mydefs;
+	retCode = RETCODE__NOT_SET;
+	fevalIncr = 0;
+	%
+	matB = fModelDat.matB;
+	sizeV = size(vecY,1);
+	yNorm = norm(vecY);
+	if ( valdLev >= VALDLEV__MEDIUM )
+		sizeB = size(matB,1);
+		assert( isrealarray(vecY,[sizeV,1]) );
+		assert( 0.0 < yNorm );
+		assert( isrealarray(matB,[sizeB,sizeV]) );
+	endif
+	vecYHat = vecY/yNorm;
+	matEY = eye(sizeV,sizeV) - vecYHat*(vecYHat');
+	matB = matEY'*matB*matEY + vecYHat*(vecYHat');
+	fModelDat.matB = (matB'+matB)/2.0;
+	%
+	retCode = RETCODE__SUCCESS;
 	return;
 endfunction
