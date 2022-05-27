@@ -1,4 +1,4 @@
-function [ vecX_best, vecF_best, retCode, fevalCount, stepsCount, datOut ] = zlinsolf200( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
+function [ vecX_best, vecF_best, retCode, fevalCount, stepsCount, datOut ] = zlinsolf190( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
 	startTime = time();
 	if ( stopsignalpresent() )
 		msg(__FILE__, __LINE__, "ERROR: Stop signal already present." );
@@ -1132,7 +1132,6 @@ function [ retCode, fevalIncr, fModelDat ] = __constrictTR( funchF, vecY, fModel
 	retCode = RETCODE__SUCCESS;
 	return;
 endfunction
-
 
 
 function [ retCode, fevalIncr, fModelDat ] = __expandTR( funchF, vecY, fModelDat, prm )
