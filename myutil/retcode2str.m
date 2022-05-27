@@ -1,17 +1,16 @@
 %  Function...
 %    str = retcode2str( retCode )
 %  Overview...
-%    Part of my common module.
 %    Generates a string describing the integer return code.
 function str = retcode2str( retCode )
-	commondefs;
+	mydefs;
 	if (isempty(retCode))
 		str = "<< THE RETURN CODE WAS NULL ([]). CHECK ORDER OF ARGUMENTS. >>";
 		return;
 	elseif (~isrealscalar(retCode))
 		str = "<< THE RETURN CODE IS NOT A REAL SCALAR. CHECK ORDER OF ARGUMENTS. >>";
 		return;
-	elseif ( abs(retCode-round(retCode)) > eps050*abs(retCode) )
+	elseif ( abs(retCode-round(retCode)) > sqrt(eps) )
 		str = sprintf( "<< THE RETURN CODE IS NOT AN INTEGER (%g). CHECK ORDER OF ARGUMENTS. >>", retCode );
 		return;
 	elseif ( RETCODE__SUCCESS == retCode )
@@ -28,6 +27,8 @@ function str = retcode2str( retCode )
 		str0 = "BAD DEPENDENCY";
 	elseif ( RETCODE__INTERNAL_INCONSISTENCY == retCode )
 		str0 = "INTERNAL INCONSISTENCY";
+	elseif ( RETCODE__NUMERICAL_ISSUE == retCode )
+		str0 = "NUMERICAL ISSUE";
 	elseif ( RETCODE__NOT_SET == retCode )
 		str0 = "RETCODE NOT SET";
 	else
@@ -38,7 +39,7 @@ return;
 end
 
 %!test
-%!	commondefs;
+%!	mydefs;
 %!	thisFile = "test retcode2str";
 %!	disp( "" );
 %!	disp( "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" );

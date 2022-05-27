@@ -10,16 +10,25 @@ if ( stopsignalpresent() )
 endif
 %
 %
-sizeX = 100;
+sizeX = 5;
 fType = 5;
 %fType = 7;
+fSeed = 0;
 %fSeed = 84943088;
-fSeed = 68716288;
+%fSeed = 68716288;
 %fSeed = 22083744;
 %fSeed = -1;
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
+%
+if (1)
+	msg( __FILE__, __LINE__, "Doing *simple* one-shot." );
+	prm = [];
+	[ vecX_best, vecF_best, retCode, fevalCount, stepsCount, datOut ] = zlinsolf200( funchF, vecX0, [], prm );
+	msg( __FILE__, __LINE__, "Goodbye." );
+	return;
+endif
 %
 if (1)
 	msg( __FILE__, __LINE__, "Doing one-shot." );
