@@ -242,7 +242,7 @@ function [ retCode, fevalIncr, fModelDat ] = __initModel( funchF, vecX, vecF, pr
 	vecRhoF = vecF;
 	vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
 	vecV = __calcOrthonorm( vecU, [], prm );
-	if ( norm(vecV) <= sqrt(eps) )
+	if ( norm(vecV) < 1.0-sqrt(eps) )
 		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "__applyPrecon() failed to generate a linearly independent vector." );
 		sizeX = size(vecX,1);
 		for n=1:sizeX
@@ -257,7 +257,18 @@ function [ retCode, fevalIncr, fModelDat ] = __initModel( funchF, vecX, vecF, pr
 	vecW = __calcJV( vecV, funchF, vecX, vecF, prm );
 	fevalIncr++;
 	%
+	sizeX = size(vecX,1);
+	sizeF = size(vecF,1);
+	sizeV = 1;
+	sizeVLocal = 1;
+	sizeB = 1;
+	%
 	fModelDat.matV = [ vecV ];
+	fModelDat.matW_frozen = [ vecW ]; % Only for dev/debug?
+	fModelDat.matALo_frozen = [ 0.0 ]; % Only for dev/debug?
+	fModelDat.matAHi_frozen = [ 0.0 ]; % Only for dev/debug?
+	fModelDat.matB_frozen = [ 0.0 ]; % Only for dev/debug?
+	%
 	fModelDat.matW = [ vecW ];
 	fModelDat.matALo = [ 0.0 ];
 	fModelDat.matAHi = [ 0.0 ];
@@ -268,9 +279,11 @@ function [ retCode, fevalIncr, fModelDat ] = __initModel( funchF, vecX, vecF, pr
 	fModelDat.matVLocal = [ vecV ];
 	fModelDat.matWLocal = [ vecW ]; % Only for dev/debug?
 	%
-	fModelDat.matALo_frozen = [ 0.0 ]; % Only for dev/debug?
-	fModelDat.matAHi_frozen = [ 0.0 ]; % Only for dev/debug?
-	fModelDat.matB_frozen = [ 0.0 ]; % Only for dev/debug?
+	fModel.sizeX = size(vecX,1);
+	fModel.sizeF = size(vecF,1);
+	fModel.sizeV = 1;
+	fModel.sizeVLocal = 1;
+	fModel.sizeB = 1;
 	%
 	retCode = RETCODE__SUCCESS;
 	return;
@@ -335,17 +348,21 @@ function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( funchF, fModelDat, 
 	fevalIncr = 0;
 	%
 	matV = fModelDat.matV; % Subspace basis matrix.
+	matW_frozen = fModelDat.matW_frozen; % Only for dev/debug?
+	matALo_frozen = fModelDat.matALo_frozen; % Only for dev/debug?
+	matAHi_frozen = fModelDat.matAHi_frozen; % Only for dev/debug?
+	matB_frozen = fModelDat.matB_frozen; % Only for dev/debug?
+	%
 	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
 	matALo = fModelDat.matALo; % Low estimate for Hessian variation matrix, < (delta W)' * (delta W) >.
 	matAHi = fModelDat.matAHi; % High estimate for Hessian variation matrix, < (delta W)' * (delta W) >.
 	matB = fModelDat.matB; % Boundary / trust region matrix; (bound) candidate steps must satify ||B*y|| <= 1.
+	%
 	vecX = fModelDat.vecX; % Current guess.
 	vecF = fModelDat.vecF; % Function at current guess.
 	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
 	matWLocal = fModelDat.matWLocal; % Only for dev/debug?
-	matALo_frozen = fModelDat.matALo_frozen; % Only for dev/debug?
-	matAHi_frozen = fModelDat.matAHi_frozen; % Only for dev/debug?
-	matB_frozen = fModelDat.matB_frozen; % Only for dev/debug?
+	%
 	sizeX = size(vecX,1);
 	sizeF = size(vecF,1);
 	sizeV = size(matV,2);
@@ -355,15 +372,30 @@ function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( funchF, fModelDat, 
 	if ( prm.valdLev >= VALDLEV__HIGH )
 		assert( sizeB == sizeV ); % Not strictly required, but it's what we're doing.
 		assert( isrealarray(matV,[sizeX,sizeV]) );
+		assert( isrealarray(matW_frozen,[sizeF,sizeV]) );
+		assert( isrealarray(matALo_frozen,[sizeV,sizeV]) );
+		assert( isrealarray(matAHi_frozen,[sizeV,sizeV]) );
+		assert( isrealarray(matB_frozen,[sizeB,sizeV]) );
 		assert( isrealarray(matW,[sizeF,sizeV]) );
 		assert( isrealarray(matALo,[sizeV,sizeV]) );
 		assert( isrealarray(matAHi,[sizeV,sizeV]) );
 		assert( isrealarray(matB,[sizeB,sizeV]) );
+		assert( isrealarray(vecX,[sizeX,1]) );
+		assert( isrealarray(vecF,[sizeF,1]) );
 		assert( isrealarray(matVLocal,[sizeX,sizeVLocal]) );
 		assert( isrealarray(matWLocal,[sizeF,sizeVLocal]) );
-		assert( isrealarray(matALo_frozen,[sizeV,sizeV]) );
-		assert( isrealarray(matAHi_frozen,[sizeV,sizeV]) );
-		assert( isrealarray(matB_frozen,[sizeB,sizeV]) );
+		%
+		assert( issymmetric(fModelDat.matALo) );
+		assert( issymmetric(fModelDat.matAHi) );
+		assert( issymmetric(fModelDat.matALo_frozen) );
+		assert( issymmetric(fModelDat.matAHi_frozen) );
+		% We're making matB sym too...
+		assert( issymmetric(fModelDat.matB) );
+		assert( issymmetric(fModelDat.matB_frozen) );
+	endif
+	if ( prm.valdLev >= VALDLEV__VERY_HIGH )
+		assert( reldiff(fModelDat.matV'*fModelDat.matV,eye(sizeV,sizeV)) < sqrt(eps) );
+		assert( reldiff(fModelDat.matVLocal'*fModelDat.matVLocal,eye(sizeVLocal,sizeVLocal)) < sqrt(eps) );
 	endif
 	%
 	matH = matW'*matW;
@@ -788,27 +820,32 @@ function [ retCode, fevalIncr, fModelDat ] = __expandModel( funchF, fModelDat, p
 	fevalIncr = 0;
 	%
 	matV = fModelDat.matV; % Subspace basis matrix.
+	matW_frozen = fModelDat.matW_frozen; % Only for dev/debug?
+	matALo_frozen = fModelDat.matALo_frozen; % Only for dev/debug?
+	matAHi_frozen = fModelDat.matAHi_frozen; % Only for dev/debug?
+	matB_frozen = fModelDat.matB_frozen; % Only for dev/debug?
+	%
 	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
 	matALo = fModelDat.matALo; % Low estimate for Hessian variation matrix, < (delta W)' * (delta W) >.
 	matAHi = fModelDat.matAHi; % High estimate for Hessian variation matrix, < (delta W)' * (delta W) >.
 	matB = fModelDat.matB; % Boundary / trust region matrix; (bound) candidate steps must satify ||B*y|| <= 1.
+	%
 	vecX = fModelDat.vecX; % Current guess.
 	vecF = fModelDat.vecF; % Function at current guess.
 	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
 	matWLocal = fModelDat.matWLocal; % Only for dev/debug?
-	matALo_frozen = fModelDat.matALo_frozen; % Only for dev/debug?
-	matAHi_frozen = fModelDat.matAHi_frozen; % Only for dev/debug?
-	matB_frozen = fModelDat.matB_frozen; % Only for dev/debug?
+	%
 	sizeX = size(vecX,1);
 	sizeF = size(vecF,1);
 	sizeV = size(matV,2);
 	sizeB = size(matB,1);
 	sizeVLocal = size(matVLocal,2);
 	%
+	%
 	vecRhoF = fModelDat.expand_vecU_suggested;
 	vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
 	vecV = __calcOrthonorm( vecU, matV, prm );
-	if ( norm(vecV) <= sqrt(eps) )
+	if ( norm(vecV) < 1.0-sqrt(eps) )
 		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "__applyPrecon() failed to generate a linearly independent vector." );
 		for n=1:sizeVLocal
 			vecRhoF = fModelDat.matWLocal(:,1+sizeVLocal-n);
@@ -819,7 +856,7 @@ function [ retCode, fevalIncr, fModelDat ] = __expandModel( funchF, fModelDat, p
 			endif
 		endfor
 	endif
-	if ( norm(vecV) <= sqrt(eps) )
+	if ( norm(vecV) < 1.0-sqrt(eps) )
 		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "__applyPrecon() still failed to generate a linearly independent vector." );
 		for n=1:sizeV
 			vecRhoF = fModelDat.matW(:,1+sizeV-n);
@@ -830,7 +867,7 @@ function [ retCode, fevalIncr, fModelDat ] = __expandModel( funchF, fModelDat, p
 			endif
 		endfor
 	endif
-	if ( norm(vecV) <= sqrt(eps) )
+	if ( norm(vecV) < 1.0-sqrt(eps) )
 		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "__applyPrecon() yet again failed to generate a linearly independent vector." );
 		for n=1:sizeX
 			vecU = zeros(size(vecX));
@@ -845,6 +882,15 @@ function [ retCode, fevalIncr, fModelDat ] = __expandModel( funchF, fModelDat, p
 	fevalIncr++;
 	%
 	fModelDat.matV = [ matV, vecV ];
+	fModelDat.matW_frozen = [ matW_frozen, vecW ];
+	fModelDat.matALo_frozen = zeros(sizeV+1,sizeV+1);
+	fModelDat.matALo_frozen(1:sizeV,1:sizeV) = matALo_frozen;
+	fModelDat.matAHi_frozen = zeros(sizeV+1,sizeV+1);
+	fModelDat.matAHi_frozen(1:sizeV,1:sizeV) = matAHi_frozen;
+	fModelDat.matB_frozen = zeros(sizeV+1,sizeV+1);
+	fModelDat.matB(1:sizeV,1:sizeV) = matB_frozen;
+	fModelDat.matB_frozen(sizeV,sizeV) = norm(diag(matB))*prm.epsB; % Note: expand frozen per non-frozen.
+	%
 	fModelDat.matW = [ matW, vecW ];
 	fModelDat.matALo = zeros(sizeV+1,sizeV+1);
 	fModelDat.matALo(1:sizeV,1:sizeV) = matALo;
@@ -859,13 +905,112 @@ function [ retCode, fevalIncr, fModelDat ] = __expandModel( funchF, fModelDat, p
 	fModelDat.matVLocal = [ matVLocal, vecV ];
 	fModelDat.matWLocal = [ matWLocal, vecW ]; % Only for dev/debug?
 	%
-	fModelDat.matALo_frozen = zeros(sizeV+1,sizeV+1);
-	fModelDat.matALo_frozen(1:sizeV,1:sizeV) = matALo_frozen;
-	fModelDat.matAHi_frozen = zeros(sizeV+1,sizeV+1);
-	fModelDat.matAHi_frozen(1:sizeV,1:sizeV) = matAHi_frozen;
-	fModelDat.matB_frozen = zeros(sizeV+1,sizeV+1);
-	fModelDat.matB(1:sizeV,1:sizeV) = matB_frozen;
-	fModelDat.matB_frozen(sizeV,sizeV) = norm(diag(matB))*prm.epsB; % Note: expand per non-frozen.
+	if ( prm.valdLev >= VALDLEV__HIGH )
+		assert( sizeB == sizeV ); % Not strictly required, but it's what we're doing.
+		assert( isrealarray(matV,[sizeX,sizeV]) );
+		assert( isrealarray(matW_frozen,[sizeF,sizeV]) );
+		assert( isrealarray(matALo_frozen,[sizeV,sizeV]) );
+		assert( isrealarray(matAHi_frozen,[sizeV,sizeV]) );
+		assert( isrealarray(matB_frozen,[sizeB,sizeV]) );
+		assert( isrealarray(matW,[sizeF,sizeV]) );
+		assert( isrealarray(matALo,[sizeV,sizeV]) );
+		assert( isrealarray(matAHi,[sizeV,sizeV]) );
+		assert( isrealarray(matB,[sizeB,sizeV]) );
+		assert( isrealarray(vecX,[sizeX,1]) );
+		assert( isrealarray(vecF,[sizeF,1]) );
+		assert( isrealarray(matVLocal,[sizeX,sizeVLocal]) );
+		assert( isrealarray(matWLocal,[sizeF,sizeVLocal]) );
+		%
+		assert( issymmetric(fModelDat.matALo) );
+		assert( issymmetric(fModelDat.matAHi) );
+		assert( issymmetric(fModelDat.matALo_frozen) );
+		assert( issymmetric(fModelDat.matAHi_frozen) );
+		% We're making matB sym too...
+		assert( issymmetric(fModelDat.matB) );
+		assert( issymmetric(fModelDat.matB_frozen) );
+	endif
+	if ( prm.valdLev >= VALDLEV__VERY_HIGH )
+		assert( reldiff(fModelDat.matV'*fModelDat.matV,eye(sizeV+1,sizeV+1)) < sqrt(eps) );
+		assert( reldiff(fModelDat.matVLocal'*fModelDat.matVLocal,eye(sizeVLocal+1,sizeVLocal+1)) < sqrt(eps) );
+	endif
+	%
+	retCode = RETCODE__SUCCESS;
+	return;
+endfunction
+
+
+function [ retCode, fevalIncr, fModelDat ] = __refreshGivenDirection( vecY, funchF, fModelDat, prm )
+	mydefs;
+	retCode = RETCODE__NOT_SET;
+	fevalIncr = 0;
+	%
+	matV = fModelDat.matV; % Subspace basis matrix.
+	matW_frozen = fModelDat.matW_frozen;
+	matALo_frozen = fModelDat.matALo_frozen; % Only for dev/debug?
+	matAHi_frozen = fModelDat.matAHi_frozen; % Only for dev/debug?
+	matB_frozen = fModelDat.matB_frozen; % Only for dev/debug?
+	%
+	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
+	matALo = fModelDat.matALo; % Low estimate for Hessian variation matrix, < (delta W)' * (delta W) >.
+	matAHi = fModelDat.matAHi; % High estimate for Hessian variation matrix, < (delta W)' * (delta W) >.
+	matB = fModelDat.matB; % Boundary / trust region matrix; (bound) candidate steps must satify ||B*y|| <= 1.
+	%
+	vecX = fModelDat.vecX; % Current guess.
+	vecF = fModelDat.vecF; % Function at current guess.
+	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
+	matWLocal = fModelDat.matWLocal; % Only for dev/debug?
+	%
+	sizeX = size(vecX,1);
+	sizeF = size(vecF,1);
+	sizeV = size(matV,2);
+	sizeB = size(matB,1);
+	sizeVLocal = size(matVLocal,2);
+	%
+	if ( prm.valdLev >= VALDLEV__LOW )
+		assert( sizeVLocal < sizeV );
+		assert( norm(vecY) > 0.0 );
+		assert( norm(matV'*vecY) > (1.0-sqrt(eps))*norm(vecY) );
+	endif
+	vecY = matV*(matV'*vecY);
+	%
+	vecU = matV*vecY;
+	vecV = __calcOrthonorm( vecU, matV_local, prm );
+	if ( norm(vecV) < 1.0-sqrt(eps) )
+		msgif( prm.verbLev >= VERBLEV__ERROR, __FILE__, __LINE__, "Given direction was clobbered by locally evaluated subspace." );
+		retCode = RETCODE__INTERNAL_INCONSISTENCY;
+		return;
+	elseif ( norm(matVLocal'*vecV) > sqrt(eps) )
+		msgif( prm.verbLev >= VERBLEV__ERROR, __FILE__, __LINE__, "Given direction is already in locally evaluated subspace." );
+		retCode = RETCODE__INTERNAL_INCONSISTENCY;
+		return;
+	elseif ( norm(matV'*vecV) < 1.0-sqrt(eps) )
+		msgif( prm.verbLev >= VERBLEV__ERROR, __FILE__, __LINE__, "Given is outside of allowed subspace." );
+		retCode = RETCODE__INTERNAL_INCONSISTENCY;
+		return;
+	endif
+	vecV = matV*(matV'*vecV);
+	vecV /= norm(vecV);
+	vecW = __calcJV( vecV, funchF, vecX, vecF, prm );
+	fevalIncr++;
+	fModelDat.matVLocal = [ matVLocal, vecV ];
+	fModelDat.matWLocal = [ matWLocal, vecW ];
+	%
+	error( "To do!" );
+	%
+	% No update to matV nor anything _frozen.
+	% But, update other quantites compared to frozen.
+	%
+	% Note that the vecY vectors are perhaps not perpendicular.
+	% This won't work: fModelDat.matW = matW + (vecW - matW*vecY)*(vecY')/sumsq(vecY);
+	fModelDat.matW = matW_frozen + ( matWLocal - matW_frozen*(matV')*matVLocal)*(matVLocal'*matV); % Yeah?
+	matEVLocal = eye(sizeV,sizeV) - (matV'*matVLocal)*(matVLocal'*matV);
+	matALo = matEVLocal'*matALo_frozen*matEVLocal;
+	matAHi = matEVLocal'*matAHi_frozen*matEVLocal;
+	fModelDat.matALo = (matALo'+matALo)/2.0;
+	fModelDat.matAHi = (matAHi'+matAHi)/2.0;
+	%fModelDat.matB = matB;
+	%fModelDat.vecX = vecX;
+	%fModelDat.vecF = vecF;
 	%
 	if ( prm.valdLev >= VALDLEV__HIGH )
 		assert( sizeB == sizeV ); % Not strictly required, but it's what we're doing.
@@ -889,8 +1034,8 @@ function [ retCode, fevalIncr, fModelDat ] = __expandModel( funchF, fModelDat, p
 		assert( issymmetric(fModelDat.matB_frozen) );
 	endif
 	if ( prm.valdLev >= VALDLEV__VERY_HIGH )
-		assert( reldiff(fModelDat.matV'*fModelDat.matV,eye(sizeV+1,sizeV+1)) < sqrt(eps) );
-		assert( reldiff(fModelDat.matVLocal'*fModelDat.matVLocal,eye(sizeVLocal+1,sizeVLocal+1)) < sqrt(eps) );
+		assert( reldiff(fModelDat.matV'*fModelDat.matV,eye(sizeV,sizeV)) < sqrt(eps) );
+		assert( reldiff(fModelDat.matVLocal'*fModelDat.matVLocal,eye(sizeVLocal,sizeVLocal)) < sqrt(eps) );
 	endif
 	%
 	retCode = RETCODE__SUCCESS;
