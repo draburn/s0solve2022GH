@@ -59,12 +59,6 @@ function [ vecX_best, vecF_best, retCode, fevalCount, stepsCount, datOut ] = zli
 		%
 		%
 		iterCount++;
-		if ( prm.verbLev >= VERBLEV__PROGRESS )
-			msg( __FILE__, __LINE__, "Progress..." );
-			msg( __FILE__, __LINE__, sprintf( ...
-			  "  elapsed time: %10.3e/%10.3e;  iter: %5d/%5d;  feval: %5d/%5d;  steps: %5d/%5d.", ...
-			  time()-startTime, prm.timeMax, iterCount, prm.iterMax, fevalCount, prm.fevalMax, stepsCount, prm.stepsMax ) );
-		endif
 		%
 		%
 		% Tier 0b actions: mandatory actions.
@@ -77,7 +71,16 @@ function [ vecX_best, vecF_best, retCode, fevalCount, stepsCount, datOut ] = zli
 			endif
 			continue;
 		endif
-		%
+		if ( prm.verbLev >= VERBLEV__PROGRESS )
+			msg( __FILE__, __LINE__, "Progress..." );
+			msg( __FILE__, __LINE__, sprintf( ...
+			  "  elapsed time: %10.3e/%0.3e;  iter: %5d/%d;  feval: %5d/%d;  steps: %5d/%d;  size: %5d/%5d/%dx%d", ...
+			  time()-startTime, prm.timeMax, ...
+			  iterCount, prm.iterMax, ...
+			  fevalCount, prm.fevalMax, ...
+			  stepsCount, prm.stepsMax, ...
+			  size(fModelDat.matVLocal,2), size(fModelDat.matV,2), size(vecX,1), size(vecF,1) ) );
+		endif
 		[ retCode, fevalIncr, fModelDat ] = __analyzeModel( funchF, fModelDat, prm );
 		fevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
@@ -506,6 +509,10 @@ function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( funchF, fModelDat, 
 	fModelDat.etaHiVar_loVar = funchEta_hiVar( vecY_loVar );
 	fModelDat.etaHiVar_hiVar = funchEta_hiVar( vecY_hiVar );
 	%
+	fModelDat.expand_vecU_suggested = vecF - matW*vecY_ideal;
+	fModelDat.refresh_vecY_suggested = vecY_loVar;
+	fModelDat.tryStep_vecY_suggested = vecY_hiVar;
+	%
 	retCode = RETCODE__SUCCESS;
 	return;
 endfunction
@@ -798,13 +805,14 @@ function [ retCode, fevalIncr, fModelDat ] = __expandModel( funchF, fModelDat, p
 	sizeB = size(matB,1);
 	sizeVLocal = size(matVLocal,2);
 	%
-	vecRhoF = vecF - matW*(fModelDat.vecY_ideal);
+	vecRhoF = fModelDat.expand_vecU_suggested;
 	vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
 	vecV = __calcOrthonorm( vecU, matV, prm );
 	if ( norm(vecV) <= sqrt(eps) )
 		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "__applyPrecon() failed to generate a linearly independent vector." );
 		for n=1:sizeVLocal
-			vecY = fModelDat.matWLocal(:,1+sizeVLocal-n);
+			vecRhoF = fModelDat.matWLocal(:,1+sizeVLocal-n);
+			vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
 			vecV = __calcOrthonorm( vecU, matV, prm );
 			if ( norm(vecV) > sqrt(eps) )
 				break;
@@ -814,7 +822,8 @@ function [ retCode, fevalIncr, fModelDat ] = __expandModel( funchF, fModelDat, p
 	if ( norm(vecV) <= sqrt(eps) )
 		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "__applyPrecon() still failed to generate a linearly independent vector." );
 		for n=1:sizeV
-			vecY = fModelDat.matW(:,1+sizeVLocal-n);
+			vecRhoF = fModelDat.matW(:,1+sizeV-n);
+			vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
 			vecV = __calcOrthonorm( vecU, matV, prm );
 			if ( norm(vecV) > sqrt(eps) )
 				break;
