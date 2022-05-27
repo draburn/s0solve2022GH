@@ -116,7 +116,8 @@ function [ retCode, fevalIncr, vecF_initial, prm ] = __initPrm( funchF, vecX_ini
 	prm.fTol = sizeF*100.0*eps;
 	prm.epsFD = 1.0e-3;
 	prm.orthoTol = 1.0e-10;
-	prm.curveType = "lev";
+	%%%prm.curveType = "lev";
+	prm.curveType = "powell";
 	prm.curveScaling = "b";
 	prm.precon_funchPrecon = [];
 	prm.precon_matL = [];
@@ -381,6 +382,12 @@ function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( fModelDat, prm )
 		endif
 	endif
 	if ( prm.valdLev >= VALDLEV__UNLIMITED )
+	switch ( tolower(prm.curveScaling) )
+	%case { "b", "btb", "boundary", "optimal" }
+	otherwise
+	switch ( prm.curveType )
+	%case { "l", "lev", "levenberg" }
+	otherwise
 		state0 = rand( "state" );
 		rand( "state", 0 );
 		for m = 1 : 4
@@ -429,6 +436,8 @@ function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( fModelDat, prm )
 		endfor
 		clear m;
 		rand( "state", state0 );
+	endswitch
+	endswitch
 	endif
 	%
 	fModelDat.vecY_ideal = vecY_ideal;
@@ -451,26 +460,12 @@ function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( fModelDat, prm )
 	fModelDat.etaHiVar_loVar = funchEta_hiVar( vecY_loVar );
 	fModelDat.etaHiVar_hiVar = funchEta_hiVar( vecY_hiVar );
 	%
+	retCode = RETCODE__SUCCESS;
 	return;
 endfunction
 
 
 function vecY = __findCandStep( matH, vecG, matC, matB, bTrgt, prm )
-	switch ( prm.curveType )
-	case { "l", "lev", "levenberg" }
-		vecY = __findCandStep_lev( matH, vecG, matC, matB, bTrgt, prm );
-	case { "p", "powell", "dog", "dog leg", "dog-leg", "dl" }
-		error( "Powell's dog-leg curve is not yet supported." );
-	case { "g", "grad", "gradient", "gradient descent", "gradient-descent", "gradescent" }
-		error( "Gradient curve is not (yet?) supported." );
-	otherwise
-		error( "Unsupported value of curveType." );
-	endswitch
-	return;
-endfunction
-
-
-function vecY = __findCandStep_lev( matH, vecG, matC, matB, bTrgt, prm )
 	mydefs;
 	if ( prm.valdLev >= VALDLEV__HIGH )
 		sz = size(matH,1);
@@ -512,6 +507,22 @@ function vecY = __findCandStep_lev( matH, vecG, matC, matB, bTrgt, prm )
 		clear eigH;
 	endif
 	%
+	switch ( prm.curveType )
+	case { "l", "lev", "levenberg" }
+		vecY = __findCandStep_lev( matH, vecG, matC, matB, bTrgt, prm );
+	case { "p", "powell", "dog", "dog leg", "dog-leg", "dl" }
+		vecY = __findCandStep_pow( matH, vecG, matC, matB, bTrgt, prm );
+	case { "g", "grad", "gradient", "gradient descent", "gradient-descent", "gradescent" }
+		error( "Gradient curve is not (yet?) supported." );
+	otherwise
+		error( "Unsupported value of curveType." );
+	endswitch
+	%
+	return;
+endfunction
+
+
+function vecY = __findCandStep_lev( matH, vecG, matC, matB, bTrgt, prm )
 	hScale = norm(diag(matH));
 	cScale = norm(diag(matC));
 	[ matR, cholFlag ] = chol( matH );
@@ -628,3 +639,62 @@ function pt = __calcLevPtFromMu( matH, vecG, matC, matB, mu );
 endfunction
 
 
+function vecY = __findCandStep_pow( matH, vecG, matC, matB, bTrgt, prm )
+	hScale = norm(diag(matH));
+	cScale = norm(diag(matC));
+	[ matR, cholFlag ] = chol( matH );
+	newtNeedsExtrap = ( 0 ~= cholFlag || min(diag(matR)) < prm.cholRelTol * max(abs(diag(matR))) );
+	if ( newtNeedsExtrap )
+		matR1 = chol( matH + matC * (1.0*prm.epsRegu*hScale/cScale) );
+		matR2 = chol( matH + matC * (2.0*prm.epsRegu*hScale/cScale) );
+		vecY1 = matR1 \ (matR1'\(-vecG));
+		vecY2 = matR2 \ (matR2'\(-vecG));
+		vecY_newt = (2.0*vecY1) - vecY2;
+		vecYPrime1 = -( matR1 \ (matR1'\(matC*vecY1)) );
+		vecYPrime2 = -( matR2 \ (matR2'\(matC*vecY1)) );
+		vecYPime_newt = (2.0*vecYPrime1) - vecYPrime2;
+	else
+		vecY_newt = matR \ (matR'\(-vecG));
+		vecYPrime_newt = -( matR \ (matR'\(matC*vecY_newt)) );
+	endif
+	vecBeta_newt = matB*vecY_newt;
+	b_newt = norm(vecBeta_newt);
+	if ( isempty(bTrgt) || b_newt <= bTrgt * (1.0+prm.candStepRelTol) )
+		vecY = vecY_newt;
+		return;
+	endif
+	%
+	matR = chol( matC );
+	vecD = matR \ (matR'\(-vecG));
+	gtd = vecG'*vecD;
+	dthd = vecD'*matH*vecD;
+	assert( dthd > 0.0 );
+	assert( gtd <= 0.0 );
+	s = -gtd/gthd;
+	vecY_cauchy = s*vecD;
+	vecBeta_cauchy = matB*vecY_cauchy;
+	b_cauchy = norm(vecBeta_cauchy);
+	%
+	if ( b_cauchy >= bTrgt )
+		vecY = vecY_cauchy * (bTrgt/b_cauchy);
+		return;
+	endif
+	%
+	% Find where the second leg intersects the boundary.
+	vecY2 = vecY_newt - vecY_cauchy;
+	vecBeta2 = matB*vecDelta2;
+	% We can't use calcLinishRootOfQuad() here!
+	% We want positive root of quad!
+	%   Using y = yCauchy + t * y2,
+	%   ||B*y||^2 = (t^2)*||beta2||^2 + t*(2.0*beta2'*betaCauchy) + bCauchy^2
+	%   where beta2 = B*vecY2 and betaCauchy = B*vecYCauchy.
+	a = sumsq(vecBeta2);
+	b = 2.0*(vecBeta2'*vecBeta_cauchy);
+	c = (b_cauchy^2) - (bTrgt^2);
+	discrim = (b^2) - (4.0*a*c);
+	assert( discrim >= 0.0 );
+	assert( 0.0 < a );
+	t = (-b+sqrt(discrim))/(2.0*a); % Because a must be positive.
+	vecY = vecY_cauchy + (t*Y2);
+	return;
+endfunction
