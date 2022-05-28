@@ -29,7 +29,7 @@
 	%
 	%
 	useBasic = false;
-	use0523 = true;
+	use0527 = true;
 	use0522 = true;
 	use0521 = false;
 	use0519 = false;
@@ -65,7 +65,7 @@
 	%alpha = alpha_cDom; matC *= alpha; matB *= sqrt(alpha); bN *= sqrt(alpha);
 	%
 	%
-	if (1)
+	if (0)
 		numPts = 1001;
 		%muPts = 100.0*linspace(1000.0,2000.0,numPts)';
 		muPts = 1.0e8*(0.0+linspace(0.0,1.0,numPts).^4);
@@ -74,7 +74,7 @@
 			bPts(n) = norm(matB*(matR\(matR'\vecG)));
 		endfor
 	endif
-	if (1)
+	if (0)
 		n0 = 100;
 		mu0 = muPts(n0)
 		%b0 = bPts(n0)
@@ -182,7 +182,7 @@
 		plot( funchVizX(muPts), funchVizF(bPts), 'o-', 'linewidth', 2, funchVizX(muPts), funchVizF(bModelPts), 'x-' );
 		grid on;
 		return
-	elseif (1)
+	elseif (0)
 		n0 = 100;
 		mu0 = muPts(n0)+sqrt(eps)
 		b0 = bPts(n0);
@@ -218,9 +218,8 @@
 	bTrgt0 = 0.001*bN;
 	if ( useBasic )
 	[ vecY0, vecYPrime0, b0, bPrime0, n0 ] = findLevPt_basic( vecG, matH, bTrgt0, matB, prm );
-	elseif (use0523)
-	[ vecY0, datOut ] = findLevPt_0523( vecG, matH, bTrgt0, matB, prm, dat );
-	n0 = datOut.iterCount;
+	elseif (use0527)
+	[ vecY0, pt0, n0, retCode0, datOut ] = findLevPt_0527( vecG, matH, matC, matB, bTrgt0, prm, dat );
 	elseif (use0522)
 	[ vecY0, datOut ] = findLevPt_0522( vecG, matH, bTrgt0, matB, prm, dat );
 	n0 = datOut.iterCount;
@@ -239,9 +238,8 @@
 	bTrgt5 = 0.5*bN;
 	if ( useBasic )
 	[ vecY5, vecYPrime5, b5, bPrime5, n5 ] = findLevPt_basic( vecG, matH, bTrgt5, matB, prm );
-	elseif (use0523)
-	[ vecY5, datOut ] = findLevPt_0523( vecG, matH, bTrgt5, matB, prm, dat );
-	n5 = datOut.iterCount;
+	elseif (use0527)
+	[ vecY5, pt5, n5, retCode5, datOut ] = findLevPt_0527( vecG, matH, matC, matB, bTrgt5, prm, dat );
 	elseif (use0522)
 	[ vecY5, datOut ] = findLevPt_0522( vecG, matH, bTrgt5, matB, prm, dat );
 	n5 = datOut.iterCount;
@@ -263,9 +261,8 @@
 	bTrgt9 = 0.9*bN;
 	if ( useBasic )
 	[ vecY9, vecYPrime9, b9, bPrime9, n9 ] = findLevPt_basic( vecG, matH, bTrgt9, matB, prm );
-	elseif (use0523)
-	[ vecY9, datOut ] = findLevPt_0523( vecG, matH, bTrgt9, matB, prm, dat );
-	n9 = datOut.iterCount;
+	elseif (use0527)
+	[ vecY9, pt9, n9, retCode9, datOut ] = findLevPt_0527( vecG, matH, matC, matB, bTrgt9, prm, dat );
 	elseif (use0522)
 	[ vecY9, datOut ] = findLevPt_0522( vecG, matH, bTrgt9, matB, prm, dat );
 	n9 = datOut.iterCount;
