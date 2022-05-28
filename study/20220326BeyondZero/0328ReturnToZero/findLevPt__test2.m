@@ -25,7 +25,8 @@
 	%setprngstates(22617792); sizeX = 500; sizeF = 500; sizeB = sizeX;
 	%setprngstates(17078064); sizeX = 500; sizeF = 400; sizeB = sizeX;
 	%setprngstates(1255056); sizeX = 1000; sizeF = 900; sizeB = sizeX;
-	setprngstates(0); sizeX = 100; sizeF = 100; sizeB = sizeX;
+	%setprngstates(0); sizeX = 100; sizeF = 100; sizeB = sizeX;
+	setprngstates(0); sizeX = 500; sizeF = 400; sizeB = sizeX;
 	%
 	%
 	useBasic = false;

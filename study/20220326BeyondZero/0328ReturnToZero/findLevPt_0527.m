@@ -44,7 +44,7 @@ function [ vecY, pt_best, iterCount, retCode, datOut ] = findLevPt_0527( vecG, m
 		if ( pt.b < bTrgt )
 			pt1 = pt;
 			havePt1 = true;
-		elseif
+		else
 			pt0 = pt;
 			% We possibly overshot a solution, but we have no way to be sure.
 		endif
@@ -117,7 +117,7 @@ function [ vecY, pt_best, iterCount, retCode, datOut ] = findLevPt_0527( vecG, m
 		endif
 		if ( pt.b < bTrgt )
 			pt1 = pt;
-		elseif
+		else
 			pt0 = pt;
 		endif
 	endwhile
@@ -128,13 +128,14 @@ endfunction
 function prm = __init( vecG, matH, matC, matB, bTrgt, prmIn )
 	mydefs;
 	%
-	prm.verbLev = VERBLEV__FLAGGED; prm.valdLev = VALDLEV__ZERO; % Production.
-	prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__MEDIUM; % Integration.
-	prm.verbLev = VERBLEV__DETAILS; prm.valdLev = VALDLEV__HIGH; % Performance testing.
-	prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Dev.
+	%prm.verbLev = VERBLEV__FLAGGED; prm.valdLev = VALDLEV__ZERO; % Optimization.
+	prm.verbLev = VERBLEV__WARNING; prm.valdLev = VALDLEV__MEDIUM; % Production.
+	%prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__HIGH; % Integration.
+	%prm.verbLev = VERBLEV__DETAILS; prm.valdLev = VALDLEV__VERY_HIGH; % Dev.
+	%prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Debug.
 	%prm.bRelTol = 100.0*eps;
-	prm.bRelTol = sqrt(eps);
-	%prm.bRelTol = 1.0e-4;
+	%prm.bRelTol = sqrt(eps);
+	prm.bRelTol = 1.0e-2;
 	prm.cholRelTol = sqrt(eps);
 	prm.epsReguRel = sqrt(eps);
 	prm.iterMax = 100;
