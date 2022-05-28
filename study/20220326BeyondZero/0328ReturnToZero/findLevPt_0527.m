@@ -137,7 +137,7 @@ function prm = __init( vecG, matH, matC, matB, bTrgt, prmIn )
 	%prm.bRelTol = sqrt(eps);
 	prm.bRelTol = 1.0e-2;
 	prm.cholRelTol = sqrt(eps);
-	prm.epsReguRel = sqrt(eps);
+	prm.epsRelRegu = sqrt(eps);
 	prm.iterMax = 100;
 	prm = overwritefields( prm, prmIn );
 	prm.cScale = norm(diag(matC));
@@ -181,8 +181,8 @@ function prm = __init( vecG, matH, matC, matB, bTrgt, prmIn )
 		assert( isrealscalar(prm.cholRelTol) );
 		assert( 0.0 <= prm.cholRelTol );
 		assert( prm.cholRelTol <= 1.0 );
-		assert( 0.0 < prm.epsReguRel );
-		assert( prm.epsReguRel <= 1.0 );
+		assert( 0.0 < prm.epsRelRegu );
+		assert( prm.epsRelRegu <= 1.0 );
 		assert( isrealscalar(prm.iterMax) );
 		assert( abs(prm.iterMax-round(prm.iterMax)) < sqrt(eps) );
 		assert( 1 <= prm.iterMax );
@@ -218,7 +218,7 @@ function ptDat = __calcPt( mu, vecG, matH, matC, matB, prm )
 		ptDat.bPrime = bPrime;
 		return;
 	endif
-	matRegu = (prm.epsReguRel*prm.hScale/prm.cScale);
+	matRegu = (prm.epsRelRegu*prm.hScale/prm.cScale);
 	matR1 = chol( matM + matRegu );
 	matR2 = chol( matM + 2.0*matRegu );
 	[ vecY1, vecYPrime1, b1, bPrime1 ] = __calcFromChol( matR1, vecG, matH, matC, matB );
@@ -233,6 +233,11 @@ endfunction
 function [ vecY, vecYPrime, b, bPrime ] = __calcFromChol( matR, vecG, matH, matC, matB );
 	vecY = matR \ ( matR' \ (-vecG) );
 	vecYPrime = matR \ ( matR'\(-(matC*vecY)) );
+	if (isempty(matB))
+		b = 0.0;
+		bPrime = 0.0;
+		return;
+	endif
 	vecBeta = matB*vecY;
 	b = norm( vecBeta );
 	if ( 0.0 == b )

@@ -10,8 +10,8 @@ if ( stopsignalpresent() )
 endif
 %
 %
-sizeX = 500;
-fType = 7;
+sizeX = 100;
+fType = 3;
 %fType = 7;
 fSeed = 0;
 %fSeed = 84943088;
