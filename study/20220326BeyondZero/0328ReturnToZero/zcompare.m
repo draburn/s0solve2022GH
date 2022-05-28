@@ -25,7 +25,7 @@ msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
 if (1)
 	msg( __FILE__, __LINE__, "Doing *simple* one-shot." );
 	prm = [];
-	[ vecX_best, vecF_best, retCode, fevalCount, stepsCount, datOut ] = zlinsolf190( funchF, vecX0, [], prm );
+	[ vecX_best, vecF_best, retCode, fevalCount, stepsCount, datOut ] = zlinsolf195( funchF, vecX0, [], prm );
 	msg( __FILE__, __LINE__, "Goodbye." );
 	return;
 endif

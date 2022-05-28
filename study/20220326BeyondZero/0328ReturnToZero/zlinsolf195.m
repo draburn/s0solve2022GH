@@ -153,10 +153,16 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	prm.curveScaling = "b";
 	prm.matC = [];
 	prm.cholRelTol = sqrt(eps);
-	prm.epsRegu = sqrt(eps);
-	%%%prm.candStepRelTol = 0.2;
-	prm.candStepRelTol = 1000.0*eps;
-	prm.levIterMax = 100;
+	prm.epsRelRegu = sqrt(eps);
+	prm.candStepRelTol = 0.2;
+	%%%prm.candStepRelTol = 1000.0*eps; %%%
+	prm.findLevPrm = [];
+	prm.findLevPrm.cholRelTol = prm.cholRelTol;
+	prm.findLevPrm.epsRelRegu = prm.epsRelRegu;
+	prm.findLevPrm.bRelRegu = prm.candStepRelTol;
+	%
+	prm.moveToELoCoeff = 0.9;
+	prm.moveToEHiCoeff = 0.1;
 	%
 	prm = overwritefields( prm, prmIn );
 	%
@@ -295,6 +301,7 @@ endfunction
 
 
 function vecW = __calcJV( vecV, funchF, vecX, vecF, prm )
+	mydefs;
 	v = norm(vecV);
 	if ( prm.valdLev >= VALDLEV__LOW )
 		assert( 0.0 < v );
@@ -382,7 +389,7 @@ function [ retCode, fevalIncr, fModelDat ] = __analyzeModel( funchF, fModelDat, 
 			[ matRC, cholFlag ] = chol(matC);
 			if ( 0 ~= cholFlag || min(diag(matRC)) < prm.cholRelTol * max(abs(diag(matRC))) )
 				msgif( prm.verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "Curve scaling matrix was non positive-definite; applying regularization." );
-				matC += cScale * prm.epsRegu * matIV;
+				matC += cScale * prm.epsRelRegu * matIV;
 			endif
 			cScale = norm(diag(matC));
 			matRC = chol(matC);
@@ -544,7 +551,7 @@ function vecY = __findCandStep( matH, vecG, matC, matB, bTrgt, prm )
 	%
 	switch ( prm.curveType )
 	case { "l", "lev", "levenberg" }
-		vecY = findLevPt_0527( vecG, matH, vecG, matC, matB, bTrgt, prm );
+		vecY = findLevPt_0527( vecG, matH, matC, matB, bTrgt, prm.findLevPrm );
 	case { "p", "powell", "dog", "dog leg", "dog-leg", "dl" }
 		vecY = __findCandStep_pow( vecG, matH, matC, matB, bTrgt, prm );
 	case { "g", "grad", "gradient", "gradient descent", "gradient-descent", "gradescent" }
@@ -564,8 +571,8 @@ function vecY = __findCandStep_pow( vecG, matH, matC, matB, bTrgt, prm )
 	if ( 0 == cholFlag && min(diag(matR)) > prm.cholRelTol * max(abs(diag(matR))) )
 		vecY_newt = matR \ (matR'\(-vecG));
 	else
-		matR1 = chol( matH + matC * (1.0*prm.epsRegu*hScale/cScale) );
-		matR2 = chol( matH + matC * (2.0*prm.epsRegu*hScale/cScale) );
+		matR1 = chol( matH + matC * (1.0*prm.epsRelRegu*hScale/cScale) );
+		matR2 = chol( matH + matC * (2.0*prm.epsRelRegu*hScale/cScale) );
 		vecY1 = matR1 \ (matR1'\(-vecG));
 		vecY2 = matR2 \ (matR2'\(-vecG));
 		vecY_newt = (2.0*vecY1) - vecY2;
@@ -617,16 +624,7 @@ function vecY = __findCandStep_pow( vecG, matH, matC, matB, bTrgt, prm )
 endfunction
 
 
-function [ retCode, fevalIncr, fModelDat ] = __moveTo( vecX_next, vecF_next, fModelDat, prm )
-	error( "To-do!" );
-	mydefs;
-	retCode = RETCODE__NOT_SET;
-	fevalIncr = 0;
-	return;
-endfunction
-
-
-function [ retCode, fevalIncr, fModelDat ] = __expandModel( funchF, fModelDat, prm )
+function [ retCode, fevalIncr, fModelDat ] = __addDimensionToModel( funchF, fModelDat, prm )
 	mydefs;
 	retCode = RETCODE__NOT_SET;
 	fevalIncr = 0;
@@ -781,7 +779,7 @@ function [ retCode, fevalIncr, fModelDat ] = __refreshGivenDirection( vecY, func
 	%
 	% Explicitly symmetrize.
 	fModelDat.matALo = (fModelDat.matALo'+fModelDat.matALo)/2.0;
-	fModelDat.matAHi = )fModelDat.matAHi'+fModelDat.matAHi)/2.0;
+	fModelDat.matAHi = (fModelDat.matAHi'+fModelDat.matAHi)/2.0;
 	%
 	if ( prm.valdLev >= VALDLEV__HIGH )
 		assert( sizeV <= sizeX );
@@ -858,8 +856,8 @@ function [ retCode, fevalIncr, fModelDat ] = __moveTo( vecY, vecF_next, funchF, 
 	vecDLo = min( [ vecD1, vecD2, vecD3 ], [], 2 );
 	vecDHi = max( [ vecD1, vecD2, vecD3 ], [], 2 );
 	vecYHat = vecY/norm(vecY);
-	matELo = matIV - 0.9*vecYHat*(vecYHat');
-	matEHi = matIV - 0.1*vecYHat*(vecYHat');
+	matELo = matIV - prm.moveToELoCoeff*vecYHat*(vecYHat');
+	matEHi = matIV - prm.moveToEHiCoeff*vecYHat*(vecYHat');
 	matALo_updated = matELo' * ( matALo + vecDLo ) * matELo;
 	matAHi_updated = matEHi' * ( matAHi + vecDHi ) * matEHi;
 	%
@@ -874,7 +872,7 @@ function [ retCode, fevalIncr, fModelDat ] = __moveTo( vecY, vecF_next, funchF, 
 	%
 	% Explicitly symmetrize.
 	fModelDat.matALo = (fModelDat.matALo'+fModelDat.matALo)/2.0;
-	fModelDat.matAHi = )fModelDat.matAHi'+fModelDat.matAHi)/2.0;
+	fModelDat.matAHi = (fModelDat.matAHi'+fModelDat.matAHi)/2.0;
 	%
 	if ( prm.valdLev >= VALDLEV__HIGH )
 		assert( sizeV <= sizeX );
@@ -904,7 +902,7 @@ function [ retCode, fevalIncr, fModelDat ] = __shrinkTR( funchF, vecY, fModelDat
 	[ retCode, fevalIncr, fModelDat ] = __modifyTR( funchF, vecY, fModelDat, prm );
 	return;
 endfunction
-function [ retCode, fevalIncr, fModelDat ] = __enlargeTR( funchF, vecY, fModelDat, prm )
+function [ retCode, fevalIncr, fModelDat ] = __expandTR( funchF, vecY, fModelDat, prm )
 	[ retCode, fevalIncr, fModelDat ] = __modifyTR( funchF, vecY, fModelDat, prm );
 	return;
 endfunction
