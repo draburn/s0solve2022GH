@@ -2,6 +2,7 @@
 % TODO: Add scaling-matrix preconditioning.
 % TODO: Allow for evaluating a subspace vector that is not entirely outside matV
 % if the preconditioner seems highly reliable.
+% TODO: Modify trigger for expand() to aim for super-linear convergence.
 
 function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = zlinsolf195( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
 	% INIT
@@ -199,6 +200,10 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	prm.moveToEHiCoeff = 0.1;
 	%
 	prm.initExpandExp = 0.5;
+	prm.expandRelThresh = 0.5;
+	prm.stallRelThresh = 1.0E-4;
+	prm.tryRelThresh = 0.1;
+	prm.reevalRelThresh = 0.1;
 	%
 	prm = overwritefields( prm, prmIn );
 	%
@@ -263,7 +268,7 @@ function [ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, p
 	fModelDat.matAHi = [ 0.0 ];
 	fModelDat.matB = [ 0.0 ];
 	%%%fModelDat.matB = [ 10.0 ]; %%%
-	fModelDat.matVLocal = zeros(sizeX,0);
+	fModelDat.matVLocal = [ vecV ];
 	fModelDat.strState = "init";
 	%
 	%
@@ -361,9 +366,9 @@ function [ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, pr
 	%
 	% "eta" is estimate for cost function;
 	% "omega" is observed values.
-	studyDat.funchEta_zeroV = @(y)( sumsq(vecF)/2.0 + vecWTF'*y + (y'*matWTW*y)/2.0 );
-	studyDat.funchEta_loVar = @(y)( sumsq(vecF)/2.0 + vecWTF'*y + (y'*matWTW*y)/2.0 + (y'*matALo*y)/2.0 );
-	studyDat.funchEta_hiVar = @(y)( sumsq(vecF)/2.0 + vecWTF'*y + (y'*matWTW*y)/2.0 + (y'*matAHi*y)/2.0 );
+	studyDat.funchEta_zeroV = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + (y'*matWTW*y)/2.0 ]) );
+	studyDat.funchEta_loVar = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + (y'*matWTW*y)/2.0 + (y'*matALo*y)/2.0 ]) );
+	studyDat.funchEta_hiVar = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + (y'*matWTW*y)/2.0 + (y'*matAHi*y)/2.0 ]) );
 	%
 	if ( prm.valdLev >= VALDLEV__LOW )
 		__validateStudyDat( fModelDat, studyDat, prm );
@@ -408,8 +413,15 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%
 	omega = sumsq(vecF)/2.0;
 	%
+	%
+	
+	% If we have a good next point, then move to it.
+	
+	%
+	%
+	% Initially, be fairly aggressive in expanding subspace.
 	if ( strcmpi(strState,"init") ) % CAUTION: MATLAB strmpi is opposite of C/C++.
-	if ( funchEta_zeroV(vecY_ideal) > prm.omegaTol * ( ( omega / prm.omegaTol ) ^ prm.initExpandExp ) )
+	if ( funchEta_zeroV(vecY_ideal) > prm.omegaTol * ( ( omega / prm.omegaTol ) ^ (1.0-prm.initExpandExp) ) )
 		vecRhoF = matW(:,end);
 		vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
 		vecV = __calcOrthonorm( vecU, matV, prm );
@@ -424,7 +436,52 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	endif
 	endif
 	%
-	error( "NOT IMPLEMENTED" );
+	% Later, be not so aggressive, but still try to achieve super-linear convergence.
+	% TODO: Try to make this offer super-linear convergence.
+	if ( funchEta_zeroV(vecY_ideal) > max([ prm.omegaTol, prm.expandRelThresh * omega]) )
+		vecRhoF = vecF - matW * vecY_ideal;
+		vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
+		vecV = __calcOrthonorm( vecU, matV, prm );
+		if ( norm(vecV) > sqrt(eps) )
+			[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
+			taFevalCount += fevalIncr; clear fevalIncr;
+			if ( 0~= retCode )
+				msgretcodeif( true, __FILE__, __LINE__, retCode );
+			endif
+			return;
+		endif
+	endif
+	%
+	%
+	if ( funchEta_hiVar(vecY_zeroV) <= prm.omegaTol )
+		error( "TODO: Try striking at vecY_zeroV." );
+	endif
+	%
+	%
+	if ( funchEta_zeroV(vecY_zeroV) > omega * ( 1.0 - prm.stallRelThresh ) )
+		error( "TODO: Give up." );
+	endif
+	%
+	%
+	if ( funchEta_hiVar(vecY_hiVar) > omega + prm.tryRelThresh * ( funchEta_zeroV(vecY_zeroV) - omega ) )
+		error( "TODO: Something like __tryStep( vecY_hiVar, funchF, fModelDat, prm );" );
+	endif
+	%
+	%
+	if ( funchEta_loVar(vecY_loVar) > omega + prm.reevalRelThresh * ( funchEta_zeroV(vecY_zeroV) - omega ) )
+		vecV = __calcOrthonorm( vecY_loVar, matVLocal, prm );
+		[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
+		taFevalCount += fevalIncr; clear fevalIncr;
+		if ( norm(vecV) > sqrt(eps) )
+			if ( 0~= retCode )
+				msgretcodeif( true, __FILE__, __LINE__, retCode );
+			endif
+			return;
+		endif
+	endif
+	%
+	%
+	error( "TODO: Consider more desperate actions, particularly expand or reeval with different vectors." );
 	return;
 endfunction
 
@@ -756,7 +813,7 @@ function vecY = __findCandStep( matH, vecG, matC, matB, bTrgt, prm )
 		clear eigH;
 	endif
 	%
-	switch ( prm.curveType )
+	switch ( tolower(prm.curveType) )
 	case { "l", "lev", "levenberg" }
 		vecY = findLevPt_0527( vecG, matH, matC, matB, bTrgt, prm.findLevPrm );
 	case { "p", "powell", "dog", "dog leg", "dog-leg", "dl" }
@@ -947,7 +1004,7 @@ function __validateFModelDat( fModelDat, prm )
 		assert( isrealarray(matVLocal,[sizeX,sizeVLocal]) );
 		assert( issymmetric(matALo) );
 		assert( issymmetric(matAHi) );
-		switch (strState)
+		switch ( tolower(strState) )
 		case { "init" }
 			% Okay.
 		case { "moved" }
@@ -1039,7 +1096,7 @@ function __validateStudyDat( fModelDat, studyDat, prm )
 	if ( prm.valdLev >= VALDLEV__UNLIMITED )
 	switch ( tolower(prm.curveScaling) )
 	case { "b", "btb", "boundary", "optimal" }
-	switch ( prm.curveType )
+	switch ( tolower(prm.curveType) )
 	case { "l", "lev", "levenberg" }
 		% Note that this test is a property of the "optim" curve,
 		% not a propery of hitting the boundary exactly.
