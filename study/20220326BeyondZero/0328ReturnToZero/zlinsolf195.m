@@ -98,7 +98,7 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = zlinsolf195( 
 		iterCount++;
 		%
 		%
-		if ( prm.verbLev >= VERBLEV__DETAILS+10 )
+		if ( prm.verbLev >= VERBLEV__DETAILS )
 			%msg( __FILE__, __LINE__, "Progress..." );
 			msg( __FILE__, __LINE__, sprintf( ...
 			  "   time: %8.2e;  iter: %3d;  feval: %3d;  steps: %3d;  size: %3d / %3d;  omega: %8.2e.", ...
@@ -231,8 +231,8 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	prm.initExpandExp = 0.5;
 	prm.expandRelThresh = 0.5;
 	prm.stallRelThresh = 1.0E-4;
-	prm.tryRelThresh = 0.1;
-	prm.reevalRelThresh = 0.1;
+	prm.tryFallRelThresh = 0.9;
+	prm.reevalFallRelThresh = 0.1;
 	%
 	prm.trExpandCoeff = 1.5;
 	prm.trShrinkCoeff = 0.5;
@@ -538,7 +538,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	endif
 	%
 	%
-	if ( funchEta_hiVar(vecY_hiVar) <= omega + prm.tryRelThresh * ( funchEta_zeroV(vecY_zeroV) - omega ) )
+	if ( funchEta_hiVar(vecY_hiVar) <= omega + prm.tryFallRelThresh * ( funchEta_zeroV(vecY_zeroV) - omega ) )
 		%error( "TODO: Something like __tryStep( vecY_hiVar, funchF, fModelDat, prm );" );
 		%% Note: __tryStep() may internally update fModelDat and call __studyFModel(),
 		%%  making the next itertion's call to __studyFModel() redundant. POITROME.
@@ -553,7 +553,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	endif
 	%
 	%
-	if ( funchEta_loVar(vecY_loVar) > omega + prm.reevalRelThresh * ( funchEta_zeroV(vecY_zeroV) - omega ) )
+	if ( funchEta_loVar(vecY_loVar) >= omega + prm.reevalFallRelThresh * ( funchEta_zeroV(vecY_zeroV) - omega ) )
 		vecV = __calcOrthonorm( matV*vecY_loVar, matVLocal, prm );
 		if ( norm(vecV) > sqrt(eps) )
 			vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
@@ -733,7 +733,7 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep_
 	%
 	vecFModel = vecF + matW * vecY;
 	if ( norm(vecFModel) < norm(vecF_trial) )
-		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, " Shrinking trust region." );
+		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Shrinking trust region." );
 		% Add barrier to prevent re-trial.
 		[ retCode, fevalIncr, fModelDat ] = __shrinkTR( funchF, prm.trShrinkCoeff*vecY, fModelDat, prm );
 		tsFevalCount += fevalIncr; clear fevalIncr;
