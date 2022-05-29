@@ -122,11 +122,11 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = zlinsolf195( 
 			stepsCount++;
 			if ( prm.verbLev >= VERBLEV__PROGRESS )
 				msg( __FILE__, __LINE__, sprintf( ...
-				  " Step %3d ( time %10.3e, iter %3d, feaval %3d ):  deltaX = %10.3e; deltaF = %10.3e... ", ...
+				  "*** Step %3d ( time %10.3e, iter %3d, feaval %3d ):  deltaX = %10.3e; deltaF = %10.3e... ", ...
 				  stepsCount, time()-startTime, iterCount, fevalCount, ...
 				  norm(vecX_next-vecX) , norm(vecF_next-vecF) ) );
 				msg( __FILE__, __LINE__, sprintf( ...
-				  "  omega: %10.3e -> %10.3e, down %10.3e (tol %10.3e). ", ...
+				  "*** omega: %10.3e -> %10.3e, down %10.3e (tol %10.3e). ", ...
 				  omega, omega_next, omega - omega_next, prm.omegaTol ) );
 			endif
 			vecX = vecX_next;
@@ -494,7 +494,8 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	endif
 	%
 	%
-	if ( funchEta_hiVar(vecY_zeroV) <= prm.omegaTol )
+	%%%if ( funchEta_hiVar(vecY_zeroV) <= prm.omegaTol )
+	if ( funchEta_zeroV(vecY_zeroV) <= prm.omegaTol )
 		%error( "TODO: Try striking at vecY_zeroV." );
 		%% Note: __tryStep() may internally update fModelDat and call __studyFModel(),
 		%%  making the next itertion's call to __studyFModel() redundant. POITROME.
