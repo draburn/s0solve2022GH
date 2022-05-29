@@ -111,7 +111,7 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = zlinsolf195( 
 			msgif( prm.verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( ...
 			  "  Step %3d ( %10.3e, %3d, %3d ):  omega: %10.3e -> %10.3e ( down %10.3e ); delta: %10.3e, %10.3e. ", ...
 			  stepsCount, time()-startTime, iterCount, fevalCount, ...
-			  omega, omega_next, omega_next - omega, ...
+			  omega, omega_next, omega - omega_next, ...
 			  norm(vecF_next-vecF), norm(vecX_next-vecX) ) );
 			vecX = vecX_next;
 			vecF = vecF_next;
@@ -449,9 +449,9 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%
 	%
 	if ( funchEta_hiVar(vecY_zeroV) <= prm.omegaTol )
-		error( "TODO: Try striking at vecY_zeroV." );
-		% Note: __tryStep() may internally update fModelDat and call __studyFModel(),
-		%  making the next itertion's call to __studyFModel() redundant. POITROME.
+		%error( "TODO: Try striking at vecY_zeroV." );
+		%% Note: __tryStep() may internally update fModelDat and call __studyFModel(),
+		%%  making the next itertion's call to __studyFModel() redundant. POITROME.
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY_zeroV, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
@@ -472,9 +472,9 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%
 	%
 	if ( funchEta_hiVar(vecY_hiVar) <= omega + prm.tryRelThresh * ( funchEta_zeroV(vecY_zeroV) - omega ) )
-		error( "TODO: Something like __tryStep( vecY_hiVar, funchF, fModelDat, prm );" );
-		% Note: __tryStep() may internally update fModelDat and call __studyFModel(),
-		%  making the next itertion's call to __studyFModel() redundant. POITROME.
+		%error( "TODO: Something like __tryStep( vecY_hiVar, funchF, fModelDat, prm );" );
+		%% Note: __tryStep() may internally update fModelDat and call __studyFModel(),
+		%%  making the next itertion's call to __studyFModel() redundant. POITROME.
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY_hiVar, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
@@ -563,6 +563,87 @@ function [ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fMo
 		__validateFModelDat( fModelDat, prm );
 	endif
 	retCode = RETCODE__SUCCESS;
+	return;
+endfunction
+
+
+function [ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm )
+	[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep_crude( vecY, funchF, fModelDat, studyDat, prm );
+	if ( 0~= retCode )
+		msgretcodeif( true, __FILE__, __LINE__, retCode );
+		return;
+	endif
+	return;
+endfunction
+function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep_crude( vecY, funchF, fModelDat, studyDat, prm )
+	mydefs;
+	retCode = RETCODE__NOT_SET;
+	tsFevalCount = 0;
+	vecX_next = [];
+	vecF_next = [];
+	%
+	vecX = fModelDat.vecX; % Current guess.
+	vecF = fModelDat.vecF; % Function at current guess.
+	matV = fModelDat.matV; % Subspace basis matrix.
+	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
+	matALo = fModelDat.matALo; % Low estimate for Hessian variation matrix, < (delta W)' * (delta W) >.
+	matAHi = fModelDat.matAHi; % High estimate for Hessian variation matrix, < (delta W)' * (delta W) >.
+	matB = fModelDat.matB; % Boundary / trust region matrix; (bound) candidate steps must satify ||B*y|| <= 1.
+	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
+	strState = fModelDat.strState; % String indicating "state" of fModelDat.
+	%
+	sizeX = size(vecX,1);
+	sizeF = size(vecF,1);
+	sizeV = size(matV,2);
+	sizeB = size(matB,1);
+	sizeVLocal = size(matVLocal,2);
+	%
+	vecX_trial = vecX + matV * vecY;
+	vecF_trial = funchF( vecX_trial );
+	tsFevalCount++;
+	%
+	if ( norm(vecF_trial) < norm(vecF) )
+		vecX_next = vecX_trial;
+		vecF_next = vecF_trial;
+		[ retCode, fevalIncr, fModelDat ] = __shrinkTR( funchF, 1.5*vecY, fModelDat, prm );
+		tsFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+			return;
+		endif
+		[ retCode, fevalIncr, fModelDat ] = __moveTo( vecY, vecF_next, funchF, fModelDat, prm );
+		tsFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+			return;
+		endif
+		retCode = RETCODE__SUCCESS;
+		return;
+	endif
+	%
+	assert( abs(norm(matV*vecY) - norm(vecY)) < sqrt(eps) );
+	if ( isempty(matVLocal) || norm(matVLocal'*matV*vecY) < (1.0-sqrt(eps))*norm(vecY) )
+		vecU = matV*vecY;
+		vecV = __calcOrthonorm( vecU, matVLocal, prm );
+		[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
+		tsFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+			return;
+		endif
+	endif
+	%
+	vecFModel = vecF + matW * vecY;
+	if ( norm(vecFModel) < norm(vecF_trial) )
+		% Add barrier to prevent re-trial.
+		[ retCode, fevalIncr, fModelDat ] = __shrinkTR( funchF, 0.5*vecY, fModelDat, prm );
+		tsFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+			return;
+		endif
+	endif
+	%
 	return;
 endfunction
 
@@ -656,11 +737,6 @@ function [ retCode, fevalIncr, fModelDat ] = __moveTo( vecY, vecF_next, funchF, 
 	%
 	%
 	%
-	if ( prm.valdLev >= VALDLEV__LOW )
-		assert( sizeVLocal < sizeV );
-		assert( isrealarray(vecYHat,[sizeV,1]) );
-	endif
-	%
 	matIV = eye(sizeV,sizeV);
 	%
 	yNorm = norm(vecY);
@@ -675,20 +751,20 @@ function [ retCode, fevalIncr, fModelDat ] = __moveTo( vecY, vecF_next, funchF, 
 	if (~useQuadUpdate)
 		matW_updated = matW + vecRhoF * (vecY')/(yNorm^2);
 	else
-		rhoSumsq = sumsq(vecRho);
+		rhoSumsq = sumsq(vecRhoF);
 		ytay = vecY'*matAHi*vecY;
 		if ( rhoSumsq <= ytay )
 			s = 1.0;
 		else
 			s = ytay/rhoSumsq;
 		endif
-		matW_updated = matW + (2.0-s) * vecRho * (vecY')/(yNorm^2);
+		matW_updated = matW + (2.0-s) * vecRhoF * (vecY')/(yNorm^2);
 	endif
 	%
 	vecDW = sum(matW.^2,1)';
 	vecD1 = ones(sizeV,1)/sumsq(vecY);
 	vecD2 = vecDW/sumsq(matW*vecY);
-	vecD3  = vecDW/(veCY'*diag(vecDW)*vecY);
+	vecD3  = vecDW/(vecY'*diag(vecDW)*vecY);
 	vecDLo = min( [ vecD1, vecD2, vecD3 ], [], 2 );
 	vecDHi = max( [ vecD1, vecD2, vecD3 ], [], 2 );
 	vecYHat = vecY/norm(vecY);
@@ -905,11 +981,11 @@ endfunction
 
 
 function [ retCode, fevalIncr, fModelDat ] = __shrinkTR( funchF, vecY, fModelDat, prm )
-	[ retCode, fevalIncr, fModelDat ] = __modifyTR( funchF, vecY, fModelDat, prm );
+	[ retCode, fevalIncr, fModelDat ] = __modifyB( funchF, vecY, fModelDat, prm );
 	return;
 endfunction
 function [ retCode, fevalIncr, fModelDat ] = __expandTR( funchF, vecY, fModelDat, prm )
-	[ retCode, fevalIncr, fModelDat ] = __modifyTR( funchF, vecY, fModelDat, prm );
+	[ retCode, fevalIncr, fModelDat ] = __modifyB( funchF, vecY, fModelDat, prm );
 	return;
 endfunction
 function [ retCode, fevalIncr, fModelDat ] = __modifyB( funchF, vecY, fModelDat, prm )
