@@ -8,3 +8,6 @@ Or, perhaps more importantly:
  most actively zlinsolf195.m,
  but also particularly findLevPt_0527.m, zcompare.m, zlinsolf100.m, and findZero_800.m.
 Enjoy.
+...
+Looks like it's not an issue with the EPS/ICPP USB.
+Just an issue with "Leo", likely filesysetem,
