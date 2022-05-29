@@ -142,12 +142,13 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = zlinsolf195( 
 	if ( prm.verbLev >= VERBLEV__PROGRESS )
 		msg( __FILE__, __LINE__, "Final..." );
 		msg( __FILE__, __LINE__, sprintf( ...
-		  "  time: %10.3e;  iter: %3d;  feval: %3d  steps: %3d;  size: %3d / %3d;  omega: %10.3e.", ...
-		  time()-startTime, prm.timeMax, ...
-		  iterCount, prm.iterMax, ...
-		  fevalCount, prm.fevalMax, ...
-		  stepsCount, prm.stepsMax, ...
-		  size(fModelDat.matVLocal,2), size(fModelDat.matV,2), size(vecX,1), size(vecF,1) ) );
+		  "  time: %10.3e;  iter: %3d;  feval: %3d;  steps: %3d;  size: %3d / %3d;  omega: %10.3e.", ...
+		  time()-startTime, ...
+		  iterCount, ...
+		  fevalCount, ...
+		  stepsCount, ...
+		  size(fModelDat.matVLocal,2), size(fModelDat.matV,2), ...
+		  sumsq(vecF)/2.0 ) );
 	endif
 return;
 endfunction
@@ -206,11 +207,11 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	prm.cholRelTol = sqrt(eps);
 	prm.epsRelRegu = sqrt(eps);
 	%%%prm.candStepRelTol = 0.2;
-	prm.candStepRelTol = 1000.0*eps; %%%
+	prm.candStepRelTol = sqrt(eps);
 	prm.findLevPrm = [];
 	prm.findLevPrm.cholRelTol = prm.cholRelTol;
 	prm.findLevPrm.epsRelRegu = prm.epsRelRegu;
-	prm.findLevPrm.bRelRegu = prm.candStepRelTol;
+	prm.findLevPrm.bRelTol = prm.candStepRelTol;
 	%
 	prm.moveToELoCoeff = 0.9;
 	prm.moveToEHiCoeff = 0.1;
@@ -716,7 +717,7 @@ function [ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fM
 	%
 	if ( prm.valdLev >= VALDLEV__LOW )
 		assert( sizeVLocal < sizeV );
-		assert( isrealarray(vecV,[sizeV,1]) );
+		assert( isrealarray(vecV,[sizeX,1]) );
 		assert( abs(norm(vecV)-1.0) < sqrt(eps) );
 		assert( abs(norm(matV'*vecV)-1.0) < sqrt(eps) );
 		assert( norm(matVLocal'*vecV) < sqrt(eps) );
@@ -1218,9 +1219,13 @@ function __validateStudyDat( fModelDat, studyDat, prm )
 		assert( issymmetric(matC) );
 		assert( min(diag(matC)) > 0.0 );
 		%
-		assert( norm(matB*vecY_zeroV) <= 1.0 + prm.candStepRelTol );
-		assert( norm(matB*vecY_loVar) <= 1.0 + prm.candStepRelTol );
-		assert( norm(matB*vecY_hiVar) <= 1.0 + prm.candStepRelTol );
+		if ( ~(norm(matB*vecY_zeroV) <= 1.0 + prm.candStepRelTol) )
+			norm(matB*vecY_zeroV) - 1.0
+			prm.candStepRelTol
+		endif
+		assert( norm(matB*vecY_zeroV) <= 1.0 + min([ 0.5, 100.0*prm.candStepRelTol ]) );
+		assert( norm(matB*vecY_loVar) <= 1.0 + min([ 0.5, 100.0*prm.candStepRelTol ]) );
+		assert( norm(matB*vecY_hiVar) <= 1.0 + min([ 0.5, 100.0*prm.candStepRelTol ]) );
 	endif
 	if ( prm.valdLev >= VALDLEV__UNLIMITED )
 	switch ( tolower(prm.curveScaling) )

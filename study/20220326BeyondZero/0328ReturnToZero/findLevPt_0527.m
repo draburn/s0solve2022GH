@@ -11,7 +11,7 @@ function [ vecY, pt_best, iterCount, retCode, datOut ] = findLevPt_0527( vecG, m
 		vecY = pt_best.vecY;
 		retCode = RETCODE__SUCCESS;
 		return;
-	elseif ( pt_best.b < bTrgt*prm.bRelTol )
+	elseif ( pt_best.b <= bTrgt + bTrgt*prm.bRelTol )
 		msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCESS: Full step was within tolerance." );
 		vecY = pt_best.vecY;
 		retCode = RETCODE__SUCCESS;
@@ -23,9 +23,6 @@ function [ vecY, pt_best, iterCount, retCode, datOut ] = findLevPt_0527( vecG, m
 	pt0 = pt_best;
 	havePt1 = false;
 	while (~havePt1)
-		if ( prm.valdLev >= VALDLEV__LOW )
-			assert( pt0.b > bTrgt );
-		endif
 		if ( abs(pt_best.b-bTrgt) <= bTol )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( "SUCCESS: Converged in %d iterations.", iterCount ) );
 			vecY = pt_best.vecY;
@@ -38,6 +35,9 @@ function [ vecY, pt_best, iterCount, retCode, datOut ] = findLevPt_0527( vecG, m
 			return;
 		endif
 		iterCount++;
+		if ( prm.valdLev >= VALDLEV__LOW )
+			assert( pt0.b > bTrgt );
+		endif
 		%
 		mu0 = pt0.mu;
 		b0 = pt0.b;
@@ -60,10 +60,6 @@ function [ vecY, pt_best, iterCount, retCode, datOut ] = findLevPt_0527( vecG, m
 	%
 	applyConstraints = false;
 	while (1)
-		if ( prm.valdLev >= VALDLEV__LOW )
-			assert( pt0.b > bTrgt );
-			assert( pt1.b < bTrgt );
-		endif
 		if ( abs(pt_best.b-bTrgt) <= bTol )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( "SUCCESS: Converged in %d iterations.", iterCount ) );
 			vecY = pt_best.vecY;
@@ -76,6 +72,10 @@ function [ vecY, pt_best, iterCount, retCode, datOut ] = findLevPt_0527( vecG, m
 			return;
 		endif
 		iterCount++;
+		if ( prm.valdLev >= VALDLEV__LOW )
+			assert( pt0.b > bTrgt );
+			assert( pt1.b < bTrgt );
+		endif
 		%
 		mu0 = pt0.mu;
 		b0 = pt0.b;
@@ -141,8 +141,8 @@ function prm = __init( vecG, matH, matC, matB, bTrgt, prmIn )
 	mydefs;
 	%
 	%prm.verbLev = VERBLEV__FLAGGED; prm.valdLev = VALDLEV__ZERO; % Optimization.
-	prm.verbLev = VERBLEV__WARNING; prm.valdLev = VALDLEV__MEDIUM; % Production.
-	%prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__HIGH; % Integration.
+	%prm.verbLev = VERBLEV__WARNING; prm.valdLev = VALDLEV__MEDIUM; % Production.
+	prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__HIGH; % Integration.
 	%prm.verbLev = VERBLEV__DETAILS; prm.valdLev = VALDLEV__VERY_HIGH; % Dev.
 	%prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Debug.
 	%prm.bRelTol = 100.0*eps;
