@@ -509,11 +509,6 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	endif
 	%
 	%
-	if ( funchEta_hiVar(vecY_zeroV) <= 10.0*prm.omegaTol )
-		error( "TODO: If /close/ to target, consider being smarter about trying to hit target.." );
-	endif
-	%
-	%
 	if ( funchEta_zeroV(vecY_zeroV) > omega * ( 1.0 - prm.stallRelThresh ) )
 		error( "TODO: If zeroV says little decrease is possible, give up or do BLM handling." );
 	endif
