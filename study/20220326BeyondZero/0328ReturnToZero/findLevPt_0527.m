@@ -230,7 +230,7 @@ function ptDat = __calcPt( mu, vecG, matH, matC, matB, prm )
 		ptDat.bPrime = bPrime;
 		return;
 	endif
-	matRegu = (prm.epsRelRegu*prm.hScale/prm.cScale);
+	matRegu = (prm.epsRelRegu*prm.hScale/prm.cScale)*matC;
 	matR1 = chol( matM + matRegu );
 	matR2 = chol( matM + 2.0*matRegu );
 	[ vecY1, vecYPrime1, b1, bPrime1 ] = __calcFromChol( matR1, vecG, matH, matC, matB );
@@ -239,7 +239,7 @@ function ptDat = __calcPt( mu, vecG, matH, matC, matB, prm )
 	ptDat.vecY = 2.0*vecY1 - vecY2;
 	ptDat.vecYPrime = 2.0*vecYPrime1 - vecYPrime2;
 	ptDat.b = 2.0*b1 - b2;
-	ptDat.bPrime = 2.0*bPrime - bPrime2;
+	ptDat.bPrime = 2.0*bPrime1 - bPrime2;
 	return;
 endfunction
 function [ vecY, vecYPrime, b, bPrime ] = __calcFromChol( matR, vecG, matH, matC, matB );

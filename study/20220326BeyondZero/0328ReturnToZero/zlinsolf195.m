@@ -122,7 +122,7 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = zlinsolf195( 
 			stepsCount++;
 			if ( prm.verbLev >= VERBLEV__PROGRESS )
 				msg( __FILE__, __LINE__, sprintf( ...
-				  " Step %3d ( time %10.3e, iter %3d, feaval %3d ):  delta x %10.3e; delta f %10.3e... ", ...
+				  " Step %3d ( time %10.3e, iter %3d, feaval %3d ):  deltaX = %10.3e; deltaF = %10.3e... ", ...
 				  stepsCount, time()-startTime, iterCount, fevalCount, ...
 				  norm(vecX_next-vecX) , norm(vecF_next-vecF) ) );
 				msg( __FILE__, __LINE__, sprintf( ...
@@ -205,8 +205,8 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	prm.matC = [];
 	prm.cholRelTol = sqrt(eps);
 	prm.epsRelRegu = sqrt(eps);
-	prm.candStepRelTol = 0.2;
-	%%%prm.candStepRelTol = 1000.0*eps; %%%
+	%%%prm.candStepRelTol = 0.2;
+	prm.candStepRelTol = 1000.0*eps; %%%
 	prm.findLevPrm = [];
 	prm.findLevPrm.cholRelTol = prm.cholRelTol;
 	prm.findLevPrm.epsRelRegu = prm.epsRelRegu;
@@ -376,9 +376,9 @@ function [ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, pr
 	%
 	% "eta" is estimate for cost function;
 	% "omega" is observed values.
-	funchEta_zeroV = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + (y'*matWTW*y)/2.0 ]) );
-	funchEta_loVar = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + (y'*matWTW*y)/2.0 + (y'*matALo*y)/2.0 ]) );
-	funchEta_hiVar = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + (y'*matWTW*y)/2.0 + (y'*matAHi*y)/2.0 ]) );
+	funchEta_zeroV = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + abs((y'*matWTW*y)/2.0) ]) );
+	funchEta_loVar = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + abs((y'*matWTW*y)/2.0) + abs((y'*matALo*y)/2.0) ]) );
+	funchEta_hiVar = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + abs((y'*matWTW*y)/2.0) + abs((y'*matAHi*y)/2.0) ]) );
 	%
 	if ( prm.verbLev >= VERBLEV__PROGRESS+10 )
 		msg( __FILE__, __LINE__, sprintf( "  vecY_ideal: %10.3e / %10.3e / %10.3e ( %10.3e, %10.3e ).", ...
@@ -465,6 +465,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
 		vecV = __calcOrthonorm( vecU, matV, prm );
 		if ( norm(vecV) > sqrt(eps) )
+			msgif( prm.verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "  Action: Expand subspace." );
 			[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
 			taFevalCount += fevalIncr; clear fevalIncr;
 			if ( 0~= retCode )
@@ -482,6 +483,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
 		vecV = __calcOrthonorm( vecU, matV, prm );
 		if ( norm(vecV) > sqrt(eps) )
+			msgif( prm.verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "  Action: Expand subspace." );
 			[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
 			taFevalCount += fevalIncr; clear fevalIncr;
 			if ( 0~= retCode )
@@ -496,6 +498,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		%error( "TODO: Try striking at vecY_zeroV." );
 		%% Note: __tryStep() may internally update fModelDat and call __studyFModel(),
 		%%  making the next itertion's call to __studyFModel() redundant. POITROME.
+		msgif( prm.verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "  Action: Try step (strike)." );
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY_zeroV, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
@@ -519,6 +522,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		%error( "TODO: Something like __tryStep( vecY_hiVar, funchF, fModelDat, prm );" );
 		%% Note: __tryStep() may internally update fModelDat and call __studyFModel(),
 		%%  making the next itertion's call to __studyFModel() redundant. POITROME.
+		msgif( prm.verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "  Action: Try step (approach)." );
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY_hiVar, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
@@ -530,6 +534,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%
 	if ( funchEta_loVar(vecY_loVar) > omega + prm.reevalRelThresh * ( funchEta_zeroV(vecY_zeroV) - omega ) )
 		vecV = __calcOrthonorm( vecY_loVar, matVLocal, prm );
+		msgif( prm.verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "  Action: Re-evaluate direction." );
 		[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( norm(vecV) > sqrt(eps) )
@@ -743,7 +748,7 @@ function [ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fM
 	%fModelDat.matV = matV;
 	fModelDat.matW = matW_updated;
 	fModelDat.matALo = matALo_updated;
-	fModelDat.matAHi = matAHi_updated
+	fModelDat.matAHi = matAHi_updated;
 	%fModelDat.matB = matB;
 	fModelDat.matVLocal = [ matVLocal, vecV ];
 	%fModelDat.strState = strState;
@@ -814,8 +819,8 @@ function [ retCode, fevalIncr, fModelDat ] = __moveTo( vecY, vecF_next, funchF, 
 	vecYHat = vecY/norm(vecY);
 	matELo = matIV - prm.moveToELoCoeff*vecYHat*(vecYHat');
 	matEHi = matIV - prm.moveToEHiCoeff*vecYHat*(vecYHat');
-	matALo_updated = matELo' * ( matALo + vecDLo ) * matELo;
-	matAHi_updated = matEHi' * ( matAHi + vecDHi ) * matEHi;
+	matALo_updated = matELo' * ( matALo + diag(vecDLo) ) * matELo;
+	matAHi_updated = matEHi' * ( matAHi + diag(vecDHi) ) * matEHi;
 	matALo_updated = (matALo_updated'+matALo_updated)/2.0;
 	matAHi_updated = (matAHi_updated'+matAHi_updated)/2.0;
 	%
@@ -1197,6 +1202,8 @@ function __validateStudyDat( fModelDat, studyDat, prm )
 	funchEta_loVar = studyDat.funchEta_loVar;
 	funchEta_hiVar = studyDat.funchEta_hiVar;
 	%
+	omega = sumsq(vecF)/2.0;
+	%
 	%
 	%
 	if ( prm.valdLev >= VALDLEV__MEDIUM )
@@ -1218,24 +1225,21 @@ function __validateStudyDat( fModelDat, studyDat, prm )
 		assert( norm(matB*vecY_zeroV) <= 1.0 + prm.candStepRelTol );
 		assert( norm(matB*vecY_loVar) <= 1.0 + prm.candStepRelTol );
 		assert( norm(matB*vecY_hiVar) <= 1.0 + prm.candStepRelTol );
-		%
-		%if ( prm.candStepRelTol <= sqrt(eps) )
-		if (1)
-			assert( funchEta_zeroV(vecY_ideal) <= (1.0+sqrt(eps))*abs(funchEta_zeroV(vecY_zeroV)) + eps*sumsq(vecF) );
-			assert( funchEta_zeroV(vecY_zeroV) <= (1.0+sqrt(eps))*abs(funchEta_zeroV(vecY_loVar)) + eps*sumsq(vecF) );
-			assert( funchEta_zeroV(vecY_loVar) <= (1.0+sqrt(eps))*abs(funchEta_zeroV(vecY_hiVar)) + eps*sumsq(vecF) );
-			assert( funchEta_zeroV(vecY_hiVar) <= (1.0+sqrt(eps))*sumsq(vecF)/2.0 );
-			assert( funchEta_loVar(vecY_loVar) <= (1.0+sqrt(eps))*abs(funchEta_loVar(vecY_zeroV)) + eps*sumsq(vecF) );
-			assert( funchEta_loVar(vecY_loVar) <= (1.0+sqrt(eps))*abs(funchEta_loVar(vecY_hiVar)) + eps*sumsq(vecF) );
-			assert( funchEta_hiVar(vecY_hiVar) <= (1.0+sqrt(eps))*abs(funchEta_hiVar(vecY_zeroV)) + eps*sumsq(vecF) );
-			assert( funchEta_hiVar(vecY_hiVar) <= (1.0+sqrt(eps))*abs(funchEta_hiVar(vecY_loVar)) + eps*sumsq(vecF) );
-		endif
 	endif
 	if ( prm.valdLev >= VALDLEV__UNLIMITED )
 	switch ( tolower(prm.curveScaling) )
 	case { "b", "btb", "boundary", "optimal" }
 	switch ( tolower(prm.curveType) )
 	case { "l", "lev", "levenberg" }
+		assert( funchEta_zeroV(vecY_ideal) <= (1.0+100.0*sqrt(eps))*abs(funchEta_zeroV(vecY_zeroV)) + eps*100.0*sumsq(vecF) );
+		assert( funchEta_zeroV(vecY_zeroV) <= (1.0+100.0*sqrt(eps))*abs(funchEta_zeroV(vecY_loVar)) + eps*100.0*sumsq(vecF) );
+		assert( funchEta_zeroV(vecY_loVar) <= (1.0+100.0*sqrt(eps))*abs(funchEta_zeroV(vecY_hiVar)) + eps*100.0*sumsq(vecF) );
+		assert( funchEta_zeroV(vecY_hiVar) <= (1.0+100.0*sqrt(eps))*sumsq(vecF)/2.0 );
+		assert( funchEta_loVar(vecY_loVar) <= (1.0+100.0*sqrt(eps))*abs(funchEta_loVar(vecY_zeroV)) + eps*100.0*sumsq(vecF) );
+		assert( funchEta_loVar(vecY_loVar) <= (1.0+100.0*sqrt(eps))*abs(funchEta_loVar(vecY_hiVar)) + eps*100.0*sumsq(vecF) );
+		assert( funchEta_hiVar(vecY_hiVar) <= (1.0+100.0*sqrt(eps))*abs(funchEta_hiVar(vecY_zeroV)) + eps*100.0*sumsq(vecF) );
+		assert( funchEta_hiVar(vecY_hiVar) <= (1.0+100.0*sqrt(eps))*abs(funchEta_hiVar(vecY_loVar)) + eps*100.0*sumsq(vecF) );
+		%
 		% Note that this test is a property of the "optim" curve,
 		% not a propery of hitting the boundary exactly.
 		state0 = rand( "state" );
@@ -1263,7 +1267,7 @@ function __validateStudyDat( fModelDat, studyDat, prm )
 			vecY_temp = vecY + yNorm * sqrt(eps)*(2.0*rand(sizeV,1)-1.0);
 			b_temp = norm(matB*vecY_temp);
 			eta_temp = funchEta(vecY_temp);
-			assert( eta_temp >= eta*(1.0-sqrt(eps)) || b_temp >= b*(1.0-sqrt(eps)) );
+			assert( eta_temp + 1000.0*eps*omega >= eta*(1.0-100.0*sqrt(eps)) || b_temp + 1000.0*eps >= b*(1.0-100.0*sqrt(eps)) );
 			eta_temp_etaTempMin = eta_temp;
 			b_temp_etaTempMin = b_temp;
 			eta_temp_bTempMin = eta_temp;
@@ -1272,7 +1276,7 @@ function __validateStudyDat( fModelDat, studyDat, prm )
 				vecY_temp = vecY + yNorm * sqrt(eps)*(2.0*rand(sizeV,1)-1.0);
 				b_temp = norm(matB*vecY_temp);
 				eta_temp = funchEta(vecY_temp);
-				assert( eta_temp >= eta*(1.0-sqrt(eps)) || b_temp >= b*(1.0-sqrt(eps)) );
+				assert( eta_temp + 1000.0*eps*omega >= eta*(1.0-100.0*sqrt(eps)) || b_temp + 1000.0*eps >= b*(1.0-100.0*sqrt(eps)) );
 			endfor
 			clear eta_temp;
 			clear b_temp;
