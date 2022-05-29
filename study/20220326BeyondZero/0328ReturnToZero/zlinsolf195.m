@@ -192,8 +192,8 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	%prm.verbLev = VERBLEV__COPIOUS; prm.valdLev = VALDLEV__VERY_HIGH; % Deep dev.
 	%prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Debug.
 	%
-	%%%prm.timeMax = -1.0; %%%
-	prm.timeMax = 10.0; %%%
+	prm.timeMax = -1.0; %%%
+	%%%prm.timeMax = 10.0; %%%
 	prm.iterMax = ceil( 100 + 10*sqrt(sizeX+sizeF) + sizeX );
 	prm.fevalMax = prm.iterMax;
 	prm.stepsMax = 100;
