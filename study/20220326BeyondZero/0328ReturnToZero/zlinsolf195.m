@@ -414,11 +414,6 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	omega = sumsq(vecF)/2.0;
 	%
 	%
-	
-	% If we have a good next point, then move to it.
-	
-	%
-	%
 	% Initially, be fairly aggressive in expanding subspace.
 	if ( strcmpi(strState,"init") ) % CAUTION: MATLAB strmpi is opposite of C/C++.
 	if ( funchEta_zeroV(vecY_ideal) > prm.omegaTol * ( ( omega / prm.omegaTol ) ^ (1.0-prm.initExpandExp) ) )
@@ -455,16 +450,37 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%
 	if ( funchEta_hiVar(vecY_zeroV) <= prm.omegaTol )
 		error( "TODO: Try striking at vecY_zeroV." );
+		% Note: __tryStep() may internally update fModelDat and call __studyFModel(),
+		%  making the next itertion's call to __studyFModel() redundant. POITROME.
+		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY_zeroV, funchF, fModelDat, studyDat, prm );
+		taFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+		endif
+		return;
+	endif
+	%
+	%
+	if ( funchEta_hiVar(vecY_zeroV) <= 10.0*prm.omegaTol )
+		error( "TODO: If /close/ to target, consider being smarter about trying to hit target.." );
 	endif
 	%
 	%
 	if ( funchEta_zeroV(vecY_zeroV) > omega * ( 1.0 - prm.stallRelThresh ) )
-		error( "TODO: Give up." );
+		error( "TODO: If zeroV says little decrease is possible, give up or do BLM handling." );
 	endif
 	%
 	%
-	if ( funchEta_hiVar(vecY_hiVar) > omega + prm.tryRelThresh * ( funchEta_zeroV(vecY_zeroV) - omega ) )
+	if ( funchEta_hiVar(vecY_hiVar) <= omega + prm.tryRelThresh * ( funchEta_zeroV(vecY_zeroV) - omega ) )
 		error( "TODO: Something like __tryStep( vecY_hiVar, funchF, fModelDat, prm );" );
+		% Note: __tryStep() may internally update fModelDat and call __studyFModel(),
+		%  making the next itertion's call to __studyFModel() redundant. POITROME.
+		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY_hiVar, funchF, fModelDat, studyDat, prm );
+		taFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+		endif
+		return;
 	endif
 	%
 	%
