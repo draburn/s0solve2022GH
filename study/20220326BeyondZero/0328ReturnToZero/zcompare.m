@@ -11,7 +11,7 @@ endif
 %
 %
 sizeX = 100;
-fType = 1;
+fType = 3;
 %fType = 7;
 fSeed = 0;
 %fSeed = 84943088;
@@ -25,7 +25,8 @@ msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
 if (1)
 	msg( __FILE__, __LINE__, "Doing *simple* one-shot." );
 	prm = [];
-	[ vecX_best, vecF_best, retCode, fevalCount, stepsCount, datOut ] = zlinsolf195( funchF, vecX0, [], prm );
+	%zlinsolf100( funchF, vecX0, [], prm );
+	zlinsolf195( funchF, vecX0, [], prm );
 	msg( __FILE__, __LINE__, "Goodbye." );
 	return;
 endif
