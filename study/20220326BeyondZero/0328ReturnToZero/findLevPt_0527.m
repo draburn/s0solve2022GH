@@ -11,6 +11,11 @@ function [ vecY, pt_best, iterCount, retCode, datOut ] = findLevPt_0527( vecG, m
 		vecY = pt_best.vecY;
 		retCode = RETCODE__SUCCESS;
 		return;
+	elseif ( pt_best.b < bTrgt*prm.bRelTol )
+		msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCESS: Full step was within tolerance." );
+		vecY = pt_best.vecY;
+		retCode = RETCODE__SUCCESS;
+		return;
 	endif
 	%
 	bTol = bTrgt*prm.bRelTol;
@@ -18,6 +23,9 @@ function [ vecY, pt_best, iterCount, retCode, datOut ] = findLevPt_0527( vecG, m
 	pt0 = pt_best;
 	havePt1 = false;
 	while (~havePt1)
+		if ( prm.valdLev >= VALDLEV__LOW )
+			assert( pt0.b > bTrgt );
+		endif
 		if ( abs(pt_best.b-bTrgt) <= bTol )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( "SUCCESS: Converged in %d iterations.", iterCount ) );
 			vecY = pt_best.vecY;
@@ -52,6 +60,10 @@ function [ vecY, pt_best, iterCount, retCode, datOut ] = findLevPt_0527( vecG, m
 	%
 	applyConstraints = false;
 	while (1)
+		if ( prm.valdLev >= VALDLEV__LOW )
+			assert( pt0.b > bTrgt );
+			assert( pt1.b < bTrgt );
+		endif
 		if ( abs(pt_best.b-bTrgt) <= bTol )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( "SUCCESS: Converged in %d iterations.", iterCount ) );
 			vecY = pt_best.vecY;
