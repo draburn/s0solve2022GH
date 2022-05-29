@@ -1,10 +1,11 @@
 % High Priority:
-% TODO: Compare to zlinsolf100.
+% TODO: Compare to zlinsolf100 and get working comprably well.
 % TODO: Write non-_crude() __tryStep().
 % TODO: Modify trigger for expand() to aim for super-linear convergence.
+% TODO: Consider more desperation moves, such as expanding per any matW column or normal basis vector.
+% NEXT VER: Move "Expand subspace (init)" to __initFModel()?
 
 % Lower Priority:
-% TODO: Consider more desperation moves, such as expanding per any matW column or normal basis vector.
 % TODO: Update epsFD based on steps taken.
 % TODO: Add scaling-matrix preconditioning.
 % TODO: Allow for evaluating a subspace vector that is not entirely outside matV if the preconditioner seems highly reliable.
@@ -38,10 +39,10 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = zlinsolf195( 
 		msgretcodeif( true, __FILE__, __LINE__, retCode );
 		return;
 	endif
-	if ( prm.verbLev >= VERBLEV__PROGRESS+10 )
+	if ( prm.verbLev >= VERBLEV__INFO )
 		msg( __FILE__, __LINE__, "Limits..." );
 		msg( __FILE__, __LINE__, sprintf( ...
-		  "  time: %8.2e;  iter: %3d;  feval: %3d;  steps: %3d;  size: %3d x %3d;  omega: %8.2e.", ...
+		  "   time: %8.2e;  iter: %3d;  feval: %3d;  steps: %3d;  size: %3d x %3d;  omega: %8.2e.", ...
 		  prm.timeMax, ...
 		  prm.iterMax, ...
 		  prm.fevalMax, ...
@@ -97,10 +98,10 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = zlinsolf195( 
 		iterCount++;
 		%
 		%
-		if ( prm.verbLev >= VERBLEV__PROGRESS+10 )
+		if ( prm.verbLev >= VERBLEV__DETAILS+10 )
 			%msg( __FILE__, __LINE__, "Progress..." );
 			msg( __FILE__, __LINE__, sprintf( ...
-			  "  time: %8.2e;  iter: %3d;  feval: %3d;  steps: %3d;  size: %3d / %3d;  omega: %8.2e.", ...
+			  "   time: %8.2e;  iter: %3d;  feval: %3d;  steps: %3d;  size: %3d / %3d;  omega: %8.2e.", ...
 			  time()-startTime, ...
 			  iterCount, ...
 			  fevalCount, ...
@@ -148,10 +149,10 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = zlinsolf195( 
 		%
 		continue;
 	endwhile
-	if ( prm.verbLev >= VERBLEV__PROGRESS )
+	if ( prm.verbLev >= VERBLEV__INFO )
 		msg( __FILE__, __LINE__, "Final..." );
 		msg( __FILE__, __LINE__, sprintf( ...
-		  "  time: %8.2e;  iter: %3d;  feval: %3d;  steps: %3d;  size: %3d / %3d;  omega: %8.2e.", ...
+		  "   time: %8.2e;  iter: %3d;  feval: %3d;  steps: %3d;  size: %3d / %3d;  omega: %8.2e.", ...
 		  time()-startTime, ...
 		  iterCount, ...
 		  fevalCount, ...
@@ -232,6 +233,9 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	prm.stallRelThresh = 1.0E-4;
 	prm.tryRelThresh = 0.1;
 	prm.reevalRelThresh = 0.1;
+	%
+	prm.trExpandCoeff = 1.5;
+	prm.trShrinkCoeff = 0.5;
 	%
 	prm = overwritefields( prm, prmIn );
 	%
@@ -392,7 +396,7 @@ function [ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, pr
 	funchEta_loVar = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + abs((y'*matWTW*y)/2.0) + abs((y'*matALo*y)/2.0) ]) );
 	funchEta_hiVar = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + abs((y'*matWTW*y)/2.0) + abs((y'*matAHi*y)/2.0) ]) );
 	%
-	if ( prm.verbLev >= VERBLEV__PROGRESS+10 )
+	if ( prm.verbLev >= VERBLEV__DETAILS+10 )
 		if ( 0 == sizeVLocal )
 			funch_yLocNorm = @(y)( 0.0 );
 			funch_bLocNorm = @(y)( 0.0 );
@@ -400,16 +404,16 @@ function [ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, pr
 			funch_yLocNorm = @(y)( norm(matVLocal'*(matV*y)) );
 			funch_bLocNorm = @(y)( norm(matB*(matV'*(matVLocal*(matVLocal'*(matV*y))))) );
 		endif
-		msg( __FILE__, __LINE__, sprintf( "  vecY_ideal: %8.2e / %8.2e / %8.2e ( %8.2e, %8.2e;  %8.2e, %8.2e ).", ...
+		msg( __FILE__, __LINE__, sprintf( "   vecY_ideal: %8.2e / %8.2e / %8.2e ( %8.2e, %8.2e;  %8.2e, %8.2e ).", ...
 		  funchEta_zeroV(vecY_ideal), funchEta_loVar(vecY_ideal), funchEta_hiVar(vecY_ideal), ...
 		  norm(vecY_ideal), norm(matB*vecY_ideal), funch_yLocNorm(vecY_ideal), funch_bLocNorm(vecY_ideal) ) );
-		msg( __FILE__, __LINE__, sprintf( "  vecY_zeroV: %8.2e / %8.2e / %8.2e ( %8.2e, %8.2e;  %8.2e, %8.2e ).", ...
+		msg( __FILE__, __LINE__, sprintf( "   vecY_zeroV: %8.2e / %8.2e / %8.2e ( %8.2e, %8.2e;  %8.2e, %8.2e ).", ...
 		  funchEta_zeroV(vecY_zeroV), funchEta_loVar(vecY_zeroV), funchEta_hiVar(vecY_zeroV), ...
 		  norm(vecY_zeroV), norm(matB*vecY_zeroV), funch_yLocNorm(vecY_zeroV), funch_bLocNorm(vecY_zeroV) ) );
-		msg( __FILE__, __LINE__, sprintf( "  vecY_loVar: %8.2e / %8.2e / %8.2e ( %8.2e, %8.2e;  %8.2e, %8.2e ).", ...
+		msg( __FILE__, __LINE__, sprintf( "   vecY_loVar: %8.2e / %8.2e / %8.2e ( %8.2e, %8.2e;  %8.2e, %8.2e ).", ...
 		  funchEta_zeroV(vecY_loVar), funchEta_loVar(vecY_loVar), funchEta_hiVar(vecY_loVar), ...
 		  norm(vecY_loVar), norm(matB*vecY_loVar), funch_yLocNorm(vecY_loVar), funch_bLocNorm(vecY_loVar) ) );
-		msg( __FILE__, __LINE__, sprintf( "  vecY_hiVar: %8.2e / %8.2e / %8.2e ( %8.2e, %8.2e;  %8.2e, %8.2e ).", ...
+		msg( __FILE__, __LINE__, sprintf( "   vecY_hiVar: %8.2e / %8.2e / %8.2e ( %8.2e, %8.2e;  %8.2e, %8.2e ).", ...
 		  funchEta_zeroV(vecY_hiVar), funchEta_loVar(vecY_hiVar), funchEta_hiVar(vecY_hiVar), ...
 		  norm(vecY_hiVar), norm(matB*vecY_hiVar), funch_yLocNorm(vecY_hiVar), funch_bLocNorm(vecY_hiVar) ) );
 	endif
@@ -687,13 +691,13 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep_
 	%
 	if ( omega_trial < omega )
 		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
-		  " Accepting step: %9.2e -> %9.2e ( down frac %9.2e, remain frac %9.2e ).", ...
+		  "  Accepting step: %9.2e -> %9.2e ( down frac %9.2e, remain frac %9.2e ).", ...
 		  omega, omega_trial, 1.0 - omega_trial/omega, omega_trial/omega ) );
 		vecX_next = vecX_trial;
 		vecF_next = vecF_trial;
-		if ( norm(matB*vecY) >= 0.7 )
-			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, " Expanding trust region." );
-			[ retCode, fevalIncr, fModelDat ] = __expandTR( funchF, 1.3*vecY, fModelDat, prm );
+		if ( prm.trExpandCoeff*norm(matB*vecY) >= 1.0 )
+			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Expanding trust region." );
+			[ retCode, fevalIncr, fModelDat ] = __expandTR( funchF, prm.trExpandCoeff*vecY, fModelDat, prm );
 			tsFevalCount += fevalIncr; clear fevalIncr;
 			if ( 0~= retCode )
 				msgretcodeif( true, __FILE__, __LINE__, retCode );
@@ -710,14 +714,14 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep_
 		return;
 	endif
 	msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
-	  " Rejecting step: %9.2e -> %9.2e ( up frac %9.2e, scale frac %9.2e ).", ...
+	  "  Rejecting step: %9.2e -> %9.2e ( up frac %9.2e, scale frac %9.2e ).", ...
 	  omega, omega_trial, omega_trial/omega - 1.0, omega_trial/omega ) );
 	%
 	assert( abs(norm(matV*vecY) - norm(vecY)) < sqrt(eps) );
 	vecU = matV*vecY;
 	vecV = __calcOrthonorm( vecU, matVLocal, prm );
 	if ( norm(vecV) >= 1.0-sqrt(eps) )
-		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, " Re-ealuating (component) of step direction." );
+		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Re-ealuating (component) of step direction." );
 		vecV = matV*(matV'*vecV); % Force in subspace for numerical stability.
 		[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
 		tsFevalCount += fevalIncr; clear fevalIncr;
@@ -731,7 +735,7 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep_
 	if ( norm(vecFModel) < norm(vecF_trial) )
 		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, " Shrinking trust region." );
 		% Add barrier to prevent re-trial.
-		[ retCode, fevalIncr, fModelDat ] = __shrinkTR( funchF, 0.5*vecY, fModelDat, prm );
+		[ retCode, fevalIncr, fModelDat ] = __shrinkTR( funchF, prm.trShrinkCoeff*vecY, fModelDat, prm );
 		tsFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
 			msgretcodeif( true, __FILE__, __LINE__, retCode );
