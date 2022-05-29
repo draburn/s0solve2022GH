@@ -27,6 +27,15 @@ case 3
 	y = @(x)( x - vecXE );
 	funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
 	%
+	if (0)
+	function f = foo(x,vecXE,matJE,matA0,matA1,matA2,matB0,matB1,matB2,matB3)
+		msg( __FILE__, __LINE__, "feval!" );
+		y = @(x)( x - vecXE );
+		f = matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) );
+	endfunction
+	funchF = @(x)(foo(x,vecXE,matJE,matA0,matA1,matA2,matB0,matB1,matB2,matB3));
+	endif
+	%
 	vecX0 = randn(sizeX,1);
 case 5
 	sizeF = sizeX;
