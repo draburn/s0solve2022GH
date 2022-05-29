@@ -11,7 +11,7 @@ endif
 %
 %
 sizeX = 100;
-fType = 5;
+fType = 1;
 %fType = 7;
 fSeed = 0;
 %fSeed = 84943088;

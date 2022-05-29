@@ -530,11 +530,12 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%
 	%
 	if ( funchEta_loVar(vecY_loVar) > omega + prm.reevalRelThresh * ( funchEta_zeroV(vecY_zeroV) - omega ) )
-		vecV = __calcOrthonorm( vecY_loVar, matVLocal, prm );
-		msgif( prm.verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "  Action: Re-evaluate direction." );
-		[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
-		taFevalCount += fevalIncr; clear fevalIncr;
+		vecV = __calcOrthonorm( matV*vecY_loVar, matVLocal, prm );
 		if ( norm(vecV) > sqrt(eps) )
+			vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
+			msgif( prm.verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, "  Action: Re-evaluate direction." );
+			[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
+			taFevalCount += fevalIncr; clear fevalIncr;
 			if ( 0~= retCode )
 				msgretcodeif( true, __FILE__, __LINE__, retCode );
 			endif
@@ -671,6 +672,7 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep_
 	if ( isempty(matVLocal) || norm(matVLocal'*matV*vecY) < (1.0-sqrt(eps))*norm(vecY) )
 		vecU = matV*vecY;
 		vecV = __calcOrthonorm( vecU, matVLocal, prm );
+		vecV = matV*(matV'*vecV); % Force in subspace for numerical stability.
 		[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
 		tsFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
