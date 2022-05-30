@@ -414,18 +414,21 @@ function [ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, pr
 	if (hack0529)
 	vecY_loVar = vecY_zeroV;
 	vecY_hiVar = vecY_zeroV;
+	funchEta_zeroV = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + abs((y'*matWTW*y)/2.0) ]) );
+	funchEta_loVar = @(y)( sumsq(vecF)*10.0 + norm(vecWTF)*norm(y)*10.0 + norm(y)*norm(matWTW*y)*10.0 + norm(y)*norm(matALo*y)*10.0 );
+	funchEta_hiVar = @(y)( sumsq(vecF)*10.0 + norm(vecWTF)*norm(y)*10.0 + norm(y)*norm(matWTW*y)*10.0 + norm(y)*norm(matAHi*y)*10.0 );
 	else
 	vecY_loVar = __findCandStep( matWTW + matALo, vecWTF, matC, matB, 1.0, prm );
 	vecY_hiVar = __findCandStep( matWTW + matAHi, vecWTF, matC, matB, 1.0, prm );
-	endif
-	
-	
 	%
 	% "eta" is estimate for cost function;
 	% "omega" is observed values.
 	funchEta_zeroV = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + abs((y'*matWTW*y)/2.0) ]) );
 	funchEta_loVar = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + abs((y'*matWTW*y)/2.0) + abs((y'*matALo*y)/2.0) ]) );
 	funchEta_hiVar = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + abs((y'*matWTW*y)/2.0) + abs((y'*matAHi*y)/2.0) ]) );
+	endif
+	
+	
 	%
 	if ( prm.verbLev >= VERBLEV__DETAILS+10 )
 		if ( 0 == sizeVLocal )
@@ -517,6 +520,8 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	if (hack0529)
 		clear vecY_loVar;
 		clear vecY_hiVar;
+		clear funchEta_loVar;
+		clear funchEta_hiVar;
 		%
 		%
 		omegaDynaThresh = 0.1 * omega * ( omega / omega_initial )^0.5;
@@ -538,15 +543,19 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		%
 		%
 		%
-		if ( funchEta_hiVar(vecY_zeroV) <= max([ omegaDynaThresh, prm.omegaTol ]) )
-			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( " Action: Try step ( approach %9.2e -> %9.2e / %9.2e / %9.2e ).", ...
-			 omega, funchEta_zeroV(vecY_zeroV), funchEta_loVar(vecY_zeroV), funchEta_hiVar(vecY_zeroV) ) );
+		%%%if ( funchEta_hiVar(vecY_zeroV) <= max([ omegaDynaThresh, prm.omegaTol ]) )
+		if ( funchEta_zeroV(vecY_zeroV) <= max([ omegaDynaThresh, prm.omegaTol ]) ) %%%
+		vecYLocal = matVLocal'*(matV*vecY_zeroV); %%%
+		if ( norm(vecYLocal) > (1.0-sqrt(eps))*norm(vecY_zeroV) ) %%%
+			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( " Action: Try step ( approach %9.2e -> %9.2e ).", ...
+			 omega, funchEta_zeroV(vecY_zeroV) ) );
 			[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY_zeroV, funchF, fModelDat, studyDat, prm );
 			taFevalCount += fevalIncr; clear fevalIncr;
 			if ( 0~= retCode )
 				msgretcodeif( true, __FILE__, __LINE__, retCode );
 			endif
 			return;
+		endif %%%
 		endif
 		%
 		%
@@ -804,6 +813,11 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep_
 
 	hack0529 = true;
 	if (hack0529)
+		clear vecY_loVar;
+		clear vecY_hiVar;
+		clear funchEta_loVar;
+		clear funchEta_hiVar;
+		%
 		omgaAcceptThresh = 0.5*omega;
 		if ( omega_trial < omgaAcceptThresh)
 		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
