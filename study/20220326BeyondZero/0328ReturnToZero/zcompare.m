@@ -11,12 +11,13 @@ if ( stopsignalpresent() )
 endif
 %
 %
-sizeX = 50;
-%fType = 3;
-fType = 5;
-fSeed = -1;
+sizeX = 20;
+fType = 510;
+fSeed = 81871680;
 %fSeed = 21203424;
-fSeed = 42795616;
+%fSeed = 42795616;
+%fSeed = 12824896;
+%fSeed = 73603072;
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
@@ -48,7 +49,8 @@ else
 numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 500; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 3000; curveType = "b"; runList(numRuns).r.prmMemo = "curve b";
-numRuns++; runList(numRuns).r.runType = 1195; runList(numRuns).r.prm = []; runList(numRuns).r.prm.verbLev = VERBLEV__DETAILED+10; runList(numRuns).r.prmMemo = "";
+%numRuns++; runList(numRuns).r.runType = 1195; runList(numRuns).r.prm = []; runList(numRuns).r.prm.verbLev = VERBLEV__DETAILED+10; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 1195; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 
 if (0)
 numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";

@@ -24,3 +24,15 @@ Dog leg...
 5_9073120x100: DL stalls painfully.
 5_83206912x100: DL slightly worse.
 5_6692928x100: DL stalls painfully here too.
+
+
+2022-05-29
+Comparing 800, z100, z195:
+1020_97538240x50: zlinsolf195 -> findLevPt_0527 hits itermax.
+1020_12824896x50: z195 is best.
+1020_73603072x50: z195 near-stalls
+520_83380848x50: z195 near-stalls
+520_95445360x50: All 3 good.
+520_44297536x50: zlinsolf195 -> findLevPt_0527 issues.
+510_35164096x20: z195 near-stalls
+510_81871680x20: z915 stallingishly
