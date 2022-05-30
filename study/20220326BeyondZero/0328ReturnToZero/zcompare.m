@@ -11,9 +11,11 @@ if ( stopsignalpresent() )
 endif
 %
 %
-sizeX = 20;
-fType = 510;
-fSeed = 81871680;
+sizeX = 50;
+fType = 520;
+%fSeed = 81871680;
+fSeed = -1;
+%fSeed = 30916624;
 %fSeed = 21203424;
 %fSeed = 42795616;
 %fSeed = 12824896;
@@ -47,10 +49,10 @@ resumeRun = 0;
 else
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 500; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
+%numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 3000; curveType = "b"; runList(numRuns).r.prmMemo = "curve b";
-numRuns++; runList(numRuns).r.runType = 1195; runList(numRuns).r.prm = []; runList(numRuns).r.prm.verbLev = VERBLEV__DETAILED+10; runList(numRuns).r.prmMemo = "";
-%numRuns++; runList(numRuns).r.runType = 1195; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
+%numRuns++; runList(numRuns).r.runType = 1195; runList(numRuns).r.prm = []; runList(numRuns).r.prm.verbLev = VERBLEV__DETAILED+10; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 1195; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 
 if (0)
 numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";

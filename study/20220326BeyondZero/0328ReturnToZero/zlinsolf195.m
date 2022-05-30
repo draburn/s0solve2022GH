@@ -234,7 +234,8 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	prm.cholRelTol = sqrt(eps);
 	prm.epsRelRegu = sqrt(eps);
 	%%%prm.candStepRelTol = 0.2;
-	prm.candStepRelTol = sqrt(eps);
+	%%%prm.candStepRelTol = sqrt(eps);
+	prm.candStepRelTol = 1.0e-4;
 	prm.findLevPrm = [];
 	prm.findLevPrm.cholRelTol = prm.cholRelTol;
 	prm.findLevPrm.epsRelRegu = prm.epsRelRegu;
@@ -407,8 +408,18 @@ function [ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, pr
 	%
 	vecY_ideal = __findCandStep( matWTW, vecWTF, matC, [], [], prm );
 	vecY_zeroV = __findCandStep( matWTW, vecWTF, matC, matB, 1.0, prm );
+	
+	
+	hack0529 = true;
+	if (hack0529)
+	vecY_loVar = vecY_zeroV;
+	vecY_hiVar = vecY_zeroV;
+	else
 	vecY_loVar = __findCandStep( matWTW + matALo, vecWTF, matC, matB, 1.0, prm );
 	vecY_hiVar = __findCandStep( matWTW + matAHi, vecWTF, matC, matB, 1.0, prm );
+	endif
+	
+	
 	%
 	% "eta" is estimate for cost function;
 	% "omega" is observed values.
@@ -499,6 +510,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%
 	%
 	omega = sumsq(vecF)/2.0;
+	omega_initial = sumsq(vecF)/2.0;
 	
 	
 	hack0529 = true;
@@ -507,7 +519,8 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		clear vecY_hiVar;
 		%
 		%
-		if ( funchEta_zeroV(vecY_ideal) > prm.omegaTol )
+		omegaDynaThresh = 0.1 * omega * ( omega / omega_initial )^0.5;
+		if ( funchEta_zeroV(vecY_ideal) > max([ 0.1*omegaDynaThresh, prm.omegaTol ]) )
 			vecRhoF = matW(:,end);
 			vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
 			vecV = __calcOrthonorm( vecU, matV, prm );
@@ -525,7 +538,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		%
 		%
 		%
-		if ( funchEta_hiVar(vecY_zeroV) <= 0.1 * omega )
+		if ( funchEta_hiVar(vecY_zeroV) <= max([ omegaDynaThresh, prm.omegaTol ]) )
 			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( " Action: Try step ( approach %9.2e -> %9.2e / %9.2e / %9.2e ).", ...
 			 omega, funchEta_zeroV(vecY_zeroV), funchEta_loVar(vecY_zeroV), funchEta_hiVar(vecY_zeroV) ) );
 			[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY_zeroV, funchF, fModelDat, studyDat, prm );
@@ -552,7 +565,9 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		endif
 		%
 		%
-		error( "Looks like there's no good action." );
+		msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "No good action; giving up." );
+		retCode = RETCODE__ALGORITHM_BREAKDOWN;
+		return;
 	endif
 	
 	

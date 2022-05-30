@@ -36,3 +36,10 @@ Comparing 800, z100, z195:
 520_44297536x50: zlinsolf195 -> findLevPt_0527 issues.
 510_35164096x20: z195 near-stalls
 510_81871680x20: z915 stallingishly
+
+z195 hack0529...
+510_30916624x100: 800 better
+510_24069488x100: z195 much worse
+510_59560624x100: about the same (lack of coasting?)
+520_9023600x50: NGAGU
+520_88856800x50520_88856800x50
