@@ -75,11 +75,11 @@ case 1150
 	r.isValid = true;
 case 1195
 	r.runTypeDescrip = "z195";
-	[ r.vecXF, r.vecFF, r.datOut ] = zlinsolf195( funchF, vecX0, [], r.prm );
-	r.fevalCount = r.datOut.fevalCount;
-	r.stepCount = r.datOut.stepCount;
+	[ r.vecXF, r.vecFF, r.retCode, r.fevalCount, r.stepsCount, r.datOut ] = zlinsolf195( funchF, vecX0, [], r.prm );
+	r.stepCount = r.stepsCount;
 	r.fevalCountOfStep = r.datOut.fevalCountOfSteps;
 	r.fBestNormOfStep = r.datOut.fNormOfSteps;
+	r.isValid = true;
 case 1200
 	r.runTypeDescrip = "z200";
 	[ r.vecXF, r.vecFF, r.datOut ] = zlinsolf200( funchF, vecX0, [], r.prm );
@@ -102,4 +102,4 @@ msg( __FILE__, __LINE__, "TODO: If run did not converge, resume with a different
 %
 r.elapsedTime = time()-runStartTime;
 msg( __FILE__, __LINE__, sprintf( "Run '%s' (%s) reached %0.3e in %0.3es with %d fevals.", ...
-  r.runName, r.runTypeDescrip, norm(r.vecFF), r.elapsedTime, r.datOut.fevalCount ) );
+  r.runName, r.runTypeDescrip, norm(r.vecFF), r.elapsedTime, r.fevalCount ) );

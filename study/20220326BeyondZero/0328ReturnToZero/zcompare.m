@@ -1,5 +1,6 @@
 clear;
-setVerbLevs;
+%%%setVerbLevs;
+mydefs;
 mainStartTime = time();
 mainStartDatestr = datestr(now,31);
 printf( "\n\n" );
@@ -19,24 +20,15 @@ zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
 %
-if (1)
-	msg( __FILE__, __LINE__, "Doing *simple* one-shot." );
+if (0)
+	msg( __FILE__, __LINE__, "Doing simple one-shot." );
 	prm = [];
-	prm.iterMax = 2000; zlinsolf100( funchF, vecX0, [], prm );
-	%zlinsolf195( funchF, vecX0, [], prm );
+	prm.verbLev = VERBLEV__COPIOUS;
+	prm.valdLev = VALDLEV__VERY_HIGH;
+	%prm.iterMax = 2000; zlinsolf100( funchF, vecX0, [], prm );
+	zlinsolf195( funchF, vecX0, [], prm );
 	msg( __FILE__, __LINE__, "Goodbye." );
 	return;
-endif
-%
-if (1)
-	msg( __FILE__, __LINE__, "Doing one-shot." );
-	numRuns = 0;
-	runIndex = 0;
-	r.runType = 1200;
-	r.prm = [];
-	r.prmMemo = "";
-	zcompare__doRun;
-	msg( __FILE__, __LINE__, "Goodbye!" ); return;
 endif
 %
 %
@@ -52,9 +44,12 @@ numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 2
 resumeRun = 0;
 else
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-%numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 500; runList(numRuns).r.prmMemo = "";
-%numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
-%numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prm. curveType = "b"; runList(numRuns).r.prmMemo = "curve b";
+numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 500; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 3000; curveType = "b"; runList(numRuns).r.prmMemo = "curve b";
+numRuns++; runList(numRuns).r.runType = 1195; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
+
+if (0)
 numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prm.epsFD = 1.0E-6; runList(numRuns).r.prmMemo = "eps-6";
 numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prm.epsFD = 1.0E-5; runList(numRuns).r.prmMemo = "eps-5";
@@ -64,6 +59,7 @@ numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3
 numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prm.epsFD = 1.0E-1; runList(numRuns).r.prmMemo = "eps-1";
 numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prm.epsFD = 1.0E0; runList(numRuns).r.prmMemo = "eps0";
 numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prm.epsFD = 1.0E+1; runList(numRuns).r.prmMemo = "eps+1";
+endif
 
 if (0)
 	numRuns++;

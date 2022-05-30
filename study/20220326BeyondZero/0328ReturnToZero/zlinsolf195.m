@@ -57,6 +57,11 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = zlinsolf195( 
 	vecX = vecX_initial;
 	vecF = vecF_initial;
 	omega = sumsq(vecF)/2.0;
+	datOut.fevalCountOfSteps(stepsCount+1) = fevalCount;
+	datOut.fNormOfSteps(stepsCount+1) = norm(vecF);
+	datOut.vecXOfSteps(:,stepsCount+1) = vecX;
+	datOut.vecFOfSteps(:,stepsCount+1) = vecF;
+	%
 	[ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, prm );
 	fevalCount += fevalIncr; clear fevalIncr;
 	if ( 0~=retCode )
@@ -101,12 +106,12 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = zlinsolf195( 
 		if ( prm.verbLev >= VERBLEV__DETAILS )
 			%msg( __FILE__, __LINE__, "Progress..." );
 			msg( __FILE__, __LINE__, sprintf( ...
-			  "   time: %8.2e;  iter: %3d;  feval: %3d;  steps: %3d;  size: %3d / %3d;  omega: %8.2e.", ...
+			  "   time: %9.2e;  iter: %3d;  feval: %3d;  steps: %3d;  size: %3d / %3d ( / %d x %d );  omega: %8.2e.", ...
 			  time()-startTime, ...
 			  iterCount, ...
 			  fevalCount, ...
 			  stepsCount, ...
-			  size(fModelDat.matVLocal,2), size(fModelDat.matV,2), ...
+			  size(fModelDat.matVLocal,2), size(fModelDat.matV,2), size(vecX_initial,1), size(vecF_initial,1), ...
 			  sumsq(vecF)/2.0 ) );
 		endif
 		[ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, prm );
@@ -142,6 +147,10 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = zlinsolf195( 
 			vecX = vecX_next;
 			vecF = vecF_next;
 			omega = omega_next;
+			datOut.fevalCountOfSteps(stepsCount+1) = fevalCount;
+			datOut.fNormOfSteps(stepsCount+1) = norm(vecF);
+			datOut.vecXOfSteps(:,stepsCount+1) = vecX;
+			datOut.vecFOfSteps(:,stepsCount+1) = vecF;
 			clear vecX_next;
 			clear vecF_next;
 			clear omega_next;
@@ -152,12 +161,12 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = zlinsolf195( 
 	if ( prm.verbLev >= VERBLEV__INFO )
 		msg( __FILE__, __LINE__, "Final..." );
 		msg( __FILE__, __LINE__, sprintf( ...
-		  "   time: %8.2e;  iter: %3d;  feval: %3d;  steps: %3d;  size: %3d / %3d;  omega: %8.2e.", ...
+		  "   time: %9.2e;  iter: %3d;  feval: %3d;  steps: %3d;  size: %3d / %3d ( / %d x %d );  omega: %8.2e.", ...
 		  time()-startTime, ...
 		  iterCount, ...
 		  fevalCount, ...
 		  stepsCount, ...
-		  size(fModelDat.matVLocal,2), size(fModelDat.matV,2), ...
+		  size(fModelDat.matVLocal,2), size(fModelDat.matV,2), size(vecX_initial,1), size(vecF_initial,1), ...
 		  sumsq(vecF)/2.0 ) );
 	endif
 return;
@@ -187,8 +196,8 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	%
 	%prm.verbLev = VERBLEV__FLAGGED; prm.valdLev = VALDLEV__LOW; % "Production / optimization".
 	%prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__MEDIUM; % Late integration.
-	%prm.verbLev = VERBLEV__PROGRESS; prm.valdLev = VALDLEV__HIGH; % Early integration.
-	prm.verbLev = VERBLEV__DETAILS; prm.valdLev = VALDLEV__HIGH; % Dev / refine.
+	prm.verbLev = VERBLEV__PROGRESS; prm.valdLev = VALDLEV__HIGH; % Early integration.
+	%prm.verbLev = VERBLEV__DETAILS; prm.valdLev = VALDLEV__HIGH; % Dev / refine.
 	%prm.verbLev = VERBLEV__COPIOUS; prm.valdLev = VALDLEV__VERY_HIGH; % Deep dev.
 	%prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Debug.
 	%
