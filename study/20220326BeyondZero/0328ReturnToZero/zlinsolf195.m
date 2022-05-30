@@ -241,6 +241,7 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	prm.expandRelThresh = 0.5;
 	prm.stallRelThresh = 1.0E-4;
 	prm.tryFallRelThresh = 0.9;
+	prm.acceptFallRelThresh = 0.1;
 	prm.reevalFallRelThresh = 0.1;
 	%
 	prm.trExpandCoeff = 1.5;
@@ -301,6 +302,8 @@ function [ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, p
 	%
 	sizeX = size(vecX,1);
 	%
+	fModelDat.vecX_initial = vecX;
+	fModelDat.vecF_initial = vecF;
 	fModelDat.vecX = vecX;
 	fModelDat.vecF = vecF;
 	fModelDat.matV = [ vecV ];
@@ -490,9 +493,11 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	omega = sumsq(vecF)/2.0;
 	%
 	%
+	if (0)
 	% Initially, be fairly aggressive in expanding subspace.
 	if ( strcmpi(strState,"init") ) % CAUTION: MATLAB strmpi is opposite of C/C++.
 	if ( funchEta_zeroV(vecY_ideal) > prm.omegaTol * ( ( omega / prm.omegaTol ) ^ (1.0-prm.initExpandExp) ) )
+	%%%if ( funchEta_zeroV(vecY_ideal) > max([ prm.omegaTol, prm.expandRelThresh^2 * omega]) )
 		vecRhoF = matW(:,end);
 		vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
 		vecV = __calcOrthonorm( vecU, matV, prm );
@@ -507,10 +512,16 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		endif
 	endif
 	endif
+	endif
 	%
-	% Later, be not so aggressive, but still try to achieve super-linear convergence.
-	% TODO: Try to make this offer super-linear convergence.
+	%
+	%%%omega_initial = sumsq(fModelDat.vecF_initial)/2.0;
+	%%%expandOmegaTol = max([ prm.omegaTol, ...
+	%%%  prm.expandRelThresh * prm.omegaTol * ( omega / prm.omegaTol )^0.1, ...
+	%%%  prm.expandRelThresh * omega * (omega/omega_initial)^0.1 ]);
 	if ( funchEta_zeroV(vecY_ideal) > max([ prm.omegaTol, prm.expandRelThresh * omega]) )
+	%%%if ( funchEta_zeroV(vecY_ideal) > max([ prm.omegaTol, prm.expandRelThresh * omega * sqrt(omega/omega_initial) ]) )
+	%%%if ( funchEta_zeroV(vecY_ideal) > expandOmegaTol )
 		vecRhoF = vecF - matW * vecY_ideal;
 		vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
 		vecV = __calcOrthonorm( vecU, matV, prm );
@@ -562,8 +573,10 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	endif
 	%
 	%
-	if ( funchEta_loVar(vecY_loVar) >= omega + prm.reevalFallRelThresh * ( funchEta_zeroV(vecY_zeroV) - omega ) )
+	%%%if ( funchEta_loVar(vecY_loVar) >= omega + prm.reevalFallRelThresh * ( funchEta_zeroV(vecY_zeroV) - omega ) )
+	if (1)
 		vecV = __calcOrthonorm( matV*vecY_loVar, matVLocal, prm );
+		%%%vecV = __calcOrthonorm( matV*vecY_zeroV, matVLocal, prm );
 		if ( norm(vecV) > sqrt(eps) )
 			vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
 			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, " Action: Re-evaluate direction." );
@@ -691,6 +704,14 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep_
 	sizeB = size(matB,1);
 	sizeVLocal = size(matVLocal,2);
 	%
+	vecY_ideal = studyDat.vecY_ideal;
+	vecY_zeroV = studyDat.vecY_zeroV;
+	vecY_loVar = studyDat.vecY_loVar;
+	vecY_hiVar = studyDat.vecY_hiVar;
+	funchEta_zeroV = studyDat.funchEta_zeroV;
+	funchEta_loVar = studyDat.funchEta_loVar;
+	funchEta_hiVar = studyDat.funchEta_hiVar;
+	%
 	vecX_trial = vecX + matV * vecY;
 	vecF_trial = funchF( vecX_trial );
 	tsFevalCount++;
@@ -698,10 +719,11 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep_
 	omega = sumsq(vecF)/2.0;
 	omega_trial = sumsq(vecF_trial)/2.0;
 	%
-	if ( omega_trial < omega )
+	omgaAcceptThresh = omega + prm.acceptFallRelThresh * ( funchEta_zeroV(vecY_zeroV) - omega );
+	if ( omega_trial < omgaAcceptThresh )
 		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
-		  "  Accepting step: %9.2e -> %9.2e ( down frac %9.2e, remain frac %9.2e ).", ...
-		  omega, omega_trial, 1.0 - omega_trial/omega, omega_trial/omega ) );
+		  "  Accepting step: %9.2e -> %9.2e < %9.2e ( down frac %9.2e, remain frac %9.2e ).", ...
+		  omega, omega_trial, omgaAcceptThresh, 1.0 - omega_trial/omega, omega_trial/omega ) );
 		vecX_next = vecX_trial;
 		vecF_next = vecF_trial;
 		if ( prm.trExpandCoeff*norm(matB*vecY) >= 1.0 )
@@ -723,8 +745,8 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep_
 		return;
 	endif
 	msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
-	  "  Rejecting step: %9.2e -> %9.2e ( up frac %9.2e, scale frac %9.2e ).", ...
-	  omega, omega_trial, omega_trial/omega - 1.0, omega_trial/omega ) );
+	  "  Rejecting step: %9.2e -> %9.2e > %9.2e ( up frac %9.2e, scale frac %9.2e ).", ...
+	  omega, omega_trial, omgaAcceptThresh, omega_trial/omega - 1.0, omega_trial/omega ) );
 	%
 	assert( abs(norm(matV*vecY) - norm(vecY)) < sqrt(eps) );
 	vecU = matV*vecY;
@@ -799,6 +821,23 @@ function [ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fM
 	matAHi_updated = ( matIV - vecYHat*(vecYHat') ) * matAHi * ( matIV - vecYHat*(vecYHat') );
 	matALo_updated = (matALo_updated'+matALo_updated)/2.0;
 	matAHi_updated = (matAHi_updated'+matAHi_updated)/2.0;
+	[ matRLo, cholFlag ] = chol(matALo_updated);
+	if (0)
+	if ( 0 ~= cholFlag || min(diag(matRLo)) <= prm.cholRelTol * max(abs(diag(matRLo))) )
+		matALo_updated += max(max(abs(matALo_updated)))*sqrt(eps)*matIV;
+	endif
+	[ matRHi, cholFlag ] = chol(matAHi_updated);
+	if ( 0 ~= cholFlag || min(diag(matRHi)) <= prm.cholRelTol * max(abs(diag(matRHi))) )
+		matAHi_updated += max(max(abs(matAHi_updated)))*sqrt(eps)*matIV;
+	endif
+	elseif (1)
+	if ( min(diag(matALo_updated)) < 0.0 )
+		matALo_updated += abs(min(diag(matALo_updated)))*(1.0+sqrt(eps))*matIV;
+	endif
+	if ( min(diag(matAHi_updated)) < 0.0 )
+		matAHi_updated += abs(min(diag(matAHi_updated)))*(1.0+sqrt(eps))*matIV;
+	endif
+	endif
 	%
 	%
 	%
@@ -882,6 +921,23 @@ function [ retCode, fevalIncr, fModelDat ] = __moveTo( vecY, vecF_next, funchF, 
 	matAHi_updated = matEHi' * ( matAHi + diag(vecDHi) ) * matEHi;
 	matALo_updated = (matALo_updated'+matALo_updated)/2.0;
 	matAHi_updated = (matAHi_updated'+matAHi_updated)/2.0;
+	if ( 0 )
+	[ matRLo, cholFlag ] = chol(matALo_updated);
+	if ( 0 ~= cholFlag || min(diag(matRLo)) <= prm.cholRelTol * max(abs(diag(matRLo))) )
+		matALo_updated += max(max(abs(matALo_updated)))*sqrt(eps)*matIV;
+	endif
+	[ matRHi, cholFlag ] = chol(matAHi_updated);
+	if ( 0 ~= cholFlag || min(diag(matRHi)) <= prm.cholRelTol * max(abs(diag(matRHi))) )
+		matAHi_updated += max(max(abs(matAHi_updated)))*sqrt(eps)*matIV;
+	endif
+	elseif (1)
+	if ( min(diag(matALo_updated)) < 0.0 )
+		matALo_updated += abs(min(diag(matALo_updated)))*(1.0+sqrt(eps))*matIV;
+	endif
+	if ( min(diag(matAHi_updated)) < 0.0 )
+		matAHi_updated += abs(min(diag(matAHi_updated)))*(1.0+sqrt(eps))*matIV;
+	endif
+	endif
 	%
 	%
 	%
