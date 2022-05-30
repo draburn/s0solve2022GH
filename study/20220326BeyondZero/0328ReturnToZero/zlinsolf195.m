@@ -169,6 +169,13 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = zlinsolf195( 
 		  size(fModelDat.matVLocal,2), size(fModelDat.matV,2), size(vecX_initial,1), size(vecF_initial,1), ...
 		  sumsq(vecF)/2.0 ) );
 	endif
+	if (1)
+		stepsCount++;
+		datOut.fevalCountOfSteps(stepsCount+1) = fevalCount;
+		datOut.fNormOfSteps(stepsCount+1) = norm(vecF);
+		datOut.vecXOfSteps(:,stepsCount+1) = vecX;
+		datOut.vecFOfSteps(:,stepsCount+1) = vecF;
+	endif
 return;
 endfunction
 
@@ -493,11 +500,12 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	omega = sumsq(vecF)/2.0;
 	%
 	%
-	if (0)
+	if (1)
 	% Initially, be fairly aggressive in expanding subspace.
 	if ( strcmpi(strState,"init") ) % CAUTION: MATLAB strmpi is opposite of C/C++.
-	if ( funchEta_zeroV(vecY_ideal) > prm.omegaTol * ( ( omega / prm.omegaTol ) ^ (1.0-prm.initExpandExp) ) )
+	%%%if ( funchEta_zeroV(vecY_ideal) > prm.omegaTol * ( ( omega / prm.omegaTol ) ^ (1.0-prm.initExpandExp) ) )
 	%%%if ( funchEta_zeroV(vecY_ideal) > max([ prm.omegaTol, prm.expandRelThresh^2 * omega]) )
+	if ( funchEta_zeroV(vecY_ideal) > prm.expandRelThresh * prm.omegaTol * ( ( omega / prm.omegaTol ) ^ 0.9 ) )
 		vecRhoF = matW(:,end);
 		vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
 		vecV = __calcOrthonorm( vecU, matV, prm );
@@ -559,6 +567,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%
 	%
 	if ( funchEta_hiVar(vecY_hiVar) <= omega + prm.tryFallRelThresh * ( funchEta_zeroV(vecY_zeroV) - omega ) )
+	%%%if ( funchEta_hiVar(vecY_zeroV) <= omega + prm.tryFallRelThresh * ( funchEta_zeroV(vecY_zeroV) - omega ) )
 		%error( "TODO: Something like __tryStep( vecY_hiVar, funchF, fModelDat, prm );" );
 		%% Note: __tryStep() may internally update fModelDat and call __studyFModel(),
 		%%  making the next itertion's call to __studyFModel() redundant. POITROME.
@@ -748,6 +757,7 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep_
 	  "  Rejecting step: %9.2e -> %9.2e > %9.2e ( up frac %9.2e, scale frac %9.2e ).", ...
 	  omega, omega_trial, omgaAcceptThresh, omega_trial/omega - 1.0, omega_trial/omega ) );
 	%
+	didReeval = false;
 	assert( abs(norm(matV*vecY) - norm(vecY)) < sqrt(eps) );
 	vecU = matV*vecY;
 	vecV = __calcOrthonorm( vecU, matVLocal, prm );
@@ -760,10 +770,12 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep_
 			msgretcodeif( true, __FILE__, __LINE__, retCode );
 			return;
 		endif
+		didReeval = true;
 	endif
 	%
-	vecFModel = vecF + matW * vecY;
-	if ( norm(vecFModel) < norm(vecF_trial) )
+	%%%vecFModel = vecF + matW * vecY;
+	%%%if ( norm(vecFModel) < norm(vecF) )
+	if (1)
 		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Shrinking trust region." );
 		% Add barrier to prevent re-trial.
 		[ retCode, fevalIncr, fModelDat ] = __shrinkTR( funchF, prm.trShrinkCoeff*vecY, fModelDat, prm );
@@ -772,8 +784,11 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep_
 			msgretcodeif( true, __FILE__, __LINE__, retCode );
 			return;
 		endif
+	elseif (~didReeval)
+		assert( "Neither re-eval nor shrink." );
 	endif
 	%
+	retCode = RETCODE__SUCCESS;
 	return;
 endfunction
 
@@ -1167,8 +1182,8 @@ function [ retCode, fevalIncr, fModelDat ] = __modifyB( funchF, vecY, fModelDat,
 		assert( isrealarray(matB,[sizeB,sizeV]) );
 	endif
 	vecYHat = vecY/yNorm;
-	matEY = eye(sizeV,sizeV) - vecYHat*(vecYHat');
-	matB = matEY'*matB*matEY + vecYHat*(vecYHat');
+	matEY = eye(sizeV,sizeV) - vecYHat*(vecYHat')/yNorm;
+	matB = matEY'*matB*matEY + vecYHat*(vecYHat')/yNorm;
 	fModelDat.matB = (matB'+matB)/2.0;
 	%
 	retCode = RETCODE__SUCCESS;
