@@ -1,15 +1,16 @@
 % High Priority:
 % TODO: Compare to zlinsolf100 and get working comprably well.
-% TODO: Write non-_crude() __tryStep().
-% TODO: Modify trigger for expand() to aim for super-linear convergence.
+% TODO: Compare to findZero800 and get working comprably well.
+% TODO:  Conventional AP benefits from J ~ I. We best sense and exploit J ~ D.
 % TODO: Consider more desperation moves, such as expanding per any matW column or normal basis vector.
-% NEXT VER: Move "Expand subspace (init)" to __initFModel()?
 
 % Lower Priority:
+% TODO: Write __tryStep() with re-try and "latest trial is worse than previous trial!" handling.
 % TODO: Update epsFD based on steps taken.
 % TODO: Add scaling-matrix preconditioning.
 % TODO: Allow for evaluating a subspace vector that is not entirely outside matV if the preconditioner seems highly reliable.
 % TODO: Bad-local min handling + jump.
+% NEXT VER: Move "Expand subspace (init)" to __initFModel()?
 
 % Consider:
 % TODO: Avoid __studyFModel() redundancy in __tryStep(),
@@ -498,6 +499,63 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%
 	%
 	omega = sumsq(vecF)/2.0;
+	
+	
+	hack0529 = true;
+	if (hack0529)
+		clear vecY_loVar;
+		clear vecY_hiVar;
+		%
+		%
+		if ( funchEta_zeroV(vecY_ideal) > prm.omegaTol )
+			vecRhoF = matW(:,end);
+			vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
+			vecV = __calcOrthonorm( vecU, matV, prm );
+			if ( norm(vecV) > sqrt(eps) )
+				msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, " Action: Expand subspace." );
+				[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
+				taFevalCount += fevalIncr; clear fevalIncr;
+				if ( 0~= retCode )
+					msgretcodeif( true, __FILE__, __LINE__, retCode );
+				endif
+				return;
+			endif
+		endif
+		%
+		%
+		%
+		%
+		if ( funchEta_hiVar(vecY_zeroV) <= 0.1 * omega )
+			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( " Action: Try step ( approach %9.2e -> %9.2e / %9.2e / %9.2e ).", ...
+			 omega, funchEta_zeroV(vecY_zeroV), funchEta_loVar(vecY_zeroV), funchEta_hiVar(vecY_zeroV) ) );
+			[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY_zeroV, funchF, fModelDat, studyDat, prm );
+			taFevalCount += fevalIncr; clear fevalIncr;
+			if ( 0~= retCode )
+				msgretcodeif( true, __FILE__, __LINE__, retCode );
+			endif
+			return;
+		endif
+		%
+		%
+		if (1)
+			vecV = __calcOrthonorm( matV*vecY_zeroV, matVLocal, prm );
+			if ( norm(vecV) > sqrt(eps) )
+				vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
+				msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, " Action: Re-evaluate direction." );
+				[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
+				taFevalCount += fevalIncr; clear fevalIncr;
+				if ( 0~= retCode )
+					msgretcodeif( true, __FILE__, __LINE__, retCode );
+				endif
+				return;
+			endif
+		endif
+		%
+		%
+		error( "Looks like there's no good action." );
+	endif
+	
+	
 	%
 	%
 	if (1)
@@ -727,6 +785,52 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep_
 	%
 	omega = sumsq(vecF)/2.0;
 	omega_trial = sumsq(vecF_trial)/2.0;
+
+
+	hack0529 = true;
+	if (hack0529)
+		omgaAcceptThresh = 0.5*omega;
+		if ( omega_trial < omgaAcceptThresh)
+		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
+			  "  Accepting step: %9.2e -> %9.2e < %9.2e ( down frac %9.2e, remain frac %9.2e ).", ...
+			  omega, omega_trial, omgaAcceptThresh, 1.0 - omega_trial/omega, omega_trial/omega ) );
+			vecX_next = vecX_trial;
+			vecF_next = vecF_trial;
+			if ( prm.trExpandCoeff*norm(matB*vecY) >= 1.0 )
+			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Expanding trust region." );
+				[ retCode, fevalIncr, fModelDat ] = __expandTR( funchF, prm.trExpandCoeff*vecY, fModelDat, prm );
+				tsFevalCount += fevalIncr; clear fevalIncr;
+				if ( 0~= retCode )
+					msgretcodeif( true, __FILE__, __LINE__, retCode );
+					return;
+				endif
+			endif
+			[ retCode, fevalIncr, fModelDat ] = __moveTo( vecY, vecF_next, funchF, fModelDat, prm );
+			tsFevalCount += fevalIncr; clear fevalIncr;
+			if ( 0~= retCode )
+				msgretcodeif( true, __FILE__, __LINE__, retCode );
+				return;
+			endif
+			retCode = RETCODE__SUCCESS;
+			return;
+		endif
+		%
+		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
+		  "  Rejecting step: %9.2e -> %9.2e > %9.2e ( up frac %9.2e, scale frac %9.2e ).", ...
+		  omega, omega_trial, omgaAcceptThresh, omega_trial/omega - 1.0, omega_trial/omega ) );
+		%
+		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Shrinking trust region." );
+		% Add barrier to prevent re-trial.
+		[ retCode, fevalIncr, fModelDat ] = __shrinkTR( funchF, prm.trShrinkCoeff*vecY, fModelDat, prm );
+		tsFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+			return;
+		endif
+		return;
+	endif
+	
+	
 	%
 	omgaAcceptThresh = omega + prm.acceptFallRelThresh * ( funchEta_zeroV(vecY_zeroV) - omega );
 	if ( omega_trial < omgaAcceptThresh )
