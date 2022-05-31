@@ -222,7 +222,6 @@ function [ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, p
 		__validateFModelDat( fModelDat, prm );
 	endif
 	retCode = RETCODE__SUCCESS;
-	%%%error( "Hey, eval more?"); NO
 	return;
 endfunction
 
@@ -250,18 +249,15 @@ function [ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, pr
 	%sizeB = size(matB,1);
 	sizeVLocal = size(matVLocal,2);
 	%
-	
-	error( "Shall we define 'local' versions of each of these?" );
+	omega = sumsq(vecF)/2.0;
 	matIV = eye(sizeV,sizeV);
 	matWTW = matW'*matW;
 	matD = diag(diag(matWTW));
 	vecWTF = matW'*vecF;
 	matBTB = matB'*matB;
-	
-	
 	%
 	if ( ~isempty(prm.matC) )
-		matC = prm.matC;
+		matC = matV'*prm.matC*matV;
 	else
 		switch ( tolower(prm.curveScaling) )
 		case { "1", "eye", "i" }
@@ -301,79 +297,45 @@ function [ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, pr
 	endif
 	%
 	%
-	vecY_unb = __findCandStep( matWTW, vecWTF, matC, [], [], prm );
-	vecY_bnd = __findCandStep( matWTW, vecWTF, matC, matB, 1.0, prm );
+	vecY_unb = findLevPt_0527( vecWTF, matWTW, matC, [], [], prm.findLevPrm );
+	vecY_bnd = findLevPt_0527( vecWTF, matWTW, matC, matB, 1.0, prm.findLevPrm );
+	eta_unb = max([ 0.0, omega + vecWTF'*vecY_unb + abs((vecY_unb'*matWTW*vecY_unb)/2.0) ]);
+	eta_bnd = max([ 0.0, omega + vecWTF'*vecY_bnd + abs((vecY_bnd'*matWTW*vecY_bnd)/2.0) ]);
+	b_unb = norm(matB*vecY_unb);
+	b_bnd = norm(matB*vecY_bnd);
 	if ( isempty(matVLocal) )
 		vecY_loc = [];
+		eta_loc = omega;
+		b_loc = 0.0;
 	else
-		vecY_loc = __findCandStep(foo)
-	endif
-	
-	
-	hack0529 = true;
-	if (hack0529)
-	vecY_loVar = vecY_zeroV;
-	vecY_hiVar = vecY_zeroV;
-	funchEta_zeroV = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + abs((y'*matWTW*y)/2.0) ]) );
-	funchEta_loVar = @(y)( sumsq(vecF)*10.0 + norm(vecWTF)*norm(y)*10.0 + norm(y)*norm(matWTW*y)*10.0 + norm(y)*norm(matALo*y)*10.0 );
-	funchEta_hiVar = @(y)( sumsq(vecF)*10.0 + norm(vecWTF)*norm(y)*10.0 + norm(y)*norm(matWTW*y)*10.0 + norm(y)*norm(matAHi*y)*10.0 );
-	else
-	vecY_loVar = __findCandStep( matWTW + matALo, vecWTF, matC, matB, 1.0, prm );
-	vecY_hiVar = __findCandStep( matWTW + matAHi, vecWTF, matC, matB, 1.0, prm );
-	%
-	% "eta" is estimate for cost function;
-	% "omega" is observed values.
-	funchEta_zeroV = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + abs((y'*matWTW*y)/2.0) ]) );
-	funchEta_loVar = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + abs((y'*matWTW*y)/2.0) + abs((y'*matALo*y)/2.0) ]) );
-	funchEta_hiVar = @(y)( max([ 0.0, sumsq(vecF)/2.0 + vecWTF'*y + abs((y'*matWTW*y)/2.0) + abs((y'*matAHi*y)/2.0) ]) );
-	endif
-	
-	
-	%
-	if ( prm.verbLev >= VERBLEV__DETAILS+10 )
-		if ( 0 == sizeVLocal )
-			funch_yLocNorm = @(y)( 0.0 );
-			funch_bLocNorm = @(y)( 0.0 );
-		else
-			funch_yLocNorm = @(y)( norm(matVLocal'*(matV*y)) );
-			funch_bLocNorm = @(y)( norm(matB*(matV'*(matVLocal*(matVLocal'*(matV*y))))) );
-		endif
-		msg( __FILE__, __LINE__, sprintf( "   vecY_ideal: %8.2e / %8.2e / %8.2e ( %8.2e, %8.2e;  %8.2e, %8.2e ).", ...
-		  funchEta_zeroV(vecY_ideal), funchEta_loVar(vecY_ideal), funchEta_hiVar(vecY_ideal), ...
-		  norm(vecY_ideal), norm(matB*vecY_ideal), funch_yLocNorm(vecY_ideal), funch_bLocNorm(vecY_ideal) ) );
-		msg( __FILE__, __LINE__, sprintf( "   vecY_zeroV: %8.2e / %8.2e / %8.2e ( %8.2e, %8.2e;  %8.2e, %8.2e ).", ...
-		  funchEta_zeroV(vecY_zeroV), funchEta_loVar(vecY_zeroV), funchEta_hiVar(vecY_zeroV), ...
-		  norm(vecY_zeroV), norm(matB*vecY_zeroV), funch_yLocNorm(vecY_zeroV), funch_bLocNorm(vecY_zeroV) ) );
-		msg( __FILE__, __LINE__, sprintf( "   vecY_loVar: %8.2e / %8.2e / %8.2e ( %8.2e, %8.2e;  %8.2e, %8.2e ).", ...
-		  funchEta_zeroV(vecY_loVar), funchEta_loVar(vecY_loVar), funchEta_hiVar(vecY_loVar), ...
-		  norm(vecY_loVar), norm(matB*vecY_loVar), funch_yLocNorm(vecY_loVar), funch_bLocNorm(vecY_loVar) ) );
-		msg( __FILE__, __LINE__, sprintf( "   vecY_hiVar: %8.2e / %8.2e / %8.2e ( %8.2e, %8.2e;  %8.2e, %8.2e ).", ...
-		  funchEta_zeroV(vecY_hiVar), funchEta_loVar(vecY_hiVar), funchEta_hiVar(vecY_hiVar), ...
-		  norm(vecY_hiVar), norm(matB*vecY_hiVar), funch_yLocNorm(vecY_hiVar), funch_bLocNorm(vecY_hiVar) ) );
+		matWLocal = matW*(matV'*matVLocal);
+		matWTWLocal = matWLocal'*matWLocal;
+		vecWTFLocal = matWLocal'*vecF;
+		matCLocal = matVLocal'*matV*matC*matV'*matVLocal;
+		matBLocal = matB*(matV'*matVLocal);
+		vecY_loc = findLevPt_0527( vecWTFLocal, matWTWLocal, matCLocal, matBLocal, 1.0, prm.findLevPrm );
+		eta_loc = max([ 0.0, omega + vecWTF'*vecY_loc + abs((vecY_loc'*matWTW*vecY_loc)/2.0) ]);
+		b_loc = norm(matBLocal*vecY_loc);
 	endif
 	%
 	%
+	studyDat.vecY_unb = vecY_unb;
+	studyDat.vecY_bnd = vecY_bnd;
+	studyDat.vecY_loc = vecY_loc;
+	studyDat.eta_unb = eta_unb;
+	studyDat.eta_bnd = eta_bnd;
+	studyDat.eta_loc = eta_loc;
 	%
-	studyDat.matWTW = matWTW;
-	studyDat.matD = matD;
-	studyDat.vecWTF = vecWTF;
-	studyDat.matBTB = matBTB;
-	studyDat.matC = matC;
-	%
-	studyDat.vecY_ideal = vecY_ideal;
-	studyDat.vecY_zeroV = vecY_zeroV;
-	studyDat.vecY_loVar = vecY_loVar;
-	studyDat.vecY_hiVar = vecY_hiVar;
-	%
-	% "eta" is estimate for cost function;
-	% "omega" is observed values.
-	studyDat.funchEta_zeroV = funchEta_zeroV;
-	studyDat.funchEta_loVar = funchEta_loVar;
-	studyDat.funchEta_hiVar = funchEta_hiVar;
-	%
-	if ( prm.valdLev >= VALDLEV__LOW )
-		__validateStudyDat( fModelDat, studyDat, prm );
+	if ( prm.verbLev >= VERBLEV__DETAILS )
+		msg( __FILE__, __LINE__, sprintf( ...
+		  "   size: %3d / %3d ( / %d x %d );  omega: %8.2e / %8.2e / %8.2e / %8.2e (/ %8.2e);  b: %8.2e / %8.2e / %8.2e.", ...
+		  size(fModelDat.matVLocal,2), size(fModelDat.matV,2), ...
+		  size(fModelDat.vecX_initial,1), size(fModelDat.vecF_initial,1), ...
+		  omega, eta_loc, eta_bnd, eta_unb, prm.omegaTol, ...
+		  b_loc, b_bnd, b_unb ) );
 	endif
+	%
+	%
 	retCode = RETCODE__SUCCESS;
 	return;
 endfunction
