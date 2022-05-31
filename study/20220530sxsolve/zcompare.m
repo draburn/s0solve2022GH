@@ -14,7 +14,7 @@ endif
 sizeX = 50;
 fType = 1010;
 %fSeed = 81871680;
-fSeed = -1;
+fSeed = 0;
 %fSeed = 30916624;
 %fSeed = 21203424;
 %fSeed = 42795616;

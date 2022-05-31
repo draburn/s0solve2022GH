@@ -70,6 +70,7 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf100( fu
 			  size(fModelDat.matVLocal,2), size(fModelDat.matV,2), size(vecX_initial,1), size(vecF_initial,1), ...
 			  sumsq(vecF)/2.0 ) );
 		endif
+		%
 		[ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, prm );
 		fevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
@@ -77,10 +78,43 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf100( fu
 			break
 		endif
 		%
+		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __takeAction( funchF, fModelDat, studyDat, prm );
+		fevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+			break
+		endif
+		if ( ~isempty(vecX_next) )
+			if ( prm.valdLev >= VALDLEV__LOW )
+				assert( ~isempty(vecF_next) );
+				assert( isrealarray(vecX_next,[size(vecX,1),1]) );
+				assert( isrealarray(vecF_next,[size(vecF,1),1]) );
+				assert( norm(vecF_next) < norm(vecF) );
+			endif
+			omega_next = sumsq(vecF_next)/2.0;
+			stepsCount++;
+			if ( prm.verbLev >= VERBLEV__PROGRESS )
+				msg( __FILE__, __LINE__, sprintf( ...
+				  " Step %3d ( at t %8.2e, i %3d, f %3d with %8.2e x %8.2e ):  %8.2e -> %8.2e ( down %8.2e; tol %8.2e ).", ...
+				  stepsCount, time()-startTime, iterCount, fevalCount, ...
+				  norm(vecX_next-vecX) , norm(vecF_next-vecF), ...
+				  omega, omega_next, omega - omega_next, prm.omegaTol ) );
+			endif
+			vecX = vecX_next;
+			vecF = vecF_next;
+			omega = omega_next;
+			%datOut.fevalCountOfSteps(stepsCount+1) = fevalCount;
+			%datOut.fNormOfSteps(stepsCount+1) = norm(vecF);
+			%datOut.vecXOfSteps(:,stepsCount+1) = vecX;
+			%datOut.vecFOfSteps(:,stepsCount+1) = vecF;
+			clear vecX_next;
+			clear vecF_next;
+			clear omega_next;
+		endif
 		%
+		continue;
 	endwhile
 	%
-	error( "END OF VALD CODE." );
 return;
 endfunction
 
@@ -122,15 +156,11 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	prm.epsFD = 1.0e-3;
 	prm.orthoTol = 1.0e-10;
 	%
-	prm.epsB = sqrt(eps);
-	prm.curveType = "lev"; %%%
-	%%%prm.curveType = "powell"; %%%
+	prm.curveType = "lev";
 	prm.curveScaling = "b";
 	prm.matC = [];
 	prm.cholRelTol = sqrt(eps);
 	prm.epsRelRegu = sqrt(eps);
-	%%%prm.candStepRelTol = 0.2;
-	%%%prm.candStepRelTol = sqrt(eps);
 	prm.candStepRelTol = 1.0e-4;
 	prm.findLevPrm = [];
 	prm.findLevPrm.cholRelTol = prm.cholRelTol;
@@ -145,6 +175,8 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	prm.precon_matL = [];
 	prm.precon_matU = [];
 	prm.precon_matJA = [];
+	%
+	% Add other parameters once code more settled.
 	%
 	prm = overwritefields( prm, prmIn );
 	%
@@ -217,6 +249,7 @@ function [ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, p
 	fModelDat.matW = [ vecW ];
 	fModelDat.matB = [ 0.0 ];
 	fModelDat.matVLocal = [ vecV ];
+	fModelDat.matWLocal = [ vecW ];
 	%
 	if ( prm.valdLev >= VALDLEV__LOW )
 		__validateFModelDat( fModelDat, prm );
@@ -242,6 +275,7 @@ function [ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, pr
 	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
 	matB = fModelDat.matB; % Boundary / trust region matrix; (bound) candidate steps must satify ||B*y|| <= 1.
 	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
+	matWLocal = fModelDat.matWLocal;  % Projection of locally evaluated subspace basis matrix.
 	%
 	%sizeX = size(vecX,1);
 	%sizeF = size(vecF,1);
@@ -308,13 +342,13 @@ function [ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, pr
 		eta_loc = omega;
 		b_loc = 0.0;
 	else
-		matWLocal = matW*(matV'*matVLocal);
 		matWTWLocal = matWLocal'*matWLocal;
 		vecWTFLocal = matWLocal'*vecF;
-		matCLocal = matVLocal'*matV*matC*matV'*matVLocal;
 		matBLocal = matB*(matV'*matVLocal);
+		matCLocal = (matVLocal'*matV)*matC*(matV'*matVLocal);
+		matCLocal = (matCLocal'+matCLocal);
 		vecY_loc = findLevPt_0527( vecWTFLocal, matWTWLocal, matCLocal, matBLocal, 1.0, prm.findLevPrm );
-		eta_loc = max([ 0.0, omega + vecWTF'*vecY_loc + abs((vecY_loc'*matWTW*vecY_loc)/2.0) ]);
+		eta_loc = max([ 0.0, omega + vecWTFLocal'*vecY_loc + abs((vecY_loc'*matWTWLocal*vecY_loc)/2.0) ]);
 		b_loc = norm(matBLocal*vecY_loc);
 	endif
 	%
@@ -327,15 +361,384 @@ function [ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, pr
 	studyDat.eta_loc = eta_loc;
 	%
 	if ( prm.verbLev >= VERBLEV__DETAILS )
+		%msg( __FILE__, __LINE__, sprintf( ...
+		%  "   omega: %8.2e / %8.2e / %8.2e / %8.2e (/ %8.2e);  y: %8.2e / %8.2e / %8.2e;  b: %8.2e / %8.2e / %8.2e.", ...
+		%  omega, eta_loc, eta_bnd, eta_unb, prm.omegaTol, ...
+		%  norm(vecY_loc), norm(vecY_bnd), norm(vecY_unb), ...
+		%  b_loc, b_bnd, b_unb ) );
 		msg( __FILE__, __LINE__, sprintf( ...
-		  "   size: %3d / %3d ( / %d x %d );  omega: %8.2e / %8.2e / %8.2e / %8.2e (/ %8.2e);  b: %8.2e / %8.2e / %8.2e.", ...
-		  size(fModelDat.matVLocal,2), size(fModelDat.matV,2), ...
-		  size(fModelDat.vecX_initial,1), size(fModelDat.vecF_initial,1), ...
-		  omega, eta_loc, eta_bnd, eta_unb, prm.omegaTol, ...
-		  b_loc, b_bnd, b_unb ) );
+		  "   omega: %8.2e / %8.2e / %8.2e / %8.2e (/ %8.2e);  y: %8.2e / %8.2e / %8.2e;  b: %8.2e / %8.2e / %8.2e.", ...
+		  eta_unb, eta_bnd, eta_loc, omega, prm.omegaTol, ...
+		  norm(vecY_unb), norm(vecY_bnd), norm(vecY_loc), ...
+		  b_bnd, b_unb, b_loc ) );
+	endif
+	%
+	%if ( prm.valdLev >= VALDLEV__LOW )
+	%	__validateStudyDat( fModelDat, studyDat, prm );
+	%endif
+	retCode = RETCODE__SUCCESS;
+	return;
+endfunction
+
+
+function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeAction( funchF, fModelDat, studyDat, prm )
+	mydefs;
+	retCode = RETCODE__NOT_SET;
+	taFevalCount = 0;
+	vecX_next = [];
+	vecF_next = [];
+	%
+	vecX = fModelDat.vecX; % Current guess.
+	vecF = fModelDat.vecF; % Function at current guess.
+	matV = fModelDat.matV; % Subspace basis matrix.
+	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
+	matB = fModelDat.matB; % Boundary / trust region matrix; (bound) candidate steps must satify ||B*y|| <= 1.
+	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
+	matWLocal = fModelDat.matWLocal; % Projection of locally evaluated subspace basis matrix.
+	%
+	sizeX = size(vecX,1);
+	sizeF = size(vecF,1);
+	sizeV = size(matV,2);
+	sizeB = size(matB,1);
+	sizeVLocal = size(matVLocal,2);
+	%
+	vecY_unb = studyDat.vecY_unb;
+	vecY_bnd = studyDat.vecY_bnd;
+	vecY_loc = studyDat.vecY_loc;
+	eta_unb = studyDat.eta_unb;
+	eta_bnd = studyDat.eta_bnd;
+	eta_loc = studyDat.eta_loc;
+	%
+	%
+	%
+	omega = sumsq(vecF)/2.0;
+	omega_initial = sumsq(vecF)/2.0;
+	%
+	omegaThresh = 0.1 * omega * ( omega / omega_initial )^0.5;
+	if ( eta_unb > max([ 0.1*omegaThresh, prm.omegaTol ]) )
+		vecR = matW(:,end);
+		vecS = vecR;
+		vecU = __applyPrecon( vecS, prm, vecX, vecF );
+		vecV = __calcOrthonorm( vecU, matV, prm );
+		if ( norm(vecV) > sqrt(eps) )
+			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, " Action: Expand subspace (per actual residual)." );
+			[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
+			taFevalCount += fevalIncr; clear fevalIncr;
+			if ( 0~= retCode )
+				msgretcodeif( true, __FILE__, __LINE__, retCode );
+			endif
+			return;
+		endif
+		%
+		% Although f - W*y is the residual, if the latest w is perp to f, this quantity will be repeated
+		%  between iterations. So, we should also properly consider the Kryov subspace...
+		vecR = matW(:,end);
+		vecS = vecR;
+		vecU = __applyPrecon( vecS, prm, vecX, vecF );
+		vecV = __calcOrthonorm( vecU, matV, prm );
+		if ( norm(vecV) > sqrt(eps) )
+			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, " Action: Expand subspace (per Krylov)." );
+			[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
+			taFevalCount += fevalIncr; clear fevalIncr;
+			if ( 0~= retCode )
+				msgretcodeif( true, __FILE__, __LINE__, retCode );
+			endif
+			return;
+		endif
 	endif
 	%
 	%
+	if ( eta_loc <= max([ omegaThresh, prm.omegaTol ]) )
+		assert( ~isempty(vecY_loc) );
+		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( " Action: Try step ( %9.2e -> %9.2e ).", omega, eta_loc ) );
+		vecY = matV'*(matVLocal*vecY_loc);
+		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
+		taFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+		endif
+		return;
+	endif
+	%
+	%
+	vecV = __calcOrthonorm( matV*vecY_bnd, matVLocal, prm );
+	if ( norm(vecV) > sqrt(eps) )
+		vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
+		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, " Action: Re-evaluate direction." );
+		[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
+		taFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+		endif
+		return;
+	endif
+	%
+	%
+	% Desperation.
+	% See if we can find any w outside of matV.
+	for n=1:sizeV
+		vecR = matW(:,n);
+		vecS = vecR;
+		vecU = __applyPrecon( vecS, prm, vecX, vecF );
+		vecV = __calcOrthonorm( vecU, matV, prm );
+		if ( norm(vecV) > sqrt(eps) )
+			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, " Action: Expand subspace (desperation)." );
+			[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
+			taFevalCount += fevalIncr; clear fevalIncr;
+			if ( 0~= retCode )
+				msgretcodeif( true, __FILE__, __LINE__, retCode );
+			endif
+			return;
+		endif
+	endfor
+endfunction
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% "ACTION" FUNCTIONS
+%
+
+function [ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm )
+	mydefs;
+	retCode = RETCODE__NOT_SET;
+	fevalIncr = 0;
+	%
+	vecX = fModelDat.vecX; % Current guess.
+	vecF = fModelDat.vecF; % Function at current guess.
+	matV = fModelDat.matV; % Subspace basis matrix.
+	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
+	matB = fModelDat.matB; % Boundary / trust region matrix; (bound) candidate steps must satify ||B*y|| <= 1.
+	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
+	matWLocal = fModelDat.matWLocal; % Projection of locally evaluated subspace basis matrix.
+	%
+	sizeX = size(vecX,1);
+	sizeF = size(vecF,1);
+	sizeV = size(matV,2);
+	sizeB = size(matB,1);
+	sizeVLocal = size(matVLocal,2);
+	%
+	%
+	%
+	if ( prm.valdLev >= VALDLEV__LOW )
+		assert( sizeV < sizeX );
+		assert( isrealarray(vecV,[sizeX,1]) );
+		assert( abs(norm(vecV)-1.0) < sqrt(eps) );
+		assert( norm(matV'*vecV) < sqrt(eps) );
+		assert( norm(matVLocal'*vecV) < sqrt(eps) );
+	endif
+	%
+	vecW = __calcJV( vecV, funchF, vecX, vecF, prm );
+	fevalIncr++;
+	%
+	%
+	%fModelDat.vecX = vecX;
+	%fModelDat.vecF = vecF;
+	fModelDat.matV = [ matV, vecV ];
+	fModelDat.matW = [ matW, vecW ];
+	fModelDat.matB = zeros(sizeV+1,sizeV+1);
+	fModelDat.matB(1:sizeV,1:sizeV) = matB;
+	fModelDat.matVLocal = [ matVLocal, vecV ];
+	fModelDat.matWLocal = [ matWLocal, vecW ];
+	%
+	%
+	%
+	if ( prm.valdLev >= VALDLEV__LOW )
+		__validateFModelDat( fModelDat, prm );
+	endif
+	retCode = RETCODE__SUCCESS;
+	return;
+endfunction
+
+
+function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm )
+	mydefs;
+	retCode = RETCODE__NOT_SET;
+	tsFevalCount = 0;
+	vecX_next = [];
+	vecF_next = [];
+	%
+	vecX = fModelDat.vecX; % Current guess.
+	vecF = fModelDat.vecF; % Function at current guess.
+	matV = fModelDat.matV; % Subspace basis matrix.
+	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
+	matB = fModelDat.matB; % Boundary / trust region matrix; (bound) candidate steps must satify ||B*y|| <= 1.
+	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
+	matWLocal = fModelDat.matWLocal; % Projection of locally evaluated subspace basis matrix.
+	%
+	sizeX = size(vecX,1);
+	sizeF = size(vecF,1);
+	sizeV = size(matV,2);
+	sizeB = size(matB,1);
+	sizeVLocal = size(matVLocal,2);
+	%
+	vecY_unb = studyDat.vecY_unb;
+	vecY_bnd = studyDat.vecY_bnd;
+	vecY_loc = studyDat.vecY_loc;
+	eta_unb = studyDat.eta_unb;
+	eta_bnd = studyDat.eta_bnd;
+	eta_loc = studyDat.eta_loc;
+	%
+	vecX_trial = vecX + matV * vecY;
+	vecF_trial = funchF( vecX_trial );
+	tsFevalCount++;
+	%
+	omega = sumsq(vecF)/2.0;
+	omega_trial = sumsq(vecF_trial)/2.0;
+	%
+	omegaThresh = 0.5*omega;
+	if ( omega_trial <= omegaThresh )
+		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
+		  "  Accepting step: %9.2e -> %9.2e, leq %9.2e ( down frac %9.2e, remain frac %9.2e ).", ...
+		  omega, omega_trial, omegaThresh, 1.0 - omega_trial/omega, omega_trial/omega ) );
+		vecX_next = vecX_trial;
+		vecF_next = vecF_trial;
+		%
+		trExpandCoeff = 1.5;
+		if ( trExpandCoeff*norm(matB*vecY) >= 1.0 )
+			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Expanding trust region." );
+			[ retCode, fModelDat ] = __expandTR( trExpandCoeff*vecY, fModelDat, prm );
+			if ( 0~= retCode )
+				msgretcodeif( true, __FILE__, __LINE__, retCode );
+				return;
+			endif
+		endif
+		%
+		[ retCode, fevalIncr, fModelDat ] = __moveTo( vecY, vecF_next, funchF, fModelDat, prm );
+		tsFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+			return;
+		endif
+		retCode = RETCODE__SUCCESS;
+		return;
+	endif
+	%
+	msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
+	  "  Rejecting step: %9.2e -> %9.2e gt %9.2e ( up frac %9.2e, scale frac %9.2e ).", ...
+	  omega, omega_trial, omegaThresh, omega_trial/omega - 1.0, omega_trial/omega ) );
+	%
+	msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Shrinking trust region." );
+	trShrinkCoeff = 0.5;
+	[ retCode, fevalIncr, fModelDat ] = __shrinkTR( trShrinkCoeff*vecY, fModelDat, prm );
+	if ( 0~= retCode )
+		msgretcodeif( true, __FILE__, __LINE__, retCode );
+		return;
+	endif
+	return;
+endfunction
+
+
+function [ retCode, fevalIncr, fModelDat ] = __moveTo( vecY, vecF_next, funchF, fModelDat, prm )
+	mydefs;
+	retCode = RETCODE__NOT_SET;
+	fevalIncr = 0;
+	%
+	vecX = fModelDat.vecX; % Current guess.
+	vecF = fModelDat.vecF; % Function at current guess.
+	matV = fModelDat.matV; % Subspace basis matrix.
+	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
+	matB = fModelDat.matB; % Boundary / trust region matrix; (bound) candidate steps must satify ||B*y|| <= 1.
+	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
+	matWLocal = fModelDat.matWLocal; % Projection of locally evaluated subspace basis matrix.
+	%
+	sizeX = size(vecX,1);
+	sizeF = size(vecF,1);
+	sizeV = size(matV,2);
+	sizeB = size(matB,1);
+	sizeVLocal = size(matVLocal,2);
+	%
+	%
+	%
+	matIV = eye(sizeV,sizeV);
+	%
+	yNorm = norm(vecY);
+	vecFModel_next = vecF + matW*vecY;
+	vecRhoF = vecF_next - vecFModel_next;
+	if ( prm.valdLev >= VALDLEV__LOW )
+		assert( 0.0 < yNorm )
+		assert( norm(vecFModel_next) <= norm(vecF) );
+		assert( norm(vecF_next) <= norm(vecF) );
+	endif
+	useQuadUpdate = true;
+	if (useQuadUpdate)
+		matW_updated = matW + 2.0 * vecRhoF * (vecY')/(yNorm^2);
+	else
+		matW_updated = matW + vecRhoF * (vecY')/(yNorm^2);
+	endif
+	%
+	%
+	%
+	fModelDat.vecX = vecX + matV*vecY;
+	fModelDat.vecF = vecF_next;
+	%fModelDat.matV = matV;
+	fModelDat.matW = matW_updated;
+	%fModelDat.matB = matB;
+	fModelDat.matVLocal = zeros(sizeX,0);
+	fModelDat.matWLocal = zeros(sizeF,0);
+	%
+	if ( prm.valdLev >= VALDLEV__LOW )
+		__validateFModelDat( fModelDat, prm );
+	endif
+	retCode = RETCODE__SUCCESS;
+	return;
+endfunction
+
+
+function [ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm )
+	mydefs;
+	retCode = RETCODE__NOT_SET;
+	fevalIncr = 0;
+	%
+	vecX = fModelDat.vecX; % Current guess.
+	vecF = fModelDat.vecF; % Function at current guess.
+	matV = fModelDat.matV; % Subspace basis matrix.
+	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
+	matB = fModelDat.matB; % Boundary / trust region matrix; (bound) candidate steps must satify ||B*y|| <= 1.
+	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
+	matWLocal = fModelDat.matWLocal; % Projection of locally evaluated subspace basis matrix.
+	%
+	sizeX = size(vecX,1);
+	sizeF = size(vecF,1);
+	sizeV = size(matV,2);
+	sizeB = size(matB,1);
+	sizeVLocal = size(matVLocal,2);
+	%
+	%
+	if ( prm.valdLev >= VALDLEV__LOW )
+		assert( sizeVLocal < sizeV );
+		assert( isrealarray(vecV,[sizeX,1]) );
+		assert( abs(norm(vecV)-1.0) < sqrt(eps) );
+		assert( abs(norm(matV'*vecV)-1.0) < sqrt(eps) );
+		assert( norm(matVLocal'*vecV) < sqrt(eps) );
+	endif
+	% Do an additional normalization to be safe...
+	vecV = matV*(matV'*vecV);
+	assert( norm(vecV)>0.0 );
+	vecV /= norm(vecV);
+	vecW = __calcJV( vecV, funchF, vecX, vecF, prm );
+	fevalIncr++;
+	%
+	vecY = matV'*vecV;
+	assert( norm(vecY)>0.0 );
+	vecYHat = vecY/norm(vecY);
+	matW_updated = matW + ( vecW - matW*vecYHat )*(vecYHat');
+	%
+	%
+	%
+	%fModelDat.vecX = vecX;
+	%fModelDat.vecF = vecF;
+	%fModelDat.matV = matV;
+	fModelDat.matW = matW_updated;
+	%fModelDat.matB = matB;
+	fModelDat.matVLocal = [ matVLocal, vecV ];
+	fModelDat.matWLocal = [ matWLocal, vecW ];
+	%
+	%
+	%
+	if ( prm.valdLev >= VALDLEV__LOW )
+		__validateFModelDat( fModelDat, prm );
+	endif
 	retCode = RETCODE__SUCCESS;
 	return;
 endfunction
@@ -407,6 +810,37 @@ function vecW = __calcJV( vecV, funchF, vecX, vecF, prm )
 endfunction
 
 
+function [ retCode, fModelDat ] = __shrinkTR( vecY, fModelDat, prm )
+	[ retCode, fModelDat ] = __modifyB( vecY, fModelDat, prm );
+	return;
+endfunction
+function [ retCode, fModelDat ] = __expandTR( vecY, fModelDat, prm )
+	[ retCode, fModelDat ] = __modifyB( vecY, fModelDat, prm );
+	return;
+endfunction
+function [ retCode, fModelDat ] = __modifyB( vecY, fModelDat, prm )
+	mydefs;
+	retCode = RETCODE__NOT_SET;
+	%
+	matB = fModelDat.matB;
+	sizeV = size(vecY,1);
+	yNorm = norm(vecY);
+	if ( prm.valdLev >= VALDLEV__MEDIUM )
+		sizeB = size(matB,1);
+		assert( isrealarray(vecY,[sizeV,1]) );
+		assert( 0.0 < yNorm );
+		assert( isrealarray(matB,[sizeB,sizeV]) );
+	endif
+	vecYHat = vecY/yNorm;
+	matEY = eye(sizeV,sizeV) - vecYHat*(vecYHat')/yNorm;
+	matB = matEY'*matB*matEY + vecYHat*(vecYHat')/yNorm;
+	fModelDat.matB = (matB'+matB)/2.0;
+	%
+	retCode = RETCODE__SUCCESS;
+	return;
+endfunction
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % DEV FUNCTIONS
@@ -465,6 +899,8 @@ function __validateFModelDat( fModelDat, prm )
 	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
 	matB = fModelDat.matB; % Boundary / trust region matrix; (bound) candidate steps must satify ||B*y|| <= 1.
 	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
+	matWLocal = fModelDat.matWLocal;  % Projection of locally evaluated subspace basis matrix.
+	%
 	sizeX = size(fModelDat.vecX,1);
 	sizeF = size(fModelDat.vecF,1);
 	sizeV = size(fModelDat.matV,2);
@@ -481,12 +917,14 @@ function __validateFModelDat( fModelDat, prm )
 		assert( isrealarray(matW,[sizeF,sizeV]) );
 		assert( isrealarray(matB,[sizeB,sizeV]) );
 		assert( isrealarray(matVLocal,[sizeX,sizeVLocal]) );
+		assert( isrealarray(matWLocal,[sizeF,sizeVLocal]) );
 	endif
 	if ( prm.valdLev >= VALDLEV__VERY_HIGH )
 	if ( ~isempty(matVLocal) )
 		assert( reldiff(matV'*matV,eye(sizeV,sizeV)) < sqrt(eps) );
 		assert( reldiff(matVLocal'*matVLocal,eye(sizeVLocal,sizeVLocal)) < sqrt(eps) );
 		assert( reldiff(matV*(matV'*matVLocal),matVLocal) < sqrt(eps) );
+		assert( reldiff(matWLocal,matW*matV'*matVLocal) < sqrt(eps) );
 	endif
 	endif
 	%
