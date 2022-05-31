@@ -41,8 +41,8 @@ case 150
 	msg(__FILE__,__LINE__,"Adding path \"study/20220326BeyondZero/0520NonPolyExpansion/\".");
 	addpath("study/20220326BeyondZero/0520NonPolyExpansion/");
 case 160
-	msg(__FILE__,__LINE__,"Adding path \"study/20220530sxsolve/0530compare/\".");
-	addpath("study/20220530sxsolve/0530compare/");
+	msg(__FILE__,__LINE__,"Adding path \"study/20220530sxsolve/\".");
+	addpath("study/20220530sxsolve/");
 otherwise
 	error( "Invalid case." );
 end
