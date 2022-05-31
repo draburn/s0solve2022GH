@@ -260,6 +260,7 @@ function [ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, p
 	fModelDat.matB = [ 0.0 ];
 	fModelDat.matVLocal = [ vecV ];
 	fModelDat.matWLocal = [ vecW ];
+	fModelDat.blindPenaltyCoeff = 0.0;
 	%
 	if ( prm.valdLev >= VALDLEV__LOW )
 		__validateFModelDat( fModelDat, prm );
@@ -286,6 +287,7 @@ function [ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, pr
 	matB = fModelDat.matB; % Boundary / trust region matrix; (bound) candidate steps must satify ||B*y|| <= 1.
 	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
 	matWLocal = fModelDat.matWLocal;  % Projection of locally evaluated subspace basis matrix.
+	blindPenaltyCoeff = fModelDat.blindPenaltyCoeff;
 	%
 	%sizeX = size(vecX,1);
 	%sizeF = size(vecF,1);
@@ -343,8 +345,8 @@ function [ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, pr
 	%
 	vecY_unb = findLevPt_0527( vecWTF, matWTW, matC, [], [], prm.findLevPrm );
 	vecY_bnd = findLevPt_0527( vecWTF, matWTW, matC, matB, 1.0, prm.findLevPrm );
-	eta_unb = max([ 0.0, omega + vecWTF'*vecY_unb + abs((vecY_unb'*matWTW*vecY_unb)/2.0) ]);
-	eta_bnd = max([ 0.0, omega + vecWTF'*vecY_bnd + abs((vecY_bnd'*matWTW*vecY_bnd)/2.0) ]);
+	eta_unb = sumsq( vecF + matW*vecY_unb )/2.0;
+	eta_bnd = sumsq( vecF + matW*vecY_bnd )/2.0;
 	b_unb = norm(matB*vecY_unb);
 	b_bnd = norm(matB*vecY_bnd);
 	if ( isempty(matVLocal) )
@@ -589,6 +591,8 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep(
 	eta_bnd = studyDat.eta_bnd;
 	eta_loc = studyDat.eta_loc;
 	%
+	assert( norm(vecY) > 0.0 );
+	%
 	vecX_trial = vecX + matV * vecY;
 	vecF_trial = funchF( vecX_trial );
 	tsFevalCount++;
@@ -596,6 +600,7 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep(
 	omega = sumsq(vecF)/2.0;
 	omega_trial = sumsq(vecF_trial)/2.0;
 	%
+	%error( "This acceptance criteria won't work if significant backtracking is needed...?" );
 	omegaThresh = 0.5*omega;
 	if ( omega_trial <= omegaThresh )
 		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
@@ -620,6 +625,7 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep(
 			msgretcodeif( true, __FILE__, __LINE__, retCode );
 			return;
 		endif
+		%
 		retCode = RETCODE__SUCCESS;
 		return;
 	endif

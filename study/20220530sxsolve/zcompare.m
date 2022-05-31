@@ -18,11 +18,11 @@ zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
 %
-if (0)
+if (1)
 	msg( __FILE__, __LINE__, "Doing simple one-shot." );
 	prm = [];
-	prm.verbLev = VERBLEV__COPIOUS;
-	prm.valdLev = VALDLEV__VERY_HIGH;
+	%prm.verbLev = VERBLEV__COPIOUS;
+	%prm.valdLev = VALDLEV__VERY_HIGH;
 	%prm.iterMax = 2000; zlinsolf100( funchF, vecX0, [], prm );
 	%zlinsolf195( funchF, vecX0, [], prm );
 	sxsolf100( funchF, vecX0, [] , prm );

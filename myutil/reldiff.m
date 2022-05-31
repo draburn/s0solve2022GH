@@ -1,5 +1,5 @@
 %  Function...
-%    rd = reldiff( x, y )
+%    rd = reldiff( x, y, denom0 )
 %  Calculates rd = ||x-y|| / sqrt( ||x||^2 + ||y||^2 + denom0 ) for arbitary shaped x and y.
 %  If both x and y are exactly zero, rd = 0.0.
 
