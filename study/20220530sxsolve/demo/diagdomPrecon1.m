@@ -4,12 +4,12 @@ numFigs = 0;
 %
 sizeX = 100;
 sizeV = 10;
-setprngstates(0);
+setprngstates();
 %
 sizeF = sizeX;
 matSX = diag(exp(1.0*randn(sizeX,1)));
 matSF = diag(exp(1.0*randn(sizeX,1)));
-matJ0 = diag(randn(sizeX,1)) + 1.0e-3*randn(sizeF,sizeX);
+matJ0 = diag(randn(sizeX,1)) + 1.0e-2*randn(sizeF,sizeX);
 matJ = matSF*matJ0/matSX;
 matV = randn(sizeX,sizeV);
 matV = orth(matV);
@@ -83,3 +83,9 @@ for m=1:sizeX
 endfor
 matA = diag(a);
 rcondComparison = [ rcond(matJ), rcond(matA*matJ) ]
+%
+if (1)
+	numFigs++; figure(numFigs);
+	plot( (1:sizeX), diag(matJ), 'o-', (1:sizeX), 1./diag(matA), 'x-' );
+	grid on;
+endif
