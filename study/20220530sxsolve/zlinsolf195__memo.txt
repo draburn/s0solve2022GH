@@ -1,0 +1,37 @@
+% ROOT FUNCTION
+[ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = zlinsolf195( funchF, vecX_initial, vecF_initial=[], prmIn=[] );
+
+% MAJOR SEQUENTIAL FUNCTIONS
+[ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funchF, vecX_initial, vecF_initial, prmIn );
+[ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, prm );
+[ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, prm );
+[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __takeAction( funchF, fModelDat, studyDat, prm );
+
+% "ACTION" FUNCTIONS
+[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
+[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
+[ retCode, fevalIncr, fModelDat ] = __moveTo( vecY, vecF_next, funchF, fModelDat, prm );
+[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
+[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep_crude( vecY, funchF, fModelDat, studyDat, prm );
+
+% RANDOM ACCESS FUNCTIONS
+vecU = __applyPrecon( vecRhoF, prm, vecX, vecF );
+vecV = __calcOrthonorm( vecU, matV, prm );
+vecW = __calcJV( vecV, funchF, vecX, vecF, prm );
+vecY = __findCandStep( matH, vecG, matC, matB, bTrgt, prm );
+vecY = __findCandStep_pow( vecG, matH, matC, matB, bTrgt, prm );
+%%%vecY = __findCandStep_grad vecG, matH, matC, matB, bTrgt, prm );
+[ retCode, fevalIncr, fModelDat ] = __shrinkTR( funchF, vecY, fModelDat, prm );
+[ retCode, fevalIncr, fModelDat ] = __expandTR( funchF, vecY, fModelDat, prm );
+[ retCode, fevalIncr, fModelDat ] = __modifyB( funchF, vecY, fModelDat, prm );
+
+% DEV FUNCTIONS.
+__validatePrm( prm );
+__validateFModelDat( fModelDat, prm );
+__validateStudyDat( fModelDat, studyDat, prm );
+
+
+if ( 0~= retCode )
+	msgretcodeif( true, __FILE__, __LINE__, retCode );
+	return;
+endif
