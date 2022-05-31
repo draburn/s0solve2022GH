@@ -24,6 +24,10 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf100( fu
 	vecX = vecX_initial;
 	vecF = vecF_initial;
 	omega = sumsq(vecF)/2.0;
+	datOut.fevalCountOfSteps(stepsCount+1) = fevalCount;
+	datOut.fNormOfSteps(stepsCount+1) = norm(vecF);
+	datOut.vecXOfSteps(:,stepsCount+1) = vecX;
+	datOut.vecFOfSteps(:,stepsCount+1) = vecF;
 	while (1)
 		if ( norm(vecF) <= prm.fTol )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCESS: norm(vecF) <= prm.fTol." );
@@ -103,10 +107,10 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf100( fu
 			vecX = vecX_next;
 			vecF = vecF_next;
 			omega = omega_next;
-			%datOut.fevalCountOfSteps(stepsCount+1) = fevalCount;
-			%datOut.fNormOfSteps(stepsCount+1) = norm(vecF);
-			%datOut.vecXOfSteps(:,stepsCount+1) = vecX;
-			%datOut.vecFOfSteps(:,stepsCount+1) = vecF;
+			datOut.fevalCountOfSteps(stepsCount+1) = fevalCount;
+			datOut.fNormOfSteps(stepsCount+1) = norm(vecF);
+			datOut.vecXOfSteps(:,stepsCount+1) = vecX;
+			datOut.vecFOfSteps(:,stepsCount+1) = vecF;
 			clear vecX_next;
 			clear vecF_next;
 			clear omega_next;
@@ -115,7 +119,13 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf100( fu
 		continue;
 	endwhile
 	%
-return;
+	if ( fevalCount > datOut.fevalCountOfSteps(end) )
+		datOut.fevalCountOfSteps(stepsCount+1) = fevalCount;
+		datOut.fNormOfSteps(stepsCount+1) = norm(vecF);
+		datOut.vecXOfSteps(:,stepsCount+1) = vecX;
+		datOut.vecFOfSteps(:,stepsCount+1) = vecF;
+	endif
+	return;
 endfunction
 
 
@@ -142,10 +152,10 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	%
 	%prm.verbLev = VERBLEV__FLAGGED; prm.valdLev = VALDLEV__LOW; % "Production / optimization".
 	%prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__MEDIUM; % Integration testing.
-	%prm.verbLev = VERBLEV__PROGRESS; prm.valdLev = VALDLEV__HIGH; % Integration dev.
+	prm.verbLev = VERBLEV__PROGRESS; prm.valdLev = VALDLEV__HIGH; % Integration dev.
 	%prm.verbLev = VERBLEV__DETAILS; prm.valdLev = VALDLEV__HIGH; % Feature refinement dev.
 	%prm.verbLev = VERBLEV__COPIOUS; prm.valdLev = VALDLEV__VERY_HIGH; % New feature dev.
-	prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Refactor / debug.
+	%prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Refactor / debug.
 	%
 	prm.timeMax = -1.0;
 	prm.iterMax = ceil( 100 + 10*sqrt(sizeX+sizeF) + sizeX );

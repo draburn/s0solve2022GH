@@ -80,11 +80,10 @@ case 1195
 	r.fevalCountOfStep = r.datOut.fevalCountOfSteps;
 	r.fBestNormOfStep = r.datOut.fNormOfSteps;
 	r.isValid = true;
-case 1200
-	r.runTypeDescrip = "z200";
-	[ r.vecXF, r.vecFF, r.datOut ] = zlinsolf200( funchF, vecX0, [], r.prm );
-	r.fevalCount = r.datOut.fevalCount;
-	r.stepCount = r.datOut.stepCount;
+case 2100
+	r.runTypeDescrip = "s100";
+	[ r.vecXF, r.vecFF, r.retCode, r.fevalCount, r.stepsCount, r.datOut ] = sxsolf100( funchF, vecX0, [], r.prm );
+	r.stepCount = r.stepsCount;
 	r.fevalCountOfStep = r.datOut.fevalCountOfSteps;
 	r.fBestNormOfStep = r.datOut.fNormOfSteps;
 	r.isValid = true;
