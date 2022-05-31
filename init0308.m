@@ -43,6 +43,8 @@ case 150
 case 160
 	msg(__FILE__,__LINE__,"Adding path \"study/20220530sxsolve/\".");
 	addpath("study/20220530sxsolve/");
+	msg(__FILE__,__LINE__,"Adding path \"study/20220530sxsolve/tac/\".");
+	addpath("study/20220530sxsolve/tac/");
 otherwise
 	error( "Invalid case." );
 end
