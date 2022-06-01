@@ -361,8 +361,8 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	endif
 	%
 	%
-	% Desperation.
-	% See if we can find any w outside of matV.
+	%
+	msgif( prm.verbLev >= VERBLEV__DETAILED, __FILE__, __LINE__, " Considering despearation move: expand subspace per stale Krylov..." );
 	for n=1:sizeV
 		vecR = matW(:,n);
 		vecS = vecR;
@@ -377,7 +377,53 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 			endif
 			return;
 		endif
+		%msg( __FILE__, __LINE__, sprintf( "    matW(:,%d) was no use.", n ) );
 	endfor
+	msgif( prm.verbLev >= VERBLEV__DETAILED, __FILE__, __LINE__, "  Ineffective." );
+	%
+	%
+	msgif( prm.verbLev >= VERBLEV__DETAILED, __FILE__, __LINE__, " Considering despearation move: re-evaluate (up to full) subspace..." );
+	for n=1:sizeVLocal
+		vecU = matVLocal(:,n);
+		vecV = __calcOrthonorm( vecU, matVLocal, prm );
+		if ( norm(vecV) > sqrt(eps) )
+			vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
+			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Action: Re-evaluate direction (desperation)." );
+			[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
+			taFevalCount += fevalIncr; clear fevalIncr;
+			if ( 0~= retCode )
+				msgretcodeif( true, __FILE__, __LINE__, retCode );
+			endif
+			return;
+		endif
+		%msg( __FILE__, __LINE__, sprintf( "    matVLocal(:,%d) was no use.", n ) );
+	endfor
+	msgif( prm.verbLev >= VERBLEV__DETAILED, __FILE__, __LINE__, "  Ineffective." );
+	%
+	%
+	msgif( prm.verbLev >= VERBLEV__DETAILED, __FILE__, __LINE__, " Considering super-despearation move: explore full space...." );
+	for n=1:sizeX
+		vecR = zeros(sizeX,1);
+		vecR(n) = 1.0;
+		vecS = vecR;
+		vecU = __applyPrecon( vecS, prm, vecX, vecF );
+		vecV = __calcOrthonorm( vecU, matV, prm );
+		if ( norm(vecV) > sqrt(eps) )
+			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Action: Expand subspace (super-desperation)." );
+			[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
+			taFevalCount += fevalIncr; clear fevalIncr;
+			if ( 0~= retCode )
+				msgretcodeif( true, __FILE__, __LINE__, retCode );
+			endif
+			return;
+		endif
+		%msg( __FILE__, __LINE__, sprintf( "    e(%d) was no use.", n ) );
+	endfor
+	msgif( prm.verbLev >= VERBLEV__DETAILED, __FILE__, __LINE__, "  Ineffective." );
+	%
+	msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "We appear to be stuck." );
+	retCode = RETCODE__ALGORITHM_BREAKDOWN;
+	return;
 endfunction
 
 

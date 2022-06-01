@@ -11,9 +11,9 @@ if ( stopsignalpresent() )
 endif
 %
 %
-sizeX = 200;
+sizeX = 50;
 fType = 1020;
-fSeed = 65788064;
+fSeed = 61529008;
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
@@ -27,6 +27,9 @@ if (1)
 	%prm.iterMax = 2000; zlinsolf100( funchF, vecX0, [], prm );
 	%zlinsolf195( funchF, vecX0, [], prm );
 	sxsolf100( funchF, vecX0, [] , prm );
+	%
+	mainCalcElapsedTime = time()-mainStartTime;
+	msg( __FILE__, __LINE__, sprintf( "One-shot '%s' with F '%s' completed in %0.3es.", mainStartDatestr, runFStr, mainCalcElapsedTime ) );
 	msg( __FILE__, __LINE__, "Goodbye." );
 	return;
 endif
