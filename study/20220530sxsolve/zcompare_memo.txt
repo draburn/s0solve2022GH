@@ -46,3 +46,9 @@ z195 hack0529...
 
 z195 hack0529 further...
 520_81736336x50: stalls
+
+2022-05-31
+1020_61529008x50: sxsolf100 gets stuck.
+1010_99643824x500: s100 takes 555 iter.
+10_98184528x100: Triggers "earlier candidate is better" in s100 but stalls.
+530_8465136x50:  Triggers "earlier candidate is better" in s100 and converges.

@@ -1,3 +1,8 @@
+% TODO: Add vecX_cand, and vecF_cand in fModelDat, temporarily rejected steps;
+%      change __takeAction and __tryStep to return "best" (if new), not necessarily "next";
+%      modify log accordingly.
+% TODO: Diagonally-dominant auto preconditioner.
+
 function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf100( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
 	mydefs;
 	startTime = time();
@@ -21,8 +26,8 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf100( fu
 	endif
 	%
 	iterCount = 0;
-	vecX = vecX_initial;
-	vecF = vecF_initial;
+	vecX = vecX_initial; % These represent the best seen so far;
+	vecF = vecF_initial; %  our current "location" is per the values in fModelDat.
 	omega = sumsq(vecF)/2.0;
 	datOut.fevalCountOfSteps(stepsCount+1) = fevalCount;
 	datOut.fNormOfSteps(stepsCount+1) = norm(vecF);
@@ -54,7 +59,7 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf100( fu
 			retCode = RETCODE__IMPOSED_STOP;
 			break;
 		elseif ( isempty(fModelDat) )
-			[ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, prm );
+			[ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX_initial, vecF_initial, prm );
 			fevalCount += fevalIncr; clear fevalIncr;
 			if ( 0~=retCode )
 				msgretcodeif( true, __FILE__, __LINE__, retCode );
@@ -90,8 +95,8 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf100( fu
 		if ( ~isempty(vecX_next) )
 			if ( prm.valdLev >= VALDLEV__LOW )
 				assert( ~isempty(vecF_next) );
-				assert( isrealarray(vecX_next,[size(vecX,1),1]) );
-				assert( isrealarray(vecF_next,[size(vecF,1),1]) );
+				assert( isrealarray(vecX_next,[size(vecX_initial,1),1]) );
+				assert( isrealarray(vecF_next,[size(vecF_initial,1),1]) );
 				assert( norm(vecF_next) < norm(vecF) );
 			endif
 			omega_next = sumsq(vecF_next)/2.0;
@@ -250,15 +255,17 @@ function [ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, p
 	%
 	sizeX = size(vecX,1);
 	%
-	fModelDat.vecX_initial = vecX;
-	fModelDat.vecF_initial = vecF;
-	fModelDat.vecX = vecX;
+	%fModelDat.vecX_initial = vecX;
+	%fModelDat.vecF_initial = vecF;
+	fModelDat.vecX = vecX; % Current "local" point.
 	fModelDat.vecF = vecF;
 	fModelDat.matV = [ vecV ];
 	fModelDat.matW = [ vecW ];
 	fModelDat.matB = [ 0.0 ];
 	fModelDat.matVLocal = [ vecV ];
 	fModelDat.matWLocal = [ vecW ];
+	fModelDat.vecX_cand = []; % Candidate for next "local" point.
+	fModelDat.vecF_cand = [];
 	%
 	if ( prm.valdLev >= VALDLEV__LOW )
 		__validateFModelDat( fModelDat, prm );
@@ -498,6 +505,8 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep(
 	matB = fModelDat.matB; % Boundary / trust region matrix; (bound) candidate steps must satify ||B*y|| <= 1.
 	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
 	matWLocal = fModelDat.matWLocal; % Projection of locally evaluated subspace basis matrix.
+	vecX_cand = fModelDat.vecX_cand; % Earlier candidate for next point.
+	vecF_cand = fModelDat.vecF_cand;
 	%
 	sizeX = size(vecX,1);
 	sizeF = size(vecF,1);
@@ -523,11 +532,49 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep(
 	omega = sumsq(vecF)/2.0;
 	omega_trial = sumsq(vecF_trial)/2.0;
 	%
+	%
+	if ( omega_trial >= omega )
+		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
+		  "  Wholly rejecting trial: %8.2e -> %8.2e ( up frac %8.2e, scale frac %8.2e ).", ...
+		  omega, omega_trial, omega_trial/omega - 1.0, omega_trial/omega ) );
+		%
+		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Shrinking trust region." );
+		trShrinkCoeff = 0.5; %%% Make param.
+		[ retCode, fModelDat ] = __shrinkTR( trShrinkCoeff*vecY, fModelDat, prm );
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+			return;
+		endif
+		return;
+	endif
+	%
+	%
+	if ( ~isempty(vecF_cand) )
+		omega_cand = sumsq(vecF_cand)/2.0;
+		assert( omega_cand < omega );
+		if ( omega_trial > omega_cand )
+			msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, "  Trial is worse than earlier candidate." );
+			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
+			  "  Accepting earlier candidate: %8.2e -> %8.2e vs %8.2e ( down frac %8.2e, remain frac %8.2e ).", ...
+			  omega, omega_cand, omega_trial, 1.0 - omega_trial/omega, omega_trial/omega ) );
+			vecY_cand = matV'*(vecX_cand-vecX); % This is hack-ish, to work with pre-existing code.
+			assert( reldiff(matV*vecY_cand,vecX_cand-vecX) < sqrt(eps) );
+			[ retCode,  fModelDat ] = __moveTo( vecY_cand, vecF_cand, fModelDat, prm );
+			if ( 0~= retCode )
+				msgretcodeif( true, __FILE__, __LINE__, retCode );
+				return;
+			endif
+			% These values should have been already returned as best.
+			return;
+		endif
+	endif
+	%
+	%
 	relFallThresh = 0.5;  %%% Make param.
 	omegaThresh = omega - relFallThresh * ( omega - eta_bnd ); % Require fall to be at least half of bound ideal.
 	if ( omega_trial <= omegaThresh )
 		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
-		  "  Accepting step: %8.2e -> %8.2e, leq %8.2e ( down frac %8.2e, remain frac %8.2e ).", ...
+		  "  Accepting trial: %8.2e -> %8.2e, leq %8.2e ( down frac %8.2e, remain frac %8.2e ).", ...
 		  omega, omega_trial, omegaThresh, 1.0 - omega_trial/omega, omega_trial/omega ) );
 		vecX_next = vecX_trial;
 		vecF_next = vecF_trial;
@@ -646,21 +693,52 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep(
 	%
 	%
 	if ( omega_trial < omega )
-		error( "Omega decreased, but not as much as desired; we need to keep track of this (x,F), in case we can't do better!" );
-	endif
-	%
-	msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
-	  "  Rejecting step: %8.2e -> %8.2e gt %8.2e ( up frac %8.2e, scale frac %8.2e ).", ...
-	  omega, omega_trial, omegaThresh, omega_trial/omega - 1.0, omega_trial/omega ) );
-	%
-	msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Shrinking trust region." );
-	trShrinkCoeff = 0.5; %%% Make param.
-	[ retCode, fModelDat ] = __shrinkTR( trShrinkCoeff*vecY, fModelDat, prm );
-	if ( 0~= retCode )
-		msgretcodeif( true, __FILE__, __LINE__, retCode );
+		%msg( __FILE__, __LINE__, "*** DOIN' DA NU THANG! ***" );
+		assert( omega_trial < omega );
+		assert( isempty(vecF_cand) || omega_trial <= sumsq(fModelDat.vecF_cand)/2.0 );
+		assert( omega_trial > omegaThresh );
+		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
+		  "  Temporarily rejecting trial: %8.2e -> %8.2e, gt %8.2e ( down frac %8.2e, remain frac %8.2e ).", ...
+		  omega, omega_trial, omegaThresh, 1.0 - omega_trial/omega, omega_trial/omega ) );
+		fModelDat.vecF_cand = vecF_trial;
+		fModelDat.vecX_cand = vecX_trial;
+		% DRaburn 2022-05-31-1910:
+		%  I've redefined "vecX" and "vecF" in main loop to be the "best", not neccesarily the current point.
+		vecX_next = vecX_trial;
+		vecF_next = vecF_trial;
+		%
+		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Shrinking trust region." );
+		trShrinkCoeff = 0.5; %%% Make param.
+		[ retCode, fModelDat ] = __shrinkTR( trShrinkCoeff*vecY, fModelDat, prm );
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+			return;
+		endif
+		%
+		[ retCode, studyDat ] = __studyFModel( fModelDat, prm );
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+			return;
+		endif
+		%
+		if ( studyDat.eta_loc >= omega_trial )
+			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
+			  "  On second thought, accepting trial: %8.2e -> %8.2e (vs updated loc %8.2e) ( down frac %8.2e, remain frac %8.2e ).", ...
+			  omega, omega_trial, stuyDat.eta_loc, 1.0 - omega_trial/omega, omega_trial/omega ) );
+			[ retCode, fModelDat ] = __moveTo( vecY, vecF_trial, fModelDat, prm );
+			if ( 0~= retCode )
+				msgretcodeif( true, __FILE__, __LINE__, retCode );
+				return;
+			endif
+		else
+			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
+			  "  On second thought, still rejecting trial: %8.2e -> %8.2e (vs updated loc %8.2e) ( down frac %8.2e, remain frac %8.2e ).", ...
+			  omega, omega_trial, studyDat.eta_loc, 1.0 - omega_trial/omega, omega_trial/omega ) );
+		endif
+		%
 		return;
 	endif
-	return;
+	error( "This line should be impossible to reach." );
 endfunction
 
 
@@ -877,6 +955,8 @@ function [ retCode, fModelDat ] = __moveTo( vecY, vecF_next, fModelDat, prm )
 	matB = fModelDat.matB; % Boundary / trust region matrix; (bound) candidate steps must satify ||B*y|| <= 1.
 	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
 	matWLocal = fModelDat.matWLocal; % Projection of locally evaluated subspace basis matrix.
+	%vecX_cand = fModelDat.vecX_cand;
+	vecF_cand = fModelDat.vecF_cand;
 	%
 	sizeX = size(vecX,1);
 	sizeF = size(vecF,1);
@@ -895,6 +975,9 @@ function [ retCode, fModelDat ] = __moveTo( vecY, vecF_next, fModelDat, prm )
 		assert( 0.0 < yNorm )
 		assert( norm(vecFModel_next) <= norm(vecF) );
 		assert( norm(vecF_next) <= norm(vecF) );
+		if ( ~isempty(vecF_cand) )
+			assert( norm(vecF_next) <= norm(vecF_cand) );
+		endif
 	endif
 	useQuadUpdate = true;
 	if (useQuadUpdate)
@@ -912,6 +995,8 @@ function [ retCode, fModelDat ] = __moveTo( vecY, vecF_next, fModelDat, prm )
 	%fModelDat.matB = matB;
 	fModelDat.matVLocal = zeros(sizeX,0);
 	fModelDat.matWLocal = zeros(sizeF,0);
+	fModelDat.vecX_cand = [];
+	fModelDat.vecF_cand = [];
 	%
 	if ( prm.valdLev >= VALDLEV__LOW )
 		__validateFModelDat( fModelDat, prm );

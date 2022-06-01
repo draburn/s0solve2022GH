@@ -12,13 +12,15 @@ endif
 %
 %
 sizeX = 50;
-fType = 1020;
-fSeed = 61529008;
+fType = 530;
+%fSeed = 61529008;
+%fSeed = 75006688;
+fSeed = 8465136;
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
 %
-if (1)
+if (0)
 	msg( __FILE__, __LINE__, "Doing simple one-shot." );
 	prm = [];
 	prm.verbLev = VERBLEV__DETAILED;
