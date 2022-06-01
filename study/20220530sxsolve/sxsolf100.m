@@ -595,10 +595,13 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep(
 	vecF_trial = funchF( vecX_trial );
 	tsFevalCount++;
 	%
+	vecFModel = vecF + matW * vecY;
+	vecRho = vecF_trial - vecFModel;
 	omega = sumsq(vecF)/2.0;
 	omega_trial = sumsq(vecF_trial)/2.0;
 	%
-	omegaThresh = omega - 0.5 * ( omega - eta_bnd ); % Require fall to be at least half of bound ideal.
+	relFallThresh = 0.5;  %%% Make param.
+	omegaThresh = omega - relFallThresh * ( omega - eta_bnd ); % Require fall to be at least half of bound ideal.
 	if ( omega_trial <= omegaThresh )
 		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
 		  "  Accepting step: %8.2e -> %8.2e, leq %8.2e ( down frac %8.2e, remain frac %8.2e ).", ...
@@ -606,7 +609,7 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep(
 		vecX_next = vecX_trial;
 		vecF_next = vecF_trial;
 		%
-		trExpandCoeff = 1.5;
+		trExpandCoeff = 1.5; %%% Make param.
 		if ( trExpandCoeff*norm(matB*vecY) >= 1.0 )
 			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Expanding trust region." );
 			[ retCode, fModelDat ] = __expandTR( trExpandCoeff*vecY, fModelDat, prm );
@@ -623,8 +626,107 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep(
 			return;
 		endif
 		%
+		%
+		%
+		useCoasting = true; %%% Make param.
+		if (useCoasting)
+			p = 0.0;
+			%
+			coastMax = 5; %%% Make param.
+			for coastCount=1:coastMax
+				%
+				% Keep vecY for now, but overwrite.
+				% Keep fModelDat, but overwrite.
+				clear vecX;
+				clear vecF;
+				clear matV;
+				clear matW;
+				clear matB;
+				clear matVLocal;
+				clear matWLocal;
+				clear sizeX;
+				clear sizeF;
+				clear sizeV;
+				clear sizeB;
+				clear sizeVLocal;
+				%
+				clear studyDat;
+				clear vecY_unb;
+				clear vecY_bnd;
+				clear vecY_loc;
+				clear eta_unb;
+				clear eta_bnd;
+				clear eta_loc;
+				%
+				clear vecX_trial;
+				clear vecF_trial;
+				clear vecFModel;
+				% Keep vecRho, but overwrite.
+				clear omega;
+				clear omega_trial;
+				%
+				% Keep vecX_next, but overwrite.
+				% Keep vecF_next, but overwrite.
+				%
+				p += sumsq( vecRho ) / sumsq( vecY );
+				vecX = vecX_next;
+				vecF = vecF_next;
+				omega = sumsq(vecF)/2.0;
+				[ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, prm );
+				tsFevalCount += fevalIncr; clear fevalIncr;
+				if ( 0~= retCode )
+					msgretcodeif( true, __FILE__, __LINE__, retCode );
+					return;
+				endif
+				matV = fModelDat.matV;
+				matW = fModelDat.matW;
+				vecY = studyDat.vecY_bnd;
+				eta = studyDat.eta_bnd;
+				eta_coast = eta + p*sumsq( vecY )/2.0;
+				coastingFallRelThresh = 0.1; %%% Make param.
+				coastingC1 = 0.5;
+				if ( eta_coast < (1.0-coastingFallRelThresh)*omega && eta < (1.0-coastingC1)*omega )
+					vecX_trial = vecX + matV*vecY;
+					vecF_trial = funchF( vecX_trial );
+					tsFevalCount++;
+					%
+					vecFModel = vecF + matW * vecY;
+					vecRho = vecF_trial - vecFModel;
+					omega_trial = sumsq(vecF_trial)/2.0;
+					%
+					if ( omega_trial < omega )
+						msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
+						  "  Coasting was good ( %0.3e -> %0.3e ~ %0.3e? -> %0.3e ).", omega, eta, eta_coast, omega_trial ) );
+						vecX_next = vecX_trial;
+						vecF_next = vecF_trial;
+						[ retCode, fevalIncr, fModelDat ] = __moveTo( vecY, vecF_next, funchF, fModelDat, prm );
+						tsFevalCount += fevalIncr; clear fevalIncr;
+						if ( 0~= retCode )
+							msgretcodeif( true, __FILE__, __LINE__, retCode );
+							return;
+						endif
+						continue;
+					else
+						msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
+						  "  Coasting was bad ( %0.3e -> %0.3e ~ %0.3e? -> %0.3e ).", omega, eta, eta_coast, omega_trial ) );
+						break;
+					endif
+				else
+					msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
+					  "  Not attempting to coast ( %0.3e -> %0.3e ~ %0.3e? ).", omega, eta, eta_coast ) );
+					break;
+				endif
+			endfor
+		endif
+		%
+		%
 		retCode = RETCODE__SUCCESS;
 		return;
+	endif
+	%
+	%
+	if ( omega_trial < omega )
+		error( "Omega decreased, but not as much as desired; we need to keep track of this (x,F), in case we can't do better!" );
 	endif
 	%
 	msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
@@ -632,7 +734,7 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep(
 	  omega, omega_trial, omegaThresh, omega_trial/omega - 1.0, omega_trial/omega ) );
 	%
 	msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Shrinking trust region." );
-	trShrinkCoeff = 0.5;
+	trShrinkCoeff = 0.5; %%% Make param.
 	[ retCode, fevalIncr, fModelDat ] = __shrinkTR( trShrinkCoeff*vecY, fModelDat, prm );
 	if ( 0~= retCode )
 		msgretcodeif( true, __FILE__, __LINE__, retCode );
