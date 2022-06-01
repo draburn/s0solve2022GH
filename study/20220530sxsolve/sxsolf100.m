@@ -66,7 +66,7 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf100( fu
 		iterCount++;
 		if ( prm.verbLev >= VERBLEV__DETAILS )
 			msg( __FILE__, __LINE__, sprintf( ...
-			  "   time: %9.2e;  iter: %3d;  feval: %3d;  steps: %3d;  size: %3d / %3d ( / %d x %d );  omega: %8.2e.", ...
+			  "   time: %8.2e;  iter: %3d;  feval: %3d;  steps: %3d;  size: %3d / %3d ( / %d x %d );  omega: %8.2e.", ...
 			  time()-startTime, ...
 			  iterCount, ...
 			  fevalCount, ...
@@ -260,7 +260,6 @@ function [ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, p
 	fModelDat.matB = [ 0.0 ];
 	fModelDat.matVLocal = [ vecV ];
 	fModelDat.matWLocal = [ vecW ];
-	fModelDat.blindPenaltyCoeff = 0.0;
 	%
 	if ( prm.valdLev >= VALDLEV__LOW )
 		__validateFModelDat( fModelDat, prm );
@@ -287,7 +286,6 @@ function [ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, pr
 	matB = fModelDat.matB; % Boundary / trust region matrix; (bound) candidate steps must satify ||B*y|| <= 1.
 	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
 	matWLocal = fModelDat.matWLocal;  % Projection of locally evaluated subspace basis matrix.
-	blindPenaltyCoeff = fModelDat.blindPenaltyCoeff;
 	%
 	%sizeX = size(vecX,1);
 	%sizeF = size(vecF,1);
@@ -379,7 +377,7 @@ function [ retCode, fevalIncr, studyDat ] = __studyFModel( funchF, fModelDat, pr
 		%  norm(vecY_loc), norm(vecY_bnd), norm(vecY_unb), ...
 		%  b_loc, b_bnd, b_unb ) );
 		msg( __FILE__, __LINE__, sprintf( ...
-		  "   omega: %8.2e / %8.2e / %8.2e / %8.2e (/ %8.2e);  y: %8.2e / %8.2e / %8.2e;  b: %8.2e / %8.2e / %8.2e.", ...
+		  "   eta: %8.2e / %8.2e / %8.2e / %8.2e (/ %8.2e);  y: %8.2e / %8.2e / %8.2e;  b: %8.2e / %8.2e / %8.2e.", ...
 		  eta_unb, eta_bnd, eta_loc, omega, prm.omegaTol, ...
 		  norm(vecY_unb), norm(vecY_bnd), norm(vecY_loc), ...
 		  b_bnd, b_unb, b_loc ) );
@@ -462,7 +460,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%
 	if ( eta_loc <= max([ omegaThresh, prm.omegaTol ]) )
 		assert( ~isempty(vecY_loc) );
-		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( " Action: Try step ( %9.2e -> %9.2e ).", omega, eta_loc ) );
+		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( " Action: Try step ( %8.2e -> %8.2e ).", omega, eta_loc ) );
 		vecY = matV'*(matVLocal*vecY_loc);
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
@@ -600,11 +598,10 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep(
 	omega = sumsq(vecF)/2.0;
 	omega_trial = sumsq(vecF_trial)/2.0;
 	%
-	%error( "This acceptance criteria won't work if significant backtracking is needed...?" );
-	omegaThresh = 0.5*omega;
+	omegaThresh = omega - 0.5 * ( omega - eta_bnd ); % Require fall to be at least half of bound ideal.
 	if ( omega_trial <= omegaThresh )
 		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
-		  "  Accepting step: %9.2e -> %9.2e, leq %9.2e ( down frac %9.2e, remain frac %9.2e ).", ...
+		  "  Accepting step: %8.2e -> %8.2e, leq %8.2e ( down frac %8.2e, remain frac %8.2e ).", ...
 		  omega, omega_trial, omegaThresh, 1.0 - omega_trial/omega, omega_trial/omega ) );
 		vecX_next = vecX_trial;
 		vecF_next = vecF_trial;
@@ -631,7 +628,7 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep(
 	endif
 	%
 	msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
-	  "  Rejecting step: %9.2e -> %9.2e gt %9.2e ( up frac %9.2e, scale frac %9.2e ).", ...
+	  "  Rejecting step: %8.2e -> %8.2e gt %8.2e ( up frac %8.2e, scale frac %8.2e ).", ...
 	  omega, omega_trial, omegaThresh, omega_trial/omega - 1.0, omega_trial/omega ) );
 	%
 	msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Shrinking trust region." );

@@ -21,8 +21,8 @@ msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
 if (1)
 	msg( __FILE__, __LINE__, "Doing simple one-shot." );
 	prm = [];
-	%prm.verbLev = VERBLEV__COPIOUS;
-	%prm.valdLev = VALDLEV__VERY_HIGH;
+	prm.verbLev = VERBLEV__COPIOUS;
+	prm.valdLev = VALDLEV__VERY_HIGH;
 	%prm.iterMax = 2000; zlinsolf100( funchF, vecX0, [], prm );
 	%zlinsolf195( funchF, vecX0, [], prm );
 	sxsolf100( funchF, vecX0, [] , prm );
@@ -42,13 +42,13 @@ numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm.iterMax = 10
 numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm.iterMax = 2000; runList(numRuns).r.prmMemo = "";
 resumeRun = 0;
 else
+numRuns++; runList(numRuns).r.runType = 2100; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 550; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 500; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 3000; curveType = "b"; runList(numRuns).r.prmMemo = "curve b";
 %numRuns++; runList(numRuns).r.runType = 1195; runList(numRuns).r.prm = []; runList(numRuns).r.prm.verbLev = VERBLEV__DETAILED+10; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 1195; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 2100; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 
 if (0)
 numRuns++; runList(numRuns).r.runType = 1150; runList(numRuns).r.prm.iterMax = 3000; runList(numRuns).r.prmMemo = "";
