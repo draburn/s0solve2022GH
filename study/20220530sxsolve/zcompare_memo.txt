@@ -52,3 +52,7 @@ z195 hack0529 further...
 1010_99643824x500: s100 takes 555 iter.
 10_98184528x100: Triggers "earlier candidate is better" in s100 but stalls.
 530_8465136x50:  Triggers "earlier candidate is better" in s100 and converges; others stall.
+
+2022-06-01
+510_72758400x50: A case where s100 is better than others, much better than 800.
+313_90455536x500: s100 is horrrrrible!
