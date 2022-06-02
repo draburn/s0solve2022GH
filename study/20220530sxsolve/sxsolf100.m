@@ -264,6 +264,14 @@ function [ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, p
 	fModelDat.matWLocal = [ vecW ];
 	fModelDat.vecX_cand = []; % Candidate for next "local" point.
 	fModelDat.vecF_cand = [];
+	
+	
+	HACK_STUDY_FTYPE_314 = true;
+	if (HACK_STUDY_FTYPE_314 = true)
+		fModelDat.funchF = funchF;
+	endif
+	
+	
 	%
 	if ( prm.valdLev >= VALDLEV__LOW )
 		__validateFModelDat( fModelDat, prm );
@@ -735,7 +743,7 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep(
 		if ( studyDat.eta_loc >= omega_trial )
 			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
 			  "  On second thought, accepting trial: %8.2e -> %8.2e (vs updated loc %8.2e) ( down frac %8.2e, remain frac %8.2e ).", ...
-			  omega, omega_trial, stuyDat.eta_loc, 1.0 - omega_trial/omega, omega_trial/omega ) );
+			  omega, omega_trial, studyDat.eta_loc, 1.0 - omega_trial/omega, omega_trial/omega ) );
 			[ retCode, fModelDat ] = __moveTo( vecY, vecF_trial, fModelDat, prm );
 			if ( 0~= retCode )
 				msgretcodeif( true, __FILE__, __LINE__, retCode );
@@ -929,6 +937,32 @@ function [ retCode, studyDat ] = __studyFModel( fModelDat, prm )
 		  norm(vecY_unb), norm(vecY_bnd), norm(vecY_loc), ...
 		  b_bnd, b_unb, b_loc ) );
 	endif
+	
+	
+	HACK_STUDY_FTYPE_314 = true;
+	if (HACK_STUDY_FTYPE_314)
+		vecX = fModelDat.vecX; % Current guess.
+		sizeX = size(vecX,1);
+		sizeF = size(vecF,1);
+		matJA_wouldHaveBeen = eye(sizeF,sizeX)-matV*(matV') + matW*(matV');
+		vecY_wouldHaveBeen = -( (matJA_wouldHaveBeen'*matJA_wouldHaveBeen)\(matJA_wouldHaveBeen'*vecF) );
+		matRhoF_wouldHaveBeen = vecF - matJA_wouldHaveBeen*vecY_wouldHaveBeen;
+		vecU_wouldHaveBeen = matJA_wouldHaveBeen\matRhoF_wouldHaveBeen;
+		vecV_wouldHaveBeen = vecU_wouldHaveBeen / norm(vecU_wouldHaveBeen);
+		%zzz
+		%vecV_wouldHaveBeen = __calcOrthonorm( vecU_wouldHaveBeen, matVLocal, prm );
+		vecW_wouldHaveBeen = __calcJV( vecV_wouldHaveBeen, fModelDat.funchF, vecX, vecF, prm );
+		matV_wouldHaveBeen = [ matVLocal, vecV_wouldHaveBeen ];
+		matW_wouldHaveBeen = [ matWLocal, vecW_wouldHaveBeen ];
+		vecY_wouldHaveBeen = -((matW_wouldHaveBeen'*matW_wouldHaveBeen)\(matW_wouldHaveBeen'*vecF));
+		vecRhoFEst_wouldHaveBeen = vecF + (matW_wouldHaveBeen*vecY_wouldHaveBeen);
+		eta_wouldHaveBeen = sumsq(vecRhoFEst_wouldHaveBeen)/2.0
+		vecXNext_wouldHaveBeen = vecX + matV_wouldHaveBeen*vecY_wouldHaveBeen;
+		vecFNext_wouldHaveBeen = fModelDat.funchF( vecXNext_wouldHaveBeen );
+		omega_wouldHaveBeen = sumsq(vecFNext_wouldHaveBeen)/2.0
+	endif
+	
+	
 	%
 	%if ( prm.valdLev >= VALDLEV__LOW )
 	%	__validateStudyDat( fModelDat, studyDat, prm );

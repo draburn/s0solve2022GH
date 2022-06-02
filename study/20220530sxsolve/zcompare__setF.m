@@ -173,6 +173,35 @@ case 313
 	funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
 	%
 	vecX0 = randn(sizeX,1);
+case 314
+	sizeF = sizeX;
+	vecXE = randn(sizeX,1);
+	matJE = diag(1.0+0.1*abs(randn(sizeX,1))); + 1.0e-8*randn(sizeF,sizeX);
+	matA0 = 1.0e-8*randn(sizeF,sizeX);
+	matA1 = randn(sizeX,sizeX);
+	matA2 = randn(sizeX,sizeX);
+	matB0 = 1.0e-8*randn(sizeF,sizeX);
+	matB1 = randn(sizeX,sizeX);
+	matB2 = randn(sizeX,sizeX);
+	matB3 = randn(sizeX,sizeX);
+	%
+	function vecF = funcF( vecX, vecXE, matJE, matA0, matA1, matA2, matB0, matB1, matB2, matB3 )
+		vecY = vecX - vecXE;
+		vecF =  matJE*vecY + matA0*( (matA1*vecY) .* (matA2*vecY) ) + matB0*( (matB1*vecY) .* (matB2*vecY) .* (matB3*vecY) );
+		%load( "feval_vecXVals.m" );
+		%%%feval_vecXVals(:,end+1) = vecX;
+		%save( "feval_vecXVals.m", "feval_vecXVals" );
+		omega = sumsq(vecF)/2.0
+		if ( omega < 0.01 )
+			error( "HALT!" );
+		endif
+		return;
+	endfunction
+	funchF = @(x)( funcF( x, vecXE, matJE, matA0, matA1, matA2, matB0, matB1, matB2, matB3 ) );
+	%
+	vecX0 = randn(sizeX,1);
+	feval_vecXVals(:,1) = vecX0;
+	%save( "feval_vecXVals.m", "feval_vecXVals" );
 case 510
 	sizeF = sizeX;
 	vecXE = randn(sizeX,1);
