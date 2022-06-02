@@ -1,6 +1,3 @@
-% TODO: Add vecX_cand, and vecF_cand in fModelDat, temporarily rejected steps;
-%      change __takeAction and __tryStep to return "best" (if new), not necessarily "next";
-%      modify log accordingly.
 % TODO: Diagonally-dominant auto preconditioner.
 
 function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf100( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
@@ -124,6 +121,7 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf100( fu
 	endwhile
 	%
 	if ( fevalCount > datOut.fevalCountOfSteps(end) )
+		stepsCount++;
 		datOut.fevalCountOfSteps(stepsCount+1) = fevalCount;
 		datOut.fNormOfSteps(stepsCount+1) = norm(vecF);
 		datOut.vecXOfSteps(:,stepsCount+1) = vecX;
@@ -360,6 +358,19 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
 		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Action: Re-evaluate direction." );
 		[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
+		taFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+		endif
+		return;
+	endif
+	%
+	%
+	if ( eta_loc <= max([ 0.9999*omega, prm.omegaTol ]) )
+		assert( ~isempty(vecY_loc) );
+		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( "  Action: Try (near-desperate) step ( %8.2e -> %8.2e ).", omega, eta_loc ) );
+		vecY = matV'*(matVLocal*vecY_loc);
+		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
 			msgretcodeif( true, __FILE__, __LINE__, retCode );
