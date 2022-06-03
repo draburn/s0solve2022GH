@@ -119,11 +119,20 @@ for n = [ 200, 500, 1000 ]
 		g = j'*f;
 		%
 		t = time();
-		x = cgs( h, g, 1e-6, n );
-		msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"x = cgs( h, g )\" to %10.3e for condest %10.3e.", ...
+		x = cgs( h, g, 1e-2, n );
+		msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"x = cgs( h, g, 1e-2, n )\" to %10.3e for condest %10.3e.", ...
 		  1000.0*(time()-t), norm(g-h*x)/norm(g), c ) );
 		%
 		if ( c < 1e4 )
+			% My (unoptimized!) linear sovler is not great, but comprable to built-in.
+			t = time();
+			funchH = @(z)( h*z );
+			prm = [];
+			prm.tol = 1e-2;
+			x = linsolf( funchH, g, zeros(n,1), prm );
+			msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"x = linsolf( h, g, ., 1e-2 )\" to %10.3e for condest %10.3e.", ...
+			  1000.0*(time()-t), norm(g-h*x)/norm(g), c ) );
+			%
 			t = time();
 			x = gmres( h, g );
 			msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"x = gmres( h, g )\" to %10.3e for condest %10.3e.", ...
