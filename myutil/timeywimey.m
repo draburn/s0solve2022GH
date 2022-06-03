@@ -84,17 +84,6 @@ for n = [ 200, 500, 1000 ]
 		q = utorthdrop(j);
 		msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"q = utorthdrop(j)\".", 1000.0*(time()-t)) );
 		% Mine is faster!
-		% And, looks like there's room for speedup!
-		%
-		t = time();
-		q = utorthdrop_turbo_alpha(j);
-		msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"q = utorthdrop_turbo_alpha(j)\".", 1000.0*(time()-t)) );
-		t = time();
-		q = utorthdrop_turbo_beta(j);
-		msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"q = utorthdrop_turbo_beta(j)\".", 1000.0*(time()-t)) );
-		%t = time();
-		%q = utorthdrop_turbo_gamma(j);
-		%msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"q = utorthdrop_turbo_gamma(j)\".", 1000.0*(time()-t)) );
 		%
 		t = time();
 		phi = null(j);
@@ -122,14 +111,6 @@ for n = [ 200, 500, 1000 ]
 	t = time();
 	c = cond(h);
 	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"c = cond(h)\".", 1000.0*(time()-t)) );
-	%
-	t = time();
-	q = utorth_turbo(j);
-	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"q = utorth_turbo(j)\".", 1000.0*(time()-t)) );
-	%
-	t = time();
-	q = utorthdrop_turbo(j);
-	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"q = utorthdrop_turbo(j)\".", 1000.0*(time()-t)) );
 	%
 	continue;
 	%

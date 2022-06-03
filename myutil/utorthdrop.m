@@ -1,7 +1,7 @@
 %  Function...
 %   "ut" mean "upper-triangular".
 
-function [ matV, rvecDrop ] = utorthdrop_turbo( matV, dropThresh = 1.0e-4 )
+function [ matV, rvecDrop ] = utorthdrop( matV, dropThresh = 1.0e-4 )
 	sizeV = size(matV,2);
 	rvecDrop = logical(zeros(1,sizeV));
 	matV ./= ( eps + sqrt(sum(matV.^2,1)) );
