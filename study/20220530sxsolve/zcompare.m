@@ -12,8 +12,8 @@ endif
 %
 %
 sizeX = 500;
-fType = 319;
-fSeed = 0;
+fType = 1010;
+fSeed = 98184528;
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
@@ -21,14 +21,15 @@ msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
 if (0)
 	msg( __FILE__, __LINE__, "Doing simple one-shot." );
 	prm = [];
-	%prm.verbLev = VERBLEV__DETAILED;
-	prm.verbLev = VERBLEV__UNLIMITED;
+	prm.verbLev = VERBLEV__DETAILED;
+	%prm.verbLev = VERBLEV__UNLIMITED;
 	prm.valdLev = VALDLEV__VERY_HIGH;
 	%prm.valdLev = VALDLEV__UNLIMITED;
-	prm.fevalMax = 40;
+	%prm.fevalMax = 40;
 	%zlinsolf195( funchF, vecX0, [], prm );
 	%sxsolf100( funchF, vecX0, [] , prm );
-	sxsolf114( funchF, vecX0, [] , prm );
+	prm.useDogLeg = true;
+	sxsolf100( funchF, vecX0, [] , prm );
 	%findZero_800( vecX0, funchF, prm );
 	%
 	mainCalcElapsedTime = time()-mainStartTime;
@@ -43,7 +44,8 @@ numRuns = 0;
 resumeRun = -1;
 numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 2100; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 2114; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 2100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.useDogLeg = true; runList(numRuns).r.prmMemo = "pow";
+%numRuns++; runList(numRuns).r.runType = 2114; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 1100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 1195; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prmMemo = "";
 %resumeRun = numRuns;

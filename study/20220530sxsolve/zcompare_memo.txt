@@ -61,3 +61,7 @@ z195 hack0529 further...
  >>> Much was due to VALDLEV__LOW in findLevPt. Post-fix, findLevPt() calls make up ~75% of time.
 320_54972192x500: s114 horrid.
 319_0x500: s114 horrid (simpler case). [~fixed, by upping "c1"]
+
+530_10264096x20: Ex where s100 converges w&w/0 Powell's dog-leg. PDL is a bit worse.
+530_49236304x20: 800 cnvg but s stall.
+530_79449232x20: s cnvg, pdl a bit better.

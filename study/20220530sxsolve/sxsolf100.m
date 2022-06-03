@@ -189,6 +189,7 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	prm.precon_matJA = [];
 	%
 	% Add other parameters once code more settled.
+	prm.useDogLeg = false;
 	%
 	prm = overwritefields( prm, prmIn );
 	%
@@ -927,7 +928,7 @@ function [ retCode, studyDat ] = __studyFModel( fModelDat, prm )
 		  "   eta: %8.2e / %8.2e / %8.2e / %8.2e (/ %8.2e);  y: %8.2e / %8.2e / %8.2e;  b: %8.2e / %8.2e / %8.2e.", ...
 		  eta_unb, eta_bnd, eta_loc, omega, prm.omegaTol, ...
 		  norm(vecY_unb), norm(vecY_bnd), norm(vecY_loc), ...
-		  b_bnd, b_unb, b_loc ) );
+		  b_unb, b_bnd, b_loc ) );
 	endif
 	%
 	%if ( prm.valdLev >= VALDLEV__LOW )
@@ -939,7 +940,82 @@ endfunction
 
 
 function vecY = __findLevPt( vecG, matH, matC, matB, bTrgt, prm )
-	vecY = findLevPt_0527( vecG, matH, matC, matB, bTrgt, prm.findLevPrm );
+	if ( prm.useDogLeg )
+		vecY = __dogLeg( vecG, matH, matC, matB, bTrgt, prm );
+	else
+		vecY = findLevPt_0527( vecG, matH, matC, matB, bTrgt, prm.findLevPrm );
+	endif
+	return;
+endfunction
+function vecY = __dogLeg( vecG, matH, matC, matB, bTrgt, prm )
+	% I'm not 100% sure this Powell's dog leg is correct.
+	% Regardless, this code does not seem to help.
+	mydefs;
+	DO_HACKS = false;
+	if (DO_HACKS)
+		vecY_wouldHaveBeen = findLevPt_0527( vecG, matH, matC, matB, bTrgt, prm.findLevPrm );
+	endif
+	vecYNewton = findLevPt_0527( vecG, matH, matC, [], [], prm.findLevPrm );
+	%
+	% If Newton step is in bounds, take it.
+	if ( isempty(matB) || sumsq(matB*vecYNewton) <= 1.0 )
+		vecY = vecYNewton;
+		return;
+	endif
+	msgif( prm.verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "Restricting step to bound (%g).",  sumsq(matB*vecYNewton) ) );
+	%
+	matRC = chol(matC);
+	vecYCauchyDir = matRC \ (matRC'\(-vecG));
+	%
+	ythy = vecYCauchyDir'*matH*vecYCauchyDir;
+	assert( ythy >= 0.0 );
+	ythmg = -vecYCauchyDir'*vecG;
+	assert( ythmg > 0.0 );
+	pCauchy = ythmg / ythy;
+	vecYCauchy = pCauchy*vecYCauchyDir;
+	%
+	% If Cauchy step goes OOB, take its intersection with boundary.
+	vecBC = matB*vecYCauchy;
+	bcsq = sumsq( vecBC );
+	if ( bcsq >= 1.0 );
+		vecY = vecYCauchy / sqrt(bcsq);
+		assert( reldiff( sumsq(matB*vecY), 1.0 ) < sqrt(eps) );
+		if (DO_HACKS)
+			eta = vecG'*vecY + (vecY'*matH*vecY)/2.0;
+			eta_wouldHaveBeen = vecG'*vecY_wouldHaveBeen + (vecY_wouldHaveBeen'*matH*vecY_wouldHaveBeen)/2.0;
+			[ norm(vecY), norm(vecY_wouldHaveBeen), norm(vecY-vecY_wouldHaveBeen) ]
+			[ eta, eta_wouldHaveBeen, eta-eta_wouldHaveBeen ]
+			%error( "BEHOLD!" );
+		endif
+		return;
+	endif
+	%
+	% Find where the second leg intersects the boundary.
+	vecY2 = vecYNewton - vecYCauchy;
+	vecB2 = matB*vecY2;
+	% We can't use calcLinishRootOfQuad() here!
+	% We want positive root of quad!
+	%   Using y = yCauchy + t * y2,
+	%   ||B*y|| = (t^2)*(b2'*b2) + t*(2.0*b2'*bc) + (bc'*bc) - 1.0,
+	%   where b2 = B*y2 and bc = B*yCauchy.
+	a = sumsq(vecB2);
+	b = 2.0*(vecBC'*vecB2);
+	c = bcsq-1.0;
+	discrim = (b^2) - (4.0*a*c);
+	assert( discrim >= 0.0 );
+	assert( 0.0 < a );
+	t = (-b+sqrt(discrim))/(2.0*a); % Because a must be positive.
+	vecY = vecYCauchy + (t*vecY2);
+	assert( reldiff( sumsq(matB*vecY), 1.0 ) < sqrt(eps) );
+	assert( t >= 0.0 );
+	assert( t <= 1.0 );
+	if (DO_HACKS)
+		eta = vecG'*vecY + (vecY'*matH*vecY)/2.0;
+		eta_wouldHaveBeen = vecG'*vecY_wouldHaveBeen + (vecY_wouldHaveBeen'*matH*vecY_wouldHaveBeen)/2.0;
+		[ norm(vecY), norm(vecY_wouldHaveBeen), norm(vecY-vecY_wouldHaveBeen) ]
+		[ eta, eta_wouldHaveBeen, eta-eta_wouldHaveBeen ]
+		%error( "BEHOLD!" );
+	endif
 	return;
 endfunction
 
