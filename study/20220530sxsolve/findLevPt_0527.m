@@ -35,7 +35,7 @@ function [ vecY, pt_best, iterCount, retCode, datOut ] = findLevPt_0527( vecG, m
 			return;
 		endif
 		iterCount++;
-		if ( prm.valdLev >= VALDLEV__LOW )
+		if ( prm.valdLev >= VALDLEV__MEDIUM )
 			assert( pt0.b > bTrgt );
 		endif
 		%
@@ -82,7 +82,7 @@ function [ vecY, pt_best, iterCount, retCode, datOut ] = findLevPt_0527( vecG, m
 			return;
 		endif
 		iterCount++;
-		if ( prm.valdLev >= VALDLEV__LOW )
+		if ( prm.valdLev >= VALDLEV__MEDIUM )
 			assert( pt0.b > bTrgt );
 			assert( pt1.b < bTrgt );
 		endif

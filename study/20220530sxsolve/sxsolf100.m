@@ -1,5 +1,3 @@
-% TODO: Diagonally-dominant auto preconditioner.
-
 function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf100( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
 	mydefs;
 	startTime = time();
@@ -152,9 +150,11 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	assert( isrealarray(vecX_initial,[sizeX,1]) );
 	assert( isrealarray(vecF_initial,[sizeF,1]) );
 	%
-	%prm.verbLev = VERBLEV__FLAGGED; prm.valdLev = VALDLEV__LOW; % "Production / optimization".
+	%prm.verbLev = VERBLEV__FLAGGED; prm.valdLev = VALDLEV__LOW; % Post-establishment.
+	%prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__ZERO; % Performance testing.
+	prm.verbLev = VERBLEV__PROGRESS; prm.valdLev = VALDLEV__LOW; % Routine use.
 	%prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__MEDIUM; % Integration testing.
-	prm.verbLev = VERBLEV__PROGRESS; prm.valdLev = VALDLEV__HIGH; % Integration dev.
+	%prm.verbLev = VERBLEV__PROGRESS; prm.valdLev = VALDLEV__HIGH; % Integration dev.
 	%prm.verbLev = VERBLEV__DETAILS; prm.valdLev = VALDLEV__HIGH; % Feature refinement dev.
 	%prm.verbLev = VERBLEV__COPIOUS; prm.valdLev = VALDLEV__VERY_HIGH; % New feature dev.
 	%prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Refactor / debug.
@@ -179,7 +179,7 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	prm.findLevPrm.epsRelRegu = prm.epsRelRegu;
 	prm.findLevPrm.bRelTol = prm.candStepRelTol;
 	prm.findLevPrm.verbLev = VERBLEV__WARNING;
-	prm.findLevPrm.valdLev = prm.valdLev;
+	prm.findLevPrm.valdLev = VALDLEV__ZERO;
 	%
 	prm.fModelDat_initial = [];
 	%
@@ -471,7 +471,7 @@ function [ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fMo
 	%
 	%
 	%
-	if ( prm.valdLev >= VALDLEV__LOW )
+	if ( prm.valdLev >= VALDLEV__MEDIUM )
 		assert( sizeV < sizeX );
 		assert( isrealarray(vecV,[sizeX,1]) );
 		assert( abs(norm(vecV)-1.0) < sqrt(eps) );
@@ -773,7 +773,7 @@ function [ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fM
 	sizeVLocal = size(matVLocal,2);
 	%
 	%
-	if ( prm.valdLev >= VALDLEV__LOW )
+	if ( prm.valdLev >= VALDLEV__MEDIUM )
 		assert( sizeVLocal < sizeV );
 		assert( isrealarray(vecV,[sizeX,1]) );
 		assert( abs(norm(vecV)-1.0) < sqrt(eps) );
@@ -982,7 +982,7 @@ function [ retCode, fModelDat ] = __moveTo( vecY, vecF_next, fModelDat, prm )
 	yNorm = norm(vecY);
 	vecFModel_next = vecF + matW*vecY;
 	vecRhoF = vecF_next - vecFModel_next;
-	if ( prm.valdLev >= VALDLEV__LOW )
+	if ( prm.valdLev >= VALDLEV__MEDIUM )
 		assert( 0.0 < yNorm )
 		assert( norm(vecFModel_next) <= norm(vecF) );
 		assert( norm(vecF_next) <= norm(vecF) );
@@ -1052,7 +1052,7 @@ function vecW = __calcJV( vecV, funchF, vecX, vecF, prm )
 	% TODO: Update epsFD based on steps taken.... yeah, right.
 	mydefs;
 	v = norm(vecV);
-	if ( prm.valdLev >= VALDLEV__LOW )
+	if ( prm.valdLev >= VALDLEV__MEDIUM )
 		assert( 0.0 < v );
 	endif
 	vecFP = funchF( vecX + prm.epsFD*vecV );
@@ -1120,7 +1120,9 @@ function __validatePrm( prm )
 		assert( 0.0 < prm.fTol );
 		assert( 0.0 < prm.epsFD );
 		assert( 0.0 < prm.orthoTol );
-		%
+	endif
+	%
+	if ( prm.valdLev >= VALDLEV__MEDIUM )
 		if ( ~isempty(prm.precon_funchPrecon) )
 			assert( isempty(prm.precon_matL) );
 			assert( isempty(prm.precon_matU) );
@@ -1134,13 +1136,14 @@ function __validatePrm( prm )
 			assert( isempty(prm.precon_matU) );
 		endif
 	endif
+	%
 	return;
 endfunction
 
 
 function __validateFModelDat( fModelDat, prm )
 	mydefs;
-	if ( prm.valdLev < VALDLEV__LOW )
+	if ( prm.valdLev < VALDLEV__MEDIUM )
 		return;
 	endif
 	%

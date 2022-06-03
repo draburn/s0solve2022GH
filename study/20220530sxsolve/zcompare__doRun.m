@@ -104,8 +104,6 @@ r.mlStyle = [ markerTypes(mod(runIndex,length(markerTypes))+1), "-" ];
 r.mSize = 10+3*(numRuns-runIndex);
 r.stepCountOfStep = ( 0 : r.stepCount );
 %
-msg( __FILE__, __LINE__, "TODO: If run did not converge, resume with a different solver (fsovle?) and see if that converges." );
-%
 r.elapsedTime = time()-runStartTime;
 msg( __FILE__, __LINE__, sprintf( "Run '%s' (%s) reached %0.3e in %0.3es with %d fevals.", ...
   r.runName, r.runTypeDescrip, norm(r.vecFF), r.elapsedTime, r.fevalCount ) );

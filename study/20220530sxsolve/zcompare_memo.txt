@@ -55,4 +55,7 @@ z195 hack0529 further...
 
 2022-06-01
 510_72758400x50: A case where s100 is better than others, much better than 800.
-313_90455536x500: s100 is horrrrrible!
+313_90455536x500: s100 is horrrrrible! [FIXED!]
+ >>> Resolved: sx100 was incorrectly using matW(:,end) as residual, instead of vecF - matW*vecY.
+1010_98184528x500: Useful for timing: s100 takes about 14s vs 800 takes about 5.4s, comprable fevals, both cnvg.
+ >>> Much was due to VALDLEV__LOW in findLevPt. Post-fix, findLevPt() calls make up ~75% of time.

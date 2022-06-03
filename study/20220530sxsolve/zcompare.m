@@ -12,10 +12,11 @@ endif
 %
 %
 sizeX = 500;
-fType = 313;
+fType = 1010;
 %fSeed = 21665632;
 %fSeed = 90455536;
-fSeed = 81679312;
+%fSeed = 81679312;
+fSeed = 98184528;
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
