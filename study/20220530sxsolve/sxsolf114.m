@@ -1,6 +1,6 @@
-% TODO: Diagonally-dominant auto preconditioner.
+% SXSOLF114: HACKS For studying fType 314, where fz800 much better than sx.
 
-function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf100( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
+function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf114( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
 	mydefs;
 	startTime = time();
 	vecX = [];
@@ -189,6 +189,7 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	prm.precon_matJA = [];
 	%
 	% Add other parameters once code more settled.
+	prm.useAutoPrecon_diag = true;
 	%
 	prm = overwritefields( prm, prmIn );
 	%
@@ -264,6 +265,14 @@ function [ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, p
 	fModelDat.matWLocal = [ vecW ];
 	fModelDat.vecX_cand = []; % Candidate for next "local" point.
 	fModelDat.vecF_cand = [];
+	
+	
+	HACK_STUDY_FTYPE_314 = true;
+	if ( HACK_STUDY_FTYPE_314 )
+		fModelDat.funchF = funchF;
+	endif
+	
+	
 	%
 	if ( prm.valdLev >= VALDLEV__LOW )
 		__validateFModelDat( fModelDat, prm );
@@ -308,10 +317,17 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%
 	omegaThresh = 0.1 * omega * ( omega / omega_initial )^0.5;
 	if ( eta_unb > max([ 0.1*omegaThresh, prm.omegaTol ]) )
+		%%%vecR = matW(:,end);
 		vecR = vecF;
-		vecS = vecR;
-		vecU = __applyPrecon( vecS, prm, vecX, vecF );
-		vecV = __calcOrthonorm( vecU, matV, prm );
+		if ( prm.useAutoPrecon_diag && studyDat.autoPrecon_r < 0.01 )
+			vecS = studyDat.autoPrecon_matD*vecR;
+			vecU = vecS;
+			vecV = vecU/norm(vecU);
+		else
+			vecS = vecR;
+			vecU = __applyPrecon( vecS, prm, vecX, vecF );
+			vecV = __calcOrthonorm( vecU, matV, prm );
+		endif
 		if ( norm(vecV) > sqrt(eps) )
 			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Action: Expand subspace (per actual residual)." );
 			[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
@@ -325,9 +341,15 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		% Although f - W*y is the residual, if the latest w is perp to f, this quantity will be repeated
 		%  between iterations. So, we should also properly consider the Kryov subspace...
 		vecR = matW(:,end);
-		vecS = vecR;
-		vecU = __applyPrecon( vecS, prm, vecX, vecF );
-		vecV = __calcOrthonorm( vecU, matV, prm );
+		if ( prm.useAutoPrecon_diag && studyDat.autoPrecon_r < 0.01 )
+			vecS = studyDat.autoPrecon_matD*vecR;
+			vecU = vecS;
+			vecV = vecU/norm(vecU);
+		else
+			vecS = vecR;
+			vecU = __applyPrecon( vecS, prm, vecX, vecF );
+			vecV = __calcOrthonorm( vecU, matV, prm );
+		endif
 		if ( norm(vecV) > sqrt(eps) )
 			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Action: Expand subspace (per Krylov)." );
 			[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
@@ -470,6 +492,45 @@ function [ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fMo
 	sizeVLocal = size(matVLocal,2);
 	%
 	%
+	if ( prm.useAutoPrecon_diag )
+	if ( norm(matV'*vecV) > sqrt(eps) )
+		% Doing something new.
+		if ( prm.valdLev >= VALDLEV__LOW )
+			assert( sizeV < sizeX );
+			assert( isrealarray(vecV,[sizeX,1]) );
+			assert( abs(norm(vecV)-1.0) < sqrt(eps) );
+			%assert( norm(matVLocal'*vecV) < sqrt(eps) ); %Don't require this either?
+		endif
+		vecW = __calcJV( vecV, funchF, vecX, vecF, prm );
+		fevalIncr++;
+		%
+		vecVPerp = __calcOrthonorm( vecV, matV, prm );
+		assert( abs(norm(vecVPerp)-1.0) < sqrt(eps) );
+		matV_updated = [ matV, vecVPerp ];
+		matW_temp = [ matW, zeros(sizeF,1) ];
+		matW_updated = matW_temp + ( vecW - matW_temp*(matV_updated')*vecV ) * ( vecV'*matV_updated );
+		%
+		vecVPerpLocal = __calcOrthonorm( vecV, matVLocal, prm );
+		assert( abs(norm(vecVPerpLocal)-1.0) < sqrt(eps) );
+		matVLocal_updated = [ matVLocal, vecVPerpLocal ];
+		matWLocal_temp = [ matWLocal, zeros(sizeF,1) ];
+		matWLocal_updated = matWLocal_temp + ( vecW - matWLocal_temp*(matVLocal_updated')*vecV ) * ( vecV'*matVLocal_updated );
+		%
+		fModelDat.matV = matV_updated;
+		fModelDat.matW = matW_updated;
+		fModelDat.matB = zeros(sizeV+1,sizeV+1);
+		fModelDat.matB(1:sizeV,1:sizeV) = matB;
+		fModelDat.matVLocal = matVLocal_updated;
+		fModelDat.matWLocal = matWLocal_updated;
+		%
+		if ( prm.valdLev >= VALDLEV__LOW )
+			__validateFModelDat( fModelDat, prm );
+		endif
+		%
+		retCode = RETCODE__SUCCESS;
+		return;
+	endif
+	endif
 	%
 	if ( prm.valdLev >= VALDLEV__LOW )
 		assert( sizeV < sizeX );
@@ -826,7 +887,7 @@ function [ retCode, studyDat ] = __studyFModel( fModelDat, prm )
 	studyDat = [];
 	%
 	%
-	%vecX = fModelDat.vecX; % Current guess.
+	vecX = fModelDat.vecX; % Current guess.
 	vecF = fModelDat.vecF; % Function at current guess.
 	matV = fModelDat.matV; % Subspace basis matrix.
 	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
@@ -834,8 +895,8 @@ function [ retCode, studyDat ] = __studyFModel( fModelDat, prm )
 	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
 	matWLocal = fModelDat.matWLocal;  % Projection of locally evaluated subspace basis matrix.
 	%
-	%sizeX = size(vecX,1);
-	%sizeF = size(vecF,1);
+	sizeX = size(vecX,1);
+	sizeF = size(vecF,1);
 	sizeV = size(matV,2);
 	%sizeB = size(matB,1);
 	sizeVLocal = size(matVLocal,2);
@@ -929,6 +990,143 @@ function [ retCode, studyDat ] = __studyFModel( fModelDat, prm )
 		  norm(vecY_unb), norm(vecY_bnd), norm(vecY_loc), ...
 		  b_bnd, b_unb, b_loc ) );
 	endif
+	%
+	%
+	%
+	if ( prm.useAutoPrecon_diag && sizeVLocal == 0 )
+		assert( sizeX == sizeF );
+		maxNumValues = 5;
+		numValues = min([ maxNumValues, sizeV ]);
+		matW1 = matW(:,1:numValues);
+		matV1 = matV(:,1:numValues);
+		matW2 = matW1.^2;
+		matV2 = matV1.^2;
+		matVW = matV1.*matW1;
+		vScale = sqrt(sum(sum(matV2)));
+		wScale = sqrt(sum(sum(matW2)));
+		c1 = 1.0/(vScale^2);
+		c2 = 1.0/(wScale^2);
+		alpha = vScale/wScale;
+		eps1 = sqrt(eps);
+		eps2 = sqrt(eps);
+		%
+		autoPrecon_vecD = zeros(sizeX,1); % Best-estimate for diagonal entries of Jacobian.
+		autoPrecon_vecR = zeros(sizeX,1);
+		for m = 1 : sizeX
+			w2 = sum(matW2(m,:));
+			vw = sum(matVW(m,:));
+			v2 = sum(matV2(m,:));
+			%
+			rrts = realroots([ c1*w2+eps1/(alpha^2), -(c1*vw+eps1/alpha), 0.0, c2*vw+eps2*alpha, -(c2*v2+eps2*alpha^2) ]);
+			if ( vw > sqrt(eps)*sqrt(w2*v2) )
+				rt = rrts(rrts>0.0);
+				assert( length(rt) == 1 ); % There should be only one solution with the proper sign... I think.
+			elseif ( vw < -sqrt(eps)*sqrt(w2*v2) )
+				rt = rrts(rrts<0.0);
+				assert( length(rt) == 1 );
+			else
+				rt = 1.0; % What else could we do?
+			endif
+			autoPrecon_vecD(m) = rt;
+			autoPrecon_vecR(m) = c1*sumsq( matW1(m,:)*rt - matV1(m,:) )/2.0 + c2*sumsq( matW1(m,:) - matV1(m,:)/rt )/2.0;
+		endfor
+		autoPrecon_r = sqrt(sum(autoPrecon_vecR));
+		
+		
+		if (0)
+		if ( 20 == sizeV )
+			plot( autoPrecon_vecD, 'o-', autoPrecon_vecR, 'x-' );
+			grid on;
+			error( "HALT" );
+		endif
+		endif
+		
+		%1.0./autoPrecon_vecD(1:5)'
+		
+		%
+		autoPrecon_matD = diag(autoPrecon_vecD);
+		
+		
+		% HACK!!!!
+		msg( __FILE__, __LINE__, "Setting old-style!" );
+		autoPrecon_matD = eye(sizeX,sizeX) + (matW-matV)*(matV');
+		autoPrecon_r = 0.0;
+		%
+		
+		
+		%
+		studyDat.autoPrecon_matD = autoPrecon_matD;
+		studyDat.autoPrecon_vecD = autoPrecon_vecD;
+		studyDat.autoPrecon_vecR = autoPrecon_vecR;
+		studyDat.autoPrecon_r = autoPrecon_r;
+	else
+		studyDat.autoPrecon_matD = [];
+		studyDat.autoPrecon_vecD = [];
+		studyDat.autoPrecon_vecR = [];
+		studyDat.autoPrecon_r = 2.0;
+	endif
+	
+	
+	HACK_STUDY_FTYPE_314 = false;
+	if (HACK_STUDY_FTYPE_314)
+	
+		msg( __FILE__, __LINE__, "FAKE would have been; just identity matrix vvvvv." );
+		vecX = fModelDat.vecX; % Current guess.
+		sizeX = size(vecX,1);
+		sizeF = size(vecF,1);
+		matJA_wouldHaveBeen = eye(sizeF,sizeX); %NOTE: THIS IS NOT WHAT IT WOULD HAVE BEEN!
+		vecY_wouldHaveBeen = -( (matJA_wouldHaveBeen'*matJA_wouldHaveBeen)\(matJA_wouldHaveBeen'*vecF) );
+		matRhoF_wouldHaveBeen = vecF - matJA_wouldHaveBeen*vecY_wouldHaveBeen;
+		vecU_wouldHaveBeen = matJA_wouldHaveBeen\matRhoF_wouldHaveBeen;
+		vecV_wouldHaveBeen = vecU_wouldHaveBeen / norm(vecU_wouldHaveBeen);
+		VTVWHB = matV'*vecV_wouldHaveBeen
+		VTVWHBFracM1 = norm(VTVWHB)/norm(vecV_wouldHaveBeen) - 1.0
+		VLocTVWHB = matVLocal'*vecV_wouldHaveBeen
+		VLocTVWHBFracM1 = norm(VLocTVWHB)/norm(vecV_wouldHaveBeen) - 1.0
+		%
+		%vecV_wouldHaveBeen = __calcOrthonorm( vecU_wouldHaveBeen, matVLocal, prm );
+		vecW_wouldHaveBeen = __calcJV( vecV_wouldHaveBeen, fModelDat.funchF, vecX, vecF, prm );
+		matV_wouldHaveBeen = [ matVLocal, vecV_wouldHaveBeen ];
+		matW_wouldHaveBeen = [ matWLocal, vecW_wouldHaveBeen ];
+		vecY_wouldHaveBeen = -((matW_wouldHaveBeen'*matW_wouldHaveBeen)\(matW_wouldHaveBeen'*vecF));
+		vecRhoFEst_wouldHaveBeen = vecF + (matW_wouldHaveBeen*vecY_wouldHaveBeen);
+		eta_wouldHaveBeen = sumsq(vecRhoFEst_wouldHaveBeen)/2.0
+		vecXNext_wouldHaveBeen = vecX + matV_wouldHaveBeen*vecY_wouldHaveBeen;
+		vecFNext_wouldHaveBeen = fModelDat.funchF( vecXNext_wouldHaveBeen );
+		omega_wouldHaveBeen = sumsq(vecFNext_wouldHaveBeen)/2.0
+		msg( __FILE__, __LINE__, "ACTUAL would have been vvvvv." );
+		
+		%
+		%
+		vecX = fModelDat.vecX; % Current guess.
+		sizeX = size(vecX,1);
+		sizeF = size(vecF,1);
+		matJA_wouldHaveBeen = eye(sizeF,sizeX)-matV*(matV') + matW*(matV');
+		vecY_wouldHaveBeen = -( (matJA_wouldHaveBeen'*matJA_wouldHaveBeen)\(matJA_wouldHaveBeen'*vecF) );
+		matRhoF_wouldHaveBeen = vecF - matJA_wouldHaveBeen*vecY_wouldHaveBeen;
+		vecU_wouldHaveBeen = matJA_wouldHaveBeen\matRhoF_wouldHaveBeen;
+		vecV_wouldHaveBeen = vecU_wouldHaveBeen / norm(vecU_wouldHaveBeen);
+		VTVWHB = matV'*vecV_wouldHaveBeen
+		VTVWHBFracM1 = norm(VTVWHB)/norm(vecV_wouldHaveBeen) - 1.0
+		VLocTVWHB = matVLocal'*vecV_wouldHaveBeen
+		VLocTVWHBFracM1 = norm(VLocTVWHB)/norm(vecV_wouldHaveBeen) - 1.0
+		%
+		%vecV_wouldHaveBeen = __calcOrthonorm( vecU_wouldHaveBeen, matVLocal, prm );
+		vecW_wouldHaveBeen = __calcJV( vecV_wouldHaveBeen, fModelDat.funchF, vecX, vecF, prm );
+		matV_wouldHaveBeen = [ matVLocal, vecV_wouldHaveBeen ];
+		matW_wouldHaveBeen = [ matWLocal, vecW_wouldHaveBeen ];
+		vecY_wouldHaveBeen = -((matW_wouldHaveBeen'*matW_wouldHaveBeen)\(matW_wouldHaveBeen'*vecF));
+		vecRhoFEst_wouldHaveBeen = vecF + (matW_wouldHaveBeen*vecY_wouldHaveBeen);
+		eta_wouldHaveBeen = sumsq(vecRhoFEst_wouldHaveBeen)/2.0
+		vecXNext_wouldHaveBeen = vecX + matV_wouldHaveBeen*vecY_wouldHaveBeen;
+		vecFNext_wouldHaveBeen = fModelDat.funchF( vecXNext_wouldHaveBeen );
+		omega_wouldHaveBeen = sumsq(vecFNext_wouldHaveBeen)/2.0
+		if ( omega_wouldHaveBeen < 0.01 )
+			error( "HALT!" );
+		endif
+	endif
+	
+	
 	%
 	%if ( prm.valdLev >= VALDLEV__LOW )
 	%	__validateStudyDat( fModelDat, studyDat, prm );
@@ -1175,7 +1373,13 @@ function __validateFModelDat( fModelDat, prm )
 		assert( reldiff(matV'*matV,eye(sizeV,sizeV)) < sqrt(eps) );
 		assert( reldiff(matVLocal'*matVLocal,eye(sizeVLocal,sizeVLocal)) < sqrt(eps) );
 		assert( reldiff(matV*(matV'*matVLocal),matVLocal) < sqrt(eps) );
-		assert( reldiff(matWLocal,matW*matV'*matVLocal) < sqrt(eps) );
+		if ( ~prm.useAutoPrecon_diag )
+			assert( reldiff(matWLocal,matW*matV'*matVLocal) < sqrt(eps) );
+		else
+			if ( reldiff(matWLocal,matW*matV'*matVLocal) > sqrt(eps) )
+				warning( "reldiff(matWLocal,matW*matV'*matVLocal) > sqrt(eps)" );
+			endif
+		endif
 	endif
 	endif
 	%

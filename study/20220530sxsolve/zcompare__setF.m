@@ -188,13 +188,8 @@ case 314
 	function vecF = funcF( vecX, vecXE, matJE, matA0, matA1, matA2, matB0, matB1, matB2, matB3 )
 		vecY = vecX - vecXE;
 		vecF =  matJE*vecY + matA0*( (matA1*vecY) .* (matA2*vecY) ) + matB0*( (matB1*vecY) .* (matB2*vecY) .* (matB3*vecY) );
-		%load( "feval_vecXVals.m" );
-		%%%feval_vecXVals(:,end+1) = vecX;
-		%save( "feval_vecXVals.m", "feval_vecXVals" );
-		omega = sumsq(vecF)/2.0
-		if ( omega < 0.01 )
-			error( "HALT!" );
-		endif
+		omega = sumsq(vecF)/2.0;
+		msg( __FILE__, __LINE__, sprintf( "funchF: omega = %0.6e.", omega ) );
 		return;
 	endfunction
 	funchF = @(x)( funcF( x, vecXE, matJE, matA0, matA1, matA2, matB0, matB1, matB2, matB3 ) );
