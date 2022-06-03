@@ -308,7 +308,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%
 	omegaThresh = 0.1 * omega * ( omega / omega_initial )^0.5;
 	if ( eta_unb > max([ 0.1*omegaThresh, prm.omegaTol ]) )
-		vecR = vecF;
+		vecR = vecF - matW*vecY_unb;
 		vecS = vecR;
 		vecU = __applyPrecon( vecS, prm, vecX, vecF );
 		vecV = __calcOrthonorm( vecU, matV, prm );
@@ -323,7 +323,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		endif
 		%
 		% Although f - W*y is the residual, if the latest w is perp to f, this quantity will be repeated
-		%  between iterations. So, we should also properly consider the Kryov subspace...
+		%  between iterations. So, we should also properly consider the Kryolv subspace...
 		vecR = matW(:,end);
 		vecS = vecR;
 		vecU = __applyPrecon( vecS, prm, vecX, vecF );
