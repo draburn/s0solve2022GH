@@ -163,8 +163,7 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	prm.iterMax = ceil( 100 + 10*sqrt(sizeX+sizeF) + sizeX );
 	prm.fevalMax = prm.iterMax;
 	prm.stepsMax = 100;
-	prm.fTol = sizeF*100.0*eps;
-	%%%prm.fTol = eps;
+	prm.fTol = sqrt(sizeF)*100.0*eps;
 	%
 	prm.epsFD = 1.0e-3;
 	prm.orthoTol = 1.0e-10;
@@ -889,8 +888,8 @@ function [ retCode, studyDat ] = __studyFModel( fModelDat, prm )
 	endif
 	%
 	%
-	vecY_unb = findLevPt_0527( vecWTF, matWTW, matC, [], [], prm.findLevPrm );
-	vecY_bnd = findLevPt_0527( vecWTF, matWTW, matC, matB, 1.0, prm.findLevPrm );
+	vecY_unb = __findLevPt( vecWTF, matWTW, matC, [], [], prm );
+	vecY_bnd = __findLevPt( vecWTF, matWTW, matC, matB, 1.0, prm );
 	eta_unb = sumsq( vecF + matW*vecY_unb )/2.0;
 	eta_bnd = sumsq( vecF + matW*vecY_bnd )/2.0;
 	b_unb = norm(matB*vecY_unb);
@@ -905,7 +904,7 @@ function [ retCode, studyDat ] = __studyFModel( fModelDat, prm )
 		matBLocal = matB*(matV'*matVLocal);
 		matCLocal = (matVLocal'*matV)*matC*(matV'*matVLocal);
 		matCLocal = (matCLocal'+matCLocal);
-		vecY_loc = findLevPt_0527( vecWTFLocal, matWTWLocal, matCLocal, matBLocal, 1.0, prm.findLevPrm );
+		vecY_loc = __findLevPt( vecWTFLocal, matWTWLocal, matCLocal, matBLocal, 1.0, prm );
 		eta_loc = max([ 0.0, omega + vecWTFLocal'*vecY_loc + abs((vecY_loc'*matWTWLocal*vecY_loc)/2.0) ]);
 		b_loc = norm(matBLocal*vecY_loc);
 	endif
@@ -935,6 +934,12 @@ function [ retCode, studyDat ] = __studyFModel( fModelDat, prm )
 	%	__validateStudyDat( fModelDat, studyDat, prm );
 	%endif
 	retCode = RETCODE__SUCCESS;
+	return;
+endfunction
+
+
+function vecY = __findLevPt( vecG, matH, matC, matB, bTrgt, prm )
+	vecY = findLevPt_0527( vecG, matH, matC, matB, bTrgt, prm.findLevPrm );
 	return;
 endfunction
 

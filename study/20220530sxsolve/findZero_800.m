@@ -80,8 +80,7 @@ function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
 		%
 		%
 		%
-		%%%fTol = mygetfield( prm, "fTol", eps );
-		fTol = mygetfield( prm, "fTol", sizeF*100.0*eps );
+		fTol = mygetfield( prm, "fTol", sqrt(sizeF)*100.0*eps );
 		iterMax = mygetfield( prm, "iterMax", 50 );
 		if ( norm(vecF_best) <= fTol )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "STRONG SUCCESS: norm(vecF_best) <= fTol." );

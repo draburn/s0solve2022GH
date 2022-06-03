@@ -166,8 +166,7 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	prm.iterMax = ceil( 100 + 10*sqrt(sizeX+sizeF) + sizeX );
 	prm.fevalMax = prm.iterMax;
 	prm.stepsMax = 100;
-	prm.fTol = sizeF*100.0*eps;
-	%%%prm.fTol = eps;
+	prm.fTol = sqrt(sizeF)*100.0*eps;
 	%
 	prm.epsFD = 1.0e-3;
 	prm.orthoTol = 1.0e-10;
