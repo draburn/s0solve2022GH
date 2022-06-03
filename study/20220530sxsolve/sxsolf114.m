@@ -167,6 +167,7 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	prm.fevalMax = prm.iterMax;
 	prm.stepsMax = 100;
 	prm.fTol = sizeF*100.0*eps;
+	%%%prm.fTol = eps;
 	%
 	prm.epsFD = 1.0e-3;
 	prm.orthoTol = 1.0e-10;
@@ -989,9 +990,9 @@ function [ retCode, studyDat ] = __studyFModel( fModelDat, prm )
 	%
 	%
 	%
-	if ( prm.useAutoPrecon_diag && sizeVLocal == 0 )
+	if ( prm.useAutoPrecon_diag && sizeV >= 3 )
 		assert( sizeX == sizeF );
-		maxNumValues = 5;
+		maxNumValues = 10;
 		numValues = min([ maxNumValues, sizeV ]);
 		matW1 = matW(:,1:numValues);
 		matV1 = matV(:,1:numValues);
@@ -1000,7 +1001,7 @@ function [ retCode, studyDat ] = __studyFModel( fModelDat, prm )
 		matVW = matV1.*matW1;
 		vScale = sqrt(sum(sum(matV2)));
 		wScale = sqrt(sum(sum(matW2)));
-		c1 = 1.0/(vScale^2);
+		c1 = 1000.0/(vScale^2);
 		c2 = 1.0/(wScale^2);
 		alpha = vScale/wScale;
 		eps1 = sqrt(eps);
@@ -1013,6 +1014,7 @@ function [ retCode, studyDat ] = __studyFModel( fModelDat, prm )
 			vw = sum(matVW(m,:));
 			v2 = sum(matV2(m,:));
 			%
+			% roots() is not fast!
 			rrts = realroots([ c1*w2+eps1/(alpha^2), -(c1*vw+eps1/alpha), 0.0, c2*vw+eps2*alpha, -(c2*v2+eps2*alpha^2) ]);
 			if ( vw > sqrt(eps)*sqrt(w2*v2) )
 				rt = rrts(rrts>0.0);
@@ -1029,11 +1031,9 @@ function [ retCode, studyDat ] = __studyFModel( fModelDat, prm )
 		autoPrecon_r = sqrt(sum(autoPrecon_vecR));
 		%
 		if (0)
-		if ( 20 == sizeV )
-			plot( autoPrecon_vecD, 'o-', autoPrecon_vecR, 'x-' );
+			plot( 1.0./autoPrecon_vecD, 'o-', autoPrecon_vecR, 'x-' );
 			grid on;
 			error( "HALT" );
-		endif
 		endif
 		%
 		autoPrecon_matD = diag(autoPrecon_vecD);

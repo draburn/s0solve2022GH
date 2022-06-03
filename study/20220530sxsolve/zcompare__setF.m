@@ -197,6 +197,21 @@ case 314
 	vecX0 = randn(sizeX,1);
 	feval_vecXVals(:,1) = vecX0;
 	%save( "feval_vecXVals.m", "feval_vecXVals" );
+case 319
+	sizeF = sizeX;
+	vecXE = randn(sizeX,1);
+	matJE = diag(1:sizeX); + 1.0e-8*randn(sizeF,sizeX);
+	matA0 = 1.0e-8*randn(sizeF,sizeX);
+	matA1 = randn(sizeX,sizeX);
+	matA2 = randn(sizeX,sizeX);
+	matB0 = 1.0e-8*randn(sizeF,sizeX);
+	matB1 = randn(sizeX,sizeX);
+	matB2 = randn(sizeX,sizeX);
+	matB3 = randn(sizeX,sizeX);
+	y = @(x)( x - vecXE );
+	funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
+	%
+	vecX0 = randn(sizeX,1);
 case 320
 	sizeF = sizeX;
 	vecXE = randn(sizeX,1);
