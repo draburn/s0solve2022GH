@@ -62,6 +62,22 @@ for n = [ 200, 500, 1000 ]
 	x = r \ ( r' \ h );
 	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"x = r \\ ( r' \\ h )\".", 1000.0*(time()-t)) );
 	%
+	t = time();
+	hFro = norm(h,"fro");
+	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"hFro = norm(h,\"fro\")\".", 1000.0*(time()-t)) );
+	%
+	t = time();
+	rc = rcond(h);
+	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"rc = rcond(h)\".", 1000.0*(time()-t)) )
+	%
+	t = time();
+	cEst = condest(h);
+	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"cEst = condest(h)\".", 1000.0*(time()-t)) );
+	%
+	t = time();
+	c = cond(h);
+	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"c = cond(h)\".", 1000.0*(time()-t)) );
+	%
 	if ( n <= 500 )
 		%
 		t = time();
@@ -94,23 +110,40 @@ for n = [ 200, 500, 1000 ]
 		msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"phi = null(h)\".", 1000.0*(time()-t)) );
 	endif
 	%
+	for p = 0.1.^[ 0, 1, 2, 3, 4 ]
+		j = randn(n,n);
+		h = j'*j;
+		h += p*diag(diag(h));
+		c = condest(h);
+		f = randn(n,1);
+		g = j'*f;
+		%
+		t = time();
+		x = cgs( h, g, 1e-6, n );
+		msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"x = cgs( h, g )\" to %10.3e for condest %10.3e.", ...
+		  1000.0*(time()-t), norm(g-h*x)/norm(g), c ) );
+		%
+		if ( c < 1e4 )
+			t = time();
+			x = gmres( h, g );
+			msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"x = gmres( h, g )\" to %10.3e for condest %10.3e.", ...
+			  1000.0*(time()-t), norm(g-h*x)/norm(g), c ) );
+		endif
+		%
+		if (0)
+			% These are slower and have annoying output.
+			t = time();
+			x = bicg( h, g );
+			msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"x = bicg( h, g )\" to %10.3e for condest %10.3e.", ...
+			  1000.0*(time()-t), norm(g-h*x)/norm(g), c ) );
+			%
+			t = time();
+			x = bicgstab( h, g );
+			msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"x = bicgstab( h, g )\" to %10.3e for condest %10.3e.", ...
+			  1000.0*(time()-t), norm(g-h*x)/norm(g), c ) );
+		endif
+	endfor
 	%
-	%
-	t = time();
-	hFro = norm(h,"fro");
-	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"hFro = norm(h,\"fro\")\".", 1000.0*(time()-t)) );
-	%
-	t = time();
-	rc = rcond(h);
-	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"rc = rcond(h)\".", 1000.0*(time()-t)) )
-	%
-	t = time();
-	cEst = condest(h);
-	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"cEst = condest(h)\".", 1000.0*(time()-t)) );
-	%
-	t = time();
-	c = cond(h);
-	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"c = cond(h)\".", 1000.0*(time()-t)) );
 	%
 	continue;
 	%
