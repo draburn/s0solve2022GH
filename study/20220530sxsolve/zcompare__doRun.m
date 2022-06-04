@@ -94,6 +94,13 @@ case 2114
 	r.fevalCountOfStep = r.datOut.fevalCountOfSteps;
 	r.fBestNormOfStep = r.datOut.fNormOfSteps;
 	r.isValid = true;
+case 2124
+	r.runTypeDescrip = "s124";
+	[ r.vecXF, r.vecFF, r.retCode, r.fevalCount, r.stepsCount, r.datOut ] = sxsolf124( funchF, vecX0, [], r.prm );
+	r.stepCount = r.stepsCount;
+	r.fevalCountOfStep = r.datOut.fevalCountOfSteps;
+	r.fBestNormOfStep = r.datOut.fNormOfSteps;
+	r.isValid = true;
 otherwise
 	msg( __FILE__, __LINE__, sprintf( "ERROR: Invalid runType (%d)", r.runType ) );
 	r.isValid = false;

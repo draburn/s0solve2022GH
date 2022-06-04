@@ -272,6 +272,21 @@ case 530
 	funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
 	%
 	vecX0 = randn(sizeX,1);
+case 540
+	sizeF = sizeX;
+	vecXE = randn(sizeX,1);
+	matJE = randn(sizeF,sizeX);
+	matA0 = randn(sizeF,sizeX);
+	matA1 = randn(sizeX,sizeX);
+	matA2 = randn(sizeX,sizeX);
+	matB0 = randn(sizeF,sizeX);
+	matB1 = randn(sizeX,sizeX);
+	matB2 = randn(sizeX,sizeX);
+	matB3 = randn(sizeX,sizeX);
+	y = @(x)( x - vecXE );
+	funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
+	%
+	vecX0 = randn(sizeX,1);
 case 1000
 	sizeF = sizeX;
 	vecXE = randn(sizeX,1);
