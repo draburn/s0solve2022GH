@@ -21,6 +21,17 @@ endfor
 %matWTrial
 %matVTrial
 %matRTrial
-[ foo, orderedList ] = sort( matRTrial );
 
+[ foo, orderedList ] = sort( matRTrial );
 newElemUsed = columnNumTrial(orderedList(1));
+%%%newElemUsed = columnNumTrial(orderedList(foo<1.1*foo(1)));
+
+if (0)
+matJIndivEstTrial = zeros(1,sizeXTrial);
+for n=1:sizeXTrial
+	matJIndivEstTrial(n) = matWVAvgTrial(n) / vecVSqAvgTrial(n);
+endfor
+[ foo, orderedList ] = sort( abs(matJIndivEstTrial./matRTrial) );
+newElemUsed = columnNumTrial(orderedList(end));
+%%%newElemUsed = columnNumTrial(foo>0.8*foo(end));
+endif

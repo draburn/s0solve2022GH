@@ -4,9 +4,9 @@ numFigs = 0;
 setprngstates(71021024);
 %
 sizeF = 1;
-sizeX = 100;
+sizeX = 1000;
 numElemPerCol = 0;
-numAddtlElemPerRow = 6;
+numAddtlElemPerRow = 10;
 c0 = 0.0;
 csx = 0.0;
 csf = 0.0;
@@ -34,8 +34,9 @@ matJ = matSF*matJ0/matSX;
 
 
 %setprngstates(96551984); % Fail
-setprngstates(75868048); % Succ
-sizeU0 = 15;
+%setprngstates(75868048); % Succ
+setprngstates();
+sizeU0 = 60;
 
 matU0 = randn(sizeX,sizeU0);
 matV = utorthdrop(randn(sizeX,sizeU0));
@@ -52,9 +53,9 @@ if (0)
 	matU5(5:5:end,5) = 1.0;
 	matV = [ matV, matU3, matU5 ];
 endif
-
-%matV = matV(:,1:10);
-%matV = matV(:,11:20);
+%vMsk = logical(ones(1,size(matV,2)));
+%vMsk(14) = false;
+%matV = matV(:,vMsk);
 
 sizeV = size(matV,2);
 %assert( reldiff(matV'*matV,eye(sizeV,sizeV)) < sqrt(eps) );
@@ -109,12 +110,38 @@ endif
 % Use quick method: just pick top several.
 useQuickMethod = false;
 if ( useQuickMethod )
+	matJCollectiveEst = zeros(sizeF,sizeX);
+	matResCollective = zeros(sizeF,sizeV);
 	for m=1:sizeF
-		sizeL = sizeV-1;
+		sizeL = 7;
 		[ foo, orderedList ] = sort( matR(m,:) );
-		elemSelector = orderedList(1:sizeL)
+		elemUsed = orderedList(1:sizeL)
+		%
+		usedMsk = logical(zeros(1,sizeX));
+		usedMsk(elemUsed) = true;
+		matWUsed = matW(m,:); % Actually just a row vector.
+		matVUsed = matV(elemUsed,:);
+		coeffs = matWUsed*(matVUsed')/(matVUsed*(matVUsed'));
+		%
+		matJCollectiveEst(m,elemUsed) = coeffs;
+		%
+		%
+		matResCollective(m,:) = abs(matW(m,:) - coeffs*matVUsed)/sum(abs(matW(m,:)));
 	endfor
-	error( "Quick method not implemented; already looks flawed on first trial." );
+	%
+	if (1)
+		numFigs++; figure(numFigs);
+		plot( matJ, 'o-', 'linewidth', 3, matJCollectiveEst, 'x-' );
+		grid on;
+		numFigs++; figure(numFigs);
+		plot( matResCollective, 'o-' );
+		grid on;
+		numFigs++; figure(numFigs);
+		plot( 1.0./matR, '^-' );
+		grid on;
+	endif
+
+	return;
 endif
 %
 %
@@ -123,15 +150,20 @@ matJCollectiveEst = zeros(sizeF,sizeX);
 matResCollective = zeros(sizeF,sizeV);
 for m=1:sizeF
 	%sizeL = 50;
-	sizeL = 7;
+	sizeL = 15;
 	assert( sizeL < sizeV );
+	
 	[ foo, orderedList ] = sort( matR(m,:) );
 	elemUsed = orderedList(1);
-	%%%[ foo, orderedList ] = sort( abs(matJIndivEst(m,:)./matR(m,:)) );
-	%%%elemUsed = orderedList(end);
+	%%%[ foo, orderedList ] = sort( abs(matJIndivEst(m,:)./matR(m,:)) ); %%%
+	%%%elemUsed = orderedList(end); %%%
+	
 	while (numel(elemUsed)<sizeL)
 		sparsePrecon0__internal;
-		elemUsed = [ elemUsed, newElemUsed ];
+		elemUsed = [ elemUsed, newElemUsed ]
+		if ( isempty(newElemUsed) )
+			break;
+		endif
 	endwhile
 	%
 	%elemUsed
@@ -155,5 +187,8 @@ if (1)
 	grid on;
 	numFigs++; figure(numFigs);
 	plot( matResCollective, 'o-' );
+	grid on;
+	numFigs++; figure(numFigs);
+	plot( 1.0./matR, '^-' );
 	grid on;
 endif
