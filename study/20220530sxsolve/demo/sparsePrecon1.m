@@ -35,7 +35,7 @@ matJ = matSF*matJ0/matSX;
 
 %setprngstates(96551984); % Fail
 setprngstates(75868048); % Succ
-sizeU0 = 90;
+sizeU0 = 15;
 
 matU0 = randn(sizeX,sizeU0);
 matV = utorthdrop(randn(sizeX,sizeU0));
@@ -59,21 +59,56 @@ endif
 sizeV = size(matV,2);
 %assert( reldiff(matV'*matV,eye(sizeV,sizeV)) < sqrt(eps) );
 matW = matJ*matV;
-%
+
+
+
+objective_function = @(x)( norm(x,1) );
+pin = ( (matW(1,:)*(matV'))*pinv(matV*(matV')) )';
+constraint_function = @(x)( matV'*x - matW(1,:)' );
+[p, objf, cvg, outp] = nonlin_min (objective_function, pin, optimset ("equc", {constraint_function}, "tolFun", 1e-16 ));
+matJEst(1,:) = p;
+
+matResCollective = matW - matJEst*matV;
+if (1)
+	numFigs++; figure(numFigs);
+	plot( matJ(1,:), 'o-', 'linewidth', 3, p, 'x-' );
+	grid on;
+	numFigs++; figure(numFigs);
+	plot( matResCollective, 'o-' );
+	grid on;
+endif
+
+return;
+
+
+ ## Example for default optimization (Levenberg/Marquardt with
+ ## BFGS), one non-linear equality constraint. Constrained optimum is
+ ## at p = [0; 1].
+ objective_function = @ (p) p(1)^2 + p(2)^2;
+ pin = [-2; 5];
+ constraint_function = @ (p) p(1)^2 + 1 - p(2);
+ [p, objf, cvg, outp] = nonlin_min (objective_function, pin, optimset ("equc", {constraint_function}))
+
+return;
 %
 %
 matJCollectiveEst = zeros(sizeF,sizeX);
 matResCollective = zeros(sizeF,sizeV);
 for m=1:sizeF
-	funchOmega = @(x)( 1E16*norm(matV'*x-matW(m,:)') + norm(x,1) );
-	vecX0 = zeros(sizeX,1);
-	fminunc_options = optimset( "TolFun", 1e-20 );
+	funchOmega = @(x)( 1E8*norm(matV'*x-matW(m,:)') + norm(x,1) );
+	%vecX0 = zeros(sizeX,1);
+	%funchOmega(vecX0)
+	vecX0 = matJ(m,:)'+0.1*randn(sizeX,1);
+	%return
+	fminunc_options = optimset( "TolFun", 1e-4 );
 	[ vecXF, fminunc_fval, fminunc_info, fminunc_output, fminunc_grad, fminunc_hess ] = fminunc(funchOmega,vecX0,fminunc_options);
-	fminunc_fval
+	%fminunc_fval
 	fminunc_output
 	fminunc_info
+	funchOmega(vecX0)
 	funchOmega(vecXF)
-	matJEst(m,:) = vecXF;
+	funchOmega(matJ(m,:)')
+	matJEst(m,:) = vecXF';
 endfor
 matResCollective = matW - matJEst*matV;
 %matJCollectiveEst
