@@ -35,7 +35,7 @@ matJ = matSF*matJ0/matSX;
 
 %setprngstates(96551984); % Fail
 setprngstates(75868048); % Succ
-sizeU0 = 15;
+sizeU0 = 20;
 
 matU0 = randn(sizeX,sizeU0);
 matV = utorthdrop(randn(sizeX,sizeU0));
@@ -66,7 +66,17 @@ objective_function = @(x)( norm(x,1) );
 pin = ( (matW(1,:)*(matV'))*pinv(matV*(matV')) )';
 constraint_function = @(x)( matV'*x - matW(1,:)' );
 [p, objf, cvg, outp] = nonlin_min (objective_function, pin, optimset ("equc", {constraint_function}, "tolFun", 1e-16 ));
+for n=1:5
+[p, objf, cvg, outp] = nonlin_min (objective_function, p, optimset ("equc", {constraint_function}, "tolFun", 1e-16 ));
+endfor
 matJEst(1,:) = p;
+
+objective_function( pin )
+objective_function( p )
+objective_function( matJ(1,:)' )
+norm(constraint_function(pin))
+norm(constraint_function(p))
+norm(constraint_function(matJ(1,:)'))
 
 matResCollective = matW - matJEst*matV;
 if (1)
