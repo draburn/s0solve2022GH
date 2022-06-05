@@ -1,8 +1,8 @@
 usedMsk = logical(zeros(1,sizeX));
-usedMsk(elemUsed) = true
-matWUsed = matW(m,:) % Actually just a row vector.
-matVUsed = matV(usedMsk,:)
-coeffs = matWUsed*(matVUsed')/(matVUsed*(matVUsed'))
+usedMsk(elemUsed) = true;
+matWUsed = matW(m,:); % Actually just a row vector.
+matVUsed = matV(usedMsk,:);
+coeffs = matWUsed*(matVUsed')/(matVUsed*(matVUsed'));
 %
 trialMsk = ~usedMsk;
 matWTrial = matW(m,:) - coeffs*matVUsed;
@@ -17,8 +17,8 @@ matRTrial = zeros(1,sizeXTrial); % Actually just a row vector.
 for n=1:sizeXTrial
 	matRTrial(n) = 1.0 - ( matWVAvgSqTrial(n) / ( eps + vecWSqAvgTrial*vecVSqAvgTrial(n) ) );
 endfor
-matWTrial
-matVTrial
-matRTrial
+%matWTrial
+%matVTrial
+%matRTrial
 [ foo, orderedList ] = sort( matRTrial );
-newElemUsed = orderedList(1)
+newElemUsed = orderedList(1);

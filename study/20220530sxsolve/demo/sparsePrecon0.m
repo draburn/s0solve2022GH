@@ -4,10 +4,10 @@ numFigs = 0;
 setprngstates(0);
 %
 sizeF = 1;
-sizeX = 5;
-sizeV0 = 4;
+sizeX = 50;
+sizeU0 = 20;
 numElemPerCol = 0;
-numAddtlElemPerRow = 2;
+numAddtlElemPerRow = 4;
 c0 = 0.0;
 csx = 0.0;
 csf = 0.0;
@@ -32,9 +32,24 @@ assert( isrealarray(matJ0,[sizeF,sizeX]) );
 matSX = diag(exp(csx*randn(sizeX,1)));
 matSF = diag(exp(csf*randn(sizeF,1)));
 matJ = matSF*matJ0/matSX;
-matV = utorthdrop(randn(sizeX,sizeV0));
+
+matU0 = randn(sizeX,sizeU0);
+matV = utorthdrop(randn(sizeX,sizeU0));
+if (0)
+	matU3 = zeros(sizeX,3);
+	matU3(1:3:end,1) = 1.0;
+	matU3(2:3:end,2) = 1.0;
+	matU3(3:3:end,3) = 1.0;
+	matU5 = zeros(sizeX,5);
+	matU5(1:5:end,1) = 1.0;
+	matU5(2:5:end,2) = 1.0;
+	matU5(3:5:end,3) = 1.0;
+	matU5(4:5:end,4) = 1.0;
+	matU5(5:5:end,5) = 1.0;
+	matV = [ matV, matU3, matU5 ];
+endif
 sizeV = size(matV,2);
-assert( reldiff(matV'*matV,eye(sizeV,sizeV)) < sqrt(eps) );
+%assert( reldiff(matV'*matV,eye(sizeV,sizeV)) < sqrt(eps) );
 matW = matJ*matV;
 %
 matWVAvg = matW*(matV') / sizeV;
@@ -56,7 +71,7 @@ endfor
 endfor
 %matR
 %
-if (1)
+if (0)
 	m = 1;
 	numFigs++; figure( numFigs );
 	plot( matJ(m,:), 'o-' );
@@ -97,22 +112,38 @@ endif
 %
 %
 matJCollectiveEst = zeros(sizeF,sizeX);
+matResCollective = zeros(sizeF,sizeV);
 for m=1:sizeF
-	sizeL = 2;
+	%sizeL = 50;
+	sizeL = 10;
+	assert( sizeL < sizeV );
 	[ foo, orderedList ] = sort( matR(m,:) );
-	elemUsed = orderedList(1)
+	elemUsed = orderedList(1);
 	while (numel(elemUsed)<sizeL)
 		sparsePrecon0__internal;
 		elemUsed = [ elemUsed, newElemUsed ];
 	endwhile
 	%
+	elemUsed
 	usedMsk = logical(zeros(1,sizeX));
-	usedMsk(elemUsed) = true
-	matWUsed = matW(m,:) % Actually just a row vector.
-	matVUsed = matV(usedMsk,:)
-	coeffs = matWUsed*(matVUsed')/(matVUsed*(matVUsed'))
+	usedMsk(elemUsed) = true;
+	matWUsed = matW(m,:); % Actually just a row vector.
+	matVUsed = matV(elemUsed,:);
+	coeffs = matWUsed*(matVUsed')/(matVUsed*(matVUsed'));
 	%
-	matJCollectiveEst(m,usedMsk) = coeffs;
+	matJCollectiveEst(m,elemUsed) = coeffs;
+	%
+	%
+	matResCollective(m,:) = matW(m,:) - coeffs*matVUsed;
 endfor
-matJCollectiveEst
-matJ
+%matJCollectiveEst
+%matJ
+
+if (1)
+	numFigs++; figure(numFigs);
+	plot( matJ, 'o-', 'linewidth', 3, matJCollectiveEst, 'x-' );
+	grid on;
+	numFigs++; figure(numFigs);
+	plot( matResCollective, 'o-' );
+	grid on;
+endif
