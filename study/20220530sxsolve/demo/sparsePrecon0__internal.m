@@ -8,6 +8,7 @@ trialMsk = ~usedMsk;
 matWTrial = matW(m,:) - coeffs*matVUsed;
 matVTrial = matV(trialMsk,:);
 sizeXTrial = sizeX - sum(double(usedMsk));
+columnNumTrial = (1:sizeX)(trialMsk);
 
 matWVAvgTrial = matWTrial*(matVTrial') / sizeV; % Actually just a row vector.
 vecWSqAvgTrial = sum( matWTrial.^2, 2 ) / sizeV; % Actually just a scalar.
@@ -21,4 +22,6 @@ endfor
 %matVTrial
 %matRTrial
 [ foo, orderedList ] = sort( matRTrial );
-newElemUsed = orderedList(1);
+
+%%%newElemUsed = orderedList(1);
+newElemUsed = columnNumTrial(orderedList(1));

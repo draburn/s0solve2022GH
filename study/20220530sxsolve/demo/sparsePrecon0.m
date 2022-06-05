@@ -4,10 +4,10 @@ numFigs = 0;
 setprngstates(0);
 %
 sizeF = 1;
-sizeX = 100;
+sizeX = 50;
 sizeU0 = 20;
 numElemPerCol = 0;
-numAddtlElemPerRow = 6;
+numAddtlElemPerRow = 4;
 c0 = 0.0;
 csx = 0.0;
 csf = 0.0;
@@ -115,15 +115,19 @@ matJCollectiveEst = zeros(sizeF,sizeX);
 matResCollective = zeros(sizeF,sizeV);
 for m=1:sizeF
 	%sizeL = 50;
-	sizeL = 10;
+	sizeL = 7;
 	assert( sizeL < sizeV );
 	[ foo, orderedList ] = sort( matR(m,:) );
 	elemUsed = orderedList(1);
 	while (numel(elemUsed)<sizeL)
 		sparsePrecon0__internal;
-		%elemUsed = [ elemUsed, newElemUsed ];
-		%elemUsed = [ elemUsed, orderedList(2) ]
-		newElem = orderedList(foo<0.9);
+		
+		elemUsed = [ elemUsed, newElemUsed ];
+		
+		%elemUsed = [ elemUsed, orderedList(1), orderedList(2) ]
+		
+		if (0)
+		newElem = orderedList(foo<0.8);
 		if ( 0 == numel(newElem) )
 			break;
 		endif
@@ -132,9 +136,10 @@ for m=1:sizeF
 			elemUsed = elemUsed(1:sizeL);
 			break;
 		endif
+		endif
 	endwhile
 	%
-	%elemUsed
+	elemUsed
 	usedMsk = logical(zeros(1,sizeX));
 	usedMsk(elemUsed) = true;
 	matWUsed = matW(m,:); % Actually just a row vector.
