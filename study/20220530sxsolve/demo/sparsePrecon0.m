@@ -4,10 +4,10 @@ numFigs = 0;
 setprngstates(0);
 %
 sizeF = 1;
-sizeX = 50;
+sizeX = 100;
 sizeU0 = 20;
 numElemPerCol = 0;
-numAddtlElemPerRow = 4;
+numAddtlElemPerRow = 6;
 c0 = 0.0;
 csx = 0.0;
 csf = 0.0;
@@ -121,10 +121,20 @@ for m=1:sizeF
 	elemUsed = orderedList(1);
 	while (numel(elemUsed)<sizeL)
 		sparsePrecon0__internal;
-		elemUsed = [ elemUsed, newElemUsed ];
+		%elemUsed = [ elemUsed, newElemUsed ];
+		%elemUsed = [ elemUsed, orderedList(2) ]
+		newElem = orderedList(foo<0.9);
+		if ( 0 == numel(newElem) )
+			break;
+		endif
+		elemUsed = [ elemUsed, newElem ];
+		if ( numel(elemUsed) > sizeL )
+			elemUsed = elemUsed(1:sizeL);
+			break;
+		endif
 	endwhile
 	%
-	elemUsed
+	%elemUsed
 	usedMsk = logical(zeros(1,sizeX));
 	usedMsk(elemUsed) = true;
 	matWUsed = matW(m,:); % Actually just a row vector.
