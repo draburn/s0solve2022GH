@@ -1,13 +1,12 @@
 % See Notes 2022-05-30-2100.
 clear;
 numFigs = 0;
-setprngstates(0);
+setprngstates(71021024);
 %
 sizeF = 1;
-sizeX = 50;
-sizeU0 = 20;
+sizeX = 100;
 numElemPerCol = 0;
-numAddtlElemPerRow = 4;
+numAddtlElemPerRow = 6;
 c0 = 0.0;
 csx = 0.0;
 csf = 0.0;
@@ -28,10 +27,15 @@ endfor
 matJ0 += c0 * randn(sizeF,sizeX);
 assert( isrealarray(matJ0,[sizeF,sizeX]) );
 
-
 matSX = diag(exp(csx*randn(sizeX,1)));
 matSF = diag(exp(csf*randn(sizeF,1)));
 matJ = matSF*matJ0/matSX;
+
+
+
+%setprngstates(96551984); % Fail
+setprngstates(75868048); % Succ
+sizeU0 = 15;
 
 matU0 = randn(sizeX,sizeU0);
 matV = utorthdrop(randn(sizeX,sizeU0));
@@ -48,6 +52,10 @@ if (0)
 	matU5(5:5:end,5) = 1.0;
 	matV = [ matV, matU3, matU5 ];
 endif
+
+%matV = matV(:,1:10);
+%matV = matV(:,11:20);
+
 sizeV = size(matV,2);
 %assert( reldiff(matV'*matV,eye(sizeV,sizeV)) < sqrt(eps) );
 matW = matJ*matV;
@@ -119,27 +127,14 @@ for m=1:sizeF
 	assert( sizeL < sizeV );
 	[ foo, orderedList ] = sort( matR(m,:) );
 	elemUsed = orderedList(1);
+	%%%[ foo, orderedList ] = sort( abs(matJIndivEst(m,:)./matR(m,:)) );
+	%%%elemUsed = orderedList(end);
 	while (numel(elemUsed)<sizeL)
 		sparsePrecon0__internal;
-		
 		elemUsed = [ elemUsed, newElemUsed ];
-		
-		%elemUsed = [ elemUsed, orderedList(1), orderedList(2) ]
-		
-		if (0)
-		newElem = orderedList(foo<0.8);
-		if ( 0 == numel(newElem) )
-			break;
-		endif
-		elemUsed = [ elemUsed, newElem ];
-		if ( numel(elemUsed) > sizeL )
-			elemUsed = elemUsed(1:sizeL);
-			break;
-		endif
-		endif
 	endwhile
 	%
-	elemUsed
+	%elemUsed
 	usedMsk = logical(zeros(1,sizeX));
 	usedMsk(elemUsed) = true;
 	matWUsed = matW(m,:); % Actually just a row vector.
@@ -149,7 +144,7 @@ for m=1:sizeF
 	matJCollectiveEst(m,elemUsed) = coeffs;
 	%
 	%
-	matResCollective(m,:) = matW(m,:) - coeffs*matVUsed;
+	matResCollective(m,:) = abs(matW(m,:) - coeffs*matVUsed)/sum(abs(matW(m,:)));
 endfor
 %matJCollectiveEst
 %matJ

@@ -23,5 +23,4 @@ endfor
 %matRTrial
 [ foo, orderedList ] = sort( matRTrial );
 
-%%%newElemUsed = orderedList(1);
 newElemUsed = columnNumTrial(orderedList(1));
