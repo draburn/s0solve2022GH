@@ -1,12 +1,12 @@
 % See Notes 2022-05-30-2100.
 clear;
 numFigs = 0;
-setprngstates(71021024);
+setprngstates(0);
 %
 sizeF = 1;
-sizeX = 1000;
+sizeX = 20;
 numElemPerCol = 0;
-numAddtlElemPerRow = 10;
+numAddtlElemPerRow = 3;
 c0 = 0.0;
 csx = 0.0;
 csf = 0.0;
@@ -35,8 +35,8 @@ matJ = matSF*matJ0/matSX;
 
 %setprngstates(96551984); % Fail
 %setprngstates(75868048); % Succ
-setprngstates();
-sizeU0 = 60;
+%setprngstates();
+sizeU0 = 15;
 
 matU0 = randn(sizeX,sizeU0);
 matV = utorthdrop(randn(sizeX,sizeU0));
@@ -113,7 +113,7 @@ if ( useQuickMethod )
 	matJCollectiveEst = zeros(sizeF,sizeX);
 	matResCollective = zeros(sizeF,sizeV);
 	for m=1:sizeF
-		sizeL = 7;
+		sizeL = 5;
 		[ foo, orderedList ] = sort( matR(m,:) );
 		elemUsed = orderedList(1:sizeL)
 		%
@@ -149,8 +149,7 @@ endif
 matJCollectiveEst = zeros(sizeF,sizeX);
 matResCollective = zeros(sizeF,sizeV);
 for m=1:sizeF
-	%sizeL = 50;
-	sizeL = 15;
+	sizeL = 5;
 	assert( sizeL < sizeV );
 	
 	[ foo, orderedList ] = sort( matR(m,:) );
