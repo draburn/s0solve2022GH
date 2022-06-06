@@ -1,13 +1,13 @@
 % See Notes 2022-05-30-2100.
 clear;
 numFigs = 0;
-setprngstates(25247536);
+setprngstates();
 tic();
 %
-sizeF = 10;
-sizeX = 1000;
+sizeF = 100;
+sizeX = 100;
 numElemPerCol = 0;
-numAddtlElemPerRow = 20;
+numAddtlElemPerRow = 5;
 c0 = 0.01;
 csx = 0.0;
 csf = 0.0;
@@ -41,7 +41,7 @@ matJ = matSF*matJ0/matSX;
 %setprngstates(74504256);
 %setprngstates(26048640);
 %setprngstates(38115184);
-sizeU0 = 100;
+sizeU0 = 50;
 %sizeU0 = 80;
 
 matU0 = randn(sizeX,sizeU0);
@@ -88,4 +88,19 @@ plot( ...
   matJEst_hacky(m,:), 'x-', 'linewidth', 4, 'markersize', 10, ...
   matJEst_basic(m,:), '^-', 'linewidth', 2, 'markersize', 15 );
 grid on;
+
+numFigs++; figure(numFigs);
+imagesc(abs(matJ));
+grid on;
+axis equal;
+numFigs++; figure(numFigs);
+imagesc(abs(matJEst_basic));
+grid on;
+axis equal;
+numFigs++; figure(numFigs);
+imagesc(matJEst_basic-matJ);
+grid on;
+axis equal;
+max(max(abs(matJEst_basic-matJ)))
+
 return
