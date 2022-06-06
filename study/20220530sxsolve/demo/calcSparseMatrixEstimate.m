@@ -7,6 +7,7 @@ function [ matJEst, datOut ] = calcSparseMatrixEstimate( matV, matW, prm = [] )
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__UNLIMITED );
 	maxNumElemPerRow = mygetfield( prm, "maxNumElem", floor(sizeK/2.0) );
 	chiThresh = mygetfield( prm, "chiThresh", sqrt(eps) );
+	cEstRelThresh = mygetfield( prm, "cEstRelThresh", sqrt(eps) );
 	if ( valdLev >= VALDLEV__MEDIUM )
 		assert( isposintscalar(sizeX) );
 		assert( isposintscalar(sizeF) );
@@ -16,7 +17,10 @@ function [ matJEst, datOut ] = calcSparseMatrixEstimate( matV, matW, prm = [] )
 		assert( isposintscalar(maxNumElemPerRow) );
 		assert( isrealscalar(chiThresh) );
 		assert( 0.0 < chiThresh );
-		assert( chiThresh <= 1.0 );
+		assert( chiThresh < 1.0 );
+		assert( isrealscalar(cEstRelThresh) );
+		assert( 0.0 < cEstRelThresh );
+		assert( cEstRelThresh < 1.0 );
 	endif
 	%
 	matJEst = zeros(sizeF,sizeX); % Estimated sparse Jacobian.
@@ -33,6 +37,14 @@ function [ matJEst, datOut ] = calcSparseMatrixEstimate( matV, matW, prm = [] )
 		matWeight = ones(sizeX,sizeK);
 	endif
 	for m=1:sizeF
+			
+			rvecJOut = zeros(1,sizeX);
+			foo1 = (matW(m,:)*(matV(:,:)')) ...
+			 * inv( matV(:,:)*(matV(:,:)') + 1.0*sqrt(eps)*diag(diag(matV(:,:)*(matV(:,:)'))) );
+			foo2 = (matW(m,:)*(matV(:,:)')) ...
+			 * inv( matV(:,:)*(matV(:,:)') + 2.0*sqrt(eps)*diag(diag(matV(:,:)*(matV(:,:)'))) );
+			rvecJOut(:) = 2.0*foo1 - foo2;
+		
 		%
 		elemUsed = [];
 		rvecJEst = zeros(1,sizeX);
@@ -43,19 +55,81 @@ function [ matJEst, datOut ] = calcSparseMatrixEstimate( matV, matW, prm = [] )
 			rvecR2Avg = sum( (rvecRho.^2).*matWeight, 2 )'; % Automatic broadcasting.
 			rvecCEst = rvecRVAvg./rvecV2Avg;
 			rvecChi = (rvecRVAvg.^2)./( eps + rvecR2Avg.*rvecV2Avg );
+			
+			%rvecWVAvg = sum( matW(m,:).*(matV.*matWeight), 2 )';
+			%rvecW2Avg = sum( matW2(m,:).*matWeight, 2 )';
+			%rvecChiW = (rvecWVAvg.^2)./( eps + rvecW2Avg.*rvecV2Avg );
+			%sigmaChiW = sum(rvecChiW)
+			
 			%
 			usedElemMsk = logical(zeros(1,sizeX));
 			usedElemMsk(elemUsed) = true;
 			selectorList = (1:sizeX)(~usedElemMsk);
-			%[ foo, orderedList ] = sort( -rvecChi(~usedElemMsk) );
-			%[ foo, orderedList ] = sort( -abs(rvecCEst(~usedElemMsk)) );
-			[ foo, orderedList ] = sort( -abs(rvecCEst(~usedElemMsk).*rvecChi(~usedElemMsk)) );
-			if ( abs(foo) < chiThresh )
-				break;
+			if (0)
+				[ cEstMin, cEstOrderedList ] = sort( rvecCEst(~usedElemMsk), "descend" );
+				[ chiMin, chiOrderedList ] = sort( rvecChi(~usedElemMsk), "descend" );
+				% Or maybe add all that are above the other's other metric?
+				if ( cEstMin < cEstRelThresh*max(rvecChi) )
+					if ( chiMin < chiThresh )
+						break;
+					else
+						elemUsed = [ elemUsed, selectorList(chiOrderedList(1)) ];
+					endif
+				else
+					if ( chiMin < chiThresh )
+						elemUsed = [ elemUsed, selectorList(cEstOrderedList(1)) ];
+					elseif ( chiOrderedList(1) == cEstOrderedList(1) )
+						elemUsed = [ elemUsed, selectorList(cEstOrderedList(1)) ];
+					else
+						elemUsed = [ elemUsed, selectorList(cEstOrderedList(1)), selectorList(chiOrderedList(1)) ];
+					endif
+				endif
+			elseif (0)
+				nBest = 0;
+				trialNormBest = 0.0;
+				for n = 1 : sizeX
+				if ( sum(n==elemUsed)==0 )
+					elemUsedTrial = [ elemUsed, n ];
+					clear rvecJEstTrial;
+					rvecJEstTrial = (matW(m,:)*(matV(elemUsedTrial,:)'))*inv(matV(elemUsedTrial,:)*(matV(elemUsedTrial,:)'));
+					%trialNorm = norm(rvecJEstTrial,1);
+					trialNorm = abs(rvecJEstTrial(end));
+					if ( 0 == nBest || trialNorm < trialNormBest )
+						nBest = n;
+						trialNormBest = trialNorm;
+					endif
+				endif
+				endfor
+				elemUsed = [ elemUsed, nBest ];
+			elseif (0)
+				rvecJOutPrev = rvecJOut;
+				elemNotUsed = selectorList;
+				clear rvecJOut;
+				foo1 = (rvecRho(m,:)*(matV(elemNotUsed,:)')) ...
+				 * inv( matV(elemNotUsed,:)*(matV(elemNotUsed,:)') + 1.0*sqrt(eps)*diag(diag(matV(elemNotUsed,:)*(matV(elemNotUsed,:)'))) );
+				foo2 = (rvecRho(m,:)*(matV(elemNotUsed,:)')) ...
+				 * inv( matV(elemNotUsed,:)*(matV(elemNotUsed,:)') + 2.0*sqrt(eps)*diag(diag(matV(elemNotUsed,:)*(matV(elemNotUsed,:)'))) );
+				rvecJOut = 2.0*foo1 - foo2;
+				%size(rvecJOut)
+				%rvecJOut
+				%selectorList
+				[ foo, orderedListOfNotUsed ] = sort(abs(rvecJOut),"descend");
+				newElem = selectorList(orderedListOfNotUsed(1));
+				elemUsed = [ elemUsed, newElem ];
+			else
+				[ foo, orderedList ] = sort( -rvecChi(~usedElemMsk) );
+				%[ foo, orderedList ] = sort( -abs(rvecCEst(~usedElemMsk)) );
+				%[ foo, orderedList ] = sort( -abs(rvecCEst(~usedElemMsk).*rvecChi(~usedElemMsk)) );
+				if ( abs(foo) < chiThresh )
+					break;
+				endif
+				elemUsed = [ elemUsed, selectorList(orderedList(1)) ];
 			endif
-			elemUsed = [ elemUsed, selectorList(orderedList(1)) ];
+			%elemUsed
+			
 			rvecJEst(elemUsed) = (matW(m,:)*(matV(elemUsed,:)'))*inv(matV(elemUsed,:)*(matV(elemUsed,:)'));
-			rvecRho = matW(m,:) - rvecJEst*matV;		
+			rvecRho = matW(m,:) - rvecJEst*matV;
+			%norm(rvecRho,1)
 		endfor
 		matJEst(m,:) = rvecJEst;
 	endfor
