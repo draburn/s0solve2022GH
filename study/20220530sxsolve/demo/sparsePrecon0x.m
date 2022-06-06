@@ -6,7 +6,7 @@ setprngstates(0);
 sizeF = 1;
 sizeX = 20;
 numElemPerCol = 0;
-numAddtlElemPerRow = 3;
+numAddtlElemPerRow = 1;
 c0 = 0.0;
 csx = 0.0;
 csf = 0.0;
@@ -15,13 +15,13 @@ matJ0 = zeros(sizeF,sizeX);
 for n=1:sizeX
 for t=1:numElemPerCol
 	m = ceil( sqrt(eps) + (sizeF-2.0*sqrt(eps))*rand() );
-	matJ0(m,n) = randn();
+	matJ0(m,n) = 1.0;
 endfor
 endfor
 for m=1:sizeF
 for t=1:numAddtlElemPerRow
 	n = ceil( sqrt(eps) + (sizeX-2.0*sqrt(eps))*rand() );
-	matJ0(m,n) = randn();
+	matJ0(m,n) = 1.0;
 endfor
 endfor
 matJ0 += c0 * randn(sizeF,sizeX);
@@ -32,11 +32,12 @@ matSF = diag(exp(csf*randn(sizeF,1)));
 matJ = matSF*matJ0/matSX;
 
 
-%setprngstates();
-sizeU0 = 15;
+%setprngstates(3568384);
+setprngstates();
+sizeU0 = 2;
 
 matU0 = randn(sizeX,sizeU0);
-matV = utorthdrop(randn(sizeX,sizeU0));
+matV = utorthdrop(matU0);
 
 sizeV = size(matV,2);
 %assert( reldiff(matV'*matV,eye(sizeV,sizeV)) < sqrt(eps) );
@@ -62,27 +63,31 @@ for m=1:sizeF
 	%
 	rvecRho = rvecW;
 	for l=1:5
-		%rvecWVAvg = sum( rvecW.*(matV.*matWeight), 2 ); % Automatic broadcastig.
-		%rvecV2Avg = sum( matV2.*matWeight, 2 );
-		%rvecW2Avg = sum( (rvecW.^2).*matWeight, 2 ); % Automatic broadcasting.
 		rvecRVAvg = sum( rvecRho.*(matV.*matWeight), 2 )'; % Automatic broadcastig.
 		rvecV2Avg = sum( matV2.*matWeight, 2 )';
 		rvecR2Avg = sum( (rvecRho.^2).*matWeight, 2 )'; % Automatic broadcasting.
 		rvecCEst = rvecRVAvg./rvecV2Avg;
 		rvecChi = (rvecRVAvg.^2)./( eps + rvecR2Avg.*rvecV2Avg );
+		%%%rvecChi .*= rvecR2Avg.^4;
 		%
-		%%%[ foo, orderedList ] = sort( -rvecChi );
-		%%%elemUsed = orderedList(1:l) % Already "used" elements will remain used.
 		usedElemMsk = logical(zeros(1,sizeX));
 		usedElemMsk(elemUsed) = true;
 		selectorList = (1:sizeX)(~usedElemMsk);
 		[ foo, orderedList ] = sort( -rvecChi(~usedElemMsk) );
+		if ( abs(foo) < sqrt(eps) )
+			break;
+		endif
 		elemUsed = [ elemUsed, selectorList(orderedList(1)) ]
 		%
 		rvecJEst = zeros(1,sizeX);
 		rvecJEst(elemUsed) = (rvecW*(matV(elemUsed,:)'))*inv(matV(elemUsed,:)*(matV(elemUsed,:)'));
 		rvecRho = rvecW - rvecJEst*matV;
 	endfor
+	rvecRVAvg = sum( rvecRho.*(matV.*matWeight), 2 )'; % Automatic broadcastig.
+	rvecV2Avg = sum( matV2.*matWeight, 2 )';
+	rvecR2Avg = sum( (rvecRho.^2).*matWeight, 2 )'; % Automatic broadcasting.
+	rvecCEst = rvecRVAvg./rvecV2Avg;
+	rvecChi = (rvecRVAvg.^2)./( eps + rvecR2Avg.*rvecV2Avg );
 	%
 	matJEst(m,:) = rvecJEst;
 	matCEst(m,:) = rvecCEst;

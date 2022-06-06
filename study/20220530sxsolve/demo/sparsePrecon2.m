@@ -1,0 +1,65 @@
+% See Notes 2022-05-30-2100.
+clear;
+numFigs = 0;
+setprngstates(0);
+%
+sizeF = 1;
+sizeX = 1000;
+numElemPerCol = 0;
+numAddtlElemPerRow = 5;
+c0 = 0.0;
+csx = 0.0;
+csf = 0.0;
+%
+matJ0 = zeros(sizeF,sizeX);
+for n=1:sizeX
+for t=1:numElemPerCol
+	m = ceil( sqrt(eps) + (sizeF-2.0*sqrt(eps))*rand() );
+	matJ0(m,n) = 1.0;
+endfor
+endfor
+for m=1:sizeF
+for t=1:numAddtlElemPerRow
+	n = ceil( sqrt(eps) + (sizeX-2.0*sqrt(eps))*rand() );
+	matJ0(m,n) = 1.0;
+endfor
+endfor
+matJ0 += c0 * randn(sizeF,sizeX);
+assert( isrealarray(matJ0,[sizeF,sizeX]) );
+
+matSX = diag(exp(csx*randn(sizeX,1)));
+matSF = diag(exp(csf*randn(sizeF,1)));
+matJ = matSF*matJ0/matSX;
+
+
+%setprngstates(3568384);
+setprngstates(74504256);
+%setprngstates();
+sizeU0 = 50;
+
+matU0 = randn(sizeX,sizeU0);
+matV = utorthdrop(matU0);
+
+sizeV = size(matV,2);
+%assert( reldiff(matV'*matV,eye(sizeV,sizeV)) < sqrt(eps) );
+matW = matJ*matV;
+
+matJEst = calcSparseMatrixEstimate( matV, matW );
+
+%
+m = 1;
+numFigs++; figure(numFigs);
+plot( matJ(m,:), 'o-', 'linewidth', 5, matJEst(m,:), 's-', 'linewidth', 1, matJEst(m,:), 'x-', 'linewidth', 2 );
+grid on;
+return
+numFigs++; figure(numFigs);
+plot( matChi(m,:), '^-', 'linewidth', 2 );
+grid on;
+numFigs++; figure(numFigs);
+plot( matRho(m,:), '^-', 'linewidth', 2 );
+grid on;
+
+
+
+
+return;

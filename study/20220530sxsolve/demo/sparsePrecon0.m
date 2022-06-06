@@ -6,7 +6,7 @@ setprngstates(0);
 sizeF = 1;
 sizeX = 20;
 numElemPerCol = 0;
-numAddtlElemPerRow = 3;
+numAddtlElemPerRow = 5;
 c0 = 0.0;
 csx = 0.0;
 csf = 0.0;
@@ -36,9 +36,10 @@ matJ = matSF*matJ0/matSX;
 %setprngstates(96551984); % Fail
 %setprngstates(75868048); % Succ
 %setprngstates();
-sizeU0 = 15;
+sizeU0 = 9;
 
-matU0 = randn(sizeX,sizeU0);
+%matU0 = randn(sizeX,sizeU0);
+%matV = utorthdrop(randn(sizeX,sizeU0));
 matV = utorthdrop(randn(sizeX,sizeU0));
 if (0)
 	matU3 = zeros(sizeX,3);

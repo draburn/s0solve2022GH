@@ -1,12 +1,12 @@
 % See Notes 2022-05-30-2100.
 clear;
 numFigs = 0;
-setprngstates(71021024);
+setprngstates(0);
 %
 sizeF = 1;
-sizeX = 100;
+sizeX = 50;
 numElemPerCol = 0;
-numAddtlElemPerRow = 6;
+numAddtlElemPerRow = 5;
 c0 = 0.0;
 csx = 0.0;
 csf = 0.0;
@@ -15,13 +15,13 @@ matJ0 = zeros(sizeF,sizeX);
 for n=1:sizeX
 for t=1:numElemPerCol
 	m = ceil( sqrt(eps) + (sizeF-2.0*sqrt(eps))*rand() );
-	matJ0(m,n) = randn();
+	matJ0(m,n) = 1.0;
 endfor
 endfor
 for m=1:sizeF
 for t=1:numAddtlElemPerRow
 	n = ceil( sqrt(eps) + (sizeX-2.0*sqrt(eps))*rand() );
-	matJ0(m,n) = randn();
+	matJ0(m,n) = 1.0;
 endfor
 endfor
 matJ0 += c0 * randn(sizeF,sizeX);
@@ -33,12 +33,12 @@ matJ = matSF*matJ0/matSX;
 
 
 
-%setprngstates(96551984); % Fail
-setprngstates(75868048); % Succ
+%setprngstates(3568384);
+setprngstates(74504256);
 sizeU0 = 20;
 
 matU0 = randn(sizeX,sizeU0);
-matV = utorthdrop(randn(sizeX,sizeU0));
+matV = utorthdrop(matU0);
 if (0)
 	matU3 = zeros(sizeX,3);
 	matU3(1:3:end,1) = 1.0;
@@ -61,15 +61,25 @@ sizeV = size(matV,2);
 matW = matJ*matV;
 
 
-
+if (1)
+	% GradObj doesn't help?!
+	constraint_function = @(x)( matV'*x - matW(1,:)' );
+	opts = optimset( "equc", {constraint_function}, "tolFun", 1e-16, "GradObj", "on" );
+	objective_function = @(x)( getL1Norm(x) );
+	pin = ( (matW(1,:)*(matV'))*pinv(matV*(matV')) )';
+	[p, objf, cvg, outp] = nonlin_min (objective_function, pin, optimset ("equc", {constraint_function}, "tolFun", 1e-16 ));
+	matJEst(1,:) = p;
+else
 objective_function = @(x)( norm(x,1) );
+%%%objective_function = @(x)( sum(x.^2./(eps+abs(x))) );
 pin = ( (matW(1,:)*(matV'))*pinv(matV*(matV')) )';
 constraint_function = @(x)( matV'*x - matW(1,:)' );
 [p, objf, cvg, outp] = nonlin_min (objective_function, pin, optimset ("equc", {constraint_function}, "tolFun", 1e-16 ));
-for n=1:5
+for n=1:0
 [p, objf, cvg, outp] = nonlin_min (objective_function, p, optimset ("equc", {constraint_function}, "tolFun", 1e-16 ));
 endfor
 matJEst(1,:) = p;
+endif
 
 objective_function( pin )
 objective_function( p )
