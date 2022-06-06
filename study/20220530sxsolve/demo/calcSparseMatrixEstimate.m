@@ -47,7 +47,9 @@ function [ matJEst, datOut ] = calcSparseMatrixEstimate( matV, matW, prm = [] )
 			usedElemMsk = logical(zeros(1,sizeX));
 			usedElemMsk(elemUsed) = true;
 			selectorList = (1:sizeX)(~usedElemMsk);
-			[ foo, orderedList ] = sort( -rvecChi(~usedElemMsk) );
+			%[ foo, orderedList ] = sort( -rvecChi(~usedElemMsk) );
+			%[ foo, orderedList ] = sort( -abs(rvecCEst(~usedElemMsk)) );
+			[ foo, orderedList ] = sort( -abs(rvecCEst(~usedElemMsk).*rvecChi(~usedElemMsk)) );
 			if ( abs(foo) < chiThresh )
 				break;
 			endif
