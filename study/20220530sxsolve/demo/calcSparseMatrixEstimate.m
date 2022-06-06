@@ -145,9 +145,13 @@ function [ matJEst, datOut ] = calcSparseMatrixEstimate( matV, matW, prm = [] )
 					elemUsed = [ elemUsed, altOrderedList(n) ];
 				endif
 			endwhile
+			rvecJEst = zeros(1,sizeX);
 			rvecJEst(elemUsed) = (matW(m,:)*(matV(elemUsed,:)'))*inv(matV(elemUsed,:)*(matV(elemUsed,:)'));
+			%rvecJEst(elemUsed) = matW(m,:)/matV(elemUsed,:);
 			%rvecJEst(elemUsed) = (matW(m,:)*(matV(elemUsed,:)'))*inv(matV(elemUsed,:)*(matV(elemUsed,:)')+1e-4*eye(maxNumElemPerRow));
 			rvecRho = matW(m,:) - rvecJEst*matV;
+			sumsq(rvecRho)
+			%rcond( matV(elemUsed,:)*(matV(elemUsed,:)') )
 		endif
 		elemUsed
 			
