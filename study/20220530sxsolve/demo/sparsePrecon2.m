@@ -44,12 +44,24 @@ sizeV = size(matV,2);
 %assert( reldiff(matV'*matV,eye(sizeV,sizeV)) < sqrt(eps) );
 matW = matJ*matV;
 
+matJL2_1 = (matW*(matV'))/( matV*(matV') + 1.0*sqrt(eps)*diag(diag(matV*(matV'))) );
+matJL2_2 = (matW*(matV'))/( matV*(matV') + 2.0*sqrt(eps)*diag(diag(matV*(matV'))) );
+matJL2 = 2.0*matJL2_1 - matJL2_2;
+%
+matJL2E = zeros(sizeF,sizeX);
+for m=1:sizeF
+	[ foo, maxyElem ] = sort(-abs(matJL2(m,:)));
+	elemSelector = maxyElem(1:sizeV);
+	matVSel = matV(elemSelector,:);
+	matJL2E(elemSelector) = matW(m,:)*(matVSel')/( matVSel*(matVSel') );
+endfor
+
 matJEst = calcSparseMatrixEstimate( matV, matW );
 
 %
 m = 1;
 numFigs++; figure(numFigs);
-plot( matJ(m,:), 'o-', 'linewidth', 5, matJEst(m,:), 's-', 'linewidth', 1, matJEst(m,:), 'x-', 'linewidth', 2 );
+plot( matJ(m,:), 'o-', 'linewidth', 5, matJL2E(m,:), 's-', 'markersize', 10, 'linewidth', 1, matJEst(m,:), 'x-', 'linewidth', 2 );
 grid on;
 return
 numFigs++; figure(numFigs);

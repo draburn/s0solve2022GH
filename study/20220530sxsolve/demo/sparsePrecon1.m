@@ -4,7 +4,7 @@ numFigs = 0;
 setprngstates(0);
 %
 sizeF = 1;
-sizeX = 50;
+sizeX = 1000;
 numElemPerCol = 0;
 numAddtlElemPerRow = 5;
 c0 = 0.0;
@@ -35,7 +35,7 @@ matJ = matSF*matJ0/matSX;
 
 %setprngstates(3568384);
 setprngstates(74504256);
-sizeU0 = 20;
+sizeU0 = 50;
 
 matU0 = randn(sizeX,sizeU0);
 matV = utorthdrop(matU0);
