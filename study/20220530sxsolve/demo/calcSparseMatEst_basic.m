@@ -31,12 +31,13 @@ function [ matJEst, datOut ] = calcSparseMatEst_basic( matV, matW, prm = [] )
 	%
 	matV2 = matV.^2;
 	matW2 = matW.^2;
+	matVVT = matV*(matV');
+	matWVT = matW*(matV');
 	if (useVWeight)
 		matWeight = 1.0./(eps+1.0-matV2);
 		rvecV2Avg = sum( matV2.*matWeight, 2 )';
 		matVWeighted = matV.*matWeight;
 	else
-		%matWeight = ones(sizeX,sizeK);
 		rvecV2Avg = sum( matV2, 2 )';
 	endif
 	for m=1:sizeF
@@ -54,28 +55,24 @@ function [ matJEst, datOut ] = calcSparseMatEst_basic( matV, matW, prm = [] )
 			endif
 			rvecChi = (rvecRVAvg.^2)./( eps + rvecR2Avg.*rvecV2Avg );
 			%
-			% Find the element of rvecChi that is minimal among all uncemented elements.
-			originalList = (1:sizeX)(~cementedElementMsk);
-			[ chiMinUncemented, orderedList ] = sort( rvecChi(~cementedElementMsk), "descend" );
-			if ( abs(chiMinUncemented) < chiThresh )
+			% Find the element of rvecChi that is maximal among all uncemented elements
+			%  and set the corresponding element of cementedElemMsk to true.
+			[ chiMaxUncemented, indexOfMax ] = max( rvecChi(~cementedElementMsk) );
+			if ( abs(chiMaxUncemented) < chiThresh )
 				break;
 			endif
-			newElem = originalList(orderedList(1));
-			%
-			if (cementedElementMsk(newElem))
-				error( "INTERNAL ERROR: Attempting to add an element that has already been added. Please fix this bug!" );
-			endif
-			cementedElementMsk(newElem) = true;
+			cementedElementMsk(( (1:sizeX)(~cementedElementMsk) )(indexOfMax) ) = true;
+			%newElem = ( (1:sizeX)(~cementedElementMsk) )(indexOfMax);
+			%cementedElementMsk( newElem ) = true;
 			%
 			%
 			%%%rvecJEst(cementedElementMsk) = (matW(m,:)*(matV(cementedElementMsk,:)'))*inv(matV(cementedElementMsk,:)*(matV(cementedElementMsk,:)'));0)
 			% The above rvecJEst is correct, but, let's optimize a bit...
 			%
-			matR = chol( matV(cementedElementMsk,:)*(matV(cementedElementMsk,:)') );
-			% This cholinsert() seems to work, but, it feels icky.
-			%%%matR = cholinsert( matR, find(newElem==(1:sizeX)(cementedElementMsk)), matV(cementedElementMsk,:)*(matV(newElem,:)') );
-			rvecJEst(cementedElementMsk) = ((matW(m,:)*(matV(cementedElementMsk,:)'))/matR)/(matR');
-			%
+			matR = chol( matVVT(cementedElementMsk,cementedElementMsk) );
+			% This cholinsert() seems to work, but, doesn't particularly help.
+			%matR = cholinsert( matR, find(newElem==(1:sizeX)(cementedElementMsk)), matVVT(cementedElementMsk,newElem) );
+			rvecJEst(cementedElementMsk) = (matWVT(m,cementedElementMsk)/matR)/(matR');
 			%
 			rvecRho = matW(m,:) - rvecJEst*matV;
 		endfor
