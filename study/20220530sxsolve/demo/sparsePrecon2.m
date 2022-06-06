@@ -1,7 +1,7 @@
 % See Notes 2022-05-30-2100.
 clear;
 numFigs = 0;
-setprngstates();
+setprngstates(25247536);
 tic();
 %
 sizeF = 10;
