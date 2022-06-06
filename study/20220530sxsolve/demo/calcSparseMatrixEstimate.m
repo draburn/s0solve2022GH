@@ -5,7 +5,7 @@ function [ matJEst, datOut ] = calcSparseMatrixEstimate( matV, matW, prm = [] )
 	sizeK = size(matV,2);
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__UNLIMITED );
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__UNLIMITED );
-	maxNumElemPerRow = mygetfield( prm, "maxNumElem", floor(sizeK/2.0) );
+	maxNumElemPerRow = mygetfield( prm, "maxNumElemPerRow", floor(sizeK/2.0) );
 	chiThresh = mygetfield( prm, "chiThresh", sqrt(eps) );
 	cEstRelThresh = mygetfield( prm, "cEstRelThresh", sqrt(eps) );
 	if ( valdLev >= VALDLEV__MEDIUM )
@@ -37,14 +37,6 @@ function [ matJEst, datOut ] = calcSparseMatrixEstimate( matV, matW, prm = [] )
 		matWeight = ones(sizeX,sizeK);
 	endif
 	for m=1:sizeF
-			
-			rvecJOut = zeros(1,sizeX);
-			foo1 = (matW(m,:)*(matV(:,:)')) ...
-			 * inv( matV(:,:)*(matV(:,:)') + 1.0*sqrt(eps)*diag(diag(matV(:,:)*(matV(:,:)'))) );
-			foo2 = (matW(m,:)*(matV(:,:)')) ...
-			 * inv( matV(:,:)*(matV(:,:)') + 2.0*sqrt(eps)*diag(diag(matV(:,:)*(matV(:,:)'))) );
-			rvecJOut(:) = 2.0*foo1 - foo2;
-		
 		%
 		elemUsed = [];
 		rvecJEst = zeros(1,sizeX);
@@ -102,7 +94,6 @@ function [ matJEst, datOut ] = calcSparseMatrixEstimate( matV, matW, prm = [] )
 				endfor
 				elemUsed = [ elemUsed, nBest ];
 			elseif (0)
-				rvecJOutPrev = rvecJOut;
 				elemNotUsed = selectorList;
 				clear rvecJOut;
 				foo1 = (rvecRho(m,:)*(matV(elemNotUsed,:)')) ...
@@ -117,8 +108,8 @@ function [ matJEst, datOut ] = calcSparseMatrixEstimate( matV, matW, prm = [] )
 				newElem = selectorList(orderedListOfNotUsed(1));
 				elemUsed = [ elemUsed, newElem ];
 			else
-				[ foo, orderedList ] = sort( -rvecChi(~usedElemMsk) );
-				%[ foo, orderedList ] = sort( -abs(rvecCEst(~usedElemMsk)) );
+				%[ foo, orderedList ] = sort( -rvecChi(~usedElemMsk) );
+				[ foo, orderedList ] = sort( -abs(rvecCEst(~usedElemMsk)) );
 				%[ foo, orderedList ] = sort( -abs(rvecCEst(~usedElemMsk).*rvecChi(~usedElemMsk)) );
 				if ( abs(foo) < chiThresh )
 					break;
@@ -131,6 +122,35 @@ function [ matJEst, datOut ] = calcSparseMatrixEstimate( matV, matW, prm = [] )
 			rvecRho = matW(m,:) - rvecJEst*matV;
 			%norm(rvecRho,1)
 		endfor
+			
+		useAugmentedList = true;
+		if (useAugmentedList)
+			if ( numel(elemUsed) > ceil(maxNumElemPerRow/2.0) )
+				elemUsed = elemUsed( 1 : ceil(maxNumElemPerRow/2.0) );
+				% Then, there's almost certainly no benefit to this aug list.
+			endif
+			%
+			rvecJOut = zeros(1,sizeX);
+			foo1 = (matW(m,:)*(matV(:,:)')) ...
+			 * inv( matV(:,:)*(matV(:,:)') + 1.0*sqrt(eps)*diag(diag(matV(:,:)*(matV(:,:)'))) );
+			foo2 = (matW(m,:)*(matV(:,:)')) ...
+			 * inv( matV(:,:)*(matV(:,:)') + 2.0*sqrt(eps)*diag(diag(matV(:,:)*(matV(:,:)'))) );
+			rvecJOut(:) = 2.0*foo1 - foo2;
+			[ foo, altOrderedList ] = sort(abs(rvecJOut),"descend");
+			%
+			n = 0;
+			while (numel(elemUsed)<maxNumElemPerRow)
+				n++;
+				if ( sum(altOrderedList(n)==elemUsed)==0 )
+					elemUsed = [ elemUsed, altOrderedList(n) ];
+				endif
+			endwhile
+			rvecJEst(elemUsed) = (matW(m,:)*(matV(elemUsed,:)'))*inv(matV(elemUsed,:)*(matV(elemUsed,:)'));
+			%rvecJEst(elemUsed) = (matW(m,:)*(matV(elemUsed,:)'))*inv(matV(elemUsed,:)*(matV(elemUsed,:)')+1e-4*eye(maxNumElemPerRow));
+			rvecRho = matW(m,:) - rvecJEst*matV;
+		endif
+		elemUsed
+			
 		matJEst(m,:) = rvecJEst;
 	endfor
 return;

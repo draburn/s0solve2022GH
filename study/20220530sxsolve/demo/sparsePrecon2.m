@@ -24,10 +24,12 @@ for t=1:numAddtlElemPerRow
 	n = ceil( sqrt(eps) + (sizeX-2.0*sqrt(eps))*rand() );
 	%matJ0(m,n) = randn();
 	matJ0(m,n) = 1.0;
+	actualElemUsed(t) = n;
 endfor
 endfor
 matJ0 += c0 * randn(sizeF,sizeX);
 assert( isrealarray(matJ0,[sizeF,sizeX]) );
+actualElemUsed
 
 matSX = diag(exp(csx*randn(sizeX,1)));
 matSF = diag(exp(csf*randn(sizeF,1)));
@@ -37,8 +39,8 @@ matJ = matSF*matJ0/matSX;
 %setprngstates(3568384);
 %setprngstates(74504256);
 %setprngstates(26048640);
-setprngstates(97472864);
-sizeU0 = 35;
+setprngstates(38115184);
+sizeU0 = 55;
 
 matU0 = randn(sizeX,sizeU0);
 matV = utorthdrop(matU0);
