@@ -40,7 +40,7 @@ matJ = matSF*matJ0/matSX;
 %setprngstates(74504256);
 %setprngstates(26048640);
 setprngstates(38115184);
-sizeU0 = 55;
+sizeU0 = 53;
 
 matU0 = randn(sizeX,sizeU0);
 matV = utorthdrop(matU0);
