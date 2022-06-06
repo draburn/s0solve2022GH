@@ -53,6 +53,11 @@ function [ matJEst, datOut ] = calcSparseMatrixEstimate( matV, matW, prm = [] )
 			%rvecChiW = (rvecWVAvg.^2)./( eps + rvecW2Avg.*rvecV2Avg );
 			%sigmaChiW = sum(rvecChiW)
 			
+			if ( isempty(elemUsed) )
+				[ foo, altOrderedList_chi ] = sort( rvecChi, "descend" );
+				[ foo, altOrderedList_cEst ] = sort( rvecCEst, "descend" );
+			endif
+			
 			%
 			usedElemMsk = logical(zeros(1,sizeX));
 			usedElemMsk(elemUsed) = true;
@@ -108,22 +113,27 @@ function [ matJEst, datOut ] = calcSparseMatrixEstimate( matV, matW, prm = [] )
 				newElem = selectorList(orderedListOfNotUsed(1));
 				elemUsed = [ elemUsed, newElem ];
 			else
-				%[ foo, orderedList ] = sort( -rvecChi(~usedElemMsk) );
-				[ foo, orderedList ] = sort( -abs(rvecCEst(~usedElemMsk)) );
+				[ foo, orderedList ] = sort( -rvecChi(~usedElemMsk) );
+				%[ foo, orderedList ] = sort( -abs(rvecCEst(~usedElemMsk)) );
 				%[ foo, orderedList ] = sort( -abs(rvecCEst(~usedElemMsk).*rvecChi(~usedElemMsk)) );
 				if ( abs(foo) < chiThresh )
 					break;
 				endif
-				elemUsed = [ elemUsed, selectorList(orderedList(1)) ];
+				newElem = selectorList(orderedList(1));
+				
+				%%%if ( 2==l )
+				%%%	newElem = selectorList(orderedList(2));
+				%%%endif
+				
+				elemUsed = [ elemUsed, newElem ];
 			endif
 			%elemUsed
 			
 			rvecJEst(elemUsed) = (matW(m,:)*(matV(elemUsed,:)'))*inv(matV(elemUsed,:)*(matV(elemUsed,:)'));
 			rvecRho = matW(m,:) - rvecJEst*matV;
-			%norm(rvecRho,1)
 		endfor
 			
-		useAugmentedList = true;
+		useAugmentedList = false;
 		if (useAugmentedList)
 			if ( numel(elemUsed) > ceil(maxNumElemPerRow/2.0) )
 				elemUsed = elemUsed( 1 : ceil(maxNumElemPerRow/2.0) );
@@ -137,6 +147,10 @@ function [ matJEst, datOut ] = calcSparseMatrixEstimate( matV, matW, prm = [] )
 			 * inv( matV(:,:)*(matV(:,:)') + 2.0*sqrt(eps)*diag(diag(matV(:,:)*(matV(:,:)'))) );
 			rvecJOut(:) = 2.0*foo1 - foo2;
 			[ foo, altOrderedList ] = sort(abs(rvecJOut),"descend");
+			
+			%altOrderedList = altOrderedList_chi;
+			%altOrderedList = altOrderedList_cEst;
+			
 			%
 			n = 0;
 			while (numel(elemUsed)<maxNumElemPerRow)
@@ -153,7 +167,7 @@ function [ matJEst, datOut ] = calcSparseMatrixEstimate( matV, matW, prm = [] )
 			%sumsq(rvecRho)
 			%rcond( matV(elemUsed,:)*(matV(elemUsed,:)') )
 		endif
-		elemUsed
+		%elemUsed
 			
 		matJEst(m,:) = rvecJEst;
 	endfor
