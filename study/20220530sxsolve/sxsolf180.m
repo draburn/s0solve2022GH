@@ -1,4 +1,7 @@
-function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf100( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
+% sxsolf100, but looking at revised actions, per ideas durign precon integration.
+
+function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf180( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
+	error( "END OF VALID CODE." );
 	mydefs;
 	startTime = time();
 	vecX = [];

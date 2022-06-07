@@ -309,24 +309,9 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%
 	omegaThresh = 0.1 * omega * ( omega / omega_initial )^0.5;
 	if ( eta_unb > max([ 0.1*omegaThresh, prm.omegaTol ]) )
-	
-		% DRaburn 2022-06-06:
-		%  This occured to me while considering precon intergration,
-		doHack0606 = true;
-		if (doHack0606)
-			if (isempty(vecY_loc))
-				vecU = matV*vecY_bnd;
-			else
-				vecR = vecF - matW*vecY_unb;
-				vecS = vecR;
-				vecU = __applyPrecon( vecS, prm, vecX, vecF );
-			endif
-		else
 		vecR = vecF - matW*vecY_unb;
 		vecS = vecR;
 		vecU = __applyPrecon( vecS, prm, vecX, vecF );
-		endif
-		
 		vecV = __calcOrthonorm( vecU, matV, prm );
 		if ( norm(vecV) > sqrt(eps) )
 			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Action: Expand subspace (per actual residual)." );
