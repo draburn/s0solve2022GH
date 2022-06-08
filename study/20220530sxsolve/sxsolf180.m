@@ -1,7 +1,6 @@
 % sxsolf100, but looking at revised actions, per ideas durign precon integration.
 
 function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf180( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
-	error( "END OF VALID CODE." );
 	mydefs;
 	startTime = time();
 	vecX = [];
@@ -309,6 +308,125 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%
 	omega = sumsq(vecF)/2.0;
 	omega_initial = sumsq(vecF)/2.0;
+	
+	
+	% START NEW, "180" CODE.
+	%
+	% After  refactor, we could consider "blind" steps here.
+	%msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
+	%  "  Considering actions ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
+	%	  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
+	%
+	%
+	if (  1 <= sizeVLocal  &&  eta_loc <= max([ prm.omegaTol, 0.5*omega*sqrt(omega/omega_initial) ])  )
+		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
+		  "  Action: Try step ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
+		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
+		vecY = matV'*(matVLocal*vecY_loc);
+		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
+		taFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+		endif
+		return;
+	endif
+	%
+	if (  0 == sizeVLocal  ||  eta_bnd < 0.5 * eta_loc  )
+		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
+		  "  Action: Confirm record ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
+		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
+		vecV = __calcOrthonorm( matV*vecY_bnd, matVLocal, prm );
+		if ( norm(vecV) > sqrt(eps) )
+			vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
+			[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
+			taFevalCount += fevalIncr; clear fevalIncr;
+			if ( 0~= retCode )
+				msgretcodeif( true, __FILE__, __LINE__, retCode );
+			endif
+			return;
+		endif
+		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "  WHOOPS, WE'VE ALREADY TRIED THIS!" );
+	endif
+	%
+	% This should really be eta_local_unb, but that's not in this version of sxsolf.
+	if ( eta_unb < 0.001 * omega )
+		msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( ...
+		  "  We are likely stuck near a non-zero local minimum ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
+		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
+		retCode = RETCODE__ALGORITHM_BREAKDOWN;
+		return;
+	endif
+	%
+	vecRho_loc = vecF - matWLocal*vecY_loc;
+	vecRho_bnd = vecF - matW*vecY_bnd;
+	vecRho_unb = vecF - matW*vecY_unb;
+	%
+	% With a good preconditioner, ortho against merely matVLocal might make more sense. (Next version!)
+	for n = 1 : 3+sizeVLocal+sizeV+sizeX
+		%
+		if ( 1 == n )
+			vecR = vecRho_loc;
+			vecU = __applyPrecon( vecR, prm, vecX, vecF );
+			strName = "vecRho_loc";
+		elseif ( 2 == n )
+			vecR = vecRho_bnd;
+			vecU = __applyPrecon( vecR, prm, vecX, vecF );
+			strName = "vecRho_bnd";
+		elseif ( 3 == n )
+			vecR = vecRho_unb;
+			vecU = __applyPrecon( vecR, prm, vecX, vecF );
+			strName = "vecRho_unb";
+		else
+			m = n-3;
+			if ( m <= sizeVLocal )
+				vecR = matWLocal(:,m);
+				vecU = __applyPrecon( vecR, prm, vecX, vecF );
+				strName = sprintf("matWLocal(:,%d)",m);
+			else
+				m -= sizeVLocal;
+				if ( m <= sizeV )
+					vecR = matW(:,m);
+					vecU = __applyPrecon( vecR, prm, vecX, vecF );
+					strName = sprintf("matW(:,%d)",m);
+				else
+					m -= sizeV;
+					if ( m <= sizeX )
+						vecU = zeros(sizeX,1);
+						vecU(m) = 1.0;
+						strName = sprintf("e(%d)",m);
+					else
+						break;
+					endif
+				endif
+			endif
+		endif
+		%
+		vecV = __calcOrthonorm( vecU, matV, prm );
+		if ( norm(vecV) > sqrt(eps) )
+			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
+			  "  Action: Expand per %s ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
+			  strName, sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
+			[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
+			taFevalCount += fevalIncr; clear fevalIncr;
+			if ( 0~= retCode )
+				msgretcodeif( true, __FILE__, __LINE__, retCode );
+			endif
+			return;
+		endif
+		%
+	endfor
+	%
+	msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( ...
+	  "  We have run out of candidate actions ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
+	  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
+	retCode = RETCODE__ALGORITHM_BREAKDOWN;
+	return;
+	
+	
+	
+	
+	
+	return;
 	%
 	omegaThresh = 0.1 * omega * ( omega / omega_initial )^0.5;
 	if ( eta_unb > max([ 0.1*omegaThresh, prm.omegaTol ]) )
