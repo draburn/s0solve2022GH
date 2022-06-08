@@ -254,8 +254,8 @@ function [ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, p
 	%
 	sizeX = size(vecX,1);
 	%
-	%fModelDat.vecX_initial = vecX;
-	%fModelDat.vecF_initial = vecF;
+	fModelDat.vecX_initial = vecX;
+	fModelDat.vecF_initial = vecF;
 	fModelDat.vecX = vecX; % Current "local" point.
 	fModelDat.vecF = vecF;
 	fModelDat.matV = [ vecV ];
@@ -305,7 +305,9 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%
 	%
 	omega = sumsq(vecF)/2.0;
-	omega_initial = sumsq(vecF)/2.0;
+	% Bugfix 2022-06-07, when about to leave this code behind.
+	%%%omega_initial = sumsq(vecF)/2.0;
+	omega_initial = sumsq(fModelDat.vecF_initial)/2.0;
 	%
 	omegaThresh = 0.1 * omega * ( omega / omega_initial )^0.5;
 	if ( eta_unb > max([ 0.1*omegaThresh, prm.omegaTol ]) )
