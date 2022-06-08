@@ -25,14 +25,14 @@ if (0)
 	%prm.verbLev = VERBLEV__DETAILED;
 	prm.verbLev = VERBLEV__UNLIMITED;
 	%prm.valdLev = VALDLEV__VERY_HIGH;
-	%prm.valdLev = VALDLEV__UNLIMITED;
+	prm.valdLev = VALDLEV__UNLIMITED;
 	prm.iterMax = 5000;
 	prm.fevalMax = 5000;
 	%zlinsolf195( funchF, vecX0, [], prm );
 	%sxsolf100( funchF, vecX0, [] , prm );
 	%prm.useDogLeg = true;
-	%sxsolf180( funchF, vecX0, [] , prm );
-	findZero_800simple( vecX0, funchF, prm );
+	sxsolf180( funchF, vecX0, [] , prm );
+	%findZero_800simple( vecX0, funchF, prm );
 	%
 	mainCalcElapsedTime = time()-mainStartTime;
 	msg( __FILE__, __LINE__, sprintf( "One-shot '%s' with F '%s' completed in %0.3es.", mainStartDatestr, runFStr, mainCalcElapsedTime ) );
@@ -44,13 +44,13 @@ endif
 %
 numRuns = 0;
 resumeRun = -1;
-numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 5; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 6; runList(numRuns).r.prmMemo = "";
 
 resumeRun = numRuns;
 
-numRuns++; runList(numRuns).r.runType = 805; runList(numRuns).r.prm = []; runList(numRuns).r.prm.verbLev = VERBLEV__COPIOUS; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prm.verbLev = VERBLEV__COPIOUS; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 2180; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 805; runList(numRuns).r.prm = []; runList(numRuns).r.prm.verbLev = VERBLEV__PROGRESS; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 2180; runList(numRuns).r.prm = []; runList(numRuns).r.prm.verbLev = VERBLEV__PROGRESS; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 2100; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 2100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 2124; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";

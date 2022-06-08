@@ -1,6 +1,9 @@
 % sxsolf100, but looking at revised actions, per ideas durign precon integration.
 
+% AND MANY HACKS TO COMPARE TO FINDZERO_800!
+
 function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf180( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
+	%error( "This is a hacked version for comparision to findZero_800. Do not use this code unless you know what you're doing!" );
 	mydefs;
 	startTime = time();
 	vecX = [];
@@ -167,7 +170,7 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	prm.stepsMax = 100;
 	prm.fTol = sqrt(sizeF)*100.0*eps;
 	%
-	prm.epsFD = 1.0e-3;
+	prm.epsFD = 1.0e-4;
 	prm.orthoTol = 1.0e-10;
 	%
 	prm.curveType = "lev";
@@ -316,28 +319,61 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	
 	% START NEW, "180" CODE.
 	%
+	% Ah! I *need* locunb!
+	if ( 0 == sizeVLocal )
+		vecRho_locunb = vecF;
+		eta_locunb = omega;
+	else
+		vecY_locunb = -( matWLocal'*matWLocal ) \ ( matWLocal'*vecF );
+		vecRho_locunb = vecF + matWLocal*vecY_locunb;
+		eta_locunb = sumsq(vecRho_locunb)/2.0;
+	endif
+	%
 	if (isempty(fModelDat.vecF_prev))
 		omega_prev = [];
+		omegaTolTemp = max([ prm.omegaTol, 0.01*omega ]);
+		omega_prev = omega;
 	else
 		omega_prev = sumsq(fModelDat.vecF_prev)/2.0;
+		%omegaTolTemp = max([ prm.omegaTol, 0.1*omega*min([ 1.0, sqrt(omega/omega_prev) ]) ]);
+		omegaTolTemp = max([ prm.omegaTol, 0.01*omega*min([ 1.0, omega/omega_initial ]) ]);
 	endif
 	%
 	% After  refactor, we could consider "blind" steps here.
 	%
-	if ( isempty(omega_prev) )
-		omegaTolTemp = max([ prm.omegaTol, 0.1*omega ]);
-		omega_prev = omega;
-	else
-		omegaTolTemp = max([ prm.omegaTol, 0.1*omega*min([ 1.0, sqrt(omega/omega_prev) ]) ]);
-	endif
-	%
 	%
 	if ( 1 <= sizeVLocal && eta_loc <= omegaTolTemp )
 		msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
-		  "  %3d / %3d / %dx%d; %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e: Try step (good).", ...
-		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_prev, omega_initial ) );
+		  "  %4d / %4d / %dx%d;  %8.2e // %8.2e / %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e:  %s.", ...
+		  sizeVLocal, sizeV, sizeF, sizeX, ...
+		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
+		  "Try step (good)." ) );
+		
+		switch (2)
+		case 1
+		% Original
 		vecY = matV'*(matVLocal*vecY_loc);
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
+		%
+		case 2
+		% Matches 800simple, depending on vecX_next...
+		%
+		vecX_next = vecX - matVLocal*( (matWLocal'*matWLocal) \ ( matWLocal'*vecF ) );
+		%vecX_next = vecX + matV*(matV'*(matVLocal*vecY_loc));
+		%vecX_next = vecX + matVLocal*vecY_loc;
+		%
+		vecF_next = funchF( vecX_next );
+		vecY_next = matV'*(vecX_next-vecX);
+		[ retCode,  fModelDat ] = __moveTo( vecY_next, vecF_next, fModelDat, prm );
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+			return;
+		endif
+		fevalIncr = 1;
+		omega_next = sumsq( vecF_next ) / 2.0
+		endswitch
+		
+		
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
 			msgretcodeif( true, __FILE__, __LINE__, retCode );
@@ -345,9 +381,39 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		return;
 	endif
 	%
+	%
+	vecU = __applyPrecon( vecRho_locunb, prm, vecX, vecF );
+	vecV = __calcOrthonorm( vecU, matVLocal, prm );
+	if ( norm(vecV) > sqrt(eps) )
+		msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
+		  "  %4d / %4d / %dx%d;  %8.2e // %8.2e / %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e:  %s.", ...
+		  sizeVLocal, sizeV, sizeF, sizeX, ...
+		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
+		  "Expand (rho_locunb)." ) );
+		[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
+		taFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+		endif
+		return;
+	endif
+	%
+	%
+	msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
+	  "  %4d / %4d / %dx%d;  %8.2e // %8.2e / %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e:  %s.", ...
+	  sizeVLocal, sizeV, sizeF, sizeX, ...
+	  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
+	  "Give up (exhausted)." ) );
+	retCode = RETCODE__ALGORITHM_BREAKDOWN;
+	return;
+	
+	
+	
+	
+	%
 	if (  0 == sizeVLocal  ||  eta_bnd < 0.5 * eta_loc  )
 		msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
-		  "  %3d / %3d / %dx%d; %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e: Confirm record.", ...
+		  "  %3d / %3d / %dx%d; %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e:  Confirm record.", ...
 		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_prev, omega_initial ) );
 		vecV = __calcOrthonorm( matV*vecY_bnd, matVLocal, prm );
 		if ( norm(vecV) > sqrt(eps) )
@@ -489,6 +555,49 @@ function [ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fMo
 	%
 	%
 	%
+	if ( norm(matV'*vecV) > sqrt(eps) )
+		% 2022-06-07: Lacking this is why 180 was doing funny things.
+		% Doing something new.
+		% Later, we can merge this with the two cases.
+		if ( prm.valdLev >= VALDLEV__MEDIUM )
+			assert( sizeV < sizeX );
+			assert( isrealarray(vecV,[sizeX,1]) );
+			assert( abs(norm(vecV)-1.0) < sqrt(eps) );
+			assert( norm(matVLocal'*vecV) < sqrt(eps) ); %Don't require this either?
+		endif
+		vecW = __calcJV( vecV, funchF, vecX, vecF, prm );
+		fevalIncr++;
+		%
+		vecVPerp = __calcOrthonorm( vecV, matV, prm );
+		assert( abs(norm(vecVPerp)-1.0) < sqrt(eps) );
+		matV_updated = [ matV, vecVPerp ];
+		matW_temp = [ matW, zeros(sizeF,1) ];
+		matW_updated = matW_temp + ( vecW - matW_temp*(matV_updated')*vecV ) * ( vecV'*matV_updated );
+		%
+		%vecVPerpLocal = __calcOrthonorm( vecV, matVLocal, prm );
+		%assert( abs(norm(vecVPerpLocal)-1.0) < sqrt(eps) );
+		%matVLocal_updated = [ matVLocal, vecVPerpLocal ];
+		%matWLocal_temp = [ matWLocal, zeros(sizeF,1) ];
+		%matWLocal_updated = matWLocal_temp + ( vecW - matWLocal_temp*(matVLocal_updated')*vecV ) * ( vecV'*matVLocal_updated );
+		matVLocal_updated = [ matVLocal, vecV ];
+		matWLocal_updated = [ matWLocal, vecW ];
+		%
+		fModelDat.matV = matV_updated;
+		fModelDat.matW = matW_updated;
+		fModelDat.matB = zeros(sizeV+1,sizeV+1);
+		fModelDat.matB(1:sizeV,1:sizeV) = matB;
+		fModelDat.matVLocal = matVLocal_updated;
+		fModelDat.matWLocal = matWLocal_updated;
+		%
+		if ( prm.valdLev >= VALDLEV__MEDIUM )
+			__validateFModelDat( fModelDat, prm );
+		endif
+		%
+		retCode = RETCODE__SUCCESS;
+		return;
+	endif
+	%
+	%
 	if ( prm.valdLev >= VALDLEV__MEDIUM )
 		assert( sizeV < sizeX );
 		assert( isrealarray(vecV,[sizeX,1]) );
@@ -555,6 +664,11 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep(
 	vecX_trial = vecX + matV * vecY;
 	vecF_trial = funchF( vecX_trial );
 	tsFevalCount++;
+	
+	
+	%xfTrial = [ vecX_trial, vecF_trial ]
+	
+	
 	%
 	vecFModel = vecF + matW * vecY;
 	vecRho = vecF_trial - vecFModel;
@@ -626,7 +740,7 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep(
 		%
 		%
 		%
-		useCoasting = true; %%% Make param.
+		useCoasting = false; %%% Make param.
 		if (useCoasting)
 			p = 0.0;
 			%
@@ -957,6 +1071,11 @@ endfunction
 
 
 function vecY = __findLevPt( vecG, matH, matC, matB, bTrgt, prm )
+
+	vecY = -(matH\vecG);
+	assert( isempty(bTrgt) || norm(matB*vecY) <= bTrgt );
+	return;
+
 	if ( prm.useDogLeg )
 		vecY = __dogLeg( vecG, matH, matC, matB, bTrgt, prm );
 	else
@@ -1156,8 +1275,22 @@ function vecW = __calcJV( vecV, funchF, vecX, vecF, prm )
 	if ( prm.valdLev >= VALDLEV__MEDIUM )
 		assert( 0.0 < v );
 	endif
-	vecFP = funchF( vecX + prm.epsFD*vecV );
-	vecW = ( vecFP - vecF ) / (prm.epsFD * v);
+	%vecFP = funchF( vecX + prm.epsFD*vecV );
+	
+	vecV = -vecV;
+	
+	%%%vecW = ( vecFP - vecF ) / (prm.epsFD * v);
+	%%%vecW = ( vecFP - vecF ) / (prm.epsFD);
+	vecW = ( funchF(vecX+prm.epsFD*vecV) - vecF ) / prm.epsFD;
+	
+	
+	%vecXP = vecX + prm.epsFD*vecV;
+	%vecFP = funchF( vecXP );
+	%epsFD = prm.epsFD
+	%vwxf = [ vecV, vecW, vecX, vecF, vecXP, vecFP ]
+	
+	vecW = -vecW;
+	
 	return;
 endfunction
 
