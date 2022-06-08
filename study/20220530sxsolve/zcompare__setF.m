@@ -50,6 +50,15 @@ case 5
 	matB3 = randn(sizeX,sizeX);
 	y = @(x)( x - vecXE );
 	funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
+	%function f = funcF( x, vecXE, matJE, matA0, matA1, matA2, matB0, matB1, matB2, matB3 )
+	%	persistent cnt = 0;
+	%	cnt++;
+	%	y = @(x)( x - vecXE );
+	%	f = matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) );
+	%	%msg( __FILE__, __LINE__, sprintf( "FEVAL %d!", cnt ) );
+	%	return;
+	%endfunction
+	%funchF = @(x)( funcF( x, vecXE, matJE, matA0, matA1, matA2, matB0, matB1, matB2, matB3 ) );
 	%
 	vecX0 = randn(sizeX,1);
 case 6

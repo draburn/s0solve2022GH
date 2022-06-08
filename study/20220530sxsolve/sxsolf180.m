@@ -267,6 +267,8 @@ function [ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, p
 	fModelDat.matWLocal = [ vecW ];
 	fModelDat.vecX_cand = []; % Candidate for next "local" point.
 	fModelDat.vecF_cand = [];
+	fModelDat.vecX_prev = [];
+	fModelDat.vecF_prev = [];
 	%
 	if ( prm.valdLev >= VALDLEV__LOW )
 		__validateFModelDat( fModelDat, prm );
@@ -314,17 +316,26 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	
 	% START NEW, "180" CODE.
 	%
+	if (isempty(fModelDat.vecF_prev))
+		omega_prev = [];
+	else
+		omega_prev = sumsq(fModelDat.vecF_prev)/2.0;
+	endif
+	%
 	% After  refactor, we could consider "blind" steps here.
-	%msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
-	%  "  Considering actions ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
-	%	  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
+	%
+	if ( isempty(omega_prev) )
+		omegaTolTemp = max([ prm.omegaTol, 0.1*omega ]);
+		omega_prev = omega;
+	else
+		omegaTolTemp = max([ prm.omegaTol, 0.1*omega*min([ 1.0, sqrt(omega/omega_prev) ]) ]);
+	endif
 	%
 	%
-	devVerbLev = VERBLEV__INFO;
-	if (  1 <= sizeVLocal  &&  eta_loc <= max([ prm.omegaTol, 0.1*omega*sqrt(omega/omega_initial) ])  )
-		msgif( prm.verbLev >= devVerbLev, __FILE__, __LINE__, sprintf( ...
-		  "  Action: Try very good step ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
-		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
+	if ( 1 <= sizeVLocal && eta_loc <= omegaTolTemp )
+		msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
+		  "  %3d / %3d / %dx%d; %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e: Try step (good).", ...
+		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_prev, omega_initial ) );
 		vecY = matV'*(matVLocal*vecY_loc);
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
@@ -335,9 +346,9 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	endif
 	%
 	if (  0 == sizeVLocal  ||  eta_bnd < 0.5 * eta_loc  )
-		msgif( prm.verbLev >= devVerbLev, __FILE__, __LINE__, sprintf( ...
-		  "  Action: Confirm record ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
-		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
+		msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
+		  "  %3d / %3d / %dx%d; %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e: Confirm record.", ...
+		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_prev, omega_initial ) );
 		vecV = __calcOrthonorm( matV*vecY_bnd, matVLocal, prm );
 		if ( norm(vecV) > sqrt(eps) )
 			vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
@@ -354,9 +365,9 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	vecU = __applyPrecon( vecRho_loc, prm, vecX, vecF );
 	vecV = __calcOrthonorm( vecU, matV, prm );
 	if ( norm(vecV) > sqrt(eps) )
-		msgif( prm.verbLev >= devVerbLev, __FILE__, __LINE__, sprintf( ...
-		  "  Action: Expand per vecRho_loc ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
-		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
+		msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
+		  "  %3d / %3d / %dx%d; %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e:  Expand (rho_loc).", ...
+		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_prev, omega_initial ) );
 		[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
@@ -366,9 +377,9 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	endif
 	%
 	if (  1 <= sizeVLocal  &&  eta_loc < 0.5*omega  )
-		msgif( prm.verbLev >= devVerbLev, __FILE__, __LINE__, sprintf( ...
-		  "  Action: Try okay step ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
-		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
+		msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
+		  "  %3d / %3d / %dx%d; %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e:  Try step (semi-desperate).", ...
+		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_prev, omega_initial ) );
 		vecY = matV'*(matVLocal*vecY_loc);
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
@@ -380,9 +391,9 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%
 	% This should really be eta_local_unb, but that's not in this version of sxsolf.
 	if ( eta_unb < 0.001 * omega )
-		msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( ...
-		  "  We are likely stuck near a non-zero local minimum ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
-		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
+		msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
+		  "  %3d / %3d / %dx%d; %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e:  Give up.", ...
+		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_prev, omega_initial ) );
 		retCode = RETCODE__ALGORITHM_BREAKDOWN;
 		return;
 	endif
@@ -429,9 +440,11 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		%
 		vecV = __calcOrthonorm( vecU, matV, prm );
 		if ( norm(vecV) > sqrt(eps) )
-			msgif( prm.verbLev >= devVerbLev, __FILE__, __LINE__, sprintf( ...
-			  "  Action: Expand per %s ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
-			  strName, sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
+			msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
+			  "  %3d / %3d / %dx%d; %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e:  Expand (%s).", ...
+			  sizeVLocal, sizeV, sizeF, sizeX, ...
+			  prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_prev, omega_initial, ...
+			  strName ) );
 			[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
 			taFevalCount += fevalIncr; clear fevalIncr;
 			if ( 0~= retCode )
@@ -442,167 +455,9 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		%
 	endfor
 	%
-	msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( ...
-	  "  We have run out of candidate actions ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
-	  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
-	retCode = RETCODE__ALGORITHM_BREAKDOWN;
-	return;
-	
-	
-	
-	
-	
-	return;
-	%
-	omegaThresh = 0.1 * omega * ( omega / omega_initial )^0.5;
-	if ( eta_unb > max([ 0.1*omegaThresh, prm.omegaTol ]) )
-	
-		% DRaburn 2022-06-06:
-		%  This occured to me while considering precon intergration,
-		doHack0606 = true;
-		if (doHack0606)
-			if (isempty(vecY_loc))
-				vecU = matV*vecY_bnd;
-			else
-				vecR = vecF - matW*vecY_unb;
-				vecS = vecR;
-				vecU = __applyPrecon( vecS, prm, vecX, vecF );
-			endif
-		else
-		vecR = vecF - matW*vecY_unb;
-		vecS = vecR;
-		vecU = __applyPrecon( vecS, prm, vecX, vecF );
-		endif
-		
-		vecV = __calcOrthonorm( vecU, matV, prm );
-		if ( norm(vecV) > sqrt(eps) )
-			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Action: Expand subspace (per actual residual)." );
-			[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
-			taFevalCount += fevalIncr; clear fevalIncr;
-			if ( 0~= retCode )
-				msgretcodeif( true, __FILE__, __LINE__, retCode );
-			endif
-			return;
-		endif
-		%
-		% Although f - W*y is the residual, if the latest w is perp to f, this quantity will be repeated
-		%  between iterations. So, we should also properly consider the Kryolv subspace...
-		vecR = matW(:,end);
-		vecS = vecR;
-		vecU = __applyPrecon( vecS, prm, vecX, vecF );
-		vecV = __calcOrthonorm( vecU, matV, prm );
-		if ( norm(vecV) > sqrt(eps) )
-			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Action: Expand subspace (per Krylov)." );
-			[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
-			taFevalCount += fevalIncr; clear fevalIncr;
-			if ( 0~= retCode )
-				msgretcodeif( true, __FILE__, __LINE__, retCode );
-			endif
-			return;
-		endif
-	endif
-	%
-	%
-	if ( eta_loc <= max([ omegaThresh, prm.omegaTol ]) )
-		assert( ~isempty(vecY_loc) );
-		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( "  Action: Try step ( %8.2e -> %8.2e ).", omega, eta_loc ) );
-		vecY = matV'*(matVLocal*vecY_loc);
-		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
-		taFevalCount += fevalIncr; clear fevalIncr;
-		if ( 0~= retCode )
-			msgretcodeif( true, __FILE__, __LINE__, retCode );
-		endif
-		return;
-	endif
-	%
-	%
-	vecV = __calcOrthonorm( matV*vecY_bnd, matVLocal, prm );
-	if ( norm(vecV) > sqrt(eps) )
-		vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
-		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Action: Re-evaluate direction." );
-		[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
-		taFevalCount += fevalIncr; clear fevalIncr;
-		if ( 0~= retCode )
-			msgretcodeif( true, __FILE__, __LINE__, retCode );
-		endif
-		return;
-	endif
-	%
-	%
-	if ( eta_loc <= max([ 0.9999*omega, prm.omegaTol ]) )
-		assert( ~isempty(vecY_loc) );
-		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( "  Action: Try (near-desperate) step ( %8.2e -> %8.2e ).", omega, eta_loc ) );
-		vecY = matV'*(matVLocal*vecY_loc);
-		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
-		taFevalCount += fevalIncr; clear fevalIncr;
-		if ( 0~= retCode )
-			msgretcodeif( true, __FILE__, __LINE__, retCode );
-		endif
-		return;
-	endif
-	%
-	%
-	%
-	msgif( prm.verbLev >= VERBLEV__DETAILED, __FILE__, __LINE__, " Considering despearation move: expand subspace per stale Krylov..." );
-	for n=1:sizeV
-		vecR = matW(:,n);
-		vecS = vecR;
-		vecU = __applyPrecon( vecS, prm, vecX, vecF );
-		vecV = __calcOrthonorm( vecU, matV, prm );
-		if ( norm(vecV) > sqrt(eps) )
-			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Action: Expand subspace (desperation)." );
-			[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
-			taFevalCount += fevalIncr; clear fevalIncr;
-			if ( 0~= retCode )
-				msgretcodeif( true, __FILE__, __LINE__, retCode );
-			endif
-			return;
-		endif
-		%msg( __FILE__, __LINE__, sprintf( "    matW(:,%d) was no use.", n ) );
-	endfor
-	msgif( prm.verbLev >= VERBLEV__DETAILED, __FILE__, __LINE__, "  Ineffective." );
-	%
-	%
-	msgif( prm.verbLev >= VERBLEV__DETAILED, __FILE__, __LINE__, " Considering despearation move: re-evaluate (up to full) subspace..." );
-	for n=1:sizeVLocal
-		vecU = matVLocal(:,n);
-		vecV = __calcOrthonorm( vecU, matVLocal, prm );
-		if ( norm(vecV) > sqrt(eps) )
-			vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
-			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Action: Re-evaluate direction (desperation)." );
-			[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
-			taFevalCount += fevalIncr; clear fevalIncr;
-			if ( 0~= retCode )
-				msgretcodeif( true, __FILE__, __LINE__, retCode );
-			endif
-			return;
-		endif
-		%msg( __FILE__, __LINE__, sprintf( "    matVLocal(:,%d) was no use.", n ) );
-	endfor
-	msgif( prm.verbLev >= VERBLEV__DETAILED, __FILE__, __LINE__, "  Ineffective." );
-	%
-	%
-	msgif( prm.verbLev >= VERBLEV__DETAILED, __FILE__, __LINE__, " Considering super-despearation move: explore full space...." );
-	for n=1:sizeX
-		vecR = zeros(sizeX,1);
-		vecR(n) = 1.0;
-		vecS = vecR;
-		vecU = __applyPrecon( vecS, prm, vecX, vecF );
-		vecV = __calcOrthonorm( vecU, matV, prm );
-		if ( norm(vecV) > sqrt(eps) )
-			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, "  Action: Expand subspace (super-desperation)." );
-			[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
-			taFevalCount += fevalIncr; clear fevalIncr;
-			if ( 0~= retCode )
-				msgretcodeif( true, __FILE__, __LINE__, retCode );
-			endif
-			return;
-		endif
-		%msg( __FILE__, __LINE__, sprintf( "    e(%d) was no use.", n ) );
-	endfor
-	msgif( prm.verbLev >= VERBLEV__DETAILED, __FILE__, __LINE__, "  Ineffective." );
-	%
-	msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "We appear to be stuck." );
+	msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
+	  "  %3d / %3d / %dx%d; %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e / %8.2e:  Give up (exhausted).", ...
+	  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_prev, omega_initial ) );
 	retCode = RETCODE__ALGORITHM_BREAKDOWN;
 	return;
 endfunction
@@ -1242,6 +1097,8 @@ function [ retCode, fModelDat ] = __moveTo( vecY, vecF_next, fModelDat, prm )
 	endif
 	%
 	%
+	fModelDat.vecX_prev = vecX;
+	fModelDat.vecF_prev = vecF;
 	%
 	fModelDat.vecX = vecX + matV*vecY;
 	fModelDat.vecF = vecF_next;
