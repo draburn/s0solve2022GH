@@ -11,12 +11,10 @@ if ( stopsignalpresent() )
 endif
 %
 %
-sizeX = 100;
-fType = 1010;
-%fSeed = 21852400;
-%fSeed = 2039904;
-%fSeed = 4184816;
-fSeed = 3360352
+sizeX = 200
+fType = 1010
+fSeed = 62508864
+%fSeed = 3360352 100x1010, s100 worse than s181.
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
@@ -51,10 +49,10 @@ resumeRun = -1;
 %resumeRun = numRuns;
 
 numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-%numRuns++; runList(numRuns).r.runType = 805; runList(numRuns).r.prm = []; runList(numRuns).r.prm.verbLev = VERBLEV__PROGRESS; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 2181; runList(numRuns).r.prm = []; runList(numRuns).r.prm.verbLev = VERBLEV__PROGRESS; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
-%numRuns++; runList(numRuns).r.runType = 2100; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 2100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 2181; runList(numRuns).r.prm = []; runList(numRuns).r.prm.verbLev = VERBLEV__PROGRESS; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
+%numRuns++; runList(numRuns).r.runType = 805; runList(numRuns).r.prm = []; runList(numRuns).r.prm.verbLev = VERBLEV__PROGRESS; runList(numRuns).r.prmMemo = "";
+%numRuns++; runList(numRuns).r.runType = 2100; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 2124; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 2100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.useDogLeg = true; runList(numRuns).r.prmMemo = "pow";
 %numRuns++; runList(numRuns).r.runType = 2114; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";

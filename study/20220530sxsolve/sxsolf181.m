@@ -345,7 +345,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		  "  %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e // %8.2e:  %s.", ...
 		  sizeVLocal, sizeV, sizeF, sizeX, ...
 		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
-		  sum(sumsq(matB)), "Try step (strong cnvg)." ) );
+		  sum(sumsq(matB)), "Try step (strong cnvg)" ) );
 		vecY = matV'*(matVLocal*vecY_loc);
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
@@ -356,12 +356,12 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	endif
 	%
 	%
-	if (  eta_bnd < 0.1 * eta_loc  ||  eta_bnd < 0.5 * omegaTolTemp  )
+	if (  0 == sizeVLocal || eta_bnd < 0.1 * eta_loc  ||  eta_bnd < 0.5 * omegaTolTemp  )
 		msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
 		  "  %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e // %8.2e:  %s.", ...
 		  sizeVLocal, sizeV, sizeF, sizeX, ...
 		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
-		  sum(sumsq(matB)), "Verify record." ) );
+		  sum(sumsq(matB)), "Verify record" ) );
 		vecV = __calcOrthonorm( matV*vecY_bnd, matVLocal, prm );
 		if ( norm(vecV) > sqrt(eps) )
 			vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
@@ -381,9 +381,27 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		  "  %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e // %8.2e:  %s.", ...
 		  sizeVLocal, sizeV, sizeF, sizeX, ...
 		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
-		  sum(sumsq(matB)), "Try step (semi-desperate)." ) );
+		  sum(sumsq(matB)), "Try step (semi-desperate)" ) );
 		vecY = matV'*(matVLocal*vecY_loc);
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
+		taFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+		endif
+		return;
+	endif
+	%
+	%
+	vecU = __applyPrecon( vecRho_loc, prm, vecX, vecF );
+	%vecV = __calcOrthonorm( vecU, matVLocal, prm );
+	vecV = __calcOrthonorm( vecU, matV, prm );
+	if ( norm(vecV) > sqrt(eps) )
+		msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
+		  "  %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e // %8.2e:  %s.", ...
+		  sizeVLocal, sizeV, sizeF, sizeX, ...
+		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
+		  sum(sumsq(matB)), "Expand (rho_loc)" ) );
+		[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
 			msgretcodeif( true, __FILE__, __LINE__, retCode );
@@ -400,7 +418,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		  "  %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e // %8.2e:  %s.", ...
 		  sizeVLocal, sizeV, sizeF, sizeX, ...
 		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
-		  sum(sumsq(matB)), "Expand (rho_locunb)." ) );
+		  sum(sumsq(matB)), "Expand (rho_locunb)" ) );
 		[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
@@ -451,7 +469,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 			endif
 		endif
 		%
-		vecV = __calcOrthonorm( vecU, matV, prm );
+		vecV = __calcOrthonorm( vecU, matVLocal, prm );
 		if ( norm(vecV) > sqrt(eps) )
 			msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
 			  "  %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e // %8.2e:  Expand (desperate %s).", ...
@@ -468,11 +486,27 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	endfor
 	%
 	%
+	if ( 1 <= sizeVLocal && eta_loc <= 0.99 * omega )
+		msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
+		  "  %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e // %8.2e:  %s.", ...
+		  sizeVLocal, sizeV, sizeF, sizeX, ...
+		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
+		  sum(sumsq(matB)), "Try step (desperate)" ) );
+		vecY = matV'*(matVLocal*vecY_loc);
+		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
+		taFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+		endif
+		return;
+	endif
+	%
+	%
 	msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
 	  "  %4d / %4d / %dx%d;  %8.2e // %8.2e / %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e // %8.2e:  %s.", ...
 	  sizeVLocal, sizeV, sizeF, sizeX, ...
 	  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
-	  sum(sumsq(matB)), "Give up (exhausted)." ) );
+	  sum(sumsq(matB)), "Give up (exhausted)" ) );
 	retCode = RETCODE__ALGORITHM_BREAKDOWN;
 	return;
 endfunction
