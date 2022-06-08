@@ -11,10 +11,11 @@ if ( stopsignalpresent() )
 endif
 %
 %
-sizeX = 50;
-fType = 5;
+sizeX = 100;
+fType = 1010;
 %fSeed = 21852400;
-fSeed = 2039904;
+%fSeed = 2039904;
+fSeed = 4184816;
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
@@ -23,7 +24,7 @@ if (0)
 	msg( __FILE__, __LINE__, "Doing simple one-shot." );
 	prm = [];
 	%prm.verbLev = VERBLEV__DETAILED;
-	prm.verbLev = VERBLEV__UNLIMITED;
+	%prm.verbLev = VERBLEV__UNLIMITED;
 	%prm.valdLev = VALDLEV__VERY_HIGH;
 	prm.valdLev = VALDLEV__UNLIMITED;
 	prm.iterMax = 5000;
@@ -31,7 +32,7 @@ if (0)
 	%zlinsolf195( funchF, vecX0, [], prm );
 	%sxsolf100( funchF, vecX0, [] , prm );
 	%prm.useDogLeg = true;
-	sxsolf180( funchF, vecX0, [] , prm );
+	sxsolf181( funchF, vecX0, [] , prm );
 	%findZero_800simple( vecX0, funchF, prm );
 	%
 	mainCalcElapsedTime = time()-mainStartTime;
@@ -44,13 +45,13 @@ endif
 %
 numRuns = 0;
 resumeRun = -1;
-numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 6; runList(numRuns).r.prmMemo = "";
+%numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 6; runList(numRuns).r.prmMemo = "";
 
-resumeRun = numRuns;
+%resumeRun = numRuns;
 
 numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 805; runList(numRuns).r.prm = []; runList(numRuns).r.prm.verbLev = VERBLEV__PROGRESS; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 2180; runList(numRuns).r.prm = []; runList(numRuns).r.prm.verbLev = VERBLEV__PROGRESS; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
+%numRuns++; runList(numRuns).r.runType = 805; runList(numRuns).r.prm = []; runList(numRuns).r.prm.verbLev = VERBLEV__PROGRESS; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 2181; runList(numRuns).r.prm = []; runList(numRuns).r.prm.verbLev = VERBLEV__PROGRESS; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 2100; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 2100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 2124; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
