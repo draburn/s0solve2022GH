@@ -256,8 +256,8 @@ function [ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, p
 	%
 	sizeX = size(vecX,1);
 	%
-	%fModelDat.vecX_initial = vecX;
-	%fModelDat.vecF_initial = vecF;
+	fModelDat.vecX_initial = vecX;
+	fModelDat.vecF_initial = vecF;
 	fModelDat.vecX = vecX; % Current "local" point.
 	fModelDat.vecF = vecF;
 	fModelDat.matV = [ vecV ];
@@ -304,10 +304,12 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	eta_bnd = studyDat.eta_bnd;
 	eta_loc = studyDat.eta_loc;
 	%
-	%
+	vecRho_loc = vecF - matWLocal*vecY_loc;
+	vecRho_bnd = vecF - matW*vecY_bnd;
+	vecRho_unb = vecF - matW*vecY_unb;
 	%
 	omega = sumsq(vecF)/2.0;
-	omega_initial = sumsq(vecF)/2.0;
+	omega_initial = sumsq(fModelDat.vecF_initial)/2.0;
 	
 	
 	% START NEW, "180" CODE.
@@ -318,9 +320,10 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%	  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
 	%
 	%
-	if (  1 <= sizeVLocal  &&  eta_loc <= max([ prm.omegaTol, 0.5*omega*sqrt(omega/omega_initial) ])  )
-		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
-		  "  Action: Try step ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
+	devVerbLev = VERBLEV__INFO;
+	if (  1 <= sizeVLocal  &&  eta_loc <= max([ prm.omegaTol, 0.1*omega*sqrt(omega/omega_initial) ])  )
+		msgif( prm.verbLev >= devVerbLev, __FILE__, __LINE__, sprintf( ...
+		  "  Action: Try very good step ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
 		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
 		vecY = matV'*(matVLocal*vecY_loc);
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
@@ -332,7 +335,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	endif
 	%
 	if (  0 == sizeVLocal  ||  eta_bnd < 0.5 * eta_loc  )
-		msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
+		msgif( prm.verbLev >= devVerbLev, __FILE__, __LINE__, sprintf( ...
 		  "  Action: Confirm record ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
 		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
 		vecV = __calcOrthonorm( matV*vecY_bnd, matVLocal, prm );
@@ -348,6 +351,33 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "  WHOOPS, WE'VE ALREADY TRIED THIS!" );
 	endif
 	%
+	vecU = __applyPrecon( vecRho_loc, prm, vecX, vecF );
+	vecV = __calcOrthonorm( vecU, matV, prm );
+	if ( norm(vecV) > sqrt(eps) )
+		msgif( prm.verbLev >= devVerbLev, __FILE__, __LINE__, sprintf( ...
+		  "  Action: Expand per vecRho_loc ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
+		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
+		[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
+		taFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+		endif
+		return;
+	endif
+	%
+	if (  1 <= sizeVLocal  &&  eta_loc < 0.5*omega  )
+		msgif( prm.verbLev >= devVerbLev, __FILE__, __LINE__, sprintf( ...
+		  "  Action: Try okay step ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
+		  sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
+		vecY = matV'*(matVLocal*vecY_loc);
+		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
+		taFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+		endif
+		return;
+	endif
+	%
 	% This should really be eta_local_unb, but that's not in this version of sxsolf.
 	if ( eta_unb < 0.001 * omega )
 		msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( ...
@@ -356,10 +386,6 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		retCode = RETCODE__ALGORITHM_BREAKDOWN;
 		return;
 	endif
-	%
-	vecRho_loc = vecF - matWLocal*vecY_loc;
-	vecRho_bnd = vecF - matW*vecY_bnd;
-	vecRho_unb = vecF - matW*vecY_unb;
 	%
 	% With a good preconditioner, ortho against merely matVLocal might make more sense. (Next version!)
 	for n = 1 : 3+sizeVLocal+sizeV+sizeX
@@ -403,7 +429,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		%
 		vecV = __calcOrthonorm( vecU, matV, prm );
 		if ( norm(vecV) > sqrt(eps) )
-			msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
+			msgif( prm.verbLev >= devVerbLev, __FILE__, __LINE__, sprintf( ...
 			  "  Action: Expand per %s ( %d / %d / %dx%d, %0.2e / %0.2e / %0.2e / %0.2e / %0.2e / %0.2e ).", ...
 			  strName, sizeVLocal, sizeV, sizeF, sizeX, prm.omegaTol, eta_unb, eta_bnd, eta_loc, omega, omega_initial ) );
 			[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );

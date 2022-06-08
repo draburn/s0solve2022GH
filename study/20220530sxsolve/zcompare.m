@@ -18,7 +18,7 @@ zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
 %
-if (1)
+if (0)
 	msg( __FILE__, __LINE__, "Doing simple one-shot." );
 	prm = [];
 	%prm.verbLev = VERBLEV__DETAILED;
@@ -43,6 +43,7 @@ endif
 %
 numRuns = 0;
 resumeRun = -1;
+numRuns++; runList(numRuns).r.runType = 2180; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 2100; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 2100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
