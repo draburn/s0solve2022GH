@@ -3,7 +3,7 @@
 % AND MANY HACKS TO COMPARE TO FINDZERO_800!
 
 function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf180( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
-	%error( "This is a hacked version for comparision to findZero_800. Do not use this code unless you know what you're doing!" );
+	error( "This is a hacked version for comparision to findZero_800. Do not use this code unless you know what you're doing!" );
 	mydefs;
 	startTime = time();
 	vecX = [];
@@ -157,12 +157,12 @@ function [ retCode, fevalIncr, vecF_initial, fModelDat, prm ] = __initPrm( funch
 	%
 	%prm.verbLev = VERBLEV__FLAGGED; prm.valdLev = VALDLEV__LOW; % Post-establishment.
 	%prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__ZERO; % Performance testing.
-	prm.verbLev = VERBLEV__PROGRESS; prm.valdLev = VALDLEV__LOW; % Routine use.
+	%prm.verbLev = VERBLEV__PROGRESS; prm.valdLev = VALDLEV__LOW; % Routine use.
 	%prm.verbLev = VERBLEV__MAIN; prm.valdLev = VALDLEV__MEDIUM; % Integration testing.
 	%prm.verbLev = VERBLEV__PROGRESS; prm.valdLev = VALDLEV__HIGH; % Integration dev.
 	%prm.verbLev = VERBLEV__DETAILS; prm.valdLev = VALDLEV__HIGH; % Feature refinement dev.
 	%prm.verbLev = VERBLEV__COPIOUS; prm.valdLev = VALDLEV__VERY_HIGH; % New feature dev.
-	%prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Refactor / debug.
+	prm.verbLev = VERBLEV__UNLIMITED; prm.valdLev = VALDLEV__UNLIMITED; % Refactor / debug.
 	%
 	prm.timeMax = -1.0;
 	prm.iterMax = ceil( 100 + 10*sqrt(sizeX+sizeF) + sizeX );
@@ -331,12 +331,12 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%
 	if (isempty(fModelDat.vecF_prev))
 		omega_prev = [];
-		omegaTolTemp = max([ prm.omegaTol, 0.01*omega ]);
+		omegaTolTemp = max([ 0.7*prm.omegaTol, 0.01*omega ]);
 		omega_prev = omega;
 	else
 		omega_prev = sumsq(fModelDat.vecF_prev)/2.0;
 		%omegaTolTemp = max([ prm.omegaTol, 0.1*omega*min([ 1.0, sqrt(omega/omega_prev) ]) ]);
-		omegaTolTemp = max([ prm.omegaTol, 0.01*omega*min([ 1.0, omega/omega_initial ]) ]);
+		omegaTolTemp = max([ 0.7*prm.omegaTol, 0.01*omega*min([ 1.0, omega/omega_initial ]) ]);
 	endif
 	%
 	% After  refactor, we could consider "blind" steps here.
@@ -370,7 +370,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 			return;
 		endif
 		fevalIncr = 1;
-		omega_next = sumsq( vecF_next ) / 2.0
+		%omega_next = sumsq( vecF_next ) / 2.0
 		endswitch
 		
 		
