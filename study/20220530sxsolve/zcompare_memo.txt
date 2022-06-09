@@ -70,4 +70,5 @@ z195 hack0529 further...
 
 
 2022-07-07
-1020_65628736x200: s181 is worse than others, stalls from start.
+1020_65628736x200: s181 hits snag unlike s100 and 800 using original start.
+1020_26841584x200: s100 snags, s181 and 800 don't.

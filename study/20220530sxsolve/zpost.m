@@ -43,7 +43,7 @@ set( ylabel( "||F best||" ), 'Interpreter', 'none' );
 set( title([ mainStartDatestr " " runFStr " CNVG V FEVAL" ]), 'Interpreter', 'none' );
 %
 %
-if (1)
+if (0)
 numFigs++; figure(numFigs);
 epsViz = 1.0e-18;
 leg = {};

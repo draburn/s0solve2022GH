@@ -444,6 +444,26 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	endif
 	%
 	%
+	if (  0 == sizeVLocal || eta_bnd < 0.5 * omega  )
+		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
+		  "  %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e // %8.2e:  %s.", ...
+		  sizeVLocal, sizeV, sizeF, sizeX, ...
+		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
+		  sum(sumsq(matB)), "Verify record (semi-desperate-ish)" ) );
+		vecV = __calcOrthonorm( matV*vecY_bnd, matVLocal, prm );
+		if ( norm(vecV) > sqrt(eps) )
+			vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
+			[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
+			taFevalCount += fevalIncr; clear fevalIncr;
+			if ( 0~= retCode )
+				msgretcodeif( true, __FILE__, __LINE__, retCode );
+			endif
+			return;
+		endif
+		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "  WHOOPS, WE'VE ALREADY TRIED THIS!" );
+	endif
+	%
+	%
 	%
 	% With a good preconditioner, ortho against merely matVLocal might make more sense. (Next version!)
 	for n = 1 : 3+sizeVLocal+sizeV+sizeX

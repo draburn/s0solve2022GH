@@ -14,7 +14,6 @@ endif
 sizeX = 200
 fType = 1020
 fSeed = 65628736
-%fSeed = 3360352 100x1010, s100 worse than s181.
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
@@ -44,9 +43,9 @@ endif
 %
 numRuns = 0;
 resumeRun = -1;
-numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 1; runList(numRuns).r.prmMemo = "";
+%numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 1; runList(numRuns).r.prmMemo = "";
 
-resumeRun = numRuns;
+%resumeRun = numRuns;
 
 numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 2100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
