@@ -11,9 +11,9 @@ if ( stopsignalpresent() )
 endif
 %
 %
-sizeX = 200
-fType = 1020
-fSeed = 65628736
+sizeX = 100
+fType = 1000
+fSeed = 0
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
