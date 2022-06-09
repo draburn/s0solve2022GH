@@ -340,7 +340,29 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	% After  refactor, we could consider "blind" steps here.
 	%
 	%
+	
+	persistent verifyCountSinceLastStep = 0;
+	if ( 1 <= sizeVLocal && 2 <= verifyCountSinceLastStep )
+		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
+		  "  %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e // %8.2e:  %s.", ...
+		  sizeVLocal, sizeV, sizeF, sizeX, ...
+		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
+		  sum(sumsq(matB)), "Try step (post-verify forced)" ) );
+		vecY = matV'*(matVLocal*vecY_loc);
+		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
+		taFevalCount += fevalIncr; clear fevalIncr;
+		
+		verifyCountSinceLastStep= 0;
+		
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+		endif
+		return;
+	endif
+	
+	
 	if ( 1 <= sizeVLocal && eta_loc <= omegaTolTemp )
+	%if ( 1 <= sizeVLocal && eta_loc <= omegaTolTemp || 10 <= sizeVLocal ) % Actually not bad.
 		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
 		  "  %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e // %8.2e:  %s.", ...
 		  sizeVLocal, sizeV, sizeF, sizeX, ...
@@ -349,6 +371,9 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		vecY = matV'*(matVLocal*vecY_loc);
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
+		
+		verifyCountSinceLastStep= 0;
+		
 		if ( 0~= retCode )
 			msgretcodeif( true, __FILE__, __LINE__, retCode );
 		endif
@@ -364,6 +389,9 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		  sum(sumsq(matB)), "Verify record" ) );
 		vecV = __calcOrthonorm( matV*vecY_bnd, matVLocal, prm );
 		if ( norm(vecV) > sqrt(eps) )
+		
+			verifyCountSinceLastStep++;
+		
 			vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
 			[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
 			taFevalCount += fevalIncr; clear fevalIncr;
@@ -385,6 +413,9 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		vecY = matV'*(matVLocal*vecY_loc);
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
+		
+		verifyCountSinceLastStep= 0;
+		
 		if ( 0~= retCode )
 			msgretcodeif( true, __FILE__, __LINE__, retCode );
 		endif
@@ -437,6 +468,9 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		vecY = matV'*(matVLocal*vecY_loc);
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
+		
+		verifyCountSinceLastStep= 0;
+		
 		if ( 0~= retCode )
 			msgretcodeif( true, __FILE__, __LINE__, retCode );
 		endif
@@ -452,6 +486,9 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		  sum(sumsq(matB)), "Verify record (semi-desperate-ish)" ) );
 		vecV = __calcOrthonorm( matV*vecY_bnd, matVLocal, prm );
 		if ( norm(vecV) > sqrt(eps) )
+		
+			verifyCountSinceLastStep++;
+		
 			vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
 			[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
 			taFevalCount += fevalIncr; clear fevalIncr;
@@ -531,6 +568,9 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		vecY = matV'*(matVLocal*vecY_loc);
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
+		
+		verifyCountSinceLastStep= 0;
+		
 		if ( 0~= retCode )
 			msgretcodeif( true, __FILE__, __LINE__, retCode );
 		endif
