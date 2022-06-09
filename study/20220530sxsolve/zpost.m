@@ -43,6 +43,25 @@ set( ylabel( "||F best||" ), 'Interpreter', 'none' );
 set( title([ mainStartDatestr " " runFStr " CNVG V FEVAL" ]), 'Interpreter', 'none' );
 %
 %
+if (1)
+numFigs++; figure(numFigs);
+epsViz = 1.0e-18;
+leg = {};
+for n=1:numRuns
+	r = runList(n).r;
+	if (r.isValid)
+		semilogy( r.fevalCountOfStep, (r.fBestNormOfStep+epsViz).^2/2.0, r.mlStyle, 'markersize', r.mSize, 'linewidth', 2 );
+		hold on;
+	endif
+endfor
+hold off;
+grid on;
+set( xlabel( "feval count" ), 'Interpreter', 'none' );
+set( ylabel( "omega best" ), 'Interpreter', 'none' );
+set( title([ mainStartDatestr " " runFStr " CNVG V FEVAL" ]), 'Interpreter', 'none' );
+endif
+%
+%
 if (~doExtras)
 	msg( __FILE__, __LINE__, sprintf( "Run suite '%s' with F '%s' completed in %0.3es; post-proc took %0.3es.", ...
 	  mainStartDatestr, runFStr, mainCalcElapsedTime, time()-plotStartTime ) );

@@ -67,3 +67,7 @@ z195 hack0529 further...
 530_79449232x20: s cnvg, pdl a bit better.
 
 510_16023792: Varies, but s100 pretty good compared to 800.
+
+
+2022-07-07
+1020_65628736x200: s181 is worse than others, stalls from start.
