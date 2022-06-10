@@ -655,7 +655,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	histDatSays_weShouldNotTrustRecord = false;
 	
 	
-	% SET HISTDAT.
+	% UPDATE HISTDAT.
 	fModelDat.histDat(fModelDat.iterCount).iterDat.localeCount = fModelDat.localeCount;
 	fModelDat.histDat(fModelDat.iterCount).iterDat.stepsCount = fModelDat.stepsCount;
 	fModelDat.histDat(fModelDat.iterCount).iterDat.sizeV = sizeV;
@@ -666,18 +666,17 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	fModelDat.histDat(fModelDat.iterCount).iterDat.eta_locunb = eta_locunb; % Local, unbounded.
 	fModelDat.histDat(fModelDat.iterCount).iterDat.omega = omega; % Local, unbounded.
 	fModelDat.histDat(fModelDat.iterCount).iterDat.fevalCount = fModelDat.fevalCount;
+	fModelDat.histDat(fModelDat.iterCount).iterDat.histDatSays_weShouldCutAndRun = histDatSays_weShouldCutAndRun;
+	fModelDat.histDat(fModelDat.iterCount).iterDat.histDatSays_weShouldNotTrustRecord = histDatSays_weShouldNotTrustRecord;
 	if ( 0 == sizeVLocal )
 		fModelDat.localeDat(fModelDat.localeCount).iterCount = fModelDat.iterCount;
 		fModelDat.localeDat(fModelDat.localeCount).vecX = vecX;
 		fModelDat.localeDat(fModelDat.localeCount).vecF = vecF;
 	endif
 	%
-	ACTION__TRY_STEP = 100;
-	ACTION__PULL_RECORD = 200;
-	ACTION__EXPAND_SUBSPACE = 300;
-	ACTION_MOD__PRIMARY = 0;
-	ACTION_MOD__SECONDARY = 10;
-	ACTION_MOD__TERTIARY = 20;
+	ACTION_TYPE__TRY_STEP = 100;
+	ACTION_TYPE__PULL_RECORD = 200;
+	ACTION_TYPE__EXPAND_SUBSPACE = 300;
 	
 	
 	if (  1 <= sizeVLocal  &&  ( eta_loc < omegaTolTemp || histDatSays_weShouldCutAndRun || sizeVLocal == sizeX )  )
@@ -687,7 +686,8 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
 		  sum(sumsq(matB)), "Try step" ) );
 		vecY = matV'*(matVLocal*vecY_loc);
-		fModelDat.histDat(fModelDat.iterCount).iterDat.actionTaken = ACTION__TRY_STEP + ACTION_MOD__PRIMARY;
+		fModelDat.histDat(fModelDat.iterCount).iterDat.actionType = ACTION_TYPE__TRY_STEP;
+		fModelDat.histDat(fModelDat.iterCount).iterDat.actionSubType = 0;
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
@@ -706,7 +706,8 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		vecV = __calcOrthonorm( matV*vecY_bnd, matVLocal, prm );
 		if ( norm(vecV) > sqrt(eps) )
 			vecV = matV*(matV'*vecV); % Force in subspace for numerical stability.
-			fModelDat.histDat(fModelDat.iterCount).iterDat.actionTaken = ACTION__PULL_RECORD + ACTION_MOD__PRIMARY;
+			fModelDat.histDat(fModelDat.iterCount).iterDat.actionType = ACTION_TYPE__PULL_RECORD;
+			fModelDat.histDat(fModelDat.iterCount).iterDat.actionSubType = 0;
 			[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
 			taFevalCount += fevalIncr; clear fevalIncr;
 			if ( 0~= retCode )
@@ -726,7 +727,8 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
 		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
 		  sum(sumsq(matB)), "Expand (rho_loc)" ) );
-		fModelDat.histDat(fModelDat.iterCount).iterDat.actionTaken = ACTION__EXPAND_SUBSPACE + ACTION_MOD__PRIMARY;
+		fModelDat.histDat(fModelDat.iterCount).iterDat.actionType = ACTION_TYPE__EXPAND_SUBSPACE;
+			fModelDat.histDat(fModelDat.iterCount).iterDat.actionSubType = 0;
 		[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
@@ -743,7 +745,8 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
 		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
 		  sum(sumsq(matB)), "Expand (rho_locunb)" ) );
-		fModelDat.histDat(fModelDat.iterCount).iterDat.actionTaken = ACTION__EXPAND_SUBSPACE_PRIMARY + ACTION_MOD__SECONDARY;
+		fModelDat.histDat(fModelDat.iterCount).iterDat.actionType = ACTION_TYPE__EXPAND_SUBSPACE;
+			fModelDat.histDat(fModelDat.iterCount).iterDat.actionSubType = 10;
 		[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
@@ -762,7 +765,8 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
 		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
 		  sum(sumsq(matB)), strAction ) );
-		fModelDat.histDat(fModelDat.iterCount).iterDat.actionTaken = ACTION__EXPAND_SUBSPACE_PRIMARY + ACTION_MOD__TERTIARY;
+		fModelDat.histDat(fModelDat.iterCount).iterDat.actionType = ACTION_TYPE__EXPAND_SUBSPACE;
+		fModelDat.histDat(fModelDat.iterCount).iterDat.actionSubType = 20;
 		[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
