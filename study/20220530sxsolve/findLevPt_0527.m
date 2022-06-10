@@ -69,6 +69,7 @@ function [ vecY, pt_best, iterCount, retCode, datOut ] = findLevPt_0527( vecG, m
 			msgif( prm.verbLev >= VERBLEV__WARNING, __FILE__, __LINE__, "IMPOSED STOP: Reached iterMax." );
 			vecY = pt_best.vecY;
 			retCode = RETCODE__IMPOSED_STOP;
+			return;
 			%
 			mu0 = pt0.mu
 			b0 = pt0.b
@@ -79,7 +80,6 @@ function [ vecY, pt_best, iterCount, retCode, datOut ] = findLevPt_0527( vecG, m
 			bTrgt
 			%
 			error( "Reached iterMax." );
-			return;
 		endif
 		iterCount++;
 		if ( prm.valdLev >= VALDLEV__MEDIUM )

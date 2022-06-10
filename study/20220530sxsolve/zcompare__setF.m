@@ -341,6 +341,40 @@ case 1020
 	funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
 	%
 	vecX0 = randn(sizeX,1);
+case 2000
+	sizeF = sizeX;
+	matSX = diag(exp(3.0*randn(sizeX,1)));
+	matSF = diag(exp(3.0*randn(sizeF,1)));
+	vecXE = randn(sizeX,1);
+	matJE = matSF*randn(sizeF,sizeX)/matSX;
+	matA0 = 0.0e0*matSF*randn(sizeF,sizeX)/matSX;
+	matA1 = randn(sizeX,sizeX)/matSX;
+	matA2 = randn(sizeX,sizeX)/matSX;
+	matB0 = 0.0e0*matSF*randn(sizeF,sizeX)/matSX;
+	matB1 = randn(sizeX,sizeX)/matSX;
+	matB2 = randn(sizeX,sizeX)/matSX;
+	matB3 = randn(sizeX,sizeX)/matSX;
+	y = @(x)( x - vecXE );
+	funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
+	%
+	vecX0 = randn(sizeX,1);
+case 2010
+	sizeF = sizeX;
+	matSX = diag(exp(3.0*randn(sizeX,1)));
+	matSF = diag(exp(3.0*randn(sizeF,1)));
+	vecXE = randn(sizeX,1);
+	matJE = matSF*randn(sizeF,sizeX)/matSX;
+	matA0 = 1.0e-8*matSF*randn(sizeF,sizeX)/matSX;
+	matA1 = randn(sizeX,sizeX)/matSX;
+	matA2 = randn(sizeX,sizeX)/matSX;
+	matB0 = 1.0e-8*matSF*randn(sizeF,sizeX)/matSX;
+	matB1 = randn(sizeX,sizeX)/matSX;
+	matB2 = randn(sizeX,sizeX)/matSX;
+	matB3 = randn(sizeX,sizeX)/matSX;
+	y = @(x)( x - vecXE );
+	funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
+	%
+	vecX0 = randn(sizeX,1);
 otherwise
 	error( "Invalid fType." );
 endswitch

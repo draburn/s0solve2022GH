@@ -290,292 +290,6 @@ function [ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, p
 	retCode = RETCODE__SUCCESS;
 	return;
 endfunction
-	
-	
-function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeAction( funchF, fModelDat, studyDat, prm )
-	mydefs;
-	retCode = RETCODE__NOT_SET;
-	taFevalCount = 0;
-	vecX_next = [];
-	vecF_next = [];
-	%
-	vecX = fModelDat.vecX; % Current guess.
-	vecF = fModelDat.vecF; % Function at current guess.
-	matV = fModelDat.matV; % Subspace basis matrix.
-	matW = fModelDat.matW; % Projected subspace basis matrix, J*V.
-	matB = fModelDat.matB; % Boundary / trust region matrix; (bound) candidate steps must satify ||B*y|| <= 1.
-	matVLocal = fModelDat.matVLocal; % Locally evaluated subspace basis matrix.
-	matWLocal = fModelDat.matWLocal; % Projection of locally evaluated subspace basis matrix.
-	%
-	sizeX = size(vecX,1);
-	sizeF = size(vecF,1);
-	sizeV = size(matV,2);
-	sizeB = size(matB,1);
-	sizeVLocal = size(matVLocal,2);
-	%
-	vecY_unb = studyDat.vecY_unb;
-	vecY_bnd = studyDat.vecY_bnd;
-	vecY_loc = studyDat.vecY_loc;
-	eta_unb = studyDat.eta_unb;
-	eta_bnd = studyDat.eta_bnd;
-	eta_loc = studyDat.eta_loc;
-	%
-	vecRho_loc = vecF - matWLocal*vecY_loc;
-	vecRho_bnd = vecF - matW*vecY_bnd;
-	vecRho_unb = vecF - matW*vecY_unb;
-	%
-	omega = sumsq(vecF)/2.0;
-	omega_initial = sumsq(fModelDat.vecF_initial)/2.0;
-	
-	
-	% START NEW, "180" CODE.
-	%
-	% Ah! I *need* locunb... but only if TR activated.
-	if ( 0 == sizeVLocal )
-		vecRho_locunb = vecF;
-		eta_locunb = omega;
-	else
-		vecY_locunb = -( matWLocal'*matWLocal ) \ ( matWLocal'*vecF );
-		vecRho_locunb = vecF + matWLocal*vecY_locunb;
-		eta_locunb = sumsq(vecRho_locunb)/2.0;
-	endif
-	%
-	if (isempty(fModelDat.vecF_prev))
-		omega_prev = [];
-		omegaTolTemp = max([ 0.7*prm.omegaTol, 0.01*omega ]);
-		omega_prev = omega;
-	else
-		omega_prev = sumsq(fModelDat.vecF_prev)/2.0;
-		%omegaTolTemp = max([ prm.omegaTol, 0.1*omega*min([ 1.0, sqrt(omega/omega_prev) ]) ]);
-		omegaTolTemp = max([ 0.7*prm.omegaTol, 0.01*omega*min([ 1.0, omega/omega_initial ]) ]);
-	endif
-	%
-	% After  refactor, we could consider "blind" steps here.
-	%
-	%
-	
-	if (0)
-	%if ( 1 <= sizeVLocal && 3 <= verifyCountSinceLastStep )
-		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
-		  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  %s.", ...
-		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
-		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
-		  sum(sumsq(matB)), "Nuking records" ) );
-		fModelDat.matV = fModelDat.matVLocal;
-		fModelDat.matW = fModelDat.matWLocal;
-		fModelDat.matB = zeros( sizeVLocal, sizeVLocal );
-		retCode = RETCODE__SUCCESS;
-		return;
-	endif
-	if (0)
-	%if ( 1 <= sizeVLocal && 2 <= verifyCountSinceLastStep )
-		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
-		  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  %s.", ...
-		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
-		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
-		  sum(sumsq(matB)), "Try step (post-verify forced)" ) );
-		vecY = matV'*(matVLocal*vecY_loc);
-		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
-		taFevalCount += fevalIncr; clear fevalIncr;
-		if ( 0~= retCode )
-			msgretcodeif( true, __FILE__, __LINE__, retCode );
-		endif
-		return;
-	endif
-	
-	
-	if ( 1 <= sizeVLocal && eta_loc <= omegaTolTemp )
-	%if ( 1 <= sizeVLocal && eta_loc <= omegaTolTemp || 10 <= sizeVLocal ) % Actually not bad.
-		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
-		  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  %s.", ...
-		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
-		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
-		  sum(sumsq(matB)), "Try step (strong cnvg)" ) );
-		vecY = matV'*(matVLocal*vecY_loc);
-		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
-		taFevalCount += fevalIncr; clear fevalIncr;
-		if ( 0~= retCode )
-			msgretcodeif( true, __FILE__, __LINE__, retCode );
-		endif
-		return;
-	endif
-	%
-	%
-	if (  0 == sizeVLocal || eta_bnd < 0.1 * eta_loc  ||  eta_bnd < 0.5 * omegaTolTemp  )
-		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
-		  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  %s.", ...
-		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
-		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
-		  sum(sumsq(matB)), "Verify record" ) );
-		vecV = __calcOrthonorm( matV*vecY_bnd, matVLocal, prm );
-		if ( norm(vecV) > sqrt(eps) )
-			vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
-			[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
-			taFevalCount += fevalIncr; clear fevalIncr;
-			if ( 0~= retCode )
-				msgretcodeif( true, __FILE__, __LINE__, retCode );
-			endif
-			return;
-		endif
-		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "  WHOOPS, WE'VE ALREADY TRIED THIS!" );
-	endif
-	%
-	%
-	if ( 1 <= sizeVLocal && eta_loc <= 0.9 * omega && eta_locunb < 0.001*omega )
-		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
-		  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  %s.", ...
-		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
-		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
-		  sum(sumsq(matB)), "Try step (semi-desperate)" ) );
-		vecY = matV'*(matVLocal*vecY_loc);
-		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
-		taFevalCount += fevalIncr; clear fevalIncr;
-		if ( 0~= retCode )
-			msgretcodeif( true, __FILE__, __LINE__, retCode );
-		endif
-		return;
-	endif
-	%
-	%
-	vecU = __applyPrecon( vecRho_loc, prm, vecX, vecF );
-	%vecV = __calcOrthonorm( vecU, matVLocal, prm );
-	vecV = __calcOrthonorm( vecU, matV, prm );
-	if ( norm(vecV) > sqrt(eps) )
-		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
-		  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  %s.", ...
-		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
-		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
-		  sum(sumsq(matB)), "Expand (rho_loc)" ) );
-		[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
-		taFevalCount += fevalIncr; clear fevalIncr;
-		if ( 0~= retCode )
-			msgretcodeif( true, __FILE__, __LINE__, retCode );
-		endif
-		return;
-	endif
-	%
-	%
-	vecU = __applyPrecon( vecRho_locunb, prm, vecX, vecF );
-	%vecV = __calcOrthonorm( vecU, matVLocal, prm );
-	vecV = __calcOrthonorm( vecU, matV, prm );
-	if ( norm(vecV) > sqrt(eps) )
-		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
-		  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  %s.", ...
-		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
-		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
-		  sum(sumsq(matB)), "Expand (rho_locunb)" ) );
-		[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
-		taFevalCount += fevalIncr; clear fevalIncr;
-		if ( 0~= retCode )
-			msgretcodeif( true, __FILE__, __LINE__, retCode );
-		endif
-		return;
-	endif
-	%
-	%
-	if ( 1 <= sizeVLocal && eta_loc <= 0.5 * omega )
-		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
-		  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  %s.", ...
-		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
-		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
-		  sum(sumsq(matB)), "Try step (weak cnvg)" ) );
-		vecY = matV'*(matVLocal*vecY_loc);
-		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
-		taFevalCount += fevalIncr; clear fevalIncr;
-		if ( 0~= retCode )
-			msgretcodeif( true, __FILE__, __LINE__, retCode );
-		endif
-		return;
-	endif
-	%
-	%
-	if (  0 == sizeVLocal || eta_bnd < 0.5 * omega  )
-		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
-		  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  %s.", ...
-		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
-		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
-		  sum(sumsq(matB)), "Verify record (semi-desperate-ish)" ) );
-		vecV = __calcOrthonorm( matV*vecY_bnd, matVLocal, prm );
-		if ( norm(vecV) > sqrt(eps) )
-			vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
-			[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
-			taFevalCount += fevalIncr; clear fevalIncr;
-			if ( 0~= retCode )
-				msgretcodeif( true, __FILE__, __LINE__, retCode );
-			endif
-			return;
-		endif
-		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "  WHOOPS, WE'VE ALREADY TRIED THIS!" );
-	endif
-	%
-	%
-	%
-	% With a good preconditioner, ortho against merely matVLocal might make more sense. (Next version!)
-	for n = 1 : 3+sizeVLocal+sizeV+sizeX
-		%
-		if ( 1 == n )
-			vecR = vecRho_loc;
-			vecU = __applyPrecon( vecR, prm, vecX, vecF );
-			strName = "vecRho_loc";
-		elseif ( 2 == n )
-			vecR = vecRho_bnd;
-			vecU = __applyPrecon( vecR, prm, vecX, vecF );
-			strName = "vecRho_bnd";
-		elseif ( 3 == n )
-			vecR = vecRho_unb;
-			vecU = __applyPrecon( vecR, prm, vecX, vecF );
-			strName = "vecRho_unb";
-		else
-			m = n-3;
-			if ( m <= sizeVLocal )
-				vecR = matWLocal(:,m);
-				vecU = __applyPrecon( vecR, prm, vecX, vecF );
-				strName = sprintf("matWLocal(:,%d)",m);
-			else
-				m -= sizeVLocal;
-				if ( m <= sizeV )
-					vecR = matW(:,m);
-					vecU = __applyPrecon( vecR, prm, vecX, vecF );
-					strName = sprintf("matW(:,%d)",m);
-				else
-					m -= sizeV;
-					if ( m <= sizeX )
-						vecU = zeros(sizeX,1);
-						vecU(m) = 1.0;
-						strName = sprintf("e(%d)",m);
-					else
-						break;
-					endif
-				endif
-			endif
-		endif
-		%
-		vecV = __calcOrthonorm( vecU, matVLocal, prm );
-		if ( norm(vecV) > sqrt(eps) )
-				msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
-			  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  Expand (vsLoc, very desperate %s).", ...
-			  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
-			  sizeVLocal, sizeV, sizeF, sizeX, ...
-			  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
-			  sum(sumsq(matB)), strName ) );
-			[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
-			taFevalCount += fevalIncr; clear fevalIncr;
-			if ( 0~= retCode )
-				msgretcodeif( true, __FILE__, __LINE__, retCode );
-			endif
-			return;
-		endif
-	endfor
-	%
-	%
-	msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
-	  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  %s.", ...
-	  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
-	  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
-	  sum(sumsq(matB)), "Give up (exhausted)" ) );
-	retCode = RETCODE__ALGORITHM_BREAKDOWN;
-	return;
-endfunction
 
 
 function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeAction_hist( funchF, fModelDat, studyDat, prm )
@@ -612,21 +326,15 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	vecY_unb = studyDat.vecY_unb;
 	vecY_bnd = studyDat.vecY_bnd;
 	vecY_loc = studyDat.vecY_loc;
+	vecY_locunb = studyDat.vecY_locunb;
 	eta_unb = studyDat.eta_unb;
 	eta_bnd = studyDat.eta_bnd;
 	eta_loc = studyDat.eta_loc;
-	vecRho_loc = vecF - matWLocal*vecY_loc;
-	vecRho_bnd = vecF - matW*vecY_bnd;
-	vecRho_unb = vecF - matW*vecY_unb;
-	if ( 0 == sizeVLocal )
-		vecY_locunb = [];
-		vecRho_locunb = vecF;
-		eta_locunb = omega;
-	else
-		vecY_locunb = -( matWLocal'*matWLocal ) \ ( matWLocal'*vecF );
-		vecRho_locunb = vecF + matWLocal*vecY_locunb;
-		eta_locunb = sumsq(vecRho_locunb)/2.0;
-	endif
+	eta_locunb = studyDat.eta_locunb;
+	vecRho_locunb = vecF + matWLocal*vecY_locunb;
+	vecRho_loc = vecF + matWLocal*vecY_loc;
+	vecRho_bnd = vecF + matW*vecY_bnd;
+	vecRho_unb = vecF + matW*vecY_unb;
 	
 	% HISTDAT...
 	ACTION_TYPE__TRY_STEP = 100;
@@ -649,7 +357,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		for n = iterCount - 1 : -1 : 1
 			if ( 0 == fModelDat.histDat(n).iterDat.sizeVLocal )
 				break;
-			elseif ( abs( 1.0 - fModelDat.histDat(n).iterDat.eta_loc / eta_loc ) > 0.1 )
+			elseif ( abs( 1.0 - fModelDat.histDat(n).iterDat.eta_loc / eta_loc ) > 0.01 )
 				n++;
 				break;
 			endif
@@ -661,17 +369,27 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		%
 		if ( badPullCount >= 2 )
 			histDatSays_weShouldNotTrustRecord = true;
+			msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
+			  "      History says we should not trust records (%d).", badPullCount ) );
 		endif
-		if ( lookBack_iterDistance >= 2 )
-			lookBack_eta_loc = fModelDat.histDat(iterCount-lookBack_iterDistance).iterDat.eta_loc;
-			if (  ( 1.0 - eta_loc / lookBack_eta_loc )^(1.0/lookBack_iterDistance) < 0.1*( 1.0 - lookBack_eta_loc / omega ) ) % Is this sensibile?
-				histDatSays_weShouldCutAndRun = true;
-				%lookBack_iterDistance
-				%eta_loc
-				%lookBack_eta_loc
-				%omega
-				%error( "HALT" );
-			endif
+	endif
+	if ( 3 <= sizeVLocal )
+		for n = iterCount-1 : -1 : 1
+		if ( fModelDat.histDat(n).iterDat.sizeVLocal <= sizeVLocal - 2 )
+			break;
+		endif
+		endfor
+		slopeFromStart = ( log(eta_loc) - log(omega) ) / ( sizeVLocal - 0.0 );
+		lookBack_eta_loc = fModelDat.histDat(n).iterDat.eta_loc;
+		deltaK = sizeVLocal - fModelDat.histDat(n).iterDat.sizeVLocal;
+		assert( deltaK > 0 );
+		slopeRecent = ( log(eta_loc) - log(lookBack_eta_loc) ) / deltaK;
+		if ( abs(slopeRecent) < 0.01 * abs(slopeFromStart) )
+			histDatSays_weShouldCutAndRun = true;
+			msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
+			  "      History says we should cut and run: %0.3e = ( l(%0.3e) - l(%0.3e) ) / %d  vs   %0.3e = ( l(%0.3e) - l(%0.3e) ) / %d.", ...
+			  slopeRecent, eta_loc, lookBack_eta_loc, deltaK, ...
+			  slopeFromStart, eta_loc, omega, sizeVLocal ) );
 		endif
 	endif
 	
@@ -697,13 +415,12 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	endif
 	
 	
-	%if (  1 <= sizeVLocal  &&  ( eta_loc < omegaTolTemp || histDatSays_weShouldCutAndRun || sizeVLocal == sizeX )  )
-	if (  1 <= sizeVLocal  &&  ( eta_loc < 0.1*omega || histDatSays_weShouldCutAndRun || sizeVLocal == sizeX )  )
+	if (  1 <= sizeVLocal  &&  ( eta_loc < omegaTolTemp || histDatSays_weShouldCutAndRun || sizeVLocal == sizeX )  )
 		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
 		  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  %s.", ...
 		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
 		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
-		  sum(sumsq(matB)), "Try VL*yLB" ) );
+		  sum(sumsq(matB)), "Try step (strong cnvg)" ) );
 		vecY = matV'*(matVLocal*vecY_loc);
 		fModelDat.histDat(iterCount).iterDat.actionType = ACTION_TYPE__TRY_STEP;
 		fModelDat.histDat(iterCount).iterDat.actionSubType = 0;
@@ -757,15 +474,6 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	endif
 	%
 	%
-	msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
-	  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  %s.", ...
-	  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
-	  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
-	  sum(sumsq(matB)), "Give up (desperate)" ) );
-	retCode = RETCODE__ALGORITHM_BREAKDOWN;
-	return;
-	%
-	%
 	vecU = __applyPrecon( vecRho_locunb, prm, vecX, vecF );
 	vecV = __calcOrthonorm( vecU, matV, prm );
 	if ( norm(vecV) > sqrt(eps) )
@@ -777,6 +485,24 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		fModelDat.histDat(iterCount).iterDat.actionType = ACTION_TYPE__EXPAND_SUBSPACE;
 		fModelDat.histDat(iterCount).iterDat.actionSubType = 10;
 		[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
+		taFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+		endif
+		return;
+	endif
+	%
+	%
+	if (  1 <= sizeVLocal  &&  ( eta_loc < 0.5*omega || histDatSays_weShouldCutAndRun || sizeVLocal == sizeX )  )
+		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
+		  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  %s.", ...
+		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
+		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
+		  sum(sumsq(matB)), "Try step (weak cnvg)" ) );
+		vecY = matV'*(matVLocal*vecY_loc);
+		fModelDat.histDat(iterCount).iterDat.actionType = ACTION_TYPE__TRY_STEP;
+		fModelDat.histDat(iterCount).iterDat.actionSubType = 10;
+		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
 			msgretcodeif( true, __FILE__, __LINE__, retCode );
@@ -855,6 +581,23 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
 		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
 		  sum(sumsq(matB)), "Try VL*yLB" ) );
+		vecY = matV'*(matVLocal*vecY_loc);
+		fModelDat.histDat(iterCount).iterDat.actionType = ACTION_TYPE__TRY_STEP;
+		fModelDat.histDat(iterCount).iterDat.actionSubType = 20;
+		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
+		taFevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+		endif
+		return;
+	endif
+	%
+	if (  1 <= sizeVLocal  &&  ( eta_loc < 0.99*omega || histDatSays_weShouldCutAndRun || sizeVLocal == sizeX )  )
+		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
+		  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  %s.", ...
+		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
+		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
+		  sum(sumsq(matB)), "Try step (marginal cnvg)" ) );
 		vecY = matV'*(matVLocal*vecY_loc);
 		fModelDat.histDat(iterCount).iterDat.actionType = ACTION_TYPE__TRY_STEP;
 		fModelDat.histDat(iterCount).iterDat.actionSubType = 20;
@@ -1294,7 +1037,7 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep(
 			%  "  On second thought, accepting trial: %8.2e -> %8.2e (vs updated loc %8.2e) ( down frac %8.2e, remain frac %8.2e ).", ...
 			%  omega, omega_trial, studyDat.eta_loc, 1.0 - omega_trial/omega, omega_trial/omega ) );
 			msgif ( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
-			  "       On second thought, accepting trial (updated eta_loc = %8.2e (vs omega_trial = %8.2e, omega = %8.2e ).", ...
+			  "       On second thought, accepting trial (updated eta_loc = %8.2e vs omega_trial = %8.2e, omega = %8.2e ).", ...
 			  studyDat.eta_loc, omega_trial, omega ) );
 			[ retCode, fModelDat ] = __moveTo( vecY, vecF_trial, fModelDat, prm );
 			if ( 0~= retCode )
@@ -1303,7 +1046,7 @@ function [ retCode, tsFevalCount, fModelDat, vecX_next, vecF_next ] = __tryStep(
 			endif
 		else
 			msgif ( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
-			  "       On second thought... still rejecting trial (updated eta_loc = %8.2e (vs omega_trial = %8.2e, omega = %8.2e ).", ...
+			  "       On second thought... still temporarily rejecting trial (updated eta_loc = %8.2e (vs omega_trial = %8.2e, omega = %8.2e ).", ...
 			  studyDat.eta_loc, omega_trial, omega ) );
 			%msgif( prm.verbLev >= VERBLEV__DETAILS, __FILE__, __LINE__, sprintf( ...
 			%  "  On second thought, still rejecting trial: %8.2e -> %8.2e (vs updated loc %8.2e) ( down frac %8.2e, remain frac %8.2e ).", ...
@@ -1463,6 +1206,9 @@ function [ retCode, studyDat ] = __studyFModel( fModelDat, prm )
 	b_unb = norm(matB*vecY_unb);
 	b_bnd = norm(matB*vecY_bnd);
 	if ( isempty(matVLocal) )
+		vecY_locunb = [];
+		eta_locunb = omega;
+		b_locunb = 0.0;
 		vecY_loc = [];
 		eta_loc = omega;
 		b_loc = 0.0;
@@ -1472,17 +1218,23 @@ function [ retCode, studyDat ] = __studyFModel( fModelDat, prm )
 		matBLocal = matB*(matV'*matVLocal);
 		matCLocal = (matVLocal'*matV)*matC*(matV'*matVLocal);
 		matCLocal = (matCLocal'+matCLocal);
+		vecY_locunb = __findLevPt( vecWTFLocal, matWTWLocal, matCLocal, [], [], prm );
+		eta_locunb = sumsq( vecF + matWLocal*vecY_locunb )/2.0;
+		b_locunb = norm(matBLocal*vecY_locunb);
 		vecY_loc = __findLevPt( vecWTFLocal, matWTWLocal, matCLocal, matBLocal, 1.0, prm );
 		eta_loc = max([ 0.0, omega + vecWTFLocal'*vecY_loc + abs((vecY_loc'*matWTWLocal*vecY_loc)/2.0) ]);
+		%eta_loc = sumsq( vecF + matWLocal*vecY_loc )/2.0;
 		b_loc = norm(matBLocal*vecY_loc);
 	endif
 	%
 	%
-	studyDat.vecY_unb = vecY_unb;
-	studyDat.vecY_bnd = vecY_bnd;
-	studyDat.vecY_loc = vecY_loc;
+	studyDat.vecY_unb = vecY_unb; % Record unbound.
+	studyDat.vecY_bnd = vecY_bnd; % Record bound.
+	studyDat.vecY_locunb = vecY_locunb; % Local unbound.
+	studyDat.vecY_loc = vecY_loc; % Local bound.
 	studyDat.eta_unb = eta_unb;
 	studyDat.eta_bnd = eta_bnd;
+	studyDat.eta_locunb = eta_locunb;
 	studyDat.eta_loc = eta_loc;
 	%
 	if ( prm.verbLev >= VERBLEV__COPIOUS )
