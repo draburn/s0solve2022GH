@@ -645,38 +645,71 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	endif
 	
 	% HISTDAT...
+	ACTION_TYPE__TRY_STEP = 100;
+	ACTION_TYPE__PULL_RECORD = 200;
+	ACTION_TYPE__EXPAND_SUBSPACE = 300;
 	if ( 0 == sizeVLocal )
 		fModelDat.localeCount++;
 	endif
+	iterCount = fModelDat.iterCount;
+	localeCount = fModelDat.localeCount;
 	
 	
 	% PROBE HISTDAT.
 	histDatSays_weShouldCutAndRun = false;
 	histDatSays_weShouldNotTrustRecord = false;
+	lookBack_iterDistance = 0;
+	if ( 1 <= sizeVLocal && 2 <= iterCount )
+		% This algorithm is probably not quite sensible but it's a start.
+		badPullCount = 0;
+		for n = iterCount - 1 : -1 : 1
+			if ( 0 == fModelDat.histDat(n).iterDat.sizeVLocal )
+				break;
+			elseif ( abs( 1.0 - fModelDat.histDat(n).iterDat.eta_loc / eta_loc ) > 0.1 )
+				break;
+			endif
+			if ( fModelDat.histDat(n).iterDat.actionType == ACTION_TYPE__PULL_RECORD )
+				badPullCount++;
+			endif
+		endfor
+		lookBack_iterDistance = iterCount - n;
+		%
+		if ( badPullCount >= 2 )
+			histDatSays_weShouldNotTrustRecord = true;
+		endif
+		if ( lookBack_iterDistance >= 2 )
+			lookBack_eta_loc = fModelDat.histDat(iterCount-lookBack_iterDistance).iterDat.eta_loc;
+			if (  ( 1.0 - eta_loc / lookBack_eta_loc ) < 0.01*( 1.0 - lookBack_eta_loc / omega ) ) % Is this sensibile?
+				histDatSays_weShouldCutAndRun = true;
+				%lookBack_iterDistance
+				%eta_loc
+				%lookBack_eta_loc
+				%omega
+				%error( "HALT" );
+			endif
+		endif
+	endif
 	
 	
 	% UPDATE HISTDAT.
-	fModelDat.histDat(fModelDat.iterCount).iterDat.localeCount = fModelDat.localeCount;
-	fModelDat.histDat(fModelDat.iterCount).iterDat.stepsCount = fModelDat.stepsCount;
-	fModelDat.histDat(fModelDat.iterCount).iterDat.sizeV = sizeV;
-	fModelDat.histDat(fModelDat.iterCount).iterDat.sizeVLocal = sizeVLocal;
-	fModelDat.histDat(fModelDat.iterCount).iterDat.eta_unb = eta_unb; % Record, unbounded.
-	fModelDat.histDat(fModelDat.iterCount).iterDat.eta_bnd = eta_bnd; % Record, bounded.
-	fModelDat.histDat(fModelDat.iterCount).iterDat.eta_loc = eta_loc; % Local, bounded.
-	fModelDat.histDat(fModelDat.iterCount).iterDat.eta_locunb = eta_locunb; % Local, unbounded.
-	fModelDat.histDat(fModelDat.iterCount).iterDat.omega = omega; % Local, unbounded.
-	fModelDat.histDat(fModelDat.iterCount).iterDat.fevalCount = fModelDat.fevalCount;
-	fModelDat.histDat(fModelDat.iterCount).iterDat.histDatSays_weShouldCutAndRun = histDatSays_weShouldCutAndRun;
-	fModelDat.histDat(fModelDat.iterCount).iterDat.histDatSays_weShouldNotTrustRecord = histDatSays_weShouldNotTrustRecord;
+	fModelDat.histDat(iterCount).iterDat.localeCount = localeCount;
+	fModelDat.histDat(iterCount).iterDat.sizeV = sizeV;
+	fModelDat.histDat(iterCount).iterDat.sizeVLocal = sizeVLocal;
+	fModelDat.histDat(iterCount).iterDat.eta_unb = eta_unb; % Record, unbounded.
+	fModelDat.histDat(iterCount).iterDat.eta_bnd = eta_bnd; % Record, bounded.
+	fModelDat.histDat(iterCount).iterDat.eta_loc = eta_loc; % Local, bounded.
+	fModelDat.histDat(iterCount).iterDat.eta_locunb = eta_locunb; % Local, unbounded.
+	fModelDat.histDat(iterCount).iterDat.omega = omega; % Local, unbounded.
+	fModelDat.histDat(iterCount).iterDat.stepsCount = fModelDat.stepsCount;
+	fModelDat.histDat(iterCount).iterDat.fevalCount = fModelDat.fevalCount;
+	fModelDat.histDat(iterCount).iterDat.histDatSays_weShouldCutAndRun = histDatSays_weShouldCutAndRun;
+	fModelDat.histDat(iterCount).iterDat.histDatSays_weShouldNotTrustRecord = histDatSays_weShouldNotTrustRecord;
+	fModelDat.histDat(iterCount).iterDat.lookBack_iterDistance = lookBack_iterDistance;
 	if ( 0 == sizeVLocal )
-		fModelDat.localeDat(fModelDat.localeCount).iterCount = fModelDat.iterCount;
-		fModelDat.localeDat(fModelDat.localeCount).vecX = vecX;
-		fModelDat.localeDat(fModelDat.localeCount).vecF = vecF;
+		fModelDat.localeDat(localeCount).iterCount = iterCount;
+		fModelDat.localeDat(localeCount).vecX = vecX;
+		fModelDat.localeDat(localeCount).vecF = vecF;
 	endif
-	%
-	ACTION_TYPE__TRY_STEP = 100;
-	ACTION_TYPE__PULL_RECORD = 200;
-	ACTION_TYPE__EXPAND_SUBSPACE = 300;
 	
 	
 	if (  1 <= sizeVLocal  &&  ( eta_loc < omegaTolTemp || histDatSays_weShouldCutAndRun || sizeVLocal == sizeX )  )
@@ -686,8 +719,8 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
 		  sum(sumsq(matB)), "Try step" ) );
 		vecY = matV'*(matVLocal*vecY_loc);
-		fModelDat.histDat(fModelDat.iterCount).iterDat.actionType = ACTION_TYPE__TRY_STEP;
-		fModelDat.histDat(fModelDat.iterCount).iterDat.actionSubType = 0;
+		fModelDat.histDat(iterCount).iterDat.actionType = ACTION_TYPE__TRY_STEP;
+		fModelDat.histDat(iterCount).iterDat.actionSubType = 0;
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
@@ -706,8 +739,8 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		vecV = __calcOrthonorm( matV*vecY_bnd, matVLocal, prm );
 		if ( norm(vecV) > sqrt(eps) )
 			vecV = matV*(matV'*vecV); % Force in subspace for numerical stability.
-			fModelDat.histDat(fModelDat.iterCount).iterDat.actionType = ACTION_TYPE__PULL_RECORD;
-			fModelDat.histDat(fModelDat.iterCount).iterDat.actionSubType = 0;
+			fModelDat.histDat(iterCount).iterDat.actionType = ACTION_TYPE__PULL_RECORD;
+			fModelDat.histDat(iterCount).iterDat.actionSubType = 0;
 			[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
 			taFevalCount += fevalIncr; clear fevalIncr;
 			if ( 0~= retCode )
@@ -727,8 +760,8 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
 		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
 		  sum(sumsq(matB)), "Expand (rho_loc)" ) );
-		fModelDat.histDat(fModelDat.iterCount).iterDat.actionType = ACTION_TYPE__EXPAND_SUBSPACE;
-			fModelDat.histDat(fModelDat.iterCount).iterDat.actionSubType = 0;
+		fModelDat.histDat(iterCount).iterDat.actionType = ACTION_TYPE__EXPAND_SUBSPACE;
+		fModelDat.histDat(iterCount).iterDat.actionSubType = 0;
 		[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
@@ -745,8 +778,8 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
 		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
 		  sum(sumsq(matB)), "Expand (rho_locunb)" ) );
-		fModelDat.histDat(fModelDat.iterCount).iterDat.actionType = ACTION_TYPE__EXPAND_SUBSPACE;
-			fModelDat.histDat(fModelDat.iterCount).iterDat.actionSubType = 10;
+		fModelDat.histDat(iterCount).iterDat.actionType = ACTION_TYPE__EXPAND_SUBSPACE;
+		fModelDat.histDat(iterCount).iterDat.actionSubType = 10;
 		[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
@@ -765,8 +798,8 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
 		  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
 		  sum(sumsq(matB)), strAction ) );
-		fModelDat.histDat(fModelDat.iterCount).iterDat.actionType = ACTION_TYPE__EXPAND_SUBSPACE;
-		fModelDat.histDat(fModelDat.iterCount).iterDat.actionSubType = 20;
+		fModelDat.histDat(iterCount).iterDat.actionType = ACTION_TYPE__EXPAND_SUBSPACE;
+		fModelDat.histDat(iterCount).iterDat.actionSubType = 20;
 		[ retCode, fevalIncr, fModelDat ] = __expandSubspace( vecV, funchF, fModelDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
