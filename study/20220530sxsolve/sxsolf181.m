@@ -310,9 +310,9 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	eta_bnd = studyDat.eta_bnd;
 	eta_loc = studyDat.eta_loc;
 	%
-	vecRho_loc = vecF - matWLocal*vecY_loc;
-	vecRho_bnd = vecF - matW*vecY_bnd;
-	vecRho_unb = vecF - matW*vecY_unb;
+	vecRho_loc = vecF + matWLocal*vecY_loc;
+	vecRho_bnd = vecF + matW*vecY_bnd;
+	vecRho_unb = vecF + matW*vecY_unb;
 	%
 	omega = sumsq(vecF)/2.0;
 	omega_initial = sumsq(fModelDat.vecF_initial)/2.0;

@@ -12,8 +12,8 @@ endif
 %
 %
 sizeX = 50
-fType = 1020
-fSeed = -1
+fType = 314
+fSeed = 0
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
