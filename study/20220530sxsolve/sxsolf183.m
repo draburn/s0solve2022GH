@@ -650,6 +650,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 			if ( 0 == fModelDat.histDat(n).iterDat.sizeVLocal )
 				break;
 			elseif ( abs( 1.0 - fModelDat.histDat(n).iterDat.eta_loc / eta_loc ) > 0.1 )
+				n++;
 				break;
 			endif
 			if ( fModelDat.histDat(n).iterDat.actionType == ACTION_TYPE__PULL_RECORD )
@@ -663,7 +664,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		endif
 		if ( lookBack_iterDistance >= 2 )
 			lookBack_eta_loc = fModelDat.histDat(iterCount-lookBack_iterDistance).iterDat.eta_loc;
-			if (  ( 1.0 - eta_loc / lookBack_eta_loc ) < 0.01*( 1.0 - lookBack_eta_loc / omega ) ) % Is this sensibile?
+			if (  ( 1.0 - eta_loc / lookBack_eta_loc )^(1.0/lookBack_iterDistance) < 0.1*( 1.0 - lookBack_eta_loc / omega ) ) % Is this sensibile?
 				histDatSays_weShouldCutAndRun = true;
 				%lookBack_iterDistance
 				%eta_loc
@@ -696,7 +697,7 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	endif
 	
 	
-	%%if (  1 <= sizeVLocal  &&  ( eta_loc < omegaTolTemp || histDatSays_weShouldCutAndRun || sizeVLocal == sizeX )  )
+	%if (  1 <= sizeVLocal  &&  ( eta_loc < omegaTolTemp || histDatSays_weShouldCutAndRun || sizeVLocal == sizeX )  )
 	if (  1 <= sizeVLocal  &&  ( eta_loc < 0.1*omega || histDatSays_weShouldCutAndRun || sizeVLocal == sizeX )  )
 		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
 		  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  %s.", ...
@@ -754,6 +755,16 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		endif
 		return;
 	endif
+	%
+	%
+	msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
+	  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  %s.", ...
+	  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...
+	  prm.omegaTol, eta_unb, eta_bnd, eta_locunb, eta_loc, omega, omega_prev, omega_initial, ...
+	  sum(sumsq(matB)), "Give up (desperate)" ) );
+	retCode = RETCODE__ALGORITHM_BREAKDOWN;
+	return;
+	%
 	%
 	vecU = __applyPrecon( vecRho_locunb, prm, vecX, vecF );
 	vecV = __calcOrthonorm( vecU, matV, prm );
