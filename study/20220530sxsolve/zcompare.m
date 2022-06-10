@@ -11,14 +11,14 @@ if ( stopsignalpresent() )
 endif
 %
 %
-sizeX = 100
-fType = 1020
-fSeed = 0
+sizeX = 200
+fType = 520
+fSeed = 15637952
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
 %
-if (1)
+if (0)
 	msg( __FILE__, __LINE__, "Doing simple one-shot." );
 	prm = [];
 	%prm.verbLev = VERBLEV__DETAILED;
@@ -52,6 +52,7 @@ numRuns++; runList(numRuns).r.runType = 2100; runList(numRuns).r.prm = []; runLi
 %numRuns++; runList(numRuns).r.runType = 2181; runList(numRuns).r.prm = []; runList(numRuns).r.prm.stepsMax = 3; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 2181; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 2182; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 2183; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
 
 %numRuns++; runList(numRuns).r.runType = 2124; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 5000; runList(numRuns).r.prm.fevalMax = 5000; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 2114; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
