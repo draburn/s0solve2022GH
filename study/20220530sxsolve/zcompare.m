@@ -30,7 +30,7 @@ if (1)
 	%zlinsolf195( funchF, vecX0, [], prm );
 	%sxsolf100( funchF, vecX0, [] , prm );
 	%prm.useDogLeg = true;
-	sxsolf183( funchF, vecX0, [] , prm );
+	[ vecXF, vecFF, retCode, fevalCount, stepsCount, datOut ] = sxsolf183( funchF, vecX0, [] , prm );
 	%findZero_800simple( vecX0, funchF, prm );
 	%
 	mainCalcElapsedTime = time()-mainStartTime;
