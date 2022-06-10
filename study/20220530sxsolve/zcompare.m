@@ -18,7 +18,7 @@ zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
 %
-if (0)
+if (1)
 	msg( __FILE__, __LINE__, "Doing simple one-shot." );
 	prm = [];
 	%prm.verbLev = VERBLEV__DETAILED;
@@ -30,7 +30,7 @@ if (0)
 	%zlinsolf195( funchF, vecX0, [], prm );
 	%sxsolf100( funchF, vecX0, [] , prm );
 	%prm.useDogLeg = true;
-	sxsolf182( funchF, vecX0, [] , prm );
+	sxsolf183( funchF, vecX0, [] , prm );
 	%findZero_800simple( vecX0, funchF, prm );
 	%
 	mainCalcElapsedTime = time()-mainStartTime;

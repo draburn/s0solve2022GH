@@ -1,8 +1,9 @@
 % sxsolf100, but looking at revised actions, per ideas durign precon integration.
 % sxsolf180, but with hacks removed(?)
-% sxsolf181, but more hacks to improve actions.
+% sxsolf181, but more hacks to improve actions (ish).
+% sxsolf182 revised -- not so hacky, but keeping history.
 
-function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf182( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
+function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf183( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
 	mydefs;
 	startTime = time();
 	vecX = [];
@@ -87,15 +88,6 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf182( fu
 		%
 		
 		
-		if ( fModelDat.badPullCheck_didPullLastTime && ~isempty(fModelDat.badPullCheck_etaLoc_prev) && size(fModelDat.matVLocal,2) >= 1 )
-		if ( studyDat.eta_loc > max([ 0.9*fModelDat.badPullCheck_etaLoc_prev, (fModelDat.badPullCheck_etaLoc_prev+fModelDat.badPullCheck_etaBnd_prev)/2.0 ]) )
-			fModelDat.badPullCheck_badPullCounter++;
-			msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( "       Declaring bad pull (%d).", fModelDat.badPullCheck_badPullCounter ) );
-		endif
-		endif
-		fModelDat.badPullCheck_etaLoc_prev = studyDat.eta_loc;
-		fModelDat.badPullCheck_etaBnd_prev = studyDat.eta_bnd;
-		fModelDat.badPullCheck_didPullLastTime = false; % May be set to true in __takeAction.
 		fModelDat.fevalCount = fevalCount;
 		
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __takeAction( funchF, fModelDat, studyDat, prm );
@@ -284,12 +276,6 @@ function [ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, p
 	fModelDat.vecF_cand = [];
 	fModelDat.vecX_prev = [];
 	fModelDat.vecF_prev = [];
-	
-	fModelDat.badPullCheck_didPullLastTime = false;
-	fModelDat.badPullCheck_etaLoc_prev = []; % Loc bnd.
-	fModelDat.badPullCheck_etaBnd_prev = []; % Rec bnd.
-	fModelDat.badPullCheck_badPullCounter = 0;
-	
 	%
 	if ( prm.valdLev >= VALDLEV__LOW )
 		__validateFModelDat( fModelDat, prm );
@@ -361,7 +347,6 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	%
 	%
 	
-	persistent verifyCountSinceLastStep = 0;
 	if (0)
 	%if ( 1 <= sizeVLocal && 3 <= verifyCountSinceLastStep )
 		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
@@ -372,7 +357,6 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		fModelDat.matV = fModelDat.matVLocal;
 		fModelDat.matW = fModelDat.matWLocal;
 		fModelDat.matB = zeros( sizeVLocal, sizeVLocal );
-		verifyCountSinceLastStep = 0;
 		retCode = RETCODE__SUCCESS;
 		return;
 	endif
@@ -386,9 +370,6 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		vecY = matV'*(matVLocal*vecY_loc);
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
-		
-		verifyCountSinceLastStep= 0;
-		
 		if ( 0~= retCode )
 			msgretcodeif( true, __FILE__, __LINE__, retCode );
 		endif
@@ -406,9 +387,6 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 		vecY = matV'*(matVLocal*vecY_loc);
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
-		
-		verifyCountSinceLastStep= 0;
-		
 		if ( 0~= retCode )
 			msgretcodeif( true, __FILE__, __LINE__, retCode );
 		endif
@@ -416,9 +394,6 @@ function [ retCode, taFevalCount, fModelDat, vecX_next, vecF_next ] = __takeActi
 	endif
 	%
 	%
-	
-	
-if ( fModelDat.badPullCheck_badPullCounter < 3 )
 	if (  0 == sizeVLocal || eta_bnd < 0.1 * eta_loc  ||  eta_bnd < 0.5 * omegaTolTemp  )
 		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
 		  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  %s.", ...
@@ -427,10 +402,6 @@ if ( fModelDat.badPullCheck_badPullCounter < 3 )
 		  sum(sumsq(matB)), "Verify record" ) );
 		vecV = __calcOrthonorm( matV*vecY_bnd, matVLocal, prm );
 		if ( norm(vecV) > sqrt(eps) )
-		
-			verifyCountSinceLastStep++;
-			fModelDat.badPullCheck_didPullLastTime = true;
-		
 			vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
 			[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
 			taFevalCount += fevalIncr; clear fevalIncr;
@@ -440,9 +411,7 @@ if ( fModelDat.badPullCheck_badPullCounter < 3 )
 			return;
 		endif
 		msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "  WHOOPS, WE'VE ALREADY TRIED THIS!" );
-	endif	
-endif
-	
+	endif
 	%
 	%
 	if ( 1 <= sizeVLocal && eta_loc <= 0.9 * omega && eta_locunb < 0.001*omega )
@@ -454,9 +423,6 @@ endif
 		vecY = matV'*(matVLocal*vecY_loc);
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
-		
-		verifyCountSinceLastStep= 0;
-		
 		if ( 0~= retCode )
 			msgretcodeif( true, __FILE__, __LINE__, retCode );
 		endif
@@ -509,9 +475,6 @@ endif
 		vecY = matV'*(matVLocal*vecY_loc);
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
-		
-		verifyCountSinceLastStep= 0;
-		
 		if ( 0~= retCode )
 			msgretcodeif( true, __FILE__, __LINE__, retCode );
 		endif
@@ -527,10 +490,6 @@ endif
 		  sum(sumsq(matB)), "Verify record (semi-desperate-ish)" ) );
 		vecV = __calcOrthonorm( matV*vecY_bnd, matVLocal, prm );
 		if ( norm(vecV) > sqrt(eps) )
-		
-			verifyCountSinceLastStep++;
-			fModelDat.badPullCheck_didPullLastTime = true;
-		
 			vecV = matV*(matV'*vecV); % Force in subspace for numerical stability..
 			[ retCode, fevalIncr, fModelDat ] = __reevalDirection( vecV, funchF, fModelDat, prm );
 			taFevalCount += fevalIncr; clear fevalIncr;
@@ -611,9 +570,6 @@ endif
 		vecY = matV'*(matVLocal*vecY_loc);
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __tryStep( vecY, funchF, fModelDat, studyDat, prm );
 		taFevalCount += fevalIncr; clear fevalIncr;
-		
-		verifyCountSinceLastStep= 0;
-		
 		if ( 0~= retCode )
 			msgretcodeif( true, __FILE__, __LINE__, retCode );
 		endif
@@ -1395,9 +1351,6 @@ function [ retCode, fModelDat ] = __moveTo( vecY, vecF_next, fModelDat, prm )
 	endif
 	%
 	%
-	
-	fModelDat.badPullCheck_badPullCounter = 0;
-	
 	fModelDat.vecX_prev = vecX;
 	fModelDat.vecF_prev = vecF;
 	%
