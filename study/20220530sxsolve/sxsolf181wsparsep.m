@@ -1,7 +1,9 @@
 % sxsolf100, but looking at revised actions, per ideas durign precon integration.
 % sxsolf180, but with hacks removed(?)
 
-function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf181( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
+% Added sparsity sensed preconditioner.
+
+function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf181wsparsep( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
 	mydefs;
 	startTime = time();
 	vecX = [];
@@ -86,6 +88,15 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf181( fu
 		%
 		
 		fModelDat.fevalCount = fevalCount;
+		
+		if ( size(fModelDat.matV,2) >= 6 && ( isempty(prm.precon_matL) || mod(iterCount,10) == 0 ) )
+			[ retCode, fevalIncr, prm ] = __checkSparsePrecon( funchF, fModelDat, studyDat, prm );
+			fevalCount += fevalIncr; clear fevalIncr;
+			if ( 0~= retCode )
+				msgretcodeif( true, __FILE__, __LINE__, retCode );
+				break
+			endif
+		endif
 		
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __takeAction( funchF, fModelDat, studyDat, prm );
 		fevalCount += fevalIncr; clear fevalIncr;
@@ -277,6 +288,36 @@ function [ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, p
 	if ( prm.valdLev >= VALDLEV__LOW )
 		__validateFModelDat( fModelDat, prm );
 	endif
+	retCode = RETCODE__SUCCESS;
+	return;
+endfunction
+
+
+function [ retCode, fevalIncr, prm ] = __checkSparsePrecon( funchF, fModelDat, studyDat, prm )
+	mydefs;
+	retCode = RETCODE__NOT_SET;
+	fevalIncr = 0;
+	if ( size(fModelDat.matV,2) <= 4 )
+		retCode = RETCODE__SUCCESS;
+		return;
+	endif
+	%
+	prm.precon_matL = [];
+	prm.precon_matU = [];
+	matJEst = calcSparseMatEst_basic( fModelDat.matV, fModelDat.matW );
+	matJV = matJEst*fModelDat.matV;
+	s = sqrt( sum(sumsq(fModelDat.matW))/sum(sumsq(fModelDat.matV)) );
+	if ( reldiff( matJV, fModelDat.matW ) < 0.1 * reldiff( s*fModelDat.matV, fModelDat.matW ) )
+	if ( rcond(matJEst) > sqrt(eps) )
+		reldiff( matJV, fModelDat.matW )
+		reldiff( s*fModelDat.matV, fModelDat.matW )
+		rcond( matJEst )
+		msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__,  "Captured sparse matrix!" );
+		prm.precon_funcPrecon = [];
+		[ prm.precon_matL, prm.precon_matU ] = lu( matJEst);
+	endif
+	endif
+	%
 	retCode = RETCODE__SUCCESS;
 	return;
 endfunction

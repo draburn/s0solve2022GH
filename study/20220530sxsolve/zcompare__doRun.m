@@ -137,6 +137,13 @@ case 2183
 	r.fevalCountOfStep = r.datOut.fevalCountOfSteps;
 	r.fBestNormOfStep = r.datOut.fNormOfSteps;
 	r.isValid = true;
+case 21801
+	r.runTypeDescrip = "s181wsparsep";
+	[ r.vecXF, r.vecFF, r.retCode, r.fevalCount, r.stepsCount, r.datOut ] = sxsolf181wsparsep( funchF, vecX0, [], r.prm );
+	r.stepCount = r.stepsCount;
+	r.fevalCountOfStep = r.datOut.fevalCountOfSteps;
+	r.fBestNormOfStep = r.datOut.fNormOfSteps;
+	r.isValid = true;
 otherwise
 	msg( __FILE__, __LINE__, sprintf( "ERROR: Invalid runType (%d)", r.runType ) );
 	r.isValid = false;
