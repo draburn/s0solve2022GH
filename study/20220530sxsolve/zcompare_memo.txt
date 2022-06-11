@@ -77,3 +77,6 @@ z195 hack0529 further...
 2022-06-08...
 1020_87714912x50: s183 happens to be best
 1020_30140976x50: s183 is near-best, just behind s182.
+
+2022-06-10: The Final Scene
+3009_0x100: s183 is not good.
