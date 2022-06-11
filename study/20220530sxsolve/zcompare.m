@@ -12,7 +12,7 @@ endif
 %
 %
 sizeX = 100
-fType = 1020
+fType = 3000
 fSeed = 0
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
