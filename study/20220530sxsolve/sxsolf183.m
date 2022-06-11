@@ -91,6 +91,13 @@ function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf183( fu
 		fModelDat.stepsCount = stepsCount; % Not the same as fModelDat's localeIndex; "stepsCount" measures changes to "best".
 		fModelDat.fevalCount = fevalCount;
 		
+		[ retCode, fevalIncr, prm ] = __checkSparsePrecon( funchF, fModelDat, studyDat, prm );
+		fevalCount += fevalIncr; clear fevalIncr;
+		if ( 0~= retCode )
+			msgretcodeif( true, __FILE__, __LINE__, retCode );
+			break
+		endif
+		
 		[ retCode, fevalIncr, fModelDat, vecX_next, vecF_next ] = __takeAction_hist( funchF, fModelDat, studyDat, prm );
 		fevalCount += fevalIncr; clear fevalIncr;
 		if ( 0~= retCode )
@@ -287,6 +294,39 @@ function [ retCode, fevalIncr, fModelDat ] = __initFModel( funchF, vecX, vecF, p
 	if ( prm.valdLev >= VALDLEV__LOW )
 		__validateFModelDat( fModelDat, prm );
 	endif
+	retCode = RETCODE__SUCCESS;
+	return;
+endfunction
+
+
+function [ retCode, fevalIncr, prm ] = __checkSparsePrecon( funchF, fModelDat, studyDat, prm )
+	mydefs;
+	retCode = RETCODE__NOT_SET;
+	fevalIncr = 0;
+	if ( size(fModelDat.matV,2) <= 4 )
+		retCode = RETCODE__SUCCESS;
+		return;
+	elseif ( mod(fModelDat.iterCount,10) ~= 0 )
+		retCode = RETCODE__SUCCESS;
+		return;
+	endif
+	%
+	prm.precon_matL = [];
+	prm.precon_matU = [];
+	matJEst = calcSparseMatEst_basic( fModelDat.matV, fModelDat.matW );
+	matJV = matJEst*fModelDat.matV;
+	s = sqrt( sum(sumsq(fModelDat.matW))/sum(sumsq(fModelDat.matV)) );
+	if ( reldiff( matJV, fModelDat.matW ) < 0.1 * reldiff( s*fModelDat.matV, fModelDat.matW ) )
+	if ( rcond(matJEst) > sqrt(eps) )
+		reldiff( matJV, fModelDat.matW )
+		reldiff( s*fModelDat.matV, fModelDat.matW )
+		rcond( matJEst )
+		msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__,  "Captured sparse matrix!" );
+		prm.precon_funcPrecon = [];
+		[ prm.precon_matL, prm.precon_matU ] = lu( matJEst);
+	endif
+	endif
+	%
 	retCode = RETCODE__SUCCESS;
 	return;
 endfunction

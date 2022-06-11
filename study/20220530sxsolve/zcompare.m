@@ -11,8 +11,8 @@ if ( stopsignalpresent() )
 endif
 %
 %
-sizeX = 50
-fType = 314
+sizeX = 100
+fType = 1020
 fSeed = 0
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
