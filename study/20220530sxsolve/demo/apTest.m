@@ -1,4 +1,5 @@
-% See Notes 2022-05-30-2100.
+% Also want to include reorthonorm, allow for J to change slightly between iters.
+
 clear;
 numFigs = 0;
 setprngstates(0);
@@ -9,9 +10,9 @@ sizeF = sizeX;
 numElemPerCol = 3;
 numAddtlElemPerRow = 3;
 cEye = 1.0;
-c0 = 0.1;
-csx = 1.0;
-csf = 1.0;
+c0 = 0.01;
+csx = 0.0;
+csf = 0.0;
 %
 matJ0 = cEye*eye(sizeF,sizeX);
 for n=1:sizeX
@@ -44,6 +45,7 @@ kTotVals_compound = zeros(1,numRuns);
 fevalVals_splitspace = zeros(1,numRuns);
 kTotVals_splitspace = zeros(1,numRuns);
 for n=1:numRuns
+	%%%matJ += 0.01*randn(sizeF,sizeX);
 	vecX_secret = randn(sizeX,1);
 	vecF = matJ*vecX_secret;
 	%
@@ -55,7 +57,7 @@ for n=1:numRuns
 	linsolf_prm.matP = inv(matJA_compound);
 	linsolf_prm.tol = 0.01;
 	[ vecX, linsolf_datOut ] = linsolf( funchW, -vecF, zeros(sizeX,1), linsolf_prm );
-	assert( reldiff(matJ*vecX,-vecF) < 1.1*linsolf_prm.tol );
+	%assert( reldiff(matJ*vecX,-vecF) < 1.1*linsolf_prm.tol );
 	fevalVals_compound(n) = linsolf_datOut.fevalCount;
 	matJA_compound += ( linsolf_datOut.matW - (matJA_compound*linsolf_datOut.matV) ) * ( linsolf_datOut.matV' );
 	matVTot_compound = utorthdrop( [matVTot_compound, linsolf_datOut.matV] );
@@ -72,7 +74,7 @@ for n=1:numRuns
 		sss_prm.matWR = matWR;
 		sss_prm.tol = linsolf_prm.tol;
 		[ vecX, sss_datOut ] = splitspacesolf( funchW, -vecF, sizeX, sss_prm );
-		assert( reldiff(matJ*vecX,-vecF) < 1.1*sss_prm.tol );
+		%assert( reldiff(matJ*vecX,-vecF) < 1.1*sss_prm.tol );
 		fevalVals_splitspace(n) = sss_datOut.fevalCount;
 		matVR = sss_datOut.matVR;
 		matWR = sss_datOut.matWR;
@@ -83,19 +85,22 @@ endfor
 numFigs++; figure(numFigs);
 plot( ...
   fevalVals_compound, "o-", "linewidth", 3, "markersize", 15, ...
-  fevalVals_splitspace, "x-", "linewidth", 2, "markersize", 10 );
+  fevalVals_splitspace, "x-", "linewidth", 2, "markersize", 10, ...
+  [ sizeX, ones(1,numRuns-1)], "^-", "markersize", 5 );
 grid on;
 %
 numFigs++; figure(numFigs);
 plot( ...
   [ 0, cumsum(fevalVals_compound) ], "o-", "linewidth", 3, "markersize", 15, ...
-  [ 0, cumsum(fevalVals_splitspace) ], "x-", "linewidth", 2, "markersize", 10 );
+  [ 0, cumsum(fevalVals_splitspace) ], "x-", "linewidth", 2, "markersize", 10, ...
+  [ 0, sizeX+(0:numRuns-1) ], "^-", "markersize", 5 );
 grid on;
 %
 numFigs++; figure(numFigs);
 plot( ...
   kTotVals_compound, "o-", "linewidth", 3, "markersize", 15, ...
-  kTotVals_splitspace, "x-", "linewidth", 2, "markersize", 10 );
+  kTotVals_splitspace, "x-", "linewidth", 2, "markersize", 10, ...
+  sizeX*ones(1,numRuns), "^-", "markersize", 5 );
 grid on;
 
 toc();
