@@ -4,6 +4,7 @@ function [ vecX, datOut ] = splitspacesolf( funchMatAProd, vecB, sizeX, prm=[] )
 	tol = mygetfield( prm, "tol", 1e-4 );
 	matVL = [];
 	matWL = [];
+	msg( __FILE__, __LINE__, "----------" );
 	%
 	while (1)
 		sizeR = size(matVR,2);
@@ -38,11 +39,11 @@ function [ vecX, datOut ] = splitspacesolf( funchMatAProd, vecB, sizeX, prm=[] )
 			break;
 		endif
 		%
-		if ( resR < 0.1 * resL )
+		if ( resR > 0.1 * resL && mod(sizeL,3) ~= 0 )
 			vecU = vecRhoL; % Would apply extra precon here.
 			vecV = __orth( vecU, matVR );
 			if ( norm(vecV) >= 0.5 )
-				%msg( __FILE__, __LINE__, "Expanding." );
+				msg( __FILE__, __LINE__, "Expanding." );
 				vecW = funchMatAProd( vecV );
 				matVR = [ matVR, vecV ];
 				matWR = [ matWR, vecW ];
@@ -50,7 +51,7 @@ function [ vecX, datOut ] = splitspacesolf( funchMatAProd, vecB, sizeX, prm=[] )
 				matWL = [ matWL, vecW ];
 				continue;
 			endif
-			%msg( __FILE__, __LINE__, "Cannot expand." );
+			msg( __FILE__, __LINE__, "Cannot expand." );
 		endif
 		%
 		vecU = matVR*vecYR;
@@ -59,7 +60,7 @@ function [ vecX, datOut ] = splitspacesolf( funchMatAProd, vecB, sizeX, prm=[] )
 		if ( norm(vecV) >= 0.5 )
 			vecV /= norm(vecV);
 			%
-			%msg( __FILE__, __LINE__, "Pulling." );
+			msg( __FILE__, __LINE__, "Pulling." );
 			vecW = funchMatAProd( vecV );
 			vecY = matVR'*vecV;
 			assert( norm(vecY)>0.0 );
@@ -73,7 +74,7 @@ function [ vecX, datOut ] = splitspacesolf( funchMatAProd, vecB, sizeX, prm=[] )
 		vecU = vecRhoL; % Would apply extra precon here.
 		vecV = __orth( vecU, matVR );
 		if ( norm(vecV) >= 0.5 )
-			%msg( __FILE__, __LINE__, "Expanding." );
+			msg( __FILE__, __LINE__, "Expanding." );
 			vecW = funchMatAProd( vecV );
 			matVR = [ matVR, vecV ];
 			matWR = [ matWR, vecW ];
@@ -81,6 +82,7 @@ function [ vecX, datOut ] = splitspacesolf( funchMatAProd, vecB, sizeX, prm=[] )
 			matWL = [ matWL, vecW ];
 			continue;
 		endif
+		%
 		msg( __FILE__, __LINE__, "Could not find a valid action." );
 		break;
 	endwhile

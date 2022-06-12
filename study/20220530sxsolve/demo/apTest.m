@@ -6,8 +6,8 @@ tic();
 %
 sizeX = 100;
 sizeF = sizeX;
-numElemPerCol = 0;
-numAddtlElemPerRow = 0;
+numElemPerCol = 3;
+numAddtlElemPerRow = 3;
 cEye = 1.0;
 c0 = 0.1;
 csx = 1.0;
@@ -43,7 +43,7 @@ matVTot_compound = zeros(sizeX,1);
 kTotVals_compound = zeros(1,numRuns);
 fevalVals_splitspace = zeros(1,numRuns);
 kTotVals_splitspace = zeros(1,numRuns);
-for n=1:100
+for n=1:numRuns
 	vecX_secret = randn(sizeX,1);
 	vecF = matJ*vecX_secret;
 	%
@@ -53,7 +53,7 @@ for n=1:100
 		break;
 	endif
 	linsolf_prm.matP = inv(matJA_compound);
-	linsolf_prm.tol = 0.1;
+	linsolf_prm.tol = 0.01;
 	[ vecX, linsolf_datOut ] = linsolf( funchW, -vecF, zeros(sizeX,1), linsolf_prm );
 	assert( reldiff(matJ*vecX,-vecF) < 1.1*linsolf_prm.tol );
 	fevalVals_compound(n) = linsolf_datOut.fevalCount;
