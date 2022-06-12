@@ -1,17 +1,17 @@
 % See Notes 2022-05-30-2100.
 clear;
 numFigs = 0;
-setprngstates();
+setprngstates(0);
 tic();
 %
 sizeX = 100;
 sizeF = sizeX;
 numElemPerCol = 0;
-numAddtlElemPerRow = 5;
-cEye = 0.0;
-c0 = 0.0;
-csx = 0.0;
-csf = 0.0;
+numAddtlElemPerRow = 0;
+cEye = 1.0;
+c0 = 0.1;
+csx = 1.0;
+csf = 1.0;
 %
 matJ0 = cEye*eye(sizeF,sizeX);
 for n=1:sizeX
