@@ -24,6 +24,7 @@ function [ matV, rvecDrop ] = utorthdrop( matV, dropThresh = 1.0e-4 )
 	endfor
 	matV = matV(:,~rvecDrop);
 	sizeV = size(matV,2);
+	rvecDrop = logical(zeros(1,sizeV));
 	for k=2:sizeV
 		matV(:,k) -= matV(:,1:k-1) * ( matV(:,1:k-1)'*matV(:,k) );
 		vNorm = norm(matV(:,k));
