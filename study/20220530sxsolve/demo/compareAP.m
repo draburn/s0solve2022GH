@@ -5,10 +5,10 @@ tic();
 %
 %
 % Init calculation stuff.
-sizeX = 100;
+sizeX = 200;
 sizeF = sizeX;
-cI = 10.0;
-cD = 0.1;
+cI = 1.0;
+cD = 0.01;
 matIX = eye(sizeF,sizeX);
 %matJ0 = matIX;
 matJ0 = diag(1.0+abs(randn(sizeX)));
@@ -116,50 +116,10 @@ for n=2:numRuns
 		matVNew = linsolf_datOut.matV;
 		matWNew = linsolf_datOut.matW;
 		%
-		if (0)
-			matVNew = [ 1.0; 0.0; 0.0; 0.0 ]
-			matVNew'*matVNew
-			matVPool = [ 1.0/sqrt(2.0), 1.0/sqrt(3.0); -1.0/sqrt(2.0), 1.0/sqrt(3.0); 0.0, 1.0/sqrt(3.0); 0.0, 0.0 ]
-			matVPool'*matVPool
-			matVPool0 = [ matVNew, matVPool ]
-			matVPool0'*matVPool0
-			
-			[ matVPool1, rvecDrop ] = utorthdrop( matVPool0, 1.0e-4 )
-			% VP1 = VP0 * R. But, VP0'*VP0 is not I.
-			% So, R = (VP1'*VP0)^-1.
-			matT = pinv(matVPool1'*matVPool0);
-			matVPool1
-			matVPool0*matT
-			
-			matWNew = [ 1.0; 2.0; 3.0; 0.0 ]
-			matWPool = [ 1.0, 0.0; 0.0, 1.0; 0.0, 0.0; 0.0, 0.0 ]
-			matWPool0 = [ matWNew, matWPool ]
-			matWPool1 = matWPool0*matR
-			%
-			return
-		endif
-		if (0)
-			matV = [ 1.0, 1.0/sqrt(2.0); 0.0, 1.0/sqrt(2.0) ]
-			matW = [ 1.0, 10.0; 100.0, 1000.0 ]
-			%
-			matV1 = utorthdrop( matV )
-			matW1 = matW/(matV1*matV)
-			
-			[ matV1, matW1 ] = utorthdrop_pair( matV, matW )
-			return
-		endif
-		%
-		%matVPool0 = [ matVNew, matVPool ]
-		%[ matVPool1, rvecDrop ] = utorthdrop( matVPool0, 1.0e-4 )
-		%matWPool1 = [ matWNew, matWPool ]/(matVPool1'*matVPool0)
 		[ matVPool1, matWPool1, rvecDrop ] = utorthdrop_pair( [ matVNew, matVPool ], [ matWNew, matWPool ], 1.0e-4 );
-		%return
-		
-		%
 		reorth_fevalCountVals(n) = linsolf_datOut.fevalCount;
 		reorth_matVPool = matVPool1;
 		reorth_matWPool = matWPool1;
-		%size(reorth_matVPool,2)
 	endif
 	%
 	if (1)
@@ -199,12 +159,29 @@ grid on;
 %
 numFigs++; figure(numFigs);
 plot( ...
-  [ 0.0, cumsum(noAP_fevalCountVals) ], "o-", "linewidth", 2, "markersize", 15, ...
   [ 0.0, cumsum(compound_fevalCountVals) ], "x-", "linewidth", 2, "markersize", 15, ...
   [ 0.0, cumsum(compoundFull0_fevalCountVals) ], "s-", "linewidth", 2, "markersize", 15, ...
-  [ 0.0, cumsum(reorth_fevalCountVals) ], "p-", "linewidth", 2, "markersize", 15, ...
   [ 0.0, cumsum(splitspace_fevalCountVals) ], "^-", "linewidth", 2, "markersize", 15, ...
-  [ 0.0, cumsum(splitspaceFull0_fevalCountVals) ], "v-", "linewidth", 2, "markersize", 15 );
+  [ 0.0, cumsum(splitspaceFull0_fevalCountVals) ], "v-", "linewidth", 2, "markersize", 15, ...
+  [ 0.0, cumsum(reorth_fevalCountVals) ], "p-", "linewidth", 2, "markersize", 15, ...
+  [ 0.0, cumsum(noAP_fevalCountVals) ], "o-", "linewidth", 2, "markersize", 15 );
+grid on;
+%
+numFigs++; figure(numFigs);
+plot( ...
+  [ cumsum(compound_fevalCountVals) ], "x-", "linewidth", 2, "markersize", 15, ...
+  [ cumsum(compoundFull0_fevalCountVals) ], "s-", "linewidth", 2, "markersize", 15, ...
+  [ cumsum(splitspace_fevalCountVals) ], "^-", "linewidth", 2, "markersize", 15, ...
+  [ cumsum(splitspaceFull0_fevalCountVals) ], "v-", "linewidth", 2, "markersize", 15, ...
+  [ cumsum(reorth_fevalCountVals) ], "p-", "linewidth", 2, "markersize", 15 );
+grid on;
+%
+numFigs++; figure(numFigs);
+plot( ...
+  [ cumsum(compound_fevalCountVals) ], "x-", "linewidth", 2, "markersize", 15, ...
+  [ cumsum(compoundFull0_fevalCountVals) ], "s-", "linewidth", 2, "markersize", 15, ...
+  [ cumsum(splitspace_fevalCountVals) ], "^-", "linewidth", 2, "markersize", 15, ...
+  [ cumsum(splitspaceFull0_fevalCountVals) ], "v-", "linewidth", 2, "markersize", 15 );
 grid on;
 %
 numFigs++; figure(numFigs);
