@@ -5,18 +5,19 @@ tic();
 %
 %
 % Init calculation stuff.
-sizeX = 500;
+sizeX = 100;
 sizeF = sizeX;
 cI = 10.0;
-cD = 0.01;
+cD = 0.1;
 matIX = eye(sizeF,sizeX);
+matJ0 = diag(1.0+abs(randn(sizeX)));
 matR = randn(sizeF,sizeX);
-tol = 0.01;
+tol = 0.1;
 numRuns = 20;
 %
 %
 % First run: either full space or not...
-matJ = cI*matIX + matR;
+matJ = cI*matJ0 + matR;
 vecX_secret = randn(sizeX,1);
 vecF = matJ*vecX_secret;
 funchW = @(v)( matJ*v );
@@ -33,6 +34,8 @@ matW = linsolf_datOut.matW;
 n = 0;
 %
 condVals(1) = cond(matJ);
+%
+noAP_fevalCountVals(1) = fevalIncr;
 %
 compound_fevalCountVals(1) = fevalIncr;
 compound_matJA = matIX + (matW-matV)*(matV');
@@ -58,12 +61,19 @@ splitspaceFull0_matWR = matJ;
 %
 for n=2:numRuns
 	matR = ( matR + cD*randn(sizeF,sizeX) ) / sqrt( 1.0 + cD^2 );
-	matJ = cI*matIX + matR;
+	matJ = cI*matJ0 + matR;
 	vecX_secret = randn(sizeX,1);
 	vecF = matJ*vecX_secret;
 	funchW = @(v)( matJ*v );
 	%
 	condVals(n) = cond(matJ);
+	%
+	if (1)
+		linsolf_prm = [];
+		linsolf_prm.tol = tol;
+		[ linsolf_vecX, linsolf_datOut ] = linsolf( funchW, -vecF, zeros(sizeX,1), linsolf_prm );
+		noAP_fevalCountVals(n) = linsolf_datOut.fevalCount;
+	endif
 	%
 	if ( rcond(compound_matJA) > sqrt(eps) )
 		linsolf_prm = [];
@@ -110,7 +120,8 @@ endfor
 %
 numFigs++; figure(numFigs);
 plot( ...
-  compound_fevalCountVals, "o-", "linewidth", 2, "markersize", 32, ...
+  noAP_fevalCountVals, "o-", "linewidth", 2, "markersize", 40, ...
+  compound_fevalCountVals, "x-", "linewidth", 2, "markersize", 32, ...
   compoundFull0_fevalCountVals, "s-", "linewidth", 2, "markersize", 24, ...
   splitspace_fevalCountVals, "^-", "linewidth", 2, "markersize", 16, ...
   splitspaceFull0_fevalCountVals, "v-", "linewidth", 2, "markersize", 8 );
@@ -118,7 +129,8 @@ grid on;
 %
 numFigs++; figure(numFigs);
 plot( ...
-  [ 0.0, cumsum(compound_fevalCountVals) ], "o-", "linewidth", 2, "markersize", 32, ...
+  [ 0.0, cumsum(noAP_fevalCountVals) ], "o-", "linewidth", 2, "markersize", 40, ...
+  [ 0.0, cumsum(compound_fevalCountVals) ], "x-", "linewidth", 2, "markersize", 32, ...
   [ 0.0, cumsum(compoundFull0_fevalCountVals) ], "s-", "linewidth", 2, "markersize", 24, ...
   [ 0.0, cumsum(splitspace_fevalCountVals) ], "^-", "linewidth", 2, "markersize", 16, ...
   [ 0.0, cumsum(splitspaceFull0_fevalCountVals) ], "v-", "linewidth", 2, "markersize", 8 );
@@ -132,75 +144,3 @@ grid on;
 msg( __FILE__, __LINE__, "Goodbye." );
 toc();
 return;
-
-
-
-funchW = @(v)( matJ*v );
-%
-numRuns = 100;
-matJA_compound = matIX;
-fevalVals_compound = zeros(1,numRuns);
-matVTot_compound = zeros(sizeX,1);
-kTotVals_compound = zeros(1,numRuns);
-fevalVals_splitspace = zeros(1,numRuns);
-kTotVals_splitspace = zeros(1,numRuns);
-for n=1:numRuns
-	%%%matJ += 0.01*randn(sizeF,sizeX);
-	vecX_secret = randn(sizeX,1);
-	vecF = matJ*vecX_secret;
-	%
-	linsolf_prm = [];
-	if ( rcond(matJA_compound) < sqrt(eps) )
-		msg( __FILE__, __LINE__, sprintf( "rcond(matJA_compound) = %g.", rcond(matJA_compound) ) );
-		break;
-	endif
-	linsolf_prm.matP = inv(matJA_compound);
-	linsolf_prm.tol = 0.01;
-	[ vecX, linsolf_datOut ] = linsolf( funchW, -vecF, zeros(sizeX,1), linsolf_prm );
-	%assert( reldiff(matJ*vecX,-vecF) < 1.1*linsolf_prm.tol );
-	fevalVals_compound(n) = linsolf_datOut.fevalCount;
-	matJA_compound += ( linsolf_datOut.matW - (matJA_compound*linsolf_datOut.matV) ) * ( linsolf_datOut.matV' );
-	matVTot_compound = utorthdrop( [matVTot_compound, linsolf_datOut.matV] );
-	kTotVals_compound(n) = size(matVTot_compound,2);
-	%
-	if ( 1==n )
-		fevalVals_splitspace(n) = fevalVals_compound(n);
-		kTotVals_splitspace(n) = kTotVals_compound(n);
-		matVR = linsolf_datOut.matV;
-		matWR = linsolf_datOut.matW;
-	else
-		sss_prm = [];
-		sss_prm.matVR = matVR;
-		sss_prm.matWR = matWR;
-		sss_prm.tol = linsolf_prm.tol;
-		[ vecX, sss_datOut ] = splitspacesolf( funchW, -vecF, sizeX, sss_prm );
-		%assert( reldiff(matJ*vecX,-vecF) < 1.1*sss_prm.tol );
-		fevalVals_splitspace(n) = sss_datOut.fevalCount;
-		matVR = sss_datOut.matVR;
-		matWR = sss_datOut.matWR;
-		kTotVals_splitspace(n) = size(matVR,2);
-	endif
-endfor
-%
-numFigs++; figure(numFigs);
-plot( ...
-  fevalVals_compound, "o-", "linewidth", 3, "markersize", 15, ...
-  fevalVals_splitspace, "x-", "linewidth", 2, "markersize", 10, ...
-  [ sizeX, ones(1,numRuns-1)], "^-", "markersize", 5 );
-grid on;
-%
-numFigs++; figure(numFigs);
-plot( ...
-  [ 0, cumsum(fevalVals_compound) ], "o-", "linewidth", 3, "markersize", 15, ...
-  [ 0, cumsum(fevalVals_splitspace) ], "x-", "linewidth", 2, "markersize", 10, ...
-  [ 0, sizeX+(0:numRuns-1) ], "^-", "markersize", 5 );
-grid on;
-%
-numFigs++; figure(numFigs);
-plot( ...
-  kTotVals_compound, "o-", "linewidth", 3, "markersize", 15, ...
-  kTotVals_splitspace, "x-", "linewidth", 2, "markersize", 10, ...
-  sizeX*ones(1,numRuns), "^-", "markersize", 5 );
-grid on;
-
-toc();
