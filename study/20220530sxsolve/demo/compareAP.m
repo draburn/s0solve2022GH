@@ -3,28 +3,26 @@ numFigs = 0;
 prngstates = setprngstates(0);
 tic();
 %
-%
 % Init calculation stuff.
-sizeX = 100
+sizeX = 500
 sizeF = sizeX
 cI = 2.0
+cR = 1.0
 cD = 0.1
 matIX = eye(sizeF,sizeX);
-%matJ0 = matIX;
-matJ0 = diag(1.0+abs(randn(sizeX)));
+matJ0 = diag(1.0+cR*abs(randn(sizeX)));
 matR = randn(sizeF,sizeX);
 tol = 0.1
-numRuns = 10;
+numRuns = 100;
+strRunName = sprintf( "cI%g_cR%g_cD%g_prng%d_x%d_tol%g", cI, cR, cD, prngstates, sizeX, tol );
 %
-strRunName = sprintf( "cI%g_cD%g_prng%d_x%d_tol%g", cI, cD, prngstates, sizeX, tol );
-%
-%
-% First run: either full space or not...
 matJ = cI*matJ0 + matR;
 vecX_secret = randn(sizeX,1);
 vecF = matJ*vecX_secret;
 funchW = @(v)( matJ*v );
 %
+%
+% First run: either full space or not...
 linsolf_prm = [];
 linsolf_prm.tol = tol;
 [ linsolf_vecX, linsolf_datOut ] = linsolf( funchW, -vecF, zeros(sizeX,1), linsolf_prm );
@@ -82,6 +80,7 @@ for n=2:numRuns
 	if ( 1 )
 		matJA = compound_matJA;
 		%
+		if ( rcond(matJA) > 100.0*eps );
 		assert( rcond(matJA) > 100.0*eps );
 		linsolf_prm = [];
 		linsolf_prm.tol = tol;
@@ -90,11 +89,13 @@ for n=2:numRuns
 		%
 		compound_fevalCountVals(n) = linsolf_datOut.fevalCount;
 		compound_matJA += ( linsolf_datOut.matW - (matJA*linsolf_datOut.matV) ) * ( linsolf_datOut.matV' );
+		endif
 	endif
 	%
 	if ( 1 )
 		matJA = compoundFull0_matJA;
 		%
+		if ( rcond(matJA) > 100.0*eps );
 		assert( rcond(matJA) > 100.0*eps );
 		linsolf_prm = [];
 		linsolf_prm.tol = tol;
@@ -103,6 +104,7 @@ for n=2:numRuns
 		%
 		compoundFull0_fevalCountVals(n) = linsolf_datOut.fevalCount;
 		compoundFull0_matJA += ( linsolf_datOut.matW - (matJA*linsolf_datOut.matV) ) * ( linsolf_datOut.matV' );
+		endif
 	endif
 	%
 	%
@@ -111,6 +113,7 @@ for n=2:numRuns
 		matWPool = reorth_matWPool;
 		%
 		matJA = matIX + (matWPool-matVPool)*(matVPool');
+		if ( rcond(matJA) > 100.0*eps );
 		assert( rcond(matJA) > 100.0*eps );
 		linsolf_prm = [];
 		linsolf_prm.tol = tol;
@@ -123,6 +126,7 @@ for n=2:numRuns
 		reorth_fevalCountVals(n) = linsolf_datOut.fevalCount;
 		reorth_matVPool = matVPool1;
 		reorth_matWPool = matWPool1;
+		endif
 	endif
 	%
 	if ( 1 )
@@ -130,6 +134,7 @@ for n=2:numRuns
 		matWPool = reorthFull0_matWPool;
 		%
 		matJA = matIX + (matWPool-matVPool)*(matVPool');
+		if ( rcond(matJA) > 100.0*eps );
 		assert( rcond(matJA) > 100.0*eps );
 		linsolf_prm = [];
 		linsolf_prm.tol = tol;
@@ -142,6 +147,7 @@ for n=2:numRuns
 		reorthFull0_fevalCountVals(n) = linsolf_datOut.fevalCount;
 		reorthFull0_matVPool = matVPool1;
 		reorthFull0_matWPool = matWPool1;
+		endif
 	endif
 	%
 	%
@@ -172,13 +178,13 @@ endfor
 %
 numFigs++; figure(numFigs);
 plot( ...
-  compound_fevalCountVals, "x-", "linewidth", 2, "markersize", 15, ...
-  compoundFull0_fevalCountVals, "s-", "linewidth", 2, "markersize", 15, ...
-  splitspace_fevalCountVals, "^-", "linewidth", 2, "markersize", 15, ...
-  splitspaceFull0_fevalCountVals, "v-", "linewidth", 2, "markersize", 15, ...
+  compound_fevalCountVals, "x-", "linewidth", 2, "markersize", 23, ...
+  compoundFull0_fevalCountVals, "s-", "linewidth", 2, "markersize", 21, ...
+  splitspace_fevalCountVals, "^-", "linewidth", 2, "markersize", 19, ...
+  splitspaceFull0_fevalCountVals, "v-", "linewidth", 2, "markersize", 17, ...
   reorth_fevalCountVals, "p-", "linewidth", 2, "markersize", 15, ...
-  reorthFull0_fevalCountVals, "*-", "linewidth", 2, "markersize", 15, ...
-  noAP_fevalCountVals, "o-", "linewidth", 2, "markersize", 15 );
+  reorthFull0_fevalCountVals, "*-", "linewidth", 2, "markersize", 13, ...
+  noAP_fevalCountVals, "o-", "linewidth", 2, "markersize", 11 );
 set( legend( ...
   "comp", ...
   "comp full 0", ...
@@ -188,52 +194,52 @@ set( legend( ...
   "reorth full0", ...
   "no AP" ), "Interpreter", "none" );
 set( title( strRunName ), "Interpreter", "none" );
-set( xlabel( "non-lin iter" ), "Interpreter", "none" );
-set( ylabel( "local subspace size" ), "Interpreter", "none" );
+set( xlabel( "Jacobian index" ), "Interpreter", "none" );
+set( ylabel( "feval count" ), "Interpreter", "none" );
 grid on;
 %
 numFigs++; figure(numFigs);
 plot( ...
-  [ 0.0, cumsum(compound_fevalCountVals) ], "x-", "linewidth", 2, "markersize", 15, ...
-  [ 0.0, cumsum(compoundFull0_fevalCountVals) ], "s-", "linewidth", 2, "markersize", 15, ...
-  [ 0.0, cumsum(splitspace_fevalCountVals) ], "^-", "linewidth", 2, "markersize", 15, ...
-  [ 0.0, cumsum(splitspaceFull0_fevalCountVals) ], "v-", "linewidth", 2, "markersize", 15, ...
+  [ 0.0, cumsum(compound_fevalCountVals) ], "x-", "linewidth", 2, "markersize", 23, ...
+  [ 0.0, cumsum(compoundFull0_fevalCountVals) ], "s-", "linewidth", 2, "markersize", 21, ...
+  [ 0.0, cumsum(splitspace_fevalCountVals) ], "^-", "linewidth", 2, "markersize", 19, ...
+  [ 0.0, cumsum(splitspaceFull0_fevalCountVals) ], "v-", "linewidth", 2, "markersize", 17, ...
   [ 0.0, cumsum(reorth_fevalCountVals) ], "p-", "linewidth", 2, "markersize", 15, ...
-  [ 0.0, cumsum(reorthFull0_fevalCountVals) ], "*-", "linewidth", 2, "markersize", 15, ...
-  [ 0.0, cumsum(noAP_fevalCountVals) ], "o-", "linewidth", 2, "markersize", 15 );
+  [ 0.0, cumsum(reorthFull0_fevalCountVals) ], "*-", "linewidth", 2, "markersize", 13, ...
+  [ 0.0, cumsum(noAP_fevalCountVals) ], "o-", "linewidth", 2, "markersize", 11 );
 set( title( strRunName ), "Interpreter", "none" );
-set( xlabel( "non-lin iter" ), "Interpreter", "none" );
-set( ylabel( "local subspace size" ), "Interpreter", "none" );
+set( xlabel( "Jacobian index" ), "Interpreter", "none" );
+set( ylabel( "cumulative feval count" ), "Interpreter", "none" );
 grid on;
 %
 numFigs++; figure(numFigs);
 plot( ...
-  [ cumsum(compound_fevalCountVals) ], "x-", "linewidth", 2, "markersize", 15, ...
-  [ cumsum(compoundFull0_fevalCountVals) ], "s-", "linewidth", 2, "markersize", 15, ...
-  [ cumsum(splitspace_fevalCountVals) ], "^-", "linewidth", 2, "markersize", 15, ...
-  [ cumsum(splitspaceFull0_fevalCountVals) ], "v-", "linewidth", 2, "markersize", 15, ...
+  [ cumsum(compound_fevalCountVals) ], "x-", "linewidth", 2, "markersize", 23, ...
+  [ cumsum(compoundFull0_fevalCountVals) ], "s-", "linewidth", 2, "markersize", 21, ...
+  [ cumsum(splitspace_fevalCountVals) ], "^-", "linewidth", 2, "markersize", 19, ...
+  [ cumsum(splitspaceFull0_fevalCountVals) ], "v-", "linewidth", 2, "markersize", 17, ...
   [ cumsum(reorth_fevalCountVals) ], "p-", "linewidth", 2, "markersize", 15, ...
-  [ cumsum(reorthFull0_fevalCountVals) ], "p-", "linewidth", 2, "markersize", 15 );
+  [ cumsum(reorthFull0_fevalCountVals) ], "p-", "linewidth", 2, "markersize", 13 );
 set( title( strRunName ), "Interpreter", "none" );
-set( xlabel( "non-lin iter" ), "Interpreter", "none" );
-set( ylabel( "local subspace size" ), "Interpreter", "none" );
+set( xlabel( "Jacobian index" ), "Interpreter", "none" );
+set( ylabel( "cumulative feval count" ), "Interpreter", "none" );
 grid on;
 %
 numFigs++; figure(numFigs);
 plot( ...
-  [ cumsum(compound_fevalCountVals) ], "x-", "linewidth", 2, "markersize", 15, ...
-  [ cumsum(compoundFull0_fevalCountVals) ], "s-", "linewidth", 2, "markersize", 15, ...
-  [ cumsum(splitspace_fevalCountVals) ], "^-", "linewidth", 2, "markersize", 15, ...
-  [ cumsum(splitspaceFull0_fevalCountVals) ], "v-", "linewidth", 2, "markersize", 15 );
+  cumsum(compound_fevalCountVals)-cumsum(compoundFull0_fevalCountVals), "x-", "linewidth", 2, "markersize", 23, ...
+  cumsum(compoundFull0_fevalCountVals)-cumsum(compoundFull0_fevalCountVals), "s-", "linewidth", 2, "markersize", 21, ...
+  cumsum(splitspace_fevalCountVals)-cumsum(compoundFull0_fevalCountVals), "^-", "linewidth", 2, "markersize", 19, ...
+  cumsum(splitspaceFull0_fevalCountVals)-cumsum(compoundFull0_fevalCountVals), "v-", "linewidth", 2, "markersize", 17 );
 set( title( strRunName ), "Interpreter", "none" );
-set( xlabel( "non-lin iter" ), "Interpreter", "none" );
-set( ylabel( "local subspace size" ), "Interpreter", "none" );
+set( xlabel( "Jacobian index" ), "Interpreter", "none" );
+set( ylabel( "cumulative feval count - 'cf0'" ), "Interpreter", "none" );
 grid on;
 %
 numFigs++; figure(numFigs);
 semilogy( condVals, "*-", "linewidth", 2, "markersize", 10 );
 set( title( strRunName ), "Interpreter", "none" );
-set( xlabel( "non-lin iter" ), "Interpreter", "none" );
+set( xlabel( "Jacobian index" ), "Interpreter", "none" );
 set( ylabel( "condition number" ), "Interpreter", "none" );
 grid on;
 %
