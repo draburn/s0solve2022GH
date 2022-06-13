@@ -1,6 +1,6 @@
 clear;
 numFigs = 0;
-setprngstates(96052864);
+prngstates = setprngstates(96052864);
 tic();
 %
 %
@@ -15,6 +15,8 @@ matJ0 = diag(1.0+abs(randn(sizeX)));
 matR = randn(sizeF,sizeX);
 tol = 0.1;
 numRuns = 20;
+%
+strRunName = sprintf( "cI%g_cD%g_prng%d_x%d_tol%g", cI, cD, prngstates, sizeX, tol );
 %
 %
 % First run: either full space or not...
@@ -48,9 +50,9 @@ reorth_fevalCountVals(1) = fevalIncr;
 reorth_matVPool = matV;
 reorth_matWPool = matW;
 %
-%reorthFull0_fevalCountVals(1) = sizeX;
-%reorthFull0_matV = matIX;
-%reorthFull0h_matW = matJ;
+reorthFull0_fevalCountVals(1) = sizeX;
+reorthFull0_matVPool = matIX;
+reorthFull0_matWPool = matJ;
 %
 splitspace_fevalCountVals(1) = fevalIncr;
 splitspace_matVR = matV;
@@ -75,6 +77,7 @@ for n=2:numRuns
 		[ linsolf_vecX, linsolf_datOut ] = linsolf( funchW, -vecF, zeros(sizeX,1), linsolf_prm );
 		noAP_fevalCountVals(n) = linsolf_datOut.fevalCount;
 	endif
+	%
 	%
 	if ( 1 )
 		matJA = compound_matJA;
@@ -122,6 +125,26 @@ for n=2:numRuns
 		reorth_matWPool = matWPool1;
 	endif
 	%
+	if ( 1 )
+		matVPool = reorthFull0_matVPool;
+		matWPool = reorthFull0_matWPool;
+		%
+		matJA = matIX + (matWPool-matVPool)*(matVPool');
+		assert( rcond(matJA) > 100.0*eps );
+		linsolf_prm = [];
+		linsolf_prm.tol = tol;
+		linsolf_prm.matP = pinv(matJA);
+		[ linsolf_vecX, linsolf_datOut ] = linsolf( funchW, -vecF, zeros(sizeX,1), linsolf_prm );
+		matVNew = linsolf_datOut.matV;
+		matWNew = linsolf_datOut.matW;
+		%
+		[ matVPool1, matWPool1, rvecDrop ] = utorthdrop_pair( [ matVNew, matVPool ], [ matWNew, matWPool ], 1.0e-4 );
+		reorthFull0_fevalCountVals(n) = linsolf_datOut.fevalCount;
+		reorthFull0_matVPool = matVPool1;
+		reorthFull0_matWPool = matWPool1;
+	endif
+	%
+	%
 	if (1)
 		sss_prm = [];
 		sss_prm.matVR = splitspace_matVR;
@@ -154,14 +177,19 @@ plot( ...
   splitspace_fevalCountVals, "^-", "linewidth", 2, "markersize", 15, ...
   splitspaceFull0_fevalCountVals, "v-", "linewidth", 2, "markersize", 15, ...
   reorth_fevalCountVals, "p-", "linewidth", 2, "markersize", 15, ...
+  reorthFull0_fevalCountVals, "*-", "linewidth", 2, "markersize", 15, ...
   noAP_fevalCountVals, "o-", "linewidth", 2, "markersize", 15 );
-legend( ...
+set( legend( ...
   "comp", ...
   "comp full 0", ...
   "split", ...
   "split full0", ...
   "reorth", ...
-  "no AP" );
+  "reorth full0", ...
+  "no AP" ), "Interpreter", "none" );
+set( title( strRunName ), "Interpreter", "none" );
+set( xlabel( "non-lin iter" ), "Interpreter", "none" );
+set( ylabel( "local subspace size" ), "Interpreter", "none" );
 grid on;
 %
 numFigs++; figure(numFigs);
@@ -171,7 +199,11 @@ plot( ...
   [ 0.0, cumsum(splitspace_fevalCountVals) ], "^-", "linewidth", 2, "markersize", 15, ...
   [ 0.0, cumsum(splitspaceFull0_fevalCountVals) ], "v-", "linewidth", 2, "markersize", 15, ...
   [ 0.0, cumsum(reorth_fevalCountVals) ], "p-", "linewidth", 2, "markersize", 15, ...
+  [ 0.0, cumsum(reorthFull0_fevalCountVals) ], "*-", "linewidth", 2, "markersize", 15, ...
   [ 0.0, cumsum(noAP_fevalCountVals) ], "o-", "linewidth", 2, "markersize", 15 );
+set( title( strRunName ), "Interpreter", "none" );
+set( xlabel( "non-lin iter" ), "Interpreter", "none" );
+set( ylabel( "local subspace size" ), "Interpreter", "none" );
 grid on;
 %
 numFigs++; figure(numFigs);
@@ -180,7 +212,11 @@ plot( ...
   [ cumsum(compoundFull0_fevalCountVals) ], "s-", "linewidth", 2, "markersize", 15, ...
   [ cumsum(splitspace_fevalCountVals) ], "^-", "linewidth", 2, "markersize", 15, ...
   [ cumsum(splitspaceFull0_fevalCountVals) ], "v-", "linewidth", 2, "markersize", 15, ...
-  [ cumsum(reorth_fevalCountVals) ], "p-", "linewidth", 2, "markersize", 15 );
+  [ cumsum(reorth_fevalCountVals) ], "p-", "linewidth", 2, "markersize", 15, ...
+  [ cumsum(reorthFull0_fevalCountVals) ], "p-", "linewidth", 2, "markersize", 15 );
+set( title( strRunName ), "Interpreter", "none" );
+set( xlabel( "non-lin iter" ), "Interpreter", "none" );
+set( ylabel( "local subspace size" ), "Interpreter", "none" );
 grid on;
 %
 numFigs++; figure(numFigs);
@@ -189,10 +225,16 @@ plot( ...
   [ cumsum(compoundFull0_fevalCountVals) ], "s-", "linewidth", 2, "markersize", 15, ...
   [ cumsum(splitspace_fevalCountVals) ], "^-", "linewidth", 2, "markersize", 15, ...
   [ cumsum(splitspaceFull0_fevalCountVals) ], "v-", "linewidth", 2, "markersize", 15 );
+set( title( strRunName ), "Interpreter", "none" );
+set( xlabel( "non-lin iter" ), "Interpreter", "none" );
+set( ylabel( "local subspace size" ), "Interpreter", "none" );
 grid on;
 %
 numFigs++; figure(numFigs);
 semilogy( condVals, "*-", "linewidth", 2, "markersize", 10 );
+set( title( strRunName ), "Interpreter", "none" );
+set( xlabel( "non-lin iter" ), "Interpreter", "none" );
+set( ylabel( "condition number" ), "Interpreter", "none" );
 grid on;
 %
 %
