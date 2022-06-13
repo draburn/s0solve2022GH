@@ -39,7 +39,9 @@ function [ vecX, datOut ] = splitspacesolf( funchMatAProd, vecB, sizeX, prm=[] )
 			break;
 		endif
 		%
-		if ( resR > 0.1 * resL && mod(sizeL,3) ~= 0 )
+		%if ( resR > 0.1 * resL && mod(sizeL,3) ~= 0 )
+		if ( ( resR > 0.1 * resL && mod(sizeL,3) ~= 0 ) ...
+		  || ( resR > 0.9 * resL ) )
 			vecU = vecRhoL; % Would apply extra precon here.
 			vecV = __orth( vecU, matVR );
 			if ( norm(vecV) >= 0.5 )
