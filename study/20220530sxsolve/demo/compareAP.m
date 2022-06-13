@@ -7,8 +7,8 @@ tic();
 % Init calculation stuff.
 sizeX = 100;
 sizeF = sizeX;
-cI = 1.0;
-cD = 0.01;
+cI = 2.0;
+cD = 0.2;
 matIX = eye(sizeF,sizeX);
 %matJ0 = matIX;
 matJ0 = diag(1.0+abs(randn(sizeX)));
