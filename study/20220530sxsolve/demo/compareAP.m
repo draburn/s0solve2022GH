@@ -1,19 +1,19 @@
 clear;
 numFigs = 0;
-prngstates = setprngstates(96052864);
+prngstates = setprngstates(0);
 tic();
 %
 %
 % Init calculation stuff.
-sizeX = 100;
-sizeF = sizeX;
-cI = 2.0;
-cD = 0.2;
+sizeX = 100
+sizeF = sizeX
+cI = 2.0
+cD = 0.0
 matIX = eye(sizeF,sizeX);
 %matJ0 = matIX;
 matJ0 = diag(1.0+abs(randn(sizeX)));
 matR = randn(sizeF,sizeX);
-tol = 0.1;
+tol = 0.1
 numRuns = 20;
 %
 strRunName = sprintf( "cI%g_cD%g_prng%d_x%d_tol%g", cI, cD, prngstates, sizeX, tol );
