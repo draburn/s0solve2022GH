@@ -11,9 +11,9 @@ if ( stopsignalpresent() )
 endif
 %
 %
-fType = 1010
+fType = 520
 %fSeed = 15637952
-%fseed 63827616
+%fSeed = 63827616
 fSeed = -1
 sizeX = 100
 zcompare__setF;
