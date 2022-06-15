@@ -519,7 +519,11 @@ endif
 	endif
 	%
 	%
+	
 	if (  0 == sizeVLocal || eta_bnd < 0.5 * omega  )
+	% HACK 2022-06-14.
+	%%%if ( 0 == sizeVLocal || eta_bnd < 0.5 * omega  ||  ( eta_bnd < 0.99 * eta_loc &&  mod(sizeVLocal,10) == 0 )  )
+	
 		msgif( prm.verbLev >= VERBLEV__PROGRESS+10, __FILE__, __LINE__, sprintf( ...
 		  "  %4d: %4d / %4d / %dx%d;  %8.2e // (%8.2e) %8.2e / (%8.2e) %8.2e // %8.2e / %8.2e / %8.2e;  |%8.2e|:  %s.", ...
 		  fModelDat.fevalCount, sizeVLocal, sizeV, sizeF, sizeX, ...

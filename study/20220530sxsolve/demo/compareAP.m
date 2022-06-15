@@ -61,6 +61,11 @@ splitspaceFull0_matVR = matIX;
 splitspaceFull0_matWR = matJ;
 %
 for n=2:numRuns
+	if ( stopsignalpresent() )
+		msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: Received stop signal." );
+		retCode = RETCODE__IMPOSED_STOP;
+		break;
+	endif
 	matR = ( matR + cD*randn(sizeF,sizeX) ) / sqrt( 1.0 + cD^2 );
 	matJ = cI*matJ0 + matR;
 	vecX_secret = randn(sizeX,1);

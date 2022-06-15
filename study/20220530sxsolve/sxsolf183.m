@@ -2,6 +2,7 @@
 % sxsolf180, but with hacks removed(?)
 % sxsolf181, but more hacks to improve actions (ish).
 % sxsolf182 revised -- not so hacky, but keeping history.
+% ALSO, HASE LARGE-ELEM PRECON!
 
 function [ vecX, vecF, retCode, fevalCount, stepsCount, datOut ] = sxsolf183( funchF, vecX_initial, vecF_initial=[], prmIn=[] )
 	mydefs;
