@@ -80,3 +80,6 @@ z195 hack0529 further...
 
 2022-06-10: The Final Scene
 3009_0x100: s183 is not good.
+
+2022-06-15
+1010_75819120x200: sxsolf181perCompareAP is pathological.
