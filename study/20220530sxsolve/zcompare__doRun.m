@@ -47,6 +47,14 @@ case 805
 	r.fevalCountOfStep = r.datOut.fevalCountVals;
 	r.fBestNormOfStep = r.datOut.fNormVals;
 	r.isValid = true;
+case 810
+	r.runTypeDescrip = "800splitspace";
+	[ r.vecXF, r.vecFF, r.datOut ] = findZero_800splitspace( vecX0, funchF, r.prm );
+	r.fevalCount = r.datOut.fevalCount;
+	r.stepCount = r.datOut.iterCount;
+	r.fevalCountOfStep = r.datOut.fevalCountVals;
+	r.fBestNormOfStep = r.datOut.fNormVals;
+	r.isValid = true;
 case 904
 	r.runTypeDescrip = "phiPatch?";
 	[ r.vecXF, r.vecFF, r.datOut ] = findZero_904( vecX0, funchF, r.prm );

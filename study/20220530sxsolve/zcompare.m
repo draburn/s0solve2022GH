@@ -11,11 +11,11 @@ if ( stopsignalpresent() )
 endif
 %
 %
-fType = 520
-fSeed = 15637952
+fType = 1010
+%fSeed = 15637952
 %fseed 63827616
-%fSeed = -1
-sizeX = 200
+fSeed = -1
+sizeX = 100
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
 msg( __FILE__, __LINE__, sprintf( "Generated F '%s'.", runFStr ) );
@@ -32,8 +32,8 @@ if (0)
 	%zlinsolf195( funchF, vecX0, [], prm );
 	%sxsolf100( funchF, vecX0, [] , prm );
 	%prm.useDogLeg = true;
-	[ vecXF, vecFF, retCode, fevalCount, stepsCount, datOut ] = sxsolf181perCompareAP( funchF, vecX0, [] , prm );
-	%findZero_800simple( vecX0, funchF, prm );
+	%[ vecXF, vecFF, retCode, fevalCount, stepsCount, datOut ] = sxsolf181perCompareAP( funchF, vecX0, [] , prm );
+	findZero_800splitspace( vecX0, funchF, prm );
 	%
 	mainCalcElapsedTime = time()-mainStartTime;
 	msg( __FILE__, __LINE__, sprintf( "One-shot '%s' with F '%s' completed in %0.3es.", mainStartDatestr, runFStr, mainCalcElapsedTime ) );
@@ -51,9 +51,10 @@ resumeRun = -1;
 resumeRun = numRuns;
 
 numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 810; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 2100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prm.fevalMax = 1000; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 2181; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prm.fevalMax = 1000; runList(numRuns).r.prmMemo = "";
-numRuns++; runList(numRuns).r.runType = 2182; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prm.fevalMax = 1000; runList(numRuns).r.prmMemo = "";
+%numRuns++; runList(numRuns).r.runType = 2182; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prm.fevalMax = 1000; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 2183; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prm.fevalMax = 1000; runList(numRuns).r.prmMemo = "";
 %umRuns++; runList(numRuns).r.runType = 21801; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prm.fevalMax = 1000; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 21802; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prm.fevalMax = 1000; runList(numRuns).r.prmMemo = "";

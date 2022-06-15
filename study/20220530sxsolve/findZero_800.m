@@ -60,6 +60,8 @@ function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
 	findZero_800__step;
 	initialFallRatio = norm(vecF_next)/norm(vecF);
 	%
+	% 2022-06-15: Aren't we missing an initial Broyden update?
+	%
 	%
 	%
 	while (1)
