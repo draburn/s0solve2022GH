@@ -20,6 +20,12 @@ function [ vecX, datOut ] = semisplitspacesolf( funchMatAProd, vecB, sizeX, prm=
 			vecRhoR = vecB;
 			resR = norm(vecRhoR);
 		else
+			if ( reldiff( matVR'*matVR, eye(sizeR,sizeR) ) > sqrt(eps) )
+				%matVR'*matVR
+				%matWR'*matWR
+				size(matVR)
+				assert( reldiff( matVR'*matVR, eye(sizeR,sizeR) ) < sqrt(eps) );
+			endif
 			vecYR = (matWR'*matWR)\(matWR'*vecB);
 			vecRhoR = vecB - matWR*vecYR;
 			resR = norm(vecRhoR);
@@ -60,7 +66,7 @@ function [ vecX, datOut ] = semisplitspacesolf( funchMatAProd, vecB, sizeX, prm=
 		%  || ( resR > 0.9 * resL ) )
 		c = [ 0.01, 0.1, 0.5, 0.9, 0.99 ](1+mod(sizeL,5));
 		if ( resR > c*resL )
-			vecU = vecRhoL; % Would apply extra precon here.
+			vecU = __applyPrecon( vecRhoL, matVR, matWR );
 			vecV = __orth( vecU, matVL );
 			if ( norm(vecV) >= 0.5 )
 				msgif( doproglog, __FILE__, __LINE__, "Expanding." );
@@ -68,7 +74,7 @@ function [ vecX, datOut ] = semisplitspacesolf( funchMatAProd, vecB, sizeX, prm=
 				if ( sizeR == sizeX )
 					vecY = matVR'*vecV;
 					matWR += ( vecW - matWR*vecY )*(vecY');
-				elseif ( norm(matVR'*vecV) > 0.5 )
+				elseif ( norm(matVR'*vecV) > 100.0*eps )
 					vecVPerp = __orth(vecV,matVR);
 					assert( norm(vecVPerp) > 0.5 );
 					matVR = [ matVR, vecVPerp ];
@@ -103,7 +109,7 @@ function [ vecX, datOut ] = semisplitspacesolf( funchMatAProd, vecB, sizeX, prm=
 			continue;
 		endif
 		%
-		vecU = vecRhoL; % Would apply extra precon here.
+		vecU = __applyPrecon( vecRhoL, matVR, matWR );
 		vecV = __orth( vecU, matVL );
 		if ( norm(vecV) >= 0.5 )
 			msgif( doproglog, __FILE__, __LINE__, "Expanding (2nd pass)." );
@@ -111,7 +117,7 @@ function [ vecX, datOut ] = semisplitspacesolf( funchMatAProd, vecB, sizeX, prm=
 			if ( sizeR == sizeX )
 				vecY = matVR'*vecV;
 				matWR += ( vecW - matWR*vecY )*(vecY');
-			elseif ( norm(matVR'*vecV) > 0.5 )
+			elseif ( norm(matVR'*vecV) > 100.0*eps )
 				vecVPerp = __orth(vecV,matVR);
 				assert( norm(vecVPerp) > 0.5 );
 				matVR = [ matVR, vecVPerp ];
@@ -166,5 +172,10 @@ function vecV = __orth( vecU, matV, tol=sqrt(eps) )
 			vecV /= v;
 		endif
 	endfor
+	return;
+endfunction
+
+function vecU = __applyPrecon( vecRho, matVR, matWR )
+	vecU = vecRho;
 	return;
 endfunction
