@@ -1,5 +1,5 @@
 function [ vecX, datOut ] = semisplitspacesolf( funchMatAProd, vecB, sizeX, prm=[] )
-	% Semi split: ALWAYS per VL.
+	% Semi split: ALWAYS per VL. -- OR NOT?????
 	matVR = mygetfield( prm, "matVR", [] );
 	matWR = mygetfield( prm, "matWR", [] );
 	tol = mygetfield( prm, "tol", 1e-4 );
@@ -66,7 +66,8 @@ function [ vecX, datOut ] = semisplitspacesolf( funchMatAProd, vecB, sizeX, prm=
 		c = [ 0.01, 0.1, 0.5, 0.9, 0.99 ](1+mod(sizeL,5));
 		if ( resR > c*resL )
 			vecU = __applyPrecon( vecRhoL, matVR, matWR );
-			vecV = __orth( vecU, matVL );
+			%%%vecV = __orth( vecU, matVL );
+			vecV = __orth( vecU, matVR ); % VIOLATES "SEMI-SPLIT-SPACE" CONCEPT, BUT, MAY BE A GOOD IDEA?
 			if ( norm(vecV) >= 0.5 )
 				msgif( doproglog, __FILE__, __LINE__, "Expanding." );
 				vecW = funchMatAProd( vecV );
@@ -109,7 +110,8 @@ function [ vecX, datOut ] = semisplitspacesolf( funchMatAProd, vecB, sizeX, prm=
 		endif
 		%
 		vecU = __applyPrecon( vecRhoL, matVR, matWR );
-		vecV = __orth( vecU, matVL );
+		%%%vecV = __orth( vecU, matVL );
+		vecV = __orth( vecU, matVR ); % VIOLATES "SEMI-SPLIT-SPACE" CONCEPT, BUT, MAY BE A GOOD IDEA?
 		if ( norm(vecV) >= 0.5 )
 			msgif( doproglog, __FILE__, __LINE__, "Expanding (2nd pass)." );
 			vecW = funchMatAProd( vecV );

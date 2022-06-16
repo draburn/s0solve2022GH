@@ -13,7 +13,7 @@ matIX = eye(sizeF,sizeX);
 matJ0 = diag(1.0+cR*abs(randn(sizeX)));
 matR = randn(sizeF,sizeX);
 tol = 0.1
-numRuns = 5;
+numRuns = 100;
 strRunName = sprintf( "cI%g_cR%g_cD%g_prng%d_x%d_tol%g", cI, cR, cD, prngstates, sizeX, tol );
 %
 matJ = cI*matJ0 + matR;
