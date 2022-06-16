@@ -179,7 +179,8 @@ endfunction
 function vecU = __applyPrecon( vecRho, matVR, matWR )
 	%vecU = vecRho;
 	%
+	s = sqrt( sum(sumsq(matWR)) / sum(sumsq(matVR)) );
 	sizeX = size(matVR,1);
-	vecU = ( eye(sizeX,sizeX) + ( matWR - matVR ) * (matVR') ) \ vecRho;
+	vecU = ( s*eye(sizeX,sizeX) + ( matWR - matVR ) * (matVR') ) \ vecRho;
 	return;
 endfunction
