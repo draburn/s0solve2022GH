@@ -1,6 +1,5 @@
 function [ vecX, datOut ] = semisplitspacesolf( funchMatAProd, vecB, sizeX, prm=[] )
 	% Semi split: ALWAYS per VL.
-	% We should probably use compound-like AP when expanding.
 	matVR = mygetfield( prm, "matVR", [] );
 	matWR = mygetfield( prm, "matWR", [] );
 	tol = mygetfield( prm, "tol", 1e-4 );
@@ -176,6 +175,9 @@ function vecV = __orth( vecU, matV, tol=sqrt(eps) )
 endfunction
 
 function vecU = __applyPrecon( vecRho, matVR, matWR )
-	vecU = vecRho;
+	%vecU = vecRho;
+	%
+	sizeX = size(matVR,1);
+	vecU = ( eye(sizeX,sizeX) + ( matWR - matVR ) * (matVR') ) \ vecRho;
 	return;
 endfunction
