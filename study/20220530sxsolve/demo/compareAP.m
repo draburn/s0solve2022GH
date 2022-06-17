@@ -1,19 +1,19 @@
 clear;
 numFigs = 0;
-prngstates = setprngstates(71939408);
+prngstates = setprngstates(0);
 tic();
 %
 % Init calculation stuff.
-sizeX = 200
+sizeX = 50
 sizeF = sizeX
 cI = 2.0
 cR = 1.0
-cD = 0.1
+cD = 0.0
 matIX = eye(sizeF,sizeX);
 matJ0 = diag(1.0+cR*abs(randn(sizeX)));
 matR = randn(sizeF,sizeX);
 tol = 0.1
-numRuns = 100;
+numRuns = 10;
 strRunName = sprintf( "cI%g_cR%g_cD%g_prng%d_x%d_tol%g", cI, cR, cD, prngstates, sizeX, tol );
 %
 matJ = cI*matJ0 + matR;
@@ -67,6 +67,10 @@ semisplitspace_matWR = matW;
 semisplitspaceFull0_fevalCountVals(1) = sizeX;
 semisplitspaceFull0_matVR = matIX;
 semisplitspaceFull0_matWR = matJ;
+%
+semicombo_fevalCountVals(1) = fevalIncr;
+semicombo_matVR = matV;
+semicombo_matWR = matW;
 %
 for n=2:numRuns
 	if ( stopsignalpresent() )
@@ -203,10 +207,37 @@ for n=2:numRuns
 		semi_prm.matVR = semisplitspaceFull0_matVR;
 		semi_prm.matWR = semisplitspaceFull0_matWR;
 		semi_prm.tol = tol;
-		[ semi_vecX, semi_datOut ] = splitspacesolf( funchW, -vecF, sizeX, semi_prm );
+		[ semi_vecX, semi_datOut ] = semisplitspacesolf( funchW, -vecF, sizeX, semi_prm );
 		semisplitspaceFull0_fevalCountVals(n) = semi_datOut.fevalCount;
 		semisplitspaceFull0_matVR = semi_datOut.matVR;
 		semisplitspaceFull0_matWR = semi_datOut.matWR;
+	endif
+	%
+	%
+	if (1)
+		% This doesn't seem to behave correctly.
+		matVPool = semicombo_matVR;
+		matWPool = semicombo_matWR;
+		%
+		matJA = matIX + (matWPool-matVPool)*(matVPool');
+		if ( rcond(matJA) > 100.0*eps );
+		assert( rcond(matJA) > 100.0*eps );
+		linsolf_prm = [];
+		linsolf_prm.tol = tol;
+		linsolf_prm.matP = pinv(matJA);
+		[ linsolf_vecX, linsolf_datOut ] = linsolf( funchW, -vecF, zeros(sizeX,1), linsolf_prm );
+		matVNew = linsolf_datOut.matV;
+		matWNew = linsolf_datOut.matW;
+		%
+		semicombo_fevalCountVals(n) = linsolf_datOut.fevalCount;
+		matVPlus = utorthdrop( [ matVNew, matVPool ], 1.0e-10 );
+		[ matVTau, matWTau ] = utorthdrop_pair( [ matVNew, matVPool ], [ matWNew, matWPool ], 0.5 );
+		matWTemp = matWPool*(matVPool'*matVPlus);
+		matZ = matVPlus'*matVTau;
+		matWPlus = matWTemp + ( matWTau - matWTemp * matZ ) * (matZ');
+		semicombo_matVR = matVPlus;
+		semicombo_matWR = matWPlus;
+		endif
 	endif
 endfor
 %
@@ -214,6 +245,7 @@ endfor
 %
 numFigs++; figure(numFigs);
 plot( ...
+  semicombo_fevalCountVals, "<-", "linewidth", 2, "markersize", 29, ...
   semisplitspace_fevalCountVals, "d-", "linewidth", 2, "markersize", 27, ...
   semisplitspaceFull0_fevalCountVals, "h-", "linewidth", 2, "markersize", 25, ...
   compound_fevalCountVals, "x-", "linewidth", 2, "markersize", 23, ...
@@ -224,6 +256,7 @@ plot( ...
   reorthFull0_fevalCountVals, "*-", "linewidth", 2, "markersize", 13, ...
   noAP_fevalCountVals, "o-", "linewidth", 2, "markersize", 11 );
 set( legend( ...
+  "semicombo", ...
   "semisplit", ...
   "semisplit full0 ", ...
   "comp", ...
@@ -240,6 +273,7 @@ grid on;
 %
 numFigs++; figure(numFigs);
 plot( ...
+  [ 0.0, cumsum(semicombo_fevalCountVals) ], "<-", "linewidth", 2, "markersize", 29, ...
   [ 0.0, cumsum(semisplitspace_fevalCountVals) ], "d-", "linewidth", 2, "markersize", 27, ...
   [ 0.0, cumsum(semisplitspaceFull0_fevalCountVals) ], "h-", "linewidth", 2, "markersize", 25, ...
   [ 0.0, cumsum(compound_fevalCountVals) ], "x-", "linewidth", 2, "markersize", 23, ...
@@ -256,6 +290,7 @@ grid on;
 %
 numFigs++; figure(numFigs);
 plot( ...
+  [ cumsum(semicombo_fevalCountVals) ], "<-", "linewidth", 2, "markersize", 29, ...
   [ cumsum(semisplitspace_fevalCountVals) ], "d-", "linewidth", 2, "markersize", 27, ...
   [ cumsum(semisplitspaceFull0_fevalCountVals) ], "h-", "linewidth", 2, "markersize", 25, ...
   [ cumsum(compound_fevalCountVals) ], "x-", "linewidth", 2, "markersize", 23, ...
@@ -263,7 +298,7 @@ plot( ...
   [ cumsum(splitspace_fevalCountVals) ], "^-", "linewidth", 2, "markersize", 19, ...
   [ cumsum(splitspaceFull0_fevalCountVals) ], "v-", "linewidth", 2, "markersize", 17, ...
   [ cumsum(reorth_fevalCountVals) ], "p-", "linewidth", 2, "markersize", 15, ...
-  [ cumsum(reorthFull0_fevalCountVals) ], "p-", "linewidth", 2, "markersize", 13 );
+  [ cumsum(reorthFull0_fevalCountVals) ], "*-", "linewidth", 2, "markersize", 13 );
 set( title( strRunName ), "Interpreter", "none" );
 set( xlabel( "Jacobian index" ), "Interpreter", "none" );
 set( ylabel( "cumulative feval count" ), "Interpreter", "none" );
@@ -271,6 +306,7 @@ grid on;
 %
 numFigs++; figure(numFigs);
 plot( ...
+  cumsum(semicombo_fevalCountVals)-cumsum(compoundFull0_fevalCountVals), "<-", "linewidth", 2, "markersize", 29, ...
   cumsum(semisplitspace_fevalCountVals)-cumsum(compoundFull0_fevalCountVals), "d-", "linewidth", 2, "markersize", 27, ...
   cumsum(semisplitspaceFull0_fevalCountVals)-cumsum(compoundFull0_fevalCountVals), "h-", "linewidth", 2, "markersize", 25, ...
   cumsum(compound_fevalCountVals)-cumsum(compoundFull0_fevalCountVals), "x-", "linewidth", 2, "markersize", 23, ...
