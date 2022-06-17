@@ -1,16 +1,17 @@
 clear;
 numFigs = 0;
-prngstates = setprngstates(0);
+prngstates = setprngstates();
 tic();
 %
 % Init calculation stuff.
 sizeX = 50
 sizeF = sizeX
-cI = 2.0
-cR = 1.0
-cD = 0.0
+cI = 5.0
+cR = 0.1
+cD = 0.1
 matIX = eye(sizeF,sizeX);
 matJ0 = diag(1.0+cR*abs(randn(sizeX)));
+%matJ0 = randn(sizeF,sizeX);
 matR = randn(sizeF,sizeX);
 tol = 0.1
 numRuns = 10;
@@ -220,8 +221,8 @@ for n=2:numRuns
 		matWPool = semicombo_matWR;
 		%
 		matJA = matIX + (matWPool-matVPool)*(matVPool');
-		if ( rcond(matJA) > 100.0*eps );
 		assert( rcond(matJA) > 100.0*eps );
+		if ( rcond(matJA) > 100.0*eps );
 		linsolf_prm = [];
 		linsolf_prm.tol = tol;
 		linsolf_prm.matP = pinv(matJA);
@@ -230,11 +231,38 @@ for n=2:numRuns
 		matWNew = linsolf_datOut.matW;
 		%
 		semicombo_fevalCountVals(n) = linsolf_datOut.fevalCount;
-		matVPlus = utorthdrop( [ matVNew, matVPool ], 1.0e-10 );
-		[ matVTau, matWTau ] = utorthdrop_pair( [ matVNew, matVPool ], [ matWNew, matWPool ], 0.5 );
-		matWTemp = matWPool*(matVPool'*matVPlus);
-		matZ = matVPlus'*matVTau;
-		matWPlus = matWTemp + ( matWTau - matWTemp * matZ ) * (matZ');
+		
+		switch (3)
+		case 1
+			% This is semicombo concept
+			matVPlus = utorthdrop( [ matVNew, matVPool ], 1.0e-10 );
+			[ matVTau, matWTau ] = utorthdrop_pair( [ matVNew, matVPool ], [ matWNew, matWPool ], 0.5 );
+			matWTemp = matWPool*(matVPool'*matVPlus);
+			matZ = matVPlus'*matVTau;
+			matWPlus = matWTemp + ( matWTau - matWTemp * matZ ) * (matZ');
+		case 2
+			% Misc hacks
+			matVPlus = utorthdrop( [ matVNew, matVPool ], 1.0e-10 );
+			%%%[ matVTau, matWTau ] = utorthdrop_pair( [ matVNew, matVPool ], [ matWNew, matWPool ], 0.9 );
+			matVTau = matVNew;
+			matWTau = matWNew;
+			matWTemp = matWPool*(matVPool'*matVPlus);
+			matZ = matVPlus'*matVTau;
+			matWPlus = matWTemp + ( matWTau - matWTemp * matZ ) * (matZ');
+			
+			%%%[ matVPlus, matWPlus ] = utorthdrop_pair( [ matVNew, matVPool], [ matWNew, matWPool ], 1.0e-10 );
+			%[ matVPlus, matWPlus ] = utorthdrop_pair( [ matVNew, matVPool], [ matWNew, matWPool ], 0.7 );
+			%matZ = matVPlus'*matVNew;
+			%matWPlus = matWPlus + ( matWNew - matWPlus*matZ)*(matZ');
+		case 3
+			% Not semicombo concept, but testing something related.
+			matVPlus = utorthdrop( [ matVPool, matVNew ] );
+			matWTemp = zeros(size(matVPlus));
+			matWTemp(:,1:size(matWPool,2)) = matWPool;
+			matZ = matVPlus'*matVNew;
+			matWPlus = matWTemp + ( matWNew - matWTemp*matZ ) * ( matZ' );
+		endswitch
+		
 		semicombo_matVR = matVPlus;
 		semicombo_matWR = matWPlus;
 		endif
