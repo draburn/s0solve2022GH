@@ -1,20 +1,23 @@
 clear;
 numFigs = 0;
-prngstates = setprngstates();
+prngstates = setprngstates(0);
 tic();
 %
 % Init calculation stuff.
 sizeX = 50
 sizeF = sizeX
+
 cI = 5.0
-cR = 0.1
-cD = 0.1
+%cI = 10.0
+
+cR = 1.0
+cD = 0.01
 matIX = eye(sizeF,sizeX);
-matJ0 = diag(1.0+cR*abs(randn(sizeX)));
+matJ0 = diag(1.0+cR*abs(randn(sizeX,1)));
 %matJ0 = randn(sizeF,sizeX);
 matR = randn(sizeF,sizeX);
 tol = 0.1
-numRuns = 10;
+numRuns = 100;
 strRunName = sprintf( "cI%g_cR%g_cD%g_prng%d_x%d_tol%g", cI, cR, cD, prngstates, sizeX, tol );
 %
 matJ = cI*matJ0 + matR;
@@ -220,9 +223,17 @@ for n=2:numRuns
 		matVPool = semicombo_matVR;
 		matWPool = semicombo_matWR;
 		%
+		
 		matJA = matIX + (matWPool-matVPool)*(matVPool');
-		assert( rcond(matJA) > 100.0*eps );
-		if ( rcond(matJA) > 100.0*eps );
+		%s = sqrt( sum(sumsq(matWPool))/sum(sumsq(matVPool)) )
+		%s = 0.7
+		%s = 1.0;
+		%matJA = s*matIX + (matWPool-matVPool)*(matVPool');
+		
+		
+		%assert( rcond(matJA) > 100.0*eps );
+		%if ( rcond(matJA) > 100.0*eps );
+		if (1)
 		linsolf_prm = [];
 		linsolf_prm.tol = tol;
 		linsolf_prm.matP = pinv(matJA);
@@ -255,7 +266,7 @@ for n=2:numRuns
 			%matZ = matVPlus'*matVNew;
 			%matWPlus = matWPlus + ( matWNew - matWPlus*matZ)*(matZ');
 		case 3
-			% Not semicombo concept, but testing something related.
+			% Not semicombo concept, but testing something related ("oblique").
 			matVPlus = utorthdrop( [ matVPool, matVNew ] );
 			matWTemp = zeros(size(matVPlus));
 			matWTemp(:,1:size(matWPool,2)) = matWPool;
@@ -284,7 +295,7 @@ plot( ...
   reorthFull0_fevalCountVals, "*-", "linewidth", 2, "markersize", 13, ...
   noAP_fevalCountVals, "o-", "linewidth", 2, "markersize", 11 );
 set( legend( ...
-  "semicombo", ...
+  "semicombo/hack", ...
   "semisplit", ...
   "semisplit full0 ", ...
   "comp", ...
