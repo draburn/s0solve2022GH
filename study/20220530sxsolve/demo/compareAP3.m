@@ -1,6 +1,6 @@
 clear;
 numFigs = 0;
-prngstates = setprngstates();
+prngstates = setprngstates(0);
 tic();
 %
 % Init calculation stuff.
@@ -232,11 +232,13 @@ for n=2:numRuns
 		
 		%vecFScale_est = sumsq(matWPool,2)/size(matWPool,2);
 		%matSF_est = diag(sqrt( vecFScale_est + eps*norm(vecFScale_est) ));
-		%matJA = matSF_est + (matWPool-matVPool)*(matVPool');
+		%matJA = matSF_est + (matWPool-matVPool)*(matVPool'); WRONG!
+		%matJA = matSF_est*(matIX-matVPool*(matVPool')) + matWPool*(matVPool'); % RIGHT!
 		
 		%foo1 = sum(matWPool.*matVPool,2);
 		%foo2 = sum(matVPool.*matVPool,2);
-		%matJA = diag(foo1./foo2) + (matWPool-matVPool)*(matVPool');
+		%%%matJA = diag(foo1./foo2) + (matWPool-matVPool)*(matVPool'); WRONG!
+		%matJA = diag(foo1./foo2)*(matIX-matVPool*(matVPool')) + matWPool*(matVPool'); % RIGHT?
 		%rcond(matJA\matJ)
 		%rcond(pinv(matJA)*matJ)
 		%rcond(matJ/matJA)
