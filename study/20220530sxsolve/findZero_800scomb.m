@@ -126,8 +126,8 @@ function [ vecXF, vecFF, datOut ] = findZero_800scomb( vecX0, funchF, prm=[] )
 		%
 		
 		%matA += ( matW - (matA*matV) ) * (matV');
-		%s = sqrt( sum(sumsq(matW))/sum(sumsq(matV)) );
-		s = 1.0;
+		s = sqrt( sum(sumsq(matW))/sum(sumsq(matV)) );
+		%s = 1.0;
 		matA = s*(matIX-matV*(matV')) + matW*(matV');
 		%matA = matIX;
 		

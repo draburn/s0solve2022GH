@@ -375,6 +375,44 @@ case 2010
 	funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
 	%
 	vecX0 = randn(sizeX,1);
+case 2100
+	sizeF = sizeX;
+	matSX = diag(exp(0.0*randn(sizeX,1)));
+	matSF = diag(exp(0.0*randn(sizeF,1)));
+	vecXE = randn(sizeX,1);
+	vecJ = sign(randn(sizeX,1));
+	matJE0 = diag( vecJ );
+	matJE = matSF*matJE0/matSX;
+	matA0 = 0.0e0*matSF*randn(sizeF,sizeX)/matSX;
+	matA1 = randn(sizeX,sizeX)/matSX;
+	matA2 = randn(sizeX,sizeX)/matSX;
+	matB0 = 0.0e0*matSF*randn(sizeF,sizeX)/matSX;
+	matB1 = randn(sizeX,sizeX)/matSX;
+	matB2 = randn(sizeX,sizeX)/matSX;
+	matB3 = randn(sizeX,sizeX)/matSX;
+	y = @(x)( x - vecXE );
+	funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
+	%
+	vecX0 = randn(sizeX,1);
+case 2110
+	sizeF = sizeX;
+	matSX = diag(exp(0.0*randn(sizeX,1)));
+	matSF = diag(exp(0.0*randn(sizeF,1)));
+	vecXE = randn(sizeX,1);
+	vecJ = sign(randn(sizeX,1));
+	matJE0 = diag( vecJ );
+	matJE = matSF*matJE0/matSX;
+	matA0 = 1.0e-6*matSF*randn(sizeF,sizeX)/matSX;
+	matA1 = randn(sizeX,sizeX)/matSX;
+	matA2 = randn(sizeX,sizeX)/matSX;
+	matB0 = 1.0e-6*matSF*randn(sizeF,sizeX)/matSX;
+	matB1 = randn(sizeX,sizeX)/matSX;
+	matB2 = randn(sizeX,sizeX)/matSX;
+	matB3 = randn(sizeX,sizeX)/matSX;
+	y = @(x)( x - vecXE );
+	funchF = @(x)( matJE*y(x) + matA0*( (matA1*y(x)) .* (matA2*y(x)) ) + matB0*( (matB1*y(x)) .* (matB2*y(x)) .* (matB3*y(x)) ) );
+	%
+	vecX0 = randn(sizeX,1);
 case 3000
 	sizeF = sizeX;
 	matSX = diag(exp(0.0*randn(sizeX,1)));
