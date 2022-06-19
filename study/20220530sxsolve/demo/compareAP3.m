@@ -1,27 +1,30 @@
 clear;
 numFigs = 0;
-prngstates = setprngstates(0);
+prngstates = setprngstates();
 tic();
 %
 % Init calculation stuff.
 sizeX = 50
 sizeF = sizeX
 
-cI = 5.0
-%cI = 10.0
+cI = 2.0
+%cI = 100.0
 
-cR = 1.0
+cR = 0.1
 cD = 0.01
 matIX = eye(sizeF,sizeX);
 %matJ0 = diag(1.0+cR*abs(randn(sizeX,1)));
 matJ0 = diag( 1.0+cR*randn(sizeX,1) );
 %matJ0 = randn(sizeF,sizeX);
 matR = randn(sizeF,sizeX);
+matSF = diag(exp(1.0*randn(sizeF,1)));
+matSX = diag(exp(1.0*randn(sizeX,1)));
 tol = 0.1
-numRuns = 100;
+numRuns = 10;
 strRunName = sprintf( "cI%g_cR%g_cD%g_prng%d_x%d_tol%g", cI, cR, cD, prngstates, sizeX, tol );
 %
-matJ = cI*matJ0 + matR;
+%matJ = cI*matJ0 + matR;
+matJ = matSF*( cI*matJ0 + matR ) /matSX;
 vecX_secret = randn(sizeX,1);
 vecF = matJ*vecX_secret;
 funchW = @(v)( matJ*v );
@@ -84,7 +87,8 @@ for n=2:numRuns
 		break;
 	endif
 	matR = ( matR + cD*randn(sizeF,sizeX) ) / sqrt( 1.0 + cD^2 );
-	matJ = cI*matJ0 + matR;
+	%matJ = cI*matJ0 + matR;
+	matJ = matSF*( cI*matJ0 + matR ) /matSX;
 	vecX_secret = randn(sizeX,1);
 	vecF = matJ*vecX_secret;
 	funchW = @(v)( matJ*v );
@@ -223,6 +227,7 @@ for n=2:numRuns
 		% This doesn't seem to behave correctly.
 		matVPool = semicombo_matVR;
 		matWPool = semicombo_matWR;
+		%rcond(matJ)
 		%
 		
 		%vecFScale_est = sumsq(matWPool,2)/size(matWPool,2);
@@ -232,13 +237,27 @@ for n=2:numRuns
 		%foo1 = sum(matWPool.*matVPool,2);
 		%foo2 = sum(matVPool.*matVPool,2);
 		%matJA = diag(foo1./foo2) + (matWPool-matVPool)*(matVPool');
+		%rcond(matJA\matJ)
+		%rcond(pinv(matJA)*matJ)
+		%rcond(matJ/matJA)
+		%rcond(matJ*pinv(matJA))
 		
-		matJA = matIX + (matWPool-matVPool)*(matVPool');
-		
-		%s = sqrt( sum(sumsq(matWPool))/sum(sumsq(matVPool)) )
+		s = sqrt( sum(sumsq(matWPool))/sum(sumsq(matVPool)) );
 		%s = 0.7
 		%s = 1.0;
-		%matJA = s*matIX + (matWPool-matVPool)*(matVPool');
+		%%%matJA = s*matIX + (matWPool-matVPool)*(matVPool'); WRONG!
+		matJA = s*(matIX-matVPool*(matVPool')) + matWPool*(matVPool'); % RIGHT!
+		%rcond(matJA\matJ)
+		%rcond(pinv(matJA)*matJ)
+		%rcond(matJ/matJA)
+		%rcond(matJ*pinv(matJA))
+		
+		%matJA = matIX + (matWPool-matVPool)*(matVPool');
+		%rcond(matJA\matJ)
+		%rcond(pinv(matJA)*matJ)
+		%rcond(matJ/matJA)
+		%rcond(matJ*pinv(matJA))
+		%return
 		
 		
 		%assert( rcond(matJA) > 100.0*eps );
