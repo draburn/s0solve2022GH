@@ -225,7 +225,16 @@ for n=2:numRuns
 		matWPool = semicombo_matWR;
 		%
 		
+		%vecFScale_est = sumsq(matWPool,2)/size(matWPool,2);
+		%matSF_est = diag(sqrt( vecFScale_est + eps*norm(vecFScale_est) ));
+		%matJA = matSF_est + (matWPool-matVPool)*(matVPool');
+		
+		%foo1 = sum(matWPool.*matVPool,2);
+		%foo2 = sum(matVPool.*matVPool,2);
+		%matJA = diag(foo1./foo2) + (matWPool-matVPool)*(matVPool');
+		
 		matJA = matIX + (matWPool-matVPool)*(matVPool');
+		
 		%s = sqrt( sum(sumsq(matWPool))/sum(sumsq(matVPool)) )
 		%s = 0.7
 		%s = 1.0;
