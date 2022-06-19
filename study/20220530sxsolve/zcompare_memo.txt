@@ -85,3 +85,7 @@ z195 hack0529 further...
 1010_75819120x200: sxsolf181perCompareAP is pathological.
 520_15637952x200: 800 good, 182 snags (repost).
 520_63827616x200: 182 better than 800.
+
+2022-06-18
+510_38589488x50: 800scomb is finally better than convention.
+510_49917456x50: 800scomb happens to be awesome.
