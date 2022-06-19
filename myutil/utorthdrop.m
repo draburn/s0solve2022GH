@@ -20,20 +20,15 @@ function [ matV, rvecDrop ] = utorthdrop( matV, dropThresh = 1.0e-4 )
 			matV(:,k) = 0.0;
 		else
 			matV(:,k) /= vNorm;
+			matV(:,k) -= matV(:,1:k-1) * ( matV(:,1:k-1)'*matV(:,k) );
+			vNorm = norm(matV(:,k));
+			if ( vNorm <= dropThresh )
+				rvecDrop(k) = true;
+				matV(:,k) = 0.0;
+			else
+				matV(:,k) /= vNorm;
+			endif
 		endif		
-	endfor
-	matV = matV(:,~rvecDrop);
-	sizeV = size(matV,2);
-	rvecDrop = logical(zeros(1,sizeV));
-	for k=2:sizeV
-		matV(:,k) -= matV(:,1:k-1) * ( matV(:,1:k-1)'*matV(:,k) );
-		vNorm = norm(matV(:,k));
-		if ( vNorm <= dropThresh )
-			rvecDrop(k) = true;
-			matV(:,k) = 0.0;
-		else
-			matV(:,k) /= vNorm;
-		endif
 	endfor
 	matV = matV(:,~rvecDrop);
 return;

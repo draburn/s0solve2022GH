@@ -1,9 +1,9 @@
 % Dev
 %  800 = 700 + conventional AP.
 %  Note that _800__step may be identical to _700__step.
-% 2022-06-18: scomb, semi/split-space (scaled) combine, per demo/compareAP3.m.% Dev
+% 2022-06-18: scomb, semi/split-space (scaled) combine, per demo/compareAP3.m.
 
-function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
+function [ vecXF, vecFF, datOut ] = findZero_800scomb( vecX0, funchF, prm=[] )
 	time0 = time();
 	fevalCount = 0;
 	%setVerbLevs;
@@ -61,7 +61,9 @@ function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
 	findZero_800__step;
 	initialFallRatio = norm(vecF_next)/norm(vecF);
 	%
-	% 2022-06-15: Aren't we missing an initial Broyden update?
+	%
+	% 2022-06-15: Aren't we missing an initial Broyden (OSQU) update?
+	% TODO
 	%
 	%
 	%
@@ -122,7 +124,13 @@ function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
 		%
 		%
 		%
-		matA += ( matW - (matA*matV) ) * (matV');
+		
+		%matA += ( matW - (matA*matV) ) * (matV');
+		%s = sqrt( sum(sumsq(matW))/sum(sumsq(matV)) );
+		s = 1.0;
+		matA = s*(matIX-matV*(matV')) + matW*(matV');
+		%matA = matIX;
+		
 		epsFD = mygetfield( prm, "epsFD", eps^0.4 );
 		funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
 		linsolf_prm = [];
@@ -132,8 +140,18 @@ function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
 		[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
 		fevalCount += linsolf_datOut.fevalCount;
 		sizeV = size(linsolf_datOut.matV,2);
-		matV = linsolf_datOut.matV;
-		matW = linsolf_datOut.matW;
+		
+		matVNew = linsolf_datOut.matV;
+		matWNew = linsolf_datOut.matW;
+		
+		matVPlus = utorthdrop( [ matV, matVNew ] );
+		matWTemp = zeros(sizeF,size(matVPlus,2));
+		matWTemp(:,1:size(matW,2)) = matW;
+		matZ = matVPlus'*matVNew;
+		matWPlus = matWTemp + ( matWNew - matWTemp*matZ) * (matZ');
+		matV = matVPlus;
+		matW = matWPlus;
+		
 		if ( 0 && verbLev >= VERBLEV__NOTIFY )
 			msg( __FILE__, __LINE__, sprintf( "  [ rcond(A), frob(W-V)/frob(V), frob(W-A*V)/frob(V) ] = [ %f, %f, %f ].", ...
 			  rcond(matA), ...
@@ -147,7 +165,10 @@ function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
 		findZero_800__step;
 		initialFallRatio = norm(vecF_next)/norm(vecF);
 		%
+		%
+		% 2022-06-18: Shouldn't this be OSQU, with *2?
 		% Apply Broyden update.
+		% TODO
 		fooY = matV'*vecDelta;
 		fooF = vecF_next - ( vecF + matW*fooY );
 		fooW = fooF*(fooY')/(fooY'*fooY);
