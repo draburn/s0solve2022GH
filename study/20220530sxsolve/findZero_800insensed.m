@@ -4,6 +4,7 @@
 % 2022-06-18: Add scaling, OSQU instead of Broyden update, and/or (either) update on first iter.
 %  Update doesn't really matter, though.(?)
 % 2022-06-19: findZero_800sssl: Switching to semisplitspacelinsolf().
+% 2022-06-20: findZero_800insensed().
 
 function [ vecXF, vecFF, datOut ] = findZero_800sssl( vecX0, funchF, prm=[] )
 	time0 = time();
