@@ -134,7 +134,32 @@ function [ vecXF, vecFF, datOut ] = findZero_800insensed( vecX0, funchF, prm=[] 
 		%
 		%
 		
-		matA += ( matW - matA*matV ) * (matV' );
+		matA += ( matW - matA*matV ) * (matV');
+		if ( 2<=iterCount )
+		msg( __FILE__, __LINE__, "Trying the thing!" );
+		enableSensedPrecon = true;
+		if (enableSensedPrecon)
+			matJEst = calcSparseMatEst_basic( matVR, matWR );
+			matJLDW = matJEst\matW;
+			msg( __FILE__, __LINE__, "Info dump..." );
+			%sum(sumsq(matJLDW-matV)) / sum(sumsq(matV))
+			%sum(sumsq(matJLDW-matV*(matV'*matJLDW))) / sum(sumsq(matV))
+			error( "No point in comparing over data that was used to construct JA." );
+			max(sumsq(matW-matA*matV,2))
+			max(sumsq(matW-matV*(matV'*matW),2))
+			min(sumsq(matW-matA*matV,2))
+			min(sumsq(matW-matV*(matV'*matW),2))
+			if ( sum(sumsq(matW-matA*matV)) < 0.1*sum(sumsq(matW-matV*(matV'*matW))) )
+			%%%if ( sum(sumsq(matJLDW-matV)) < 0.1*sum(sumsq(matJEst\(matW-matV*(matV'*matW)))) )
+				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Sensed sparsity!" )
+				matA = matJEst;
+			else
+				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Sensors suggest non-sparsity." );
+				%msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "  ... but forcing it for hack." );
+				%matA = matJEst
+			endif
+		endif
+		endif
 		
 		epsFD = mygetfield( prm, "epsFD", eps^0.4 );
 		funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );

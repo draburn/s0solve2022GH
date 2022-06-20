@@ -35,6 +35,7 @@ function [ vecX, datOut ] = semisplitspacelinsolf( funchMatAProd, vecB, vecX0, p
 			vecRhoL = vecB;
 			resL = norm(vecRhoL);
 		else
+			if (0)
 			if ( reldiff( matVL'*matVL, eye(sizeL,sizeL) ) > sqrt(eps) )
 				matVL'*matVL
 				matWL'*matWL
@@ -45,6 +46,7 @@ function [ vecX, datOut ] = semisplitspacelinsolf( funchMatAProd, vecB, vecX0, p
 				matVL'*matVL
 				matWL'*matWL
 				error("WL");
+			endif
 			endif
 			vecYL = (matWL'*matWL)\(matWL'*vecB);
 			vecRhoL = vecB - matWL*vecYL;
