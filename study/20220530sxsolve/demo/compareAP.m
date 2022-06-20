@@ -45,6 +45,7 @@ noAP_fevalCountVals(1) = fevalIncr;
 %
 compound_fevalCountVals(1) = fevalIncr;
 compound_matJA = matIX + (matW-matV)*(matV');
+compound_vecX = -matV*(matW\vecF);
 %
 compoundFull0_fevalCountVals(1) = sizeX;
 compoundFull0_matJA = matJ;
@@ -83,10 +84,16 @@ for n=2:numRuns
 		retCode = RETCODE__IMPOSED_STOP;
 		break;
 	endif
+	if (0)
 	matR = ( matR + cD*randn(sizeF,sizeX) ) / sqrt( 1.0 + cD^2 );
 	matJ = cI*matJ0 + matR;
 	vecX_secret = randn(sizeX,1);
 	vecF = matJ*vecX_secret;
+	else
+	norm(vecF)
+	vecF = matJ*(vecX_secret-compound_vecX);
+	norm(vecF)
+	endif
 	funchW = @(v)( matJ*v );
 	%
 	condVals(n) = cond(matJ);
@@ -111,6 +118,7 @@ for n=2:numRuns
 		%
 		compound_fevalCountVals(n) = linsolf_datOut.fevalCount;
 		compound_matJA += ( linsolf_datOut.matW - (matJA*linsolf_datOut.matV) ) * ( linsolf_datOut.matV' );
+		compound_vecX -= matV*(matW\vecF);
 		endif
 	endif
 	%

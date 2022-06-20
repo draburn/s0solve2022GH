@@ -20,7 +20,7 @@ matR = randn(sizeF,sizeX);
 matSF = diag(exp(1.0*randn(sizeF,1)));
 matSX = diag(exp(1.0*randn(sizeX,1)));
 tol = 0.1
-numRuns = 10;
+numRuns = 5;
 strRunName = sprintf( "cI%g_cR%g_cD%g_prng%d_x%d_tol%g", cI, cR, cD, prngstates, sizeX, tol );
 %
 %matJ = cI*matJ0 + matR;
@@ -48,6 +48,7 @@ noAP_fevalCountVals(1) = fevalIncr;
 %
 compound_fevalCountVals(1) = fevalIncr;
 compound_matJA = matIX + (matW-matV)*(matV');
+compound_vecX = -matV*(matW\vecF);
 %
 compoundFull0_fevalCountVals(1) = sizeX;
 compoundFull0_matJA = matJ;
@@ -86,11 +87,16 @@ for n=2:numRuns
 		retCode = RETCODE__IMPOSED_STOP;
 		break;
 	endif
-	matR = ( matR + cD*randn(sizeF,sizeX) ) / sqrt( 1.0 + cD^2 );
-	%matJ = cI*matJ0 + matR;
-	matJ = matSF*( cI*matJ0 + matR ) /matSX;
-	vecX_secret = randn(sizeX,1);
-	vecF = matJ*vecX_secret;
+	if (0)
+		matR = ( matR + cD*randn(sizeF,sizeX) ) / sqrt( 1.0 + cD^2 );
+		%matJ = cI*matJ0 + matR;
+		matJ = matSF*( cI*matJ0 + matR ) /matSX;
+		vecX_secret = randn(sizeX,1);
+		vecF = matJ*vecX_secret;
+	else
+		vecF = matJ*(vecX_secret+compound_vecX);
+		norm(vecF)
+	endif
 	funchW = @(v)( matJ*v );
 	%
 	condVals(n) = cond(matJ);
@@ -115,6 +121,7 @@ for n=2:numRuns
 		%
 		compound_fevalCountVals(n) = linsolf_datOut.fevalCount;
 		compound_matJA += ( linsolf_datOut.matW - (matJA*linsolf_datOut.matV) ) * ( linsolf_datOut.matV' );
+		compound_vecX -= linsolf_datOut.matV*(linsolf_datOut.matW\vecF);
 		endif
 	endif
 	%
