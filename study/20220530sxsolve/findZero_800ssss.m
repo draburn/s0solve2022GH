@@ -1,8 +1,10 @@
 % Dev
 %  800 = 700 + conventional AP.
 %  Note that _800__step may be identical to _700__step.
+% 2022-06-18: Add scaling, OSQU instead of Broyden update, and/or (either) update on first iter.
+%  Update doesn't really matter, though.(?)
 
-function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
+function [ vecXF, vecFF, datOut ] = findZero_800tweaky( vecX0, funchF, prm=[] )
 	time0 = time();
 	fevalCount = 0;
 	%setVerbLevs;
@@ -61,6 +63,12 @@ function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
 	initialFallRatio = norm(vecF_next)/norm(vecF);
 	%
 	% 2022-06-15: Aren't we missing an initial Broyden update?
+	% Apply Broyden (or OSQU) update.
+	fooY = matV'*vecDelta;
+	fooF = vecF_next - ( vecF + matW*fooY );
+	fooW = fooF*(fooY')/(fooY'*fooY);
+	matW += 2.0*fooW;
+	preconGenCount = 0;
 	%
 	%
 	%
@@ -121,7 +129,28 @@ function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
 		%
 		%
 		%
-		matA += ( matW - (matA*matV) ) * (matV');
+		preconGenCount++;
+		preconGenDat(preconGenCount).matV = matV;
+		preconGenDat(preconGenCount).matW = matW;
+		switch (1)
+		case 1
+			s = 1.0;
+		case 2
+			s = sqrt( sum(sumsq(matW))/sum(sumsq(matV) ) );
+		case 3
+			sNumer = 0.0;
+			sDenom = 0.0;
+			for n=1:preconGenCount
+				sNumer += sum(sumsq(preconGenDat(n).matW));
+				sDenom += sum(sumsq(preconGenDat(n).matV));
+			endfor
+			s = sqrt(sNumer/sDenom)
+		endswitch
+		matA = s*matIX;
+		for n=1:preconGenCount
+			matA += ( preconGenDat(n).matW - matA*preconGenDat(n).matV ) * ( preconGenDat(n).matV' );
+		endfor
+		
 		epsFD = mygetfield( prm, "epsFD", eps^0.4 );
 		funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
 		linsolf_prm = [];
@@ -150,7 +179,7 @@ function [ vecXF, vecFF, datOut ] = findZero_800( vecX0, funchF, prm=[] )
 		fooY = matV'*vecDelta;
 		fooF = vecF_next - ( vecF + matW*fooY );
 		fooW = fooF*(fooY')/(fooY'*fooY);
-		matW += fooW;
+		matW += 2.0*fooW;
 	endwhile
 	vecXF = vecX_best;
 	vecFF = vecF_best;

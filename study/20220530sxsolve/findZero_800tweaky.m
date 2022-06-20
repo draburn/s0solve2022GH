@@ -132,7 +132,7 @@ function [ vecXF, vecFF, datOut ] = findZero_800tweaky( vecX0, funchF, prm=[] )
 		preconGenCount++;
 		preconGenDat(preconGenCount).matV = matV;
 		preconGenDat(preconGenCount).matW = matW;
-		switch (3)
+		switch (1)
 		case 1
 			s = 1.0;
 		case 2
