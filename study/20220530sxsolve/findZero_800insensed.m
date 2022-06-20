@@ -1,3 +1,4 @@
+
 % Dev
 %  800 = 700 + conventional AP.
 %  Note that _800__step may be identical to _700__step.
@@ -6,7 +7,7 @@
 % 2022-06-19: findZero_800sssl: Switching to semisplitspacelinsolf().
 % 2022-06-20: findZero_800insensed().
 
-function [ vecXF, vecFF, datOut ] = findZero_800sssl( vecX0, funchF, prm=[] )
+function [ vecXF, vecFF, datOut ] = findZero_800insensed( vecX0, funchF, prm=[] )
 	time0 = time();
 	fevalCount = 0;
 	%setVerbLevs;
@@ -70,7 +71,6 @@ function [ vecXF, vecFF, datOut ] = findZero_800sssl( vecX0, funchF, prm=[] )
 	fooF = vecF_next - ( vecF + matW*fooY );
 	fooW = fooF*(fooY')/(fooY'*fooY);
 	matW += 2.0*fooW;
-	preconGenCount = 0;
 	matVR = linsolf_datOut.matV;
 	matWR = linsolf_datOut.matW;
 	%
@@ -133,27 +133,8 @@ function [ vecXF, vecFF, datOut ] = findZero_800sssl( vecX0, funchF, prm=[] )
 		%
 		%
 		%
-		preconGenCount++;
-		preconGenDat(preconGenCount).matV = matVR;
-		preconGenDat(preconGenCount).matW = matWR;
-		switch (1)
-		case 1
-			s = 1.0;
-		case 2
-			s = sqrt( sum(sumsq(matW))/sum(sumsq(matV) ) );
-		case 3
-			sNumer = 0.0;
-			sDenom = 0.0;
-			for n=1:preconGenCount
-				sNumer += sum(sumsq(preconGenDat(n).matW));
-				sDenom += sum(sumsq(preconGenDat(n).matV));
-			endfor
-			s = sqrt(sNumer/sDenom)
-		endswitch
-		matA = s*matIX;
-		for n=1:preconGenCount
-			matA += ( preconGenDat(n).matW - matA*preconGenDat(n).matV ) * ( preconGenDat(n).matV' );
-		endfor
+		
+		matA += ( matW - matA*matV ) * (matV' );
 		
 		epsFD = mygetfield( prm, "epsFD", eps^0.4 );
 		funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
