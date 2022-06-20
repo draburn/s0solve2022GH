@@ -73,6 +73,7 @@ function [ vecXF, vecFF, datOut ] = findZero_800insensed( vecX0, funchF, prm=[] 
 	matW += 2.0*fooW;
 	matVR = linsolf_datOut.matV;
 	matWR = linsolf_datOut.matW;
+	haveCaptureMatrix = false;
 	%
 	%
 	%
@@ -94,8 +95,8 @@ function [ vecXF, vecFF, datOut ] = findZero_800insensed( vecX0, funchF, prm=[] 
 		%
 		%
 		%
-		fTol = mygetfield( prm, "fTol", sqrt(sizeF)*100.0*eps );
 		iterMax = mygetfield( prm, "iterMax", 50 );
+		fTol = mygetfield( prm, "fTol", 100.0*eps );
 		if ( norm(vecF_best) <= fTol )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "STRONG SUCCESS: norm(vecF_best) <= fTol." );
 			break;
@@ -134,31 +135,10 @@ function [ vecXF, vecFF, datOut ] = findZero_800insensed( vecX0, funchF, prm=[] 
 		%
 		%
 		
-		matA += ( matW - matA*matV ) * (matV');
-		if ( 2<=iterCount )
-		msg( __FILE__, __LINE__, "Trying the thing!" );
-		enableSensedPrecon = true;
-		if (enableSensedPrecon)
-			matJEst = calcSparseMatEst_basic( matVR, matWR );
-			matJLDW = matJEst\matW;
-			msg( __FILE__, __LINE__, "Info dump..." );
-			%sum(sumsq(matJLDW-matV)) / sum(sumsq(matV))
-			%sum(sumsq(matJLDW-matV*(matV'*matJLDW))) / sum(sumsq(matV))
-			error( "No point in comparing over data that was used to construct JA." );
-			max(sumsq(matW-matA*matV,2))
-			max(sumsq(matW-matV*(matV'*matW),2))
-			min(sumsq(matW-matA*matV,2))
-			min(sumsq(matW-matV*(matV'*matW),2))
-			if ( sum(sumsq(matW-matA*matV)) < 0.1*sum(sumsq(matW-matV*(matV'*matW))) )
-			%%%if ( sum(sumsq(matJLDW-matV)) < 0.1*sum(sumsq(matJEst\(matW-matV*(matV'*matW)))) )
-				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Sensed sparsity!" )
-				matA = matJEst;
-			else
-				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Sensors suggest non-sparsity." );
-				%msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "  ... but forcing it for hack." );
-				%matA = matJEst
-			endif
-		endif
+		if (~haveCaptureMatrix)
+			matA += ( matW - matA*matV ) * (matV');
+		else
+			matA = matJEst_captured;
 		endif
 		
 		epsFD = mygetfield( prm, "epsFD", eps^0.4 );
@@ -173,6 +153,35 @@ function [ vecXF, vecFF, datOut ] = findZero_800insensed( vecX0, funchF, prm=[] 
 		fevalCount += linsolf_datOut.fevalCount;
 		
 		sizeV = size(linsolf_datOut.matVL,2);
+		if ( 1<=iterCount )
+		msg( __FILE__, __LINE__, "Trying the thing!" );
+		enableSensedPrecon = true;
+		if (enableSensedPrecon)
+			matJEst = calcSparseMatEst_basic( matVR, matWR );
+			matJLDW = matJEst\matW;
+			msg( __FILE__, __LINE__, "Info dump..." );
+			%sum(sumsq(matJLDW-matV)) / sum(sumsq(matV))
+			%sum(sumsq(matJLDW-matV*(matV'*matJLDW))) / sum(sumsq(matV))
+			%error( "No point in comparing over data that was used to construct JA." );
+			max(sumsq(matW-matA*matV,2))
+			max(sumsq(matW-matV*(matV'*matW),2))
+			min(sumsq(matW-matA*matV,2))
+			min(sumsq(matW-matV*(matV'*matW),2))
+			if ( sum(sumsq(matW-matA*matV)) < 0.1*sum(sumsq(matW-matV*(matV'*matW))) )
+			%%%if ( sum(sumsq(matJLDW-matV)) < 0.1*sum(sumsq(matJEst\(matW-matV*(matV'*matW)))) )
+				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Sensed sparsity!" )
+				haveCaptureMatrix = true;
+				matA = matJEst;
+				matJEst_captured = matJEst;
+			else
+				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Sensors suggest non-sparsity." );
+				haveCaptureMatrix = false;
+				matJEst_captured = [];
+				%msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "  ... but forcing it for hack." );
+				%matA = matJEst
+			endif
+		endif
+		endif
 		
 		matV = linsolf_datOut.matVL;
 		matW = linsolf_datOut.matWL;
