@@ -153,7 +153,7 @@ function [ vecXF, vecFF, datOut ] = findZero_800insensed( vecX0, funchF, prm=[] 
 		fevalCount += linsolf_datOut.fevalCount;
 		
 		sizeV = size(linsolf_datOut.matVL,2);
-		if ( 1<=iterCount )
+		if ( 4 <= size(matV,2) && ~haveCaptureMatrix )
 		msg( __FILE__, __LINE__, "Trying the thing!" );
 		enableSensedPrecon = true;
 		if (enableSensedPrecon)
@@ -170,6 +170,8 @@ function [ vecXF, vecFF, datOut ] = findZero_800insensed( vecX0, funchF, prm=[] 
 			if ( sum(sumsq(matW-matA*matV)) < 0.1*sum(sumsq(matW-matV*(matV'*matW))) )
 			%%%if ( sum(sumsq(matJLDW-matV)) < 0.1*sum(sumsq(matJEst\(matW-matV*(matV'*matW)))) )
 				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Sensed sparsity!" )
+				%iterCount
+				%fevalCount
 				haveCaptureMatrix = true;
 				matA = matJEst;
 				matJEst_captured = matJEst;
@@ -177,8 +179,10 @@ function [ vecXF, vecFF, datOut ] = findZero_800insensed( vecX0, funchF, prm=[] 
 				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "Sensors suggest non-sparsity." );
 				haveCaptureMatrix = false;
 				matJEst_captured = [];
-				%msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "  ... but forcing it for hack." );
-				%matA = matJEst
+				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "  ... but forcing it for hack." );
+				haveCaptureMatrix = true;
+				matA = matJEst;
+				matJEst_captured = matJEst
 			endif
 		endif
 		endif
