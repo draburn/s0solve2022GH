@@ -63,11 +63,12 @@ function [ vecXF, vecFF, datOut ] = findZero_800tweaky( vecX0, funchF, prm=[] )
 	initialFallRatio = norm(vecF_next)/norm(vecF);
 	%
 	% 2022-06-15: Aren't we missing an initial Broyden update?
-	% Apply Broyden update.
+	% Apply Broyden (or OSQU) update.
 	fooY = matV'*vecDelta;
 	fooF = vecF_next - ( vecF + matW*fooY );
 	fooW = fooF*(fooY')/(fooY'*fooY);
 	matW += 2.0*fooW;
+	preconGenCount = 0;
 	%
 	%
 	%
@@ -128,16 +129,27 @@ function [ vecXF, vecFF, datOut ] = findZero_800tweaky( vecX0, funchF, prm=[] )
 		%
 		%
 		%
-		
-		%%%matA += ( matW - (matA*matV) ) * (matV');
-		%s0 = sqrt( sum(sumsq(matW))/sum(sumsq(matV)) );
-		%s1 = sqrt( sum(sumsq(matA))/sizeX );
-		% AUGH, STILL WORSE!
-		%%%s0 = norm(matW*(matV'));
-		%%%s1 = norm(matA*(matIX-matV*(matV')));
-		s0 = 1.0;
-		s1 = 1.0;
-		matA = (s0/s1)*matA*(matIX-matV*(matV')) + matW*(matV');
+		preconGenCount++;
+		preconGenDat(preconGenCount).matV = matV;
+		preconGenDat(preconGenCount).matW = matW;
+		switch (3)
+		case 1
+			s = 1.0;
+		case 2
+			s = sqrt( sum(sumsq(matW))/sum(sumsq(matV) ) );
+		case 3
+			sNumer = 0.0;
+			sDenom = 0.0;
+			for n=1:preconGenCount
+				sNumer += sum(sumsq(preconGenDat(n).matW));
+				sDenom += sum(sumsq(preconGenDat(n).matV));
+			endfor
+			s = sqrt(sNumer/sDenom)
+		endswitch
+		matA = s*matIX;
+		for n=1:preconGenCount
+			matA += ( preconGenDat(n).matW - matA*preconGenDat(n).matV ) * ( preconGenDat(n).matV' );
+		endfor
 		
 		epsFD = mygetfield( prm, "epsFD", eps^0.4 );
 		funchMatJProd = @(v)( ( funchF(vecX+epsFD*v) - vecF ) / epsFD );
