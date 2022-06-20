@@ -14,7 +14,7 @@ endif
 fType = 1020
 %fSeed = 15637952
 %fSeed = 63827616
-fSeed = -1
+fSeed = 74876240
 sizeX = 200
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
