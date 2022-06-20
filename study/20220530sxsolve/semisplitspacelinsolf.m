@@ -1,8 +1,8 @@
-function [ vecX, datOut ] = semisplitspacesolf( funchMatAProd, vecB, sizeX, prm=[] )
-	% Semi split: ALWAYS per VL. -- OR NOT?????
+function [ vecX, datOut ] = semisplitspacelinsolf( funchMatAProd, vecB, vecX0, prm=[] )
 	matVR = mygetfield( prm, "matVR", [] );
 	matWR = mygetfield( prm, "matWR", [] );
 	tol = mygetfield( prm, "tol", 1e-4 );
+	sizeX = size(vecX0,1);
 	matVL = [];
 	matWL = [];
 	doproglog = false;
@@ -65,7 +65,7 @@ function [ vecX, datOut ] = semisplitspacesolf( funchMatAProd, vecB, sizeX, prm=
 		%  || ( resR > 0.9 * resL ) )
 		c = [ 0.01, 0.1, 0.5, 0.9, 0.99 ](1+mod(sizeL,5));
 		if ( resR > c*resL )
-			vecU = __applyPrecon( vecRhoL, matVR, matWR );
+			vecU = __applyPrecon( vecRhoL, prm );
 			%%%vecV = __orth( vecU, matVL );
 			vecV = __orth( vecU, matVR ); % VIOLATES "SEMI-SPLIT-SPACE" CONCEPT, BUT, MAY BE A GOOD IDEA?
 			if ( norm(vecV) >= 0.5 )
@@ -109,7 +109,7 @@ function [ vecX, datOut ] = semisplitspacesolf( funchMatAProd, vecB, sizeX, prm=
 			continue;
 		endif
 		%
-		vecU = __applyPrecon( vecRhoL, matVR, matWR );
+		vecU = __applyPrecon( vecRhoL, prm );
 		%%%vecV = __orth( vecU, matVL );
 		vecV = __orth( vecU, matVR ); % VIOLATES "SEMI-SPLIT-SPACE" CONCEPT, BUT, MAY BE A GOOD IDEA?
 		if ( norm(vecV) >= 0.5 )
@@ -142,7 +142,7 @@ function [ vecX, datOut ] = semisplitspacesolf( funchMatAProd, vecB, sizeX, prm=
 	datOut.fevalCount = size(matVL,2);
 	datOut.vecY = vecYL;
 	datOut.matVL = matVL;
-	datOut.matWLs = matWL;
+	datOut.matWL = matWL;
 	datOut.matVR = matVR;
 	datOut.matWR = matWR;
 return;
@@ -176,11 +176,12 @@ function vecV = __orth( vecU, matV, tol=sqrt(eps) )
 	return;
 endfunction
 
-function vecU = __applyPrecon( vecRho, matVR, matWR )
+function vecU = __applyPrecon( vecRho, prm )
 	%vecU = vecRho;
 	%
-	s = sqrt( sum(sumsq(matWR)) / sum(sumsq(matVR)) );
-	sizeX = size(matVR,1);
-	vecU = ( s*eye(sizeX,sizeX) + ( matWR - matVR ) * (matVR') ) \ vecRho;
+	%s = sqrt( sum(sumsq(matWR)) / sum(sumsq(matVR)) );
+	%sizeX = size(matVR,1);
+	%vecU = ( s*eye(sizeX,sizeX) + ( matWR - matVR ) * (matVR') ) \ vecRho;
+	vecU = prm.matP*vecRho;
 	return;
 endfunction

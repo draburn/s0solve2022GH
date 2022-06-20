@@ -3,8 +3,9 @@
 %  Note that _800__step may be identical to _700__step.
 % 2022-06-18: Add scaling, OSQU instead of Broyden update, and/or (either) update on first iter.
 %  Update doesn't really matter, though.(?)
+% findZero_800sssl: Switching to semisplitspacelinsolf().
 
-function [ vecXF, vecFF, datOut ] = findZero_800tweaky( vecX0, funchF, prm=[] )
+function [ vecXF, vecFF, datOut ] = findZero_800sssl( vecX0, funchF, prm=[] )
 	time0 = time();
 	fevalCount = 0;
 	%setVerbLevs;
@@ -45,7 +46,7 @@ function [ vecXF, vecFF, datOut ] = findZero_800tweaky( vecX0, funchF, prm=[] )
 	linsolf_prm.tol = mygetfield( prm, "linsolf_tol0", linsolf_prm.tol );
 	linsolf_prm.matP = pinv(matA);
 	linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
-	[ vecSSDeltaN, linsolf_datOut ] = ssslinsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
+	[ vecSSDeltaN, linsolf_datOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
 	fevalCount += linsolf_datOut.fevalCount;
 	sizeV = size(linsolf_datOut.matV,2);
 	matV = linsolf_datOut.matV;
@@ -69,6 +70,8 @@ function [ vecXF, vecFF, datOut ] = findZero_800tweaky( vecX0, funchF, prm=[] )
 	fooW = fooF*(fooY')/(fooY'*fooY);
 	matW += 2.0*fooW;
 	preconGenCount = 0;
+	matVR = linsolf_datOut.matV;
+	matWR = linsolf_datOut.matW;
 	%
 	%
 	%
@@ -130,8 +133,8 @@ function [ vecXF, vecFF, datOut ] = findZero_800tweaky( vecX0, funchF, prm=[] )
 		%
 		%
 		preconGenCount++;
-		preconGenDat(preconGenCount).matV = matV;
-		preconGenDat(preconGenCount).matW = matW;
+		preconGenDat(preconGenCount).matV = matVR;
+		preconGenDat(preconGenCount).matW = matWR;
 		switch (1)
 		case 1
 			s = 1.0;
@@ -157,11 +160,17 @@ function [ vecXF, vecFF, datOut ] = findZero_800tweaky( vecX0, funchF, prm=[] )
 		linsolf_prm.tol = mygetfield( prm, "linsolf_tol", 0.1*sqrt(norm(vecF)/norm(vecF0)) );
 		linsolf_prm.matP = pinv(matA);
 		linsolf_prm = mygetfield( prm, "linsolf_prm", linsolf_prm );
-		[ vecSSDeltaN, linsolf_datOut ] = ssslinsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
+		linsolf_prm.matVR = matVR;
+		linsolf_prm.matWR = matWR;
+		[ vecSSDeltaN, linsolf_datOut ] = semisplitspacelinsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolf_prm );
 		fevalCount += linsolf_datOut.fevalCount;
-		sizeV = size(linsolf_datOut.matV,2);
-		matV = linsolf_datOut.matV;
-		matW = linsolf_datOut.matW;
+		
+		sizeV = size(linsolf_datOut.matVL,2);
+		
+		matV = linsolf_datOut.matVL;
+		matW = linsolf_datOut.matWL;
+		matVR = linsolf_datOut.matVR;
+		matWR = linsolf_datOut.matWR;
 		if ( 0 && verbLev >= VERBLEV__NOTIFY )
 			msg( __FILE__, __LINE__, sprintf( "  [ rcond(A), frob(W-V)/frob(V), frob(W-A*V)/frob(V) ] = [ %f, %f, %f ].", ...
 			  rcond(matA), ...
@@ -180,6 +189,12 @@ function [ vecXF, vecFF, datOut ] = findZero_800tweaky( vecX0, funchF, prm=[] )
 		fooF = vecF_next - ( vecF + matW*fooY );
 		fooW = fooF*(fooY')/(fooY'*fooY);
 		matW += 2.0*fooW;
+		%
+		% Apply Broyden update.
+		fooYR = matVR'*vecDelta;
+		fooFR = vecF_next - ( vecF + matWR*fooYR );
+		fooWR = fooFR*(fooYR')/(fooYR'*fooYR);
+		matWR += 2.0*fooWR;
 	endwhile
 	vecXF = vecX_best;
 	vecFF = vecF_best;

@@ -71,6 +71,14 @@ case 820
 	r.fevalCountOfStep = r.datOut.fevalCountVals;
 	r.fBestNormOfStep = r.datOut.fNormVals;
 	r.isValid = true;
+case 85551
+	r.runTypeDescrip = "800sssl";
+	[ r.vecXF, r.vecFF, r.datOut ] = findZero_800sssl( vecX0, funchF, r.prm );
+	r.fevalCount = r.datOut.fevalCount;
+	r.stepCount = r.datOut.iterCount;
+	r.fevalCountOfStep = r.datOut.fevalCountVals;
+	r.fBestNormOfStep = r.datOut.fNormVals;
+	r.isValid = true;
 case 904
 	r.runTypeDescrip = "phiPatch?";
 	[ r.vecXF, r.vecFF, r.datOut ] = findZero_904( vecX0, funchF, r.prm );
