@@ -1,4 +1,4 @@
-function [ vecX, datOut ] = semisplitspacelinsolf( funchMatAProd, vecB, vecX0, prm=[] )
+function [ vecX, datOut ] = insensedlinsolf( funchMatAProd, vecB, vecX0, prm=[] )
 	matVR = mygetfield( prm, "matVR", [] );
 	matWR = mygetfield( prm, "matWR", [] );
 	tol = mygetfield( prm, "tol", 1e-4 );
@@ -60,6 +60,48 @@ function [ vecX, datOut ] = semisplitspacelinsolf( funchMatAProd, vecB, vecX0, p
 			msg( __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Reached full space without convergence." );
 			break;
 		endif
+		
+		if ( mod(sizeL,10) == 0 )
+		if ( 30 <= sizeL )
+			matJSensed = calcSparseMatEst_basic( matVR, matWR );
+			%imagesc(matJSensed)
+			if ( rcond(matJSensed'*matJSensed)>sqrt(eps) )
+				vecU = matJSensed \ vecRhoL;
+				vecV = __orth( vecU, matVL );
+				msgif( doproglog, __FILE__, __LINE__, "Expanding per sensed matrix." );
+				vecW = funchMatAProd( vecV );
+				%norm(matJSensed\vecW-vecV)
+				%norm(vecW-matJSensed*vecV)/norm(vecW)
+				if ( norm(matJSensed\vecW-vecV) < 0.1 )
+					msgif( doproglog, __FILE__, __LINE__, "Success!" );
+					matVR = eye(sizeX);
+					matWR = matJSensed;
+				elseif (1)
+					msgif( doproglog, __FILE__, __LINE__, "Forcing as success." );
+					matVR = eye(sizeX);
+					matWR = matJSensed;
+				elseif ( sizeR == sizeX )
+					vecY = matVR'*vecV;
+					matWR += ( vecW - matWR*vecY )*(vecY');
+				elseif ( norm(matVR'*vecV) > 100.0*eps )
+					vecVPerp = __orth(vecV,matVR);
+					assert( norm(vecVPerp) > 0.5 );
+					matVR = [ matVR, vecVPerp ];
+					vecY = matVR'*vecV;
+					matWR = [ matWR, zeros(sizeF,1) ];
+					matWR += ( vecW - matWR*vecY) * (vecY');
+				else
+					matVR = [ matVR, vecV ];
+					matWR = [ matWR, vecW ];
+				endif
+				matVL = [ matVL, vecV ];
+				matWL = [ matWL, vecW ];
+				continue;
+			endif
+		endif
+		endif
+		
+		
 		%
 		%
 		%if ( resR > 0.1 * resL && mod(sizeL,3) ~= 0 )
@@ -73,7 +115,10 @@ function [ vecX, datOut ] = semisplitspacelinsolf( funchMatAProd, vecB, vecX0, p
 			if ( norm(vecV) >= 0.5 )
 				msgif( doproglog, __FILE__, __LINE__, "Expanding." );
 				vecW = funchMatAProd( vecV );
-				if ( sizeR == sizeX )
+				if ( sizeR == 0 )
+					matVR = [ matVR, vecV ];
+					matWR = [ matWR, vecW ];
+				elseif ( sizeR == sizeX )
 					vecY = matVR'*vecV;
 					matWR += ( vecW - matWR*vecY )*(vecY');
 				elseif ( norm(matVR'*vecV) > 100.0*eps )
@@ -117,7 +162,10 @@ function [ vecX, datOut ] = semisplitspacelinsolf( funchMatAProd, vecB, vecX0, p
 		if ( norm(vecV) >= 0.5 )
 			msgif( doproglog, __FILE__, __LINE__, "Expanding (2nd pass)." );
 			vecW = funchMatAProd( vecV );
-			if ( sizeR == sizeX )
+			if ( sizeR == 0 )
+				matVR = [ matVR, vecV ];
+				matWR = [ matWR, vecW ];
+			elseif ( sizeR == sizeX )
 				vecY = matVR'*vecV;
 				matWR += ( vecW - matWR*vecY )*(vecY');
 			elseif ( norm(matVR'*vecV) > 100.0*eps )
