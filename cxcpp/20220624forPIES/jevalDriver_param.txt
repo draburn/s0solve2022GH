@@ -5,3 +5,4 @@
 x0.txt
 x.txt
 f.txt
+./proxyPIES.exe

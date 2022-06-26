@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <string.h> // For memset?!?!
 
-#define REAL_TYPE double
-#define REAL_TYPE_FORMAT_STR "%lf"
 #define msg( ... ) { char msgStr[32000]; snprintf( msgStr, 30000, __VA_ARGS__ ); printf( "[%s.%d] %s\n", __FILE__, __LINE__, msgStr ); }
 #define MAX_FNAME_LENGTH 32000
 #define MAX_SIZEX 32000
@@ -16,7 +14,8 @@ int main( void ) {
 	char fnameX0[MAX_FNAME_LENGTH];
 	char fnameXN[MAX_FNAME_LENGTH];
 	char fnameFN[MAX_FNAME_LENGTH];
-	REAL_TYPE vecX0[MAX_SIZEX];
+	double vecX0[MAX_SIZEX];
+	char cmdFeval[MAX_FNAME_LENGTH];
 	//
 	{
 		char fnameParam[MAX_FNAME_LENGTH];
@@ -90,7 +89,6 @@ int main( void ) {
 		//
 		//
 		{
-			
 			char formatStr [100];
 			sprintf( formatStr, "%%%ds", MAX_FNAME_LENGTH-2 );
 			int numItemsRead = fscanf( fPtr, formatStr, fnameX0 ); // Is this safe?
@@ -103,7 +101,6 @@ int main( void ) {
 		msg( "Read fnameX0 = \"%s\".", fnameX0 );
 		//
 		{
-			
 			char formatStr [100];
 			sprintf( formatStr, "%%%ds", MAX_FNAME_LENGTH-2 );
 			int numItemsRead = fscanf( fPtr, formatStr, fnameXN ); // Is this safe?
@@ -116,7 +113,6 @@ int main( void ) {
 		msg( "Read fnameXN = \"%s\".", fnameX0 );
 		//
 		{
-			
 			char formatStr [100];
 			sprintf( formatStr, "%%%ds", MAX_FNAME_LENGTH-2 );
 			int numItemsRead = fscanf( fPtr, formatStr, fnameFN ); // Is this safe?
@@ -127,6 +123,18 @@ int main( void ) {
 			}
 		}
 		msg( "Read fnameFN = \"%s\".", fnameFN );
+		//
+		{
+			char formatStr [100];
+			sprintf( formatStr, "%%%ds", MAX_FNAME_LENGTH-2 );
+			int numItemsRead = fscanf( fPtr, formatStr, cmdFeval ); // Is this safe?
+			if ( 1 != numItemsRead ) {
+				msg( "ERROR: fscanf() returned %d trying to read cmdFeval from parameter file \"%s\".", numItemsRead, fnameParam );
+				fclose( fPtr );
+				return __LINE__;
+			}
+		}
+		msg( "Read cmdFeval = \"%s\".", cmdFeval );
 		//
 		fclose( fPtr );
 	}
@@ -163,6 +171,38 @@ int main( void ) {
 		fclose( fPtr );
 	}
 	msg( "Finished reading x0 file." );
+	//
+	//
+	//
+	for ( int n = 0; n < sizeX; n++ ) {
+		FILE *fPtr = fopen( fnameXN, "w" );
+		if ( NULL == fPtr ) {
+			msg( "ERROR: Failed to start writing to file \"%s\".", fnameXN );
+			fclose( fPtr );
+			return __LINE__;
+		}
+		msg( "Opened x file \"%s\".", fnameXN );
+		for ( int m = 0; m < sizeX; m++ ) {
+			double x = vecX0[m];
+			if ( n == m ) {
+				x += epsX;
+			}
+			int numCharsWritten = fprintf( fPtr, "%0.16le\n", x );
+			if ( 0 >= numCharsWritten ) {
+				msg( "Failed to write next value to x file %d.", n );
+				return __LINE__;
+			}
+		}
+		//
+		msg( "Successfully wrote %d values to x file %d \"%s\".", sizeX, n, fnameXN );
+		fclose( fPtr );
+		//
+		msg( "Executing command \"%s\".", cmdFeval );
+		system( cmdFeval );
+		//
+		msg( "TODO: PROCESS FILES FOR STORGE." );
+		return 0;
+	}
 	//
 return 0;
 }
