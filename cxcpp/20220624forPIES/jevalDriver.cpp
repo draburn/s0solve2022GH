@@ -11,6 +11,7 @@ int main( void ) {
 	int n0 = 0;
 	int n1 = 0;
 	int sizeX = 0;
+	double epsX = 0.0;
 	char fnameX0[MAX_SIZE];
 	char fnameXN[MAX_SIZE];
 	char fnameFN[MAX_SIZE];
@@ -57,6 +58,21 @@ int main( void ) {
 		msg( "Read n1 = %d.", n1 );
 		//
 		{
+			int numItemsRead = fscanf( fPtr, "%lg", &epsX );
+			if ( 1 != numItemsRead ) {
+				msg( "ERROR: fscanf() returned %d trying to read epsX from parameter file \"%s\".", numItemsRead, fnameParam );
+				fclose( fPtr );
+				return __LINE__;
+			}
+			if ( 0.0 >= epsX ) {
+				msg( "ERROR: epsX is non-positive (%le).", epsX );
+				fclose( fPtr );
+				return __LINE__;
+			}
+		}
+		msg( "Read epsX = %le.", epsX );
+		//
+		{
 			int numItemsRead = fscanf( fPtr, "%d", &sizeX );
 			if ( 1 != numItemsRead ) {
 				msg( "ERROR: fscanf() returned %d trying to read sizeX from parameter file \"%s\".", numItemsRead, fnameParam );
@@ -71,7 +87,7 @@ int main( void ) {
 		}
 		msg( "Read sizeX = %d.", sizeX );
 		//
-// IS THIS SAFE???
+		//
 		{
 			
 			char formatStr [100];
