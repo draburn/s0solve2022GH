@@ -5,21 +5,22 @@
 #define REAL_TYPE double
 #define REAL_TYPE_FORMAT_STR "%lf"
 #define msg( ... ) { char msgStr[32000]; snprintf( msgStr, 30000, __VA_ARGS__ ); printf( "[%s.%d] %s\n", __FILE__, __LINE__, msgStr ); }
-#define MAX_SIZE 32000
+#define MAX_FNAME_LENGTH 32000
+#define MAX_SIZEX 32000
 
 int main( void ) {
 	int n0 = 0;
 	int n1 = 0;
 	int sizeX = 0;
 	double epsX = 0.0;
-	char fnameX0[MAX_SIZE];
-	char fnameXN[MAX_SIZE];
-	char fnameFN[MAX_SIZE];
-	REAL_TYPE vecX0[MAX_SIZE];
+	char fnameX0[MAX_FNAME_LENGTH];
+	char fnameXN[MAX_FNAME_LENGTH];
+	char fnameFN[MAX_FNAME_LENGTH];
+	REAL_TYPE vecX0[MAX_SIZEX];
 	//
 	{
-		char fnameParam[MAX_SIZE];
-		strncpy( fnameParam, "jevalDriver_param.txt", MAX_SIZE-1 );
+		char fnameParam[MAX_FNAME_LENGTH];
+		strncpy( fnameParam, "jevalDriver_param.txt", MAX_FNAME_LENGTH-1 );
 		FILE *fPtr = fopen( fnameParam, "r" );
 		if ( NULL == fPtr ) {
 			msg( "ERROR: Failed to open parameter file \"%s\".", fnameParam );
@@ -91,7 +92,7 @@ int main( void ) {
 		{
 			
 			char formatStr [100];
-			sprintf( formatStr, "%%%ds", MAX_SIZE-2 );
+			sprintf( formatStr, "%%%ds", MAX_FNAME_LENGTH-2 );
 			int numItemsRead = fscanf( fPtr, formatStr, fnameX0 ); // Is this safe?
 			if ( 1 != numItemsRead ) {
 				msg( "ERROR: fscanf() returned %d trying to read fnameX0 from parameter file \"%s\".", numItemsRead, fnameParam );
@@ -104,7 +105,7 @@ int main( void ) {
 		{
 			
 			char formatStr [100];
-			sprintf( formatStr, "%%%ds", MAX_SIZE-2 );
+			sprintf( formatStr, "%%%ds", MAX_FNAME_LENGTH-2 );
 			int numItemsRead = fscanf( fPtr, formatStr, fnameXN ); // Is this safe?
 			if ( 1 != numItemsRead ) {
 				msg( "ERROR: fscanf() returned %d trying to read fnameXN from parameter file \"%s\".", numItemsRead, fnameParam );
@@ -117,7 +118,7 @@ int main( void ) {
 		{
 			
 			char formatStr [100];
-			sprintf( formatStr, "%%%ds", MAX_SIZE-2 );
+			sprintf( formatStr, "%%%ds", MAX_FNAME_LENGTH-2 );
 			int numItemsRead = fscanf( fPtr, formatStr, fnameFN ); // Is this safe?
 			if ( 1 != numItemsRead ) {
 				msg( "ERROR: fscanf() returned %d trying to read fnameFN from parameter file \"%s\".", numItemsRead, fnameParam );
@@ -130,6 +131,38 @@ int main( void ) {
 		fclose( fPtr );
 	}
 	msg( "Finished reading paramter file." );
+	//
+	//
+	//
+	{
+		FILE *fPtr = fopen( fnameX0, "r" );
+		if ( NULL == fPtr ) {
+			msg( "ERROR: Failed to open x0 file \"%s\".", fnameX0 );
+			return __LINE__;
+		}
+		msg( "Opened x0 file \"%s\".", fnameX0 );
+		//
+		for ( int n = 0; n < sizeX; n++ ) {
+			int numItemsRead = fscanf( fPtr, "%lg", &(vecX0[n]) );
+			if ( 1 != numItemsRead ) {
+				msg( "ERROR: fscanf() returned %d trying to read vecX0[%d] from file \"%s\".", numItemsRead, n, fnameX0 );
+				fclose( fPtr );
+				return __LINE__;
+			}
+		}
+		{
+			double foo = 0.0;
+			int numItemsRead = fscanf( fPtr, "%lg", &foo );
+			if ( 1 == numItemsRead ) {
+				msg( "ERROR: vecX0 file \"%s\" contains more than %d items.", fnameX0, sizeX );
+				fclose( fPtr );
+				return __LINE__;
+			}
+		}
+		//
+		fclose( fPtr );
+	}
+	msg( "Finished reading x0 file." );
 	//
 return 0;
 }
