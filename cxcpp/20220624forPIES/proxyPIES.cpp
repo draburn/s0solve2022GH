@@ -57,7 +57,7 @@ int main( void ) {
 				msg( "Failed to read next expected value from input file." );
 				return __LINE__;
 			}
-			//printf( "Read vecX(%d) = %lf\n", n, vecX[n] );
+			msg( "Read vecX(%d) = " REAL_TYPE_FORMAT_STR, n, vecX[n] );
 		}
 		{
 			REAL_TYPE foo = 0;
@@ -67,7 +67,7 @@ int main( void ) {
 				return __LINE__;
 			}
 		}
-		msg( "Successfully read number of expected values from input file." );
+		msg( "Successfully read %d values from input file.", sizeX );
 		msg( "Closing input file." );
 		fclose( fPtr );
 	}
@@ -77,7 +77,7 @@ int main( void ) {
 		float x = ((double)n)*((double)sizeF)/(double(sizeX));
 		int m = (int)( x + 0.5 );
 		vecF[m] = (1.0+x)*vecX[n];
-		//printf( "Set vecF(%d) = %lf\n", m, vecF[m] );
+		msg( "Set vecF(%d) = " REAL_TYPE_FORMAT_STR, m, vecF[m] );
 	}
 	msg( "Finished calculating output." );//
 	//
@@ -103,6 +103,7 @@ int main( void ) {
 			}
 		}
 		//
+		msg( "Successfully wrote %d values to output file.", sizeF );
 		msg( "Closing output file." );
 		fclose( fPtr );
 	}
