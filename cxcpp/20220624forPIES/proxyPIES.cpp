@@ -3,8 +3,8 @@
 #include <string.h> // For memset?!?!
 
 #define REAL_TYPE double
-//#define REAL_TYPE_FORMAT_STR "%lf"
-#define msg( str ) printf( "[%s.%d] %s\n", __FILE__, __LINE__, str )
+#define REAL_TYPE_FORMAT_STR "%lf"
+#define msg( ... ) { char msgStr[32000]; snprintf( msgStr, 30000, __VA_ARGS__ ); printf( "[%s.%d] %s\n", __FILE__, __LINE__, msgStr ); }
 
 int main( void ) {
 	msg( "Hello world!" );
@@ -48,9 +48,7 @@ int main( void ) {
 		//
 		msg( "Reading data from input file..." );
 		for ( int n = 0; n < sizeX; n++ ) {
-			int numItemsRead = fscanf( fPtr, "%lf", &(vecX[n]) );
-			//const char *const tempStr = sprintf( "Read vecX(%s) = %s\n", "%d", REAL_TYPE_FORMAT_STR );
-			//printf( tempStr, n, vecX[n] );
+			int numItemsRead = fscanf( fPtr, REAL_TYPE_FORMAT_STR, &(vecX[n]) );
 			if ( 1 != numItemsRead ) {
 				if ( 0 == n ) {
 					msg( "Failed to read first expected value from input file." );
@@ -59,15 +57,11 @@ int main( void ) {
 				msg( "Failed to read next expected value from input file." );
 				return __LINE__;
 			}
-			//const char foo = sprintf( "Read vecX(%s) = %s.\n", "%d", REAL_TYPE_FORMAT_STR );
-			//printf( foo, n, vecX[n] );
-			//const char foo2 = sprintf( foo, n, vecX[n] );
-			//msg( foo2 );
-			printf( "Read vecX(%d) = %lf\n", n, vecX[n] );
+			//printf( "Read vecX(%d) = %lf\n", n, vecX[n] );
 		}
 		{
 			REAL_TYPE foo = 0;
-			int retVal = fscanf( fPtr, "%lf", &foo );
+			int retVal = fscanf( fPtr, REAL_TYPE_FORMAT_STR, &foo );
 			if ( 0 < retVal ) {
 				msg( "Input file contains more data than expected." );
 				return __LINE__;
@@ -83,7 +77,7 @@ int main( void ) {
 		float x = ((double)n)*((double)sizeF)/(double(sizeX));
 		int m = (int)( x + 0.5 );
 		vecF[m] = (1.0+x)*vecX[n];
-		printf( "Set vecF(%d) = %lf\n", m, vecF[m] );
+		//printf( "Set vecF(%d) = %lf\n", m, vecF[m] );
 	}
 	msg( "Finished calculating output." );//
 	//
