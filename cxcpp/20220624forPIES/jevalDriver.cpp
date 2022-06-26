@@ -16,6 +16,7 @@ int main( void ) {
 	char fnameFN[MAX_FNAME_LENGTH];
 	double vecX0[MAX_SIZEX];
 	char cmdFeval[MAX_FNAME_LENGTH];
+	char cmdMv[MAX_FNAME_LENGTH];
 	//
 	{
 		char fnameParam[MAX_FNAME_LENGTH];
@@ -136,6 +137,18 @@ int main( void ) {
 		}
 		msg( "Read cmdFeval = \"%s\".", cmdFeval );
 		//
+		{
+			char formatStr [100];
+			sprintf( formatStr, "%%%ds", MAX_FNAME_LENGTH-2 );
+			int numItemsRead = fscanf( fPtr, formatStr, cmdMv ); // Is this safe?
+			if ( 1 != numItemsRead ) {
+				msg( "ERROR: fscanf() returned %d trying to read cmdMv from parameter file \"%s\".", numItemsRead, fnameParam );
+				fclose( fPtr );
+				return __LINE__;
+			}
+		}
+		msg( "Read cmdMv = \"%s\".", cmdMv );
+		//
 		fclose( fPtr );
 	}
 	msg( "Finished reading paramter file." );
@@ -174,7 +187,7 @@ int main( void ) {
 	//
 	//
 	//
-	for ( int n = 0; n < sizeX; n++ ) {
+	for ( int n = n0; n <= n1; n++ ) {
 		FILE *fPtr = fopen( fnameXN, "w" );
 		if ( NULL == fPtr ) {
 			msg( "ERROR: Failed to start writing to file \"%s\".", fnameXN );
@@ -184,7 +197,7 @@ int main( void ) {
 		msg( "Opened x file \"%s\".", fnameXN );
 		for ( int m = 0; m < sizeX; m++ ) {
 			double x = vecX0[m];
-			if ( n == m ) {
+			if ( n-1 == m ) {
 				x += epsX;
 			}
 			int numCharsWritten = fprintf( fPtr, "%0.16le\n", x );
@@ -200,8 +213,12 @@ int main( void ) {
 		msg( "Executing command \"%s\".", cmdFeval );
 		system( cmdFeval );
 		//
-		msg( "TODO: PROCESS FILES FOR STORGE." );
-		return 0;
+		msg( "Renaming files..." );
+		char cmdTemp[MAX_FNAME_LENGTH];
+		snprintf( cmdTemp, 30000, "%s %s x%06d.txt", cmdMv, fnameXN, n );
+		system( cmdTemp );
+		snprintf( cmdTemp, 30000, "%s %s f%06d.txt", cmdMv, fnameFN, n );
+		system( cmdTemp );
 	}
 	//
 return 0;

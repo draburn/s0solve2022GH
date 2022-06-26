@@ -4,7 +4,8 @@
 
 #define REAL_TYPE double
 #define REAL_TYPE_FORMAT_STR "%lf"
-#define msg( ... ) { char msgStr[32000]; snprintf( msgStr, 30000, __VA_ARGS__ ); printf( "[%s.%d] %s\n", __FILE__, __LINE__, msgStr ); }
+//#define msg( ... ) { char msgStr[32000]; snprintf( msgStr, 30000, __VA_ARGS__ ); printf( "[%s.%d] %s\n", __FILE__, __LINE__, msgStr ); }
+#define msg( ... )
 
 int main( void ) {
 	msg( "Hello world!" );
