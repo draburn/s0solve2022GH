@@ -16,6 +16,8 @@ int main( void ) {
 	char fnameFN[MAX_FNAME_LENGTH];
 	double vecX0[MAX_SIZEX];
 	char cmdFeval[MAX_FNAME_LENGTH];
+	char fnameOutputDir[MAX_FNAME_LENGTH];
+	char cmdMkdir[MAX_FNAME_LENGTH];
 	char cmdMv[MAX_FNAME_LENGTH];
 	bool allowOverwrite = false;
 	//
@@ -141,6 +143,30 @@ int main( void ) {
 		{
 			char formatStr [100];
 			sprintf( formatStr, "%%%ds", MAX_FNAME_LENGTH-2 );
+			int numItemsRead = fscanf( fPtr, formatStr, fnameOutputDir ); // Is this safe?
+			if ( 1 != numItemsRead ) {
+				msg( "ERROR: fscanf() returned %d trying to read fnameOutput from parameter file \"%s\".", numItemsRead, fnameParam );
+				fclose( fPtr );
+				return __LINE__;
+			}
+		}
+		msg( "Read fnameOutputDir = \"%s\".", fnameOutputDir );
+		//
+		{
+			char formatStr [100];
+			sprintf( formatStr, "%%%ds", MAX_FNAME_LENGTH-2 );
+			int numItemsRead = fscanf( fPtr, formatStr, cmdMkdir ); // Is this safe?
+			if ( 1 != numItemsRead ) {
+				msg( "ERROR: fscanf() returned %d trying to read fnameOutput from parameter file \"%s\".", numItemsRead, fnameParam );
+				fclose( fPtr );
+				return __LINE__;
+			}
+		}
+		msg( "Read cmdMkdir = \"%s\".", cmdMkdir );
+		//
+		{
+			char formatStr [100];
+			sprintf( formatStr, "%%%ds", MAX_FNAME_LENGTH-2 );
 			int numItemsRead = fscanf( fPtr, formatStr, cmdMv ); // Is this safe?
 			if ( 1 != numItemsRead ) {
 				msg( "ERROR: fscanf() returned %d trying to read cmdMv from parameter file \"%s\".", numItemsRead, fnameParam );
@@ -187,6 +213,14 @@ int main( void ) {
 	msg( "Finished reading x0 file." );
 	//
 	//
+	{
+		char cmdTemp[MAX_FNAME_LENGTH];
+		snprintf( cmdTemp, MAX_FNAME_LENGTH, "%s %s", cmdMkdir, fnameOutputDir );
+		msg( "Calling command \"%s\".", cmdTemp );
+		system( cmdTemp );
+	}
+	msg( "Created output directory \"%s\" (or it already exists).", fnameOutputDir );
+	//
 	//
 	for ( int n = n0; n <= n1; n++ ) {
 		if (!allowOverwrite) {
@@ -225,7 +259,7 @@ int main( void ) {
 		msg( "Moving files..." );
 		{
 			char fnameTemp[MAX_FNAME_LENGTH];
-			snprintf( fnameTemp, MAX_FNAME_LENGTH, "x%06d.txt", n );
+			snprintf( fnameTemp, MAX_FNAME_LENGTH, "%s/x%06d.txt", fnameOutputDir, n );
 			if (!allowOverwrite) {
 				FILE *fPtr = fopen( fnameTemp, "r" );
 				if ( NULL != fPtr ) {
@@ -245,7 +279,7 @@ int main( void ) {
 		}
 		{
 			char fnameTemp[MAX_FNAME_LENGTH];
-			snprintf( fnameTemp, MAX_FNAME_LENGTH, "f%06d.txt", n );
+			snprintf( fnameTemp, MAX_FNAME_LENGTH, "%s/f%06d.txt", fnameOutputDir, n );
 			if (!allowOverwrite) {
 				FILE *fPtr = fopen( fnameTemp, "r" );
 				if ( NULL != fPtr ) {

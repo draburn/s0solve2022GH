@@ -3,4 +3,6 @@ tac
 extFit/deprecate
 *.out
 *.o
-
+*.exe
+output
+runspc
