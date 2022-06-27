@@ -1,8 +1,8 @@
 1
 10
 1.0e-5
-800
-x0.txt
+640
+x_initial.txt
 fort.300
 fort.100
 ./proxyPIES.exe

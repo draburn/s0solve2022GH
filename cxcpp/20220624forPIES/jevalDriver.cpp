@@ -254,7 +254,12 @@ int main( void ) {
 		fclose( fPtr );
 		//
 		msg( "Executing feval command \"%s\".", cmdFeval );
-		system( cmdFeval );
+		{
+			int retVal = system( cmdFeval );
+			if ( 0 != retVal ) {
+				msg( "WARNING: FEval command \"%s\" returned %d.", cmdFeval, retVal );
+			}
+		}
 		//
 		msg( "Moving files..." );
 		{
