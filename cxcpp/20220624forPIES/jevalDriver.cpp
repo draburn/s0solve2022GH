@@ -17,6 +17,7 @@ int main( void ) {
 	double vecX0[MAX_SIZEX];
 	char cmdFeval[MAX_FNAME_LENGTH];
 	char cmdMv[MAX_FNAME_LENGTH];
+	bool allowOverwrite = false;
 	//
 	{
 		char fnameParam[MAX_FNAME_LENGTH];
@@ -188,6 +189,14 @@ int main( void ) {
 	//
 	//
 	for ( int n = n0; n <= n1; n++ ) {
+		if (!allowOverwrite) {
+			FILE *fPtr = fopen( fnameXN, "r" );
+			if ( NULL != fPtr ) {
+				msg( "ERROR: File \"%s\" already exists.", fnameXN );
+				fclose( fPtr );
+				return __LINE__;
+			}
+		}
 		FILE *fPtr = fopen( fnameXN, "w" );
 		if ( NULL == fPtr ) {
 			msg( "ERROR: Failed to start writing to file \"%s\".", fnameXN );
@@ -195,6 +204,7 @@ int main( void ) {
 			return __LINE__;
 		}
 		msg( "Opened x file \"%s\".", fnameXN );
+		//
 		for ( int m = 0; m < sizeX; m++ ) {
 			double x = vecX0[m];
 			if ( n-1 == m ) {
@@ -206,19 +216,53 @@ int main( void ) {
 				return __LINE__;
 			}
 		}
-		//
 		msg( "Successfully wrote %d values to x file %d \"%s\".", sizeX, n, fnameXN );
 		fclose( fPtr );
 		//
-		msg( "Executing command \"%s\".", cmdFeval );
+		msg( "Executing feval command \"%s\".", cmdFeval );
 		system( cmdFeval );
 		//
-		msg( "Renaming files..." );
-		char cmdTemp[MAX_FNAME_LENGTH];
-		snprintf( cmdTemp, 30000, "%s %s x%06d.txt", cmdMv, fnameXN, n );
-		system( cmdTemp );
-		snprintf( cmdTemp, 30000, "%s %s f%06d.txt", cmdMv, fnameFN, n );
-		system( cmdTemp );
+		msg( "Moving files..." );
+		{
+			char fnameTemp[MAX_FNAME_LENGTH];
+			snprintf( fnameTemp, MAX_FNAME_LENGTH, "x%06d.txt", n );
+			if (!allowOverwrite) {
+				FILE *fPtr = fopen( fnameTemp, "r" );
+				if ( NULL != fPtr ) {
+					msg( "ERROR: File \"%s\" already exists.", fnameTemp );
+					fclose( fPtr );
+					return __LINE__;
+				}
+			}
+			char cmdTemp[MAX_FNAME_LENGTH];
+			snprintf( cmdTemp, MAX_FNAME_LENGTH, "%s %s %s", cmdMv, fnameXN, fnameTemp );
+			msg( "Calling command \"%s\".", cmdTemp );
+			int retVal = system( cmdTemp );
+			if ( 0 != retVal ) {
+				msg( "ERROR: X move command \"%s\" returned %d.", cmdTemp, retVal );
+				return __LINE__;
+			}
+		}
+		{
+			char fnameTemp[MAX_FNAME_LENGTH];
+			snprintf( fnameTemp, MAX_FNAME_LENGTH, "f%06d.txt", n );
+			if (!allowOverwrite) {
+				FILE *fPtr = fopen( fnameTemp, "r" );
+				if ( NULL != fPtr ) {
+					msg( "ERROR: File \"%s\" already exists.", fnameTemp );
+					fclose( fPtr );
+					return __LINE__;
+				}
+			}
+			char cmdTemp[MAX_FNAME_LENGTH];
+			snprintf( cmdTemp, MAX_FNAME_LENGTH, "%s %s %s", cmdMv, fnameFN, fnameTemp );
+			msg( "Calling command \"%s\".", cmdTemp );
+			int retVal = system( cmdTemp );
+			if ( 0 != retVal ) {
+				msg( "ERROR: F move command \"%s\" returned %d.", cmdTemp, retVal );
+				return __LINE__;
+			}
+		}
 	}
 	//
 return 0;
