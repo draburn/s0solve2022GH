@@ -217,9 +217,13 @@ int main( void ) {
 		char cmdTemp[MAX_FNAME_LENGTH];
 		snprintf( cmdTemp, MAX_FNAME_LENGTH, "%s %s", cmdMkdir, fnameOutputDir );
 		msg( "Calling mkdir command \"%s\".", cmdTemp );
-		system( cmdTemp );
+		int retVal = system( cmdTemp );
+		if ( 0 == retVal ) {
+			msg( "Created output directory \"%s\".", fnameOutputDir );
+		} else {
+			msg( "WARNING: mkdir command \"%s\" returned %d.", cmdMkdir, retVal );
+		}
 	}
-	msg( "Created output directory \"%s\" (or it already exists).", fnameOutputDir );
 	//
 	//
 	for ( int n = n0; n <= n1; n++ ) {
@@ -231,7 +235,7 @@ int main( void ) {
 				return __LINE__;
 			}
 		}
-		msg( "Writing x %d, \"%s\".", n, fnameXN );
+		msg( "Writing x file \"%s\" for component %d.", fnameXN, n );
 		FILE *fPtr = fopen( fnameXN, "w" );
 		if ( NULL == fPtr ) {
 			msg( "ERROR: Failed to start writing to file \"%s\".", fnameXN );
