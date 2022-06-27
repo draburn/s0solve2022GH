@@ -9,7 +9,7 @@
 int main( void ) {
 	const char *const strInputFilename = "fort.300";
 	const char *const strOutputFilename = "fort.100";
-	const int sizeX = 800;
+	const int sizeX = 640;
 	bool verbo = false;
 	//
 	//
@@ -77,7 +77,7 @@ int main( void ) {
 		float x = ((double)n)*((double)sizeF)/(double(sizeX));
 		int m = (int)( x + 0.5 );
 		vecF[m] = (1.0+x)*vecX[n];
-		msg( "Set vecF(%d) = " REAL_TYPE_FORMAT_STR, m, vecF[m] );
+		if (verbo) msg( "Set vecF(%d) = " REAL_TYPE_FORMAT_STR, m, vecF[m] );
 	}
 	if (verbo) msg( "Finished calculating output." );
 	//

@@ -185,15 +185,15 @@ int main( void ) {
 	{
 		FILE *fPtr = fopen( fnameX0, "r" );
 		if ( NULL == fPtr ) {
-			msg( "ERROR: Failed to open x0 file \"%s\".", fnameX0 );
+			msg( "ERROR: Failed to open x_initial file \"%s\".", fnameX0 );
 			return __LINE__;
 		}
-		msg( "Opened x0 file \"%s\".", fnameX0 );
+		msg( "Opened x_initial file \"%s\".", fnameX0 );
 		//
 		for ( int n = 0; n < sizeX; n++ ) {
 			int numItemsRead = fscanf( fPtr, "%lg", &(vecX0[n]) );
 			if ( 1 != numItemsRead ) {
-				msg( "ERROR: fscanf() returned %d trying to read vecX0[%d] from file \"%s\".", numItemsRead, n, fnameX0 );
+				msg( "ERROR: fscanf() returned %d trying to read x_initial[%d] from file \"%s\".", numItemsRead, n, fnameX0 );
 				fclose( fPtr );
 				return __LINE__;
 			}
@@ -202,7 +202,7 @@ int main( void ) {
 			double foo = 0.0;
 			int numItemsRead = fscanf( fPtr, "%lg", &foo );
 			if ( 1 == numItemsRead ) {
-				msg( "ERROR: vecX0 file \"%s\" contains more than %d items.", fnameX0, sizeX );
+				msg( "ERROR: x_initial file \"%s\" contains more than %d items.", fnameX0, sizeX );
 				fclose( fPtr );
 				return __LINE__;
 			}
@@ -210,13 +210,13 @@ int main( void ) {
 		//
 		fclose( fPtr );
 	}
-	msg( "Finished reading x0 file." );
+	msg( "Finished reading x_initial file." );
 	//
 	//
 	{
 		char cmdTemp[MAX_FNAME_LENGTH];
 		snprintf( cmdTemp, MAX_FNAME_LENGTH, "%s %s", cmdMkdir, fnameOutputDir );
-		msg( "Calling command \"%s\".", cmdTemp );
+		msg( "Calling mkdir command \"%s\".", cmdTemp );
 		system( cmdTemp );
 	}
 	msg( "Created output directory \"%s\" (or it already exists).", fnameOutputDir );
@@ -231,13 +231,14 @@ int main( void ) {
 				return __LINE__;
 			}
 		}
+		msg( "Writing x %d, \"%s\".", n, fnameXN );
 		FILE *fPtr = fopen( fnameXN, "w" );
 		if ( NULL == fPtr ) {
 			msg( "ERROR: Failed to start writing to file \"%s\".", fnameXN );
 			fclose( fPtr );
 			return __LINE__;
 		}
-		msg( "Opened x file \"%s\".", fnameXN );
+		//msg( "Opened x file \"%s\".", fnameXN );
 		//
 		for ( int m = 0; m < sizeX; m++ ) {
 			double x = vecX0[m];
@@ -250,10 +251,10 @@ int main( void ) {
 				return __LINE__;
 			}
 		}
-		msg( "Successfully wrote %d values to x file %d \"%s\".", sizeX, n, fnameXN );
+		//msg( "Successfully wrote %d values to x file %d \"%s\".", sizeX, n, fnameXN );
 		fclose( fPtr );
 		//
-		msg( "Executing feval command \"%s\".", cmdFeval );
+		msg( "Calling feval command \"%s\".", cmdFeval );
 		{
 			int retVal = system( cmdFeval );
 			if ( 0 != retVal ) {
@@ -261,7 +262,6 @@ int main( void ) {
 			}
 		}
 		//
-		msg( "Moving files..." );
 		{
 			char fnameTemp[MAX_FNAME_LENGTH];
 			snprintf( fnameTemp, MAX_FNAME_LENGTH, "%s/x%06d.txt", fnameOutputDir, n );
@@ -275,7 +275,7 @@ int main( void ) {
 			}
 			char cmdTemp[MAX_FNAME_LENGTH];
 			snprintf( cmdTemp, MAX_FNAME_LENGTH, "%s %s %s", cmdMv, fnameXN, fnameTemp );
-			msg( "Calling command \"%s\".", cmdTemp );
+			msg( "Calling x mv command \"%s\".", cmdTemp );
 			int retVal = system( cmdTemp );
 			if ( 0 != retVal ) {
 				msg( "ERROR: X move command \"%s\" returned %d.", cmdTemp, retVal );
@@ -295,7 +295,7 @@ int main( void ) {
 			}
 			char cmdTemp[MAX_FNAME_LENGTH];
 			snprintf( cmdTemp, MAX_FNAME_LENGTH, "%s %s %s", cmdMv, fnameFN, fnameTemp );
-			msg( "Calling command \"%s\".", cmdTemp );
+			msg( "Calling f mv command \"%s\".", cmdTemp );
 			int retVal = system( cmdTemp );
 			if ( 0 != retVal ) {
 				msg( "ERROR: F move command \"%s\" returned %d.", cmdTemp, retVal );
