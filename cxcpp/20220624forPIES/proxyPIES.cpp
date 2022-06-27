@@ -9,8 +9,8 @@
 
 int main( void ) {
 	msg( "Hello world!" );
-	const char *const strInputFilename = "x.txt";
-	const char *const strOutputFilename = "f.txt";
+	const char *const strInputFilename = "fort.300";
+	const char *const strOutputFilename = "fort.100";
 	const int sizeX = 800;
 	//
 	//

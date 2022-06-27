@@ -3,8 +3,8 @@
 1.0e-5
 800
 x0.txt
-x.txt
-f.txt
+fort.300
+fort.100
 ./proxyPIES.exe
 jevalDriverOutput
 mkdir

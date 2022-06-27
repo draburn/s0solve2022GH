@@ -1,0 +1,11 @@
+n0
+n1
+epsX
+sizeX
+fnameXInitial
+fnameX
+fnameF
+cmdFEval
+fnameOutputDir
+cmdMkdir
+cmdMv
