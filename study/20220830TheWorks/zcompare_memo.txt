@@ -1,0 +1,94 @@
+10_81484320x50: zlinsolf100 conveges but 800 doesn't.
+10_55323424x50: fz800 faster than z100.
+10_55323424x50: Screenshot_2022-05-11_14-11-00.png
+  Screenshot_2022-05-11_14-21-51.png shows z100 has more fevals per step.
+  Screenshot_2022-05-11_14-55-37.png, reloading vecX0 from disk after iterMax=900 with zlinsolf100;
+    zlinsolf100 is clearly putting far too many fevals in to second step.
+See dat/vecX0_10_55323424x50_resume.m.
+
+10_96332192x50: z100 awesome, 800 stall.
+5_86981936x100: 800 better than z100.
+5_52886176x100: z100 stalls, 800 stalls.
+5_70938544x100: 800 stalls, z100 awesome.
+5_56207600x50, etc: z100 slower, shows linear (vs 800's super-linear) cnvg, likely due to tols.
+I'm thinking next version of zlinsolf is in order.
+First, check a few more things: timing,
+
+2022-05-12
+10_71247648x50: Needs B but converges!
+10_37349312x50: Stalls in some cases but not others;
+  Behavior changed after symmetry enforcement fix, but seemed marginal anyway.
+5_62423744x100: BBall seems more likely to stall.
+5_46257472x100: BBall converges, others stall.
+Dog leg...
+5_9073120x100: DL stalls painfully.
+5_83206912x100: DL slightly worse.
+5_6692928x100: DL stalls painfully here too.
+
+
+2022-05-29
+Comparing 800, z100, z195:
+1020_97538240x50: zlinsolf195 -> findLevPt_0527 hits itermax.
+1020_12824896x50: z195 is best.
+1020_73603072x50: z195 near-stalls
+520_83380848x50: z195 near-stalls
+520_95445360x50: All 3 good.
+520_44297536x50: zlinsolf195 -> findLevPt_0527 issues.
+510_35164096x20: z195 near-stalls
+510_81871680x20: z915 stallingishly
+
+z195 hack0529...
+510_30916624x100: 800 better
+510_24069488x100: z195 much worse
+510_59560624x100: about the same (lack of coasting?)
+520_9023600x50: NGAGU
+520_88856800x50
+
+z195 hack0529 further...
+520_81736336x50: stalls
+
+2022-05-31
+1020_61529008x50: sxsolf100 gets stuck.
+1010_99643824x500: s100 takes 555 iter.
+10_98184528x100: Triggers "earlier candidate is better" in s100 but stalls.
+530_8465136x50:  Triggers "earlier candidate is better" in s100 and converges; others stall.
+
+2022-06-01
+510_72758400x50: A case where s100 is better than others, much better than 800.
+313_90455536x500: s100 is horrrrrible! [FIXED!]
+ >>> Resolved: sx100 was incorrectly using matW(:,end) as residual, instead of vecF - matW*vecY.
+1010_98184528x500: Useful for timing: s100 takes about 14s vs 800 takes about 5.4s, comprable fevals, both cnvg.
+ >>> Much was due to VALDLEV__LOW in findLevPt. Post-fix, findLevPt() calls make up ~75% of time.
+320_54972192x500: s114 horrid.
+319_0x500: s114 horrid (simpler case). [~fixed, by upping "c1"]
+
+530_10264096x20: Ex where s100 converges w&w/0 Powell's dog-leg. PDL is a bit worse.
+530_49236304x20: 800 cnvg but s stall.
+530_79449232x20: s cnvg, pdl a bit better.
+
+510_16023792: Varies, but s100 pretty good compared to 800.
+
+
+2022-06-07
+1020_65628736x200: s181 hits snag unlike s100 and 800 using original start.
+1020_26841584x200: s100 snags, s181 and 800 don't.
+520_92038848x200: s181 spiffy... by chance, methinks (2022-06-09).
+520_15637952x200: 800 better
+2022-06-08...
+1020_87714912x50: s183 happens to be best
+1020_30140976x50: s183 is near-best, just behind s182.
+
+2022-06-10: The Final Scene
+3009_0x100: s183 is not good.
+
+2022-06-15
+1010_75819120x200: sxsolf181perCompareAP is pathological.
+520_15637952x200: 800 good, 182 snags (repost).
+520_63827616x200: 182 better than 800.
+
+2022-06-18
+510_38589488x50: 800scomb is finally better than convention.
+510_49917456x50: 800scomb happens to be awesome.
+
+2022-06-19
+1020_74876240x200: 800tweaky (minimal, at this point) > 800sssl > 800 <baseline>.
