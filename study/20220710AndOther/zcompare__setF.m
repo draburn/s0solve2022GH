@@ -646,6 +646,17 @@ case 11000
 	matJ = matJE
 	%
 	vecX0 = randn(sizeX,1);
+case 12000
+	assert( 800 == sizeX );
+	sizeF = sizeX;
+	dat0 = load( "dat/dat_82445x31_202208.m" );
+	matJ0 = dat0.matJ;
+	vecXE = randn(sizeX,1);
+	y = @(x)( x - vecXE );
+	funchF = @(x)( matJ0*y(x) );
+	matJ = matJ0;
+	%
+	vecX0 = randn(sizeX,1);
 otherwise
 	error( "Invalid fType." );
 endswitch
