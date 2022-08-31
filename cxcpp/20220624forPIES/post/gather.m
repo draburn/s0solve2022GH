@@ -64,12 +64,14 @@ for m=0:7
 		vecFSumSq += vecF.^2;
 	end
 end
+clear filepathBase;
 clear vecX;
 clear vecF;
 clear epsX;
 clear k
 clear m
 clear n
+clear vecFSumSq;
 
 %vecFSumSqMinScale = eps*max(vecFSumSq);
 %vecFSumSq += vecFSumSqMinScale;

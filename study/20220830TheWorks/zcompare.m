@@ -11,9 +11,9 @@ if ( stopsignalpresent() )
 endif
 %
 %
-if (0)
+if (1)
 	fType = 12000
-	fSeed = -1
+	fSeed = 0
 	sizeX = 800
 else
 	fType = 3001
