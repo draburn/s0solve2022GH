@@ -11,14 +11,14 @@ if ( stopsignalpresent() )
 endif
 %
 %
-if (1)
+if (0)
 	fType = 12000
 	fSeed = -1
 	sizeX = 800
 else
 	fType = 3001
-	fSeed = -1
-	sizeX = 200
+	fSeed = 0
+	sizeX = 100
 endif
 zcompare__setF;
 runFStr = sprintf( "zcompare %d_%dx%d", fType, fSeed, sizeX );
@@ -58,6 +58,7 @@ numRuns++; runList(numRuns).r.runType = 800; runList(numRuns).r.prm = []; runLis
 %numRuns++; runList(numRuns).r.runType = 802; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 85551; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 numRuns++; runList(numRuns).r.runType = 8153532; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
+numRuns++; runList(numRuns).r.runType = 8153533; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 810; runList(numRuns).r.prm = []; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 820; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prmMemo = "";
 %numRuns++; runList(numRuns).r.runType = 2100; runList(numRuns).r.prm = []; runList(numRuns).r.prm.iterMax = 1000; runList(numRuns).r.prm.fevalMax = 1000; runList(numRuns).r.prmMemo = "";

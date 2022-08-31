@@ -95,6 +95,14 @@ case 8153532
 	r.fevalCountOfStep = r.datOut.fevalCountVals;
 	r.fBestNormOfStep = r.datOut.fNormVals;
 	r.isValid = true;
+case 8153533
+	r.runTypeDescrip = "800ins_noSJA";
+	[ r.vecXF, r.vecFF, r.datOut ] = findZero_800ins_noSJA( vecX0, funchF, r.prm );
+	r.fevalCount = r.datOut.fevalCount;
+	r.stepCount = r.datOut.iterCount;
+	r.fevalCountOfStep = r.datOut.fevalCountVals;
+	r.fBestNormOfStep = r.datOut.fNormVals;
+	r.isValid = true;
 case 904
 	r.runTypeDescrip = "phiPatch?";
 	[ r.vecXF, r.vecFF, r.datOut ] = findZero_904( vecX0, funchF, r.prm );
