@@ -49,7 +49,7 @@ endif
 sz = 30000;
 alpha0 = linspace( 0.0, 1.0, sz )';
 alphaC = alpha0.*(1.0-alpha0);
-alphaC = alphaC.^2;
+alphaC = alphaC.^4;
 alphaC /= max(alphaC);
 alphaL = (1.0-alphaC).*(alpha0<0.5);
 alphaR = (1.0-alphaC).*(alpha0>0.5);
@@ -63,28 +63,33 @@ cmap1 = (1.0 + (cmap1-1.0).*(cmap1<1.0)).*(cmap1>0.0);
 cmapCent = cmap1;
 %
 numFigs++;figure(numFigs);
-image( sz*(1+matXIndex)/(1.0+sizeX) );
-title( "((matXIndex-1.0)/(sizeX-1.0))-0.5" );
+image( 1+(sz-1)*(matXIndex-1.0)/(sizeX-1.0) );
+title( "2.0*((matXIndex-1.0)/(sizeX-1.0))-1.0" );
 colormap(cmapCent);
 %
 numFigs++;figure(numFigs);
-image( sz*(1+matFIndex)/(1.0+sizeF) );
-title( "((matFIndex-1.0)/(sizeF-1.0))-0.5" );
+image( 1+(sz-1)*(matFIndex-1.0)/(sizeF-1.0) );
+title( "2.0*((matFIndex-1.0)/(sizeF-1.0))-1.0" );
 colormap(cmapCent);
 %
 numFigs++;figure(numFigs);
-image( sz*0.5*(1.0+asinh(matJ/jAbsMax)/asinh(1.0)) );
+image( 1+(sz-1)*0.5*(1.0+asinh(matJ/jAbsMax)/asinh(1.0)) );
 title( "asinh(matJ/jAbsMax)/asinh(1.0)" );
 colormap(cmapCent);
 %
 numFigs++;figure(numFigs);
-image( sz*0.5*(1.0+asinh(1.0e6*matJ/jAbsMax)/asinh(1.0e6)) );
+image( 1+(sz-1)*0.5*(1.0+asinh(1.0e3*matJ/jAbsMax)/asinh(1.0e3)) );
 title( "asinh(1.0e3*matJ/jAbsMax)/asinh(1.0e3)" );
 colormap(cmapCent);
 %
 numFigs++;figure(numFigs);
-image( sz*0.5*(1.0+asinh(1.0e6*matJ/jAbsMax)/asinh(1.0e6)) );
+image( 1+(sz-1)*0.5*(1.0+asinh(1.0e6*matJ/jAbsMax)/asinh(1.0e6)) );
 title( "asinh(1.0e6*matJ/jAbsMax)/asinh(1.0e6)" );
+colormap(cmapCent);
+%
+numFigs++;figure(numFigs);
+image( 1+(sz-1)*0.5*(1.0+asinh(1.0e9*matJ/jAbsMax)/asinh(1.0e9)) );
+title( "asinh(1.0e9*matJ/jAbsMax)/asinh(1.0e9)" );
 colormap(cmapCent);
 %
 %

@@ -16,4 +16,7 @@ numFig++; figure(numFig);
 print( "J1E6.eps", "-depsc2" );
 %
 numFig++; figure(numFig);
+print( "J1E9.eps", "-depsc2" );
+%
+numFig++; figure(numFig);
 print( "svd.eps", "-depsc2" );
