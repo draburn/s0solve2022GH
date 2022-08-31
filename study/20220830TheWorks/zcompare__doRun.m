@@ -7,6 +7,14 @@ msg( __FILE__, __LINE__, sprintf( "Starting run %d/%d: '%s'...", runIndex, numRu
 runStartTime = time();
 %
 switch( r.runType )
+case 10
+	r.runTypeDescrip = "fsolve gnostic";
+	[ r.vecXF, r.vecFF, r.datOut ] = findZero_fsolveGnostic( vecX0, funchF, r.prm );
+	r.fevalCount = r.datOut.fevalCountVals(end);
+	r.stepCount = r.datOut.iterCountVals(end);
+	r.fevalCountOfStep = r.datOut.fevalCountVals;
+	r.fBestNormOfStep = r.datOut.fNormVals;
+	r.isValid = true;
 case 50
 	r.runTypeDescrip = "Quess N-R + minscan";
 	[ r.vecXF, r.vecFF, r.datOut ] = findZero_050( vecX0, funchF, r.prm );
@@ -31,8 +39,16 @@ case 550
 	r.fevalCountOfStep = r.datOut.fevalCountVals;
 	r.fBestNormOfStep = r.datOut.fNormVals;
 	r.isValid = true;
+case 700
+	r.runTypeDescrip = "JFNK+TR(+coast)";
+	[ r.vecXF, r.vecFF, r.datOut ] = findZero_700( vecX0, funchF, r.prm );
+	r.fevalCount = r.datOut.fevalCount;
+	r.stepCount = r.datOut.iterCount;
+	r.fevalCountOfStep = r.datOut.fevalCountVals;
+	r.fBestNormOfStep = r.datOut.fNormVals;
+	r.isValid = true;
 case 800
-	r.runTypeDescrip = "JFNK+TR+AP";
+	r.runTypeDescrip = "JFNK+TR+AP(+coast)";
 	[ r.vecXF, r.vecFF, r.datOut ] = findZero_800( vecX0, funchF, r.prm );
 	r.fevalCount = r.datOut.fevalCount;
 	r.stepCount = r.datOut.iterCount;
@@ -212,9 +228,6 @@ otherwise
 	r.isValid = false;
 	return;
 endswitch
-markerTypes = "+o*xsd^v<>ph";
-r.mlStyle = [ markerTypes(mod(runIndex,length(markerTypes))+1), "-" ];
-r.mSize = 10+3*(numRuns-runIndex);
 r.stepCountOfStep = ( 0 : r.stepCount );
 %
 r.elapsedTime = time()-runStartTime;

@@ -1,3 +1,5 @@
+doExtras = false;
+
 numFigs = 0;
 plotStartTime = time();
 vecF0 = funchF(vecX0);
@@ -21,6 +23,20 @@ endfor
 msg( __FILE__, __LINE__, "Generating plots..." );
 %
 %
+
+markerTypes = "+o*xsd^v<>ph";
+for runIndex=1:numRuns
+	r = runList(runIndex).r;
+	r.mlStyle = [ markerTypes(mod(runIndex,length(markerTypes))+1), "-" ];
+	if ( numRuns < 6 )
+		r.mSize = 10+3*(numRuns-runIndex);
+	else
+		r.mSize = 10+2*(numRuns-runIndex);
+	endif
+	runList(runIndex).r = r;
+end
+%
+%
 numFigs++; figure(numFigs);
 epsViz = 1.0e-18;
 leg = {};
@@ -37,10 +53,15 @@ for n=1:numRuns
 endfor
 hold off;
 grid on;
-set( legend( leg ), 'Interpreter', 'none' );
+if ( numRuns < 0 )
+	set( legend( leg ), 'Interpreter', 'none' );
+else
+	set( legend( leg, "location", "northeastoutside" ), 'Interpreter', 'none' );
+endif
 set( xlabel( "feval count" ), 'Interpreter', 'none' );
 set( ylabel( "||F best||" ), 'Interpreter', 'none' );
 set( title([ mainStartDatestr " " runFStr " CNVG V FEVAL" ]), 'Interpreter', 'none' );
+
 %
 %
 if (0)
