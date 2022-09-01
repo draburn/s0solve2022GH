@@ -100,6 +100,14 @@ numFigs++;figure(numFigs);
 semilogy( vecS, 'o-', 'markersize', 20, 'linewidth', 2 );
 grid on;
 title( 'singular values of matJ' );
+%
+%
+numFigs++;figure(numFigs);
+semilogy( abs(matJ(250,:)), 'o-', 'markersize', 10, 'linewidth', 2 );
+grid on;
+xlabel( "xIndex" );
+ylabel( "abs(matJ(250,:))" );
+title( "matJ(250,:)" );
 
 return
 %
