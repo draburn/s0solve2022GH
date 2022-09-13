@@ -1,6 +1,6 @@
 % Function...
 
-function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, prm=[] )
+function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, funchSeed=0, prm=[] )
 	time_start = time();
 	% bigN: num unk, x-size, domain size, num col in J, etc.
 	assert( isposintscalar(bigN) );
@@ -9,6 +9,13 @@ function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, prm=[] )
 	bigM = bigN;
 	bigM = mygetfield( prm, "bigM", bigM );
 	assert( isposintscalar(bigM) );
+	%
+	% bigP: "compressed" size for MxN matrices.
+	bigP = min([ ceil(5.0*sqrt(bigN)), bigN, bigM ]);
+	bigP = mygetfield( prm, "bigP", bigP );
+	assert( isposintscalar(bigP) );
+	assert( bigP <= bigM );
+	assert( bigP <= bigN );
 	%
 	% lambda: average num "Large Elements" per row.
 	lambda = sqrt(bigN);
@@ -20,13 +27,6 @@ function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, prm=[] )
 	% Require either none or at least one per row.
 	bigL = ceil( lambda * bigN );
 	assert( 0 == bigL || bigN <= bigL );
-	%
-	% bigP: "compressed" size for MxN matrices.
-	bigP = min([ ceil(5.0*sqrt(bigN)), bigN, bigM ]);
-	bigP = mygetfield( prm, "bigP", bigP );
-	assert( isposintscalar(bigP) );
-	assert( bigP <= bigM );
-	assert( bigP <= bigN );
 	%
 	% Check anticipated memory usage.
 	% Note that inclusion of data in datOut is free.
@@ -51,7 +51,7 @@ function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, prm=[] )
 	% Get coefficients.
 	cx = mygetfield( prm, "cx", 1.0E0 );
 	c0 = mygetfield( prm, "c0", 0.0E0 );
-	c1 = mygetfield( prm, "c1", 1.0E0 );
+	c1 = mygetfield( prm, "c1", 0.0E0 );
 	c2 = mygetfield( prm, "c2", 0.0E0 );
 	c3 = mygetfield( prm, "c3", 0.0E0 );
 	s1 = mygetfield( prm, "s1", 0.0E0 );
@@ -76,11 +76,8 @@ function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, prm=[] )
 	%
 	%
 	% Generate values.
-	prngStateDat = getprngstatedat();
-	rSeed = mygetfield( prm, "rSeed", [] );
-	if ( ~isempty(rSeed) )
-		setprngstates(rSeed);
-	end
+	backup_prngStateDat = getprngstatedat();
+	setprngstates(funchSeed,printState=false);
 	time_startBuild = time();
 	%
 	vecXSecret = randn( bigN, 1 )*cx;
@@ -145,7 +142,7 @@ function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, prm=[] )
 	endif
 	%
 	time_finishBuild = time();
-	setprngstatedat(prngStateDat);
+	setprngstatedat(backup_prngStateDat);
 	%
 	%
 	%
@@ -153,6 +150,8 @@ function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, prm=[] )
 		% The basics.
 		datOut.bigN = bigN;
 		datOut.bigM = bigM;
+		datOut.funchSeed = funchSeed;
+		datOut.prm = prm;
 		% The big secret.
 		datOut.vecXSecret = vecXSecret;
 		% Locations of "Large Elements".
