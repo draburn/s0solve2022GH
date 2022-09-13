@@ -7,7 +7,7 @@ my_editor = "/usr/bin/mousepad";
 EDITOR( [my_editor ' %s'] ); % Moot if not USING_GUI; see options within GUI.
 %
 %return;
-switch 180
+switch 200
 case 10
 	msg(__FILE__,__LINE__,"Adding path \"study/20220222findLocMin/testfunc2021/\".");
 	addpath("study/20220222findLocMin/testfunc2021/");
@@ -54,6 +54,9 @@ case 180
 case 181
 	msg(__FILE__,__LINE__,"Adding path \"cxcpp/20220624forPIES/post/\".");
 	addpath("cxcpp/20220624forPIES/post/");
+case 200
+	msg(__FILE__,__LINE__,"Adding path \"study/20220909APS2022a/\".");
+	addpath("study/20220909APS2022a");
 otherwise
 	error( "Invalid case." );
 end
