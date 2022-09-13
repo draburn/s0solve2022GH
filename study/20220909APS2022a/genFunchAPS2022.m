@@ -2,6 +2,8 @@
 
 function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, funchSeed=0, prm=[] )
 	time_start = time();
+	backup_prngStateDat = getprngstatedat();
+	%
 	% bigN: num unk, x-size, domain size, num col in J, etc.
 	assert( isposintscalar(bigN) );
 	%
@@ -76,7 +78,6 @@ function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, funchSeed=0, prm=[] )
 	%
 	%
 	% Generate values.
-	backup_prngStateDat = getprngstatedat();
 	setprngstates(funchSeed,printState=false);
 	time_startBuild = time();
 	%
@@ -119,6 +120,7 @@ function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, funchSeed=0, prm=[] )
 		matB32 = sparse( vecM, vecN, s3*randn(bigL,1), bigM, bigN );
 		matB33 = sparse( vecM, vecN, s3*randn(bigL,1), bigM, bigN );
 	endif
+	setprngstatedat(backup_prngStateDat); % In case of abrupt return.
 	%
 	sqrtM = sqrt(bigM);
 	funchYOfX = @(x)(  (x - vecXSecret) / sqrtM );
@@ -142,7 +144,15 @@ function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, funchSeed=0, prm=[] )
 	endif
 	%
 	time_finishBuild = time();
-	setprngstatedat(backup_prngStateDat);
+	%
+	%
+	%
+	doTestFeval = true;
+	doTestFeval = mygetfield( prm, "doTestFeval", doTestFeval );
+	if ( doTestFeval )
+		vecF0 = funchFOfX( zeros(bigN,1) );
+		assert( isrealarray(vecF0,[bigM,1]) );
+	endif
 	%
 	%
 	%
@@ -152,6 +162,7 @@ function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, funchSeed=0, prm=[] )
 		datOut.bigM = bigM;
 		datOut.funchSeed = funchSeed;
 		datOut.prm = prm;
+		datOut.genFunchName = trimFileName(__FILE__);
 		% The big secret.
 		datOut.vecXSecret = vecXSecret;
 		% Locations of "Large Elements".
@@ -169,5 +180,6 @@ function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, funchSeed=0, prm=[] )
 		datOut.initTimeInS = time_startBuild - time_start;
 		datOut.buildTimeInS = time_finishBuild - time_startBuild;
 	endif
+	setprngstatedat(backup_prngStateDat); % May be redundant.
 return;
 endfunction
