@@ -10,7 +10,7 @@ function [ vecX, datOut ] = linsolf( funchMatAProd, vecB, vecX0, prm = [] )
 	fevalCount = 0;
 	%setVerbLevs;
 	mydefs;
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__NOTIFY );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__FLAGGED );
 	fevalCount = 0;
 	%
 	sizeX = size(vecX0,1);
