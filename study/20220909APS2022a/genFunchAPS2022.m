@@ -50,13 +50,13 @@ function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, prm=[] )
 	%
 	% Get coefficients.
 	cx = mygetfield( prm, "cx", 1.0E0 );
-	c0 = mygetfield( prm, "c0", 1.0E0 );
-	c1 = mygetfield( prm, "c1", 1.0E-2 );
-	c2 = mygetfield( prm, "c2", 1.0E-4 );
-	c3 = mygetfield( prm, "c3", 1.0E-4 );
-	s1 = mygetfield( prm, "s1", 1.0E-1 );
-	s2 = mygetfield( prm, "s2", 1.0E-2 );
-	s3 = mygetfield( prm, "s3", 1.0E-2 );
+	c0 = mygetfield( prm, "c0", 0.0E0 );
+	c1 = mygetfield( prm, "c1", 1.0E0 );
+	c2 = mygetfield( prm, "c2", 0.0E0 );
+	c3 = mygetfield( prm, "c3", 0.0E0 );
+	s1 = mygetfield( prm, "s1", 0.0E0 );
+	s2 = mygetfield( prm, "s2", 0.0E0 );
+	s3 = mygetfield( prm, "s3", 0.0E0 );
 	assert( isrealscalar(cx) );
 	assert( isrealscalar(c0) );
 	assert( isrealscalar(c1) );
@@ -85,20 +85,20 @@ function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, prm=[] )
 	%
 	vecXSecret = randn( bigN, 1 )*cx;
 	%
-	matA11L = randn( bigN, bigP )*c1;
-	matA11R = randn( bigP, bigM );
-	matA12L = randn( bigN, bigP )*c1;
-	matA12R = randn( bigP, bigM );
-	matA21L = randn( bigN, bigP )*c2;
-	matA21R = randn( bigP, bigM );
-	matA22L = randn( bigN, bigP )*c2;
-	matA22R = randn( bigP, bigM );
-	matA31L = randn( bigN, bigP )*c3;
-	matA31R = randn( bigP, bigM );
-	matA32L = randn( bigN, bigP )*c3;
-	matA32R = randn( bigP, bigM );
-	matA33L = randn( bigN, bigP )*c3;
-	matA33R = randn( bigP, bigM );
+	matA11L = randn( bigM, bigP )*c1;
+	matA11R = randn( bigP, bigN );
+	matA12L = randn( bigM, bigP )*c1;
+	matA12R = randn( bigP, bigN );
+	matA21L = randn( bigM, bigP )*c2;
+	matA21R = randn( bigP, bigN );
+	matA22L = randn( bigM, bigP )*c2;
+	matA22R = randn( bigP, bigN );
+	matA31L = randn( bigM, bigP )*c3;
+	matA31R = randn( bigP, bigN );
+	matA32L = randn( bigM, bigP )*c3;
+	matA32R = randn( bigP, bigN );
+	matA33L = randn( bigM, bigP )*c3;
+	matA33R = randn( bigP, bigN );
 	%
 	if ( 0 == bigL )
 		vecM = [];
