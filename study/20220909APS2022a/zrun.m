@@ -13,8 +13,8 @@ probSetPrm.setSeed = 0;
 %
 %
 solverPrm = [];
-solverPrm.solverFunch = @groot_fsolve;
-%solverPrm.solverFunch = @groot_jfnk_crude;
+%solverPrm.solverFunch = @groot_fsolve;
+solverPrm.solverFunch = @groot_jfnk_basic;
 %
 solverPrm.verbLev = VERBLEV__FLAGGED;
 solverPrm.valdLev = VALDLEV__HIGH;

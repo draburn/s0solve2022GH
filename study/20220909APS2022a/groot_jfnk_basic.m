@@ -1,4 +1,4 @@
-function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_jfnk_crude( funchF, vecX0, prm=[] )
+function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_jfnk_basic( funchF, vecX0, prm=[] )
 	if ( 0 == nargin )
 		vecXBest = __FILE__;
 		return;
