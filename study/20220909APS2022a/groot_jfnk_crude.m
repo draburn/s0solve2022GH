@@ -1,5 +1,11 @@
 function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_jfnk_crude( funchF, vecX0, prm=[] )
+	if ( 0 == nargin )
+		vecXBest = __FILE__;
+		return;
+	endif
+	%
 	groot__commonInit;
+	%
 	vecXBest = [];
 	fevalCount = 0;
 	matCnvg = [];
@@ -44,6 +50,25 @@ function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_jfnk_crude( funchF, v
 		vecF = funchF( vecX );
 		fevalCount++;
 		f = norm(vecF);
+		%
+		%
+		prm.btCoeff = mygetfield( prm, "btCoeff", 0.5 );
+		while ( f >= fPrev )
+			if ( fevalCount >= prm.fevalLimit )
+				msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: Reached fevalLimit." );
+				break;
+			endif
+			if ( norm(vecDelta) <= prm.stepTol )
+				msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: Reached stepTol." );
+				break;
+			endif
+			vecDelta *= prm.btCoeff;
+			vecX = vecXPrev + vecDelta;
+			vecF = funchF( vecX );
+			fevalCount++;
+			f = norm(vecF);
+		endwhile
+		%
 		%
 		iterCount++;
 		matCnvg(iterCount+1,:) = [ fevalCount, norm(vecF) ];

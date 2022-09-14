@@ -1,4 +1,8 @@
 function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_fsolve( funchF, vecX0, prm=[] )
+	if ( 0 == nargin )
+		vecXBest = __FILE__;
+		return;
+	endif
 	%
 	groot__commonInit;
 	vecXBest = [];
