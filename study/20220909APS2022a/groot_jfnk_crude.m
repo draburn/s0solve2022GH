@@ -32,7 +32,7 @@ function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_jfnk_crude( funchF, v
 		%
 		% We hypothetically could include fevalLimit - fevalCount - 1 as a limit inside linsolf.
 		funchMatJProd = @(v)(  ( funchF( vecX + (prm.epsFD*v) ) - vecF ) / prm.epsFD  );
-		linsolfPrm = [];
+		linsolfPrm = mygetfield( prm, "linsolfPrm", [] );
 		[ vecDelta, linsolfDatOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
 		fevalCount += linsolfDatOut.fevalCount;
 		%
