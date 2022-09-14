@@ -57,6 +57,7 @@ function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_jfnk_basic( funchF, v
 		%
 		%
 		prm.btCoeff = mygetfield( prm, "btCoeff", 0.5 );
+		if ( prm.btCoeff > 0.0 )
 		while ( f >= fPrev )
 			if ( fevalCount >= prm.fevalLimit )
 				msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: Reached fevalLimit." );
@@ -72,6 +73,7 @@ function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_jfnk_basic( funchF, v
 			fevalCount++;
 			f = norm(vecF);
 		endwhile
+		endif
 		%
 		%
 		iterCount++;
