@@ -7,14 +7,14 @@ seedTime = mod( round(now*1E11), 1E8 ); % In case you want this.
 %
 probSetPrm = [];
 probSetPrm.numProbs = 10;
-probSetPrm.probType = "testr";
+probSetPrm.probType = "test1";
 probSetPrm.numUnknowns = 10;
 probSetPrm.setSeed = 0;
 %
 %
 solverPrm = [];
-%solverPrm.solverFunch = @groot_fsolve;
-solverPrm.solverFunch = @groot_jfnk_crude;
+solverPrm.solverFunch = @groot_fsolve;
+%solverPrm.solverFunch = @groot_jfnk_crude;
 %
 solverPrm.verbLev = VERBLEV__FLAGGED;
 solverPrm.valdLev = VALDLEV__HIGH;
@@ -24,9 +24,9 @@ solverPrm.fTol = 1.0e-8;
 solverPrm.fallTol = solverPrm.fTol / 100.0;
 solverPrm.stepTol = 1.0e-8;
 solverPrm.epsFD = eps^(1.0/3.0);
-
 %
-%solverPrm.linsolfPrm.tol = 1.0e-2;
+%solverPrm.btCoeff = 0.1;
+%solverPrm.linsolfPrm.tol = 1.0e-8;
 %
 %
 zrun__start;

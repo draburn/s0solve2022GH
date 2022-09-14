@@ -31,15 +31,13 @@ else
 	figure(1);
 	plot( ...
 	  [ 0, zrunDat.succPctngVals_sorted, zrunDat.succPctngVals_sorted(end) ], ...
-	  [ zrunDat.succFevalVals_sorted(1), zrunDat.succFevalVals_sorted, fevalMax ], ...
+	  [ zrunDat.succFevalVals_sorted(1), zrunDat.succFevalVals_sorted, 0.0 ], ...
 	  "o-", "linewidth", 2, "markersize", 10 );
 	axis( [ 0.0, 100.0, 0.0, fevalMax ]);
-	hold on;
-	plot( zrunDat.succPctngVals_sorted(end), zrunDat.succFevalVals_sorted(end), "linewidth", 3, "o", "markersize", 20 );
 	grid on;
-	xlabel( "success fration" );
+	xlabel( "percentile" );
 	ylabel( "feval count" );
-	hold off;
+	title( suiteName );
 	endif
 endif
 %

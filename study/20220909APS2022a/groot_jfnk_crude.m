@@ -34,6 +34,10 @@ function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_jfnk_crude( funchF, v
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCCESS: Reached fTol." );
 			break;
 		endif
+		if ( stopsignalpresent() )
+			msg( __FILE__, __LINE__, "Received stopsignal." );
+			return;
+		endif
 		%
 		%
 		% We hypothetically could include fevalLimit - fevalCount - 1 as a limit inside linsolf.

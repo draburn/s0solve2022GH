@@ -40,6 +40,24 @@ function [ funchFOfX, vecX0, datOut ] = zrun_genProb( strProbType, bigN0, probSe
 		gfaPrm.s3 = gfaPrm.s1 * exp(-abs(randn()));
 		[ funchFOfX, gfaDatOut ] = genFunchAPS2022( bigN, funchSeed, gfaPrm );
 		vecX0 = zeros(bigN,1);
+	case { "test1" }
+		bigN = ceil( bigN0*(2.0+rand())/2.0 );
+		bigM = bigN;
+		funchSeed = round( 1.0E12*rand() );
+		gfaPrm = [];
+		gfaPrm.bigM = bigM;
+		gfaPrm.bigP = min([ ceil(5.0*sqrt(bigN)), bigN, bigM ]);
+		gfaPrm.lambda = sqrt(bigN);
+		gfaPrm.cx = 1.0;
+		gfaPrm.c0 = 1.0;
+		gfaPrm.c1 = 1.0E-1*abs(randn())/bigN;
+		gfaPrm.c2 = gfaPrm.c1 * abs(randn());
+		gfaPrm.c3 = gfaPrm.c1 * abs(randn());
+		gfaPrm.s1 = 1.0E-1 * abs(randn());
+		gfaPrm.s2 = gfaPrm.s1 * abs(randn());
+		gfaPrm.s3 = gfaPrm.s1 * abs(randn());
+		[ funchFOfX, gfaDatOut ] = genFunchAPS2022( bigN, funchSeed, gfaPrm );
+		vecX0 = zeros(bigN,1);
 	otherwise
 		setprngstatedat(backup_prngStateDat);
 		error([ "Invalid strProbType (\"" strProbType "\")." ]);
