@@ -1,4 +1,4 @@
-function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_jfnk_crude( funchF, vecX0, fTol=[], fevalLimit=[], prm=[] )
+function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_jfnk_crude( funchF, vecX0, prm=[] )
 	groot__commonInit;
 	vecXBest = [];
 	fevalCount = 0;
@@ -20,18 +20,18 @@ function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_jfnk_crude( funchF, v
 	fBest = f0;
 	vecXBest = vecX0;
 	while (1)
-		if ( fevalCount >= fevalLimit )
+		if ( fevalCount >= prm.fevalLimit )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: Reached fevalLimit." );
-			return;
+			break;
 		endif
-		if ( f <= fTol )
+		if ( f <= prm.fTol )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCCESS: Reached fTol." );
-			return;
+			break;
 		endif
 		%
 		%
 		% We hypothetically could include fevalLimit - fevalCount - 1 as a limit inside linsolf.
-		funchMatJProd = @(v)(  ( funchF( vecX + (epsFD*v) ) - vecF ) / epsFD  );
+		funchMatJProd = @(v)(  ( funchF( vecX + (prm.epsFD*v) ) - vecF ) / prm.epsFD  );
 		linsolfPrm = [];
 		[ vecDelta, linsolfDatOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
 		fevalCount += linsolfDatOut.fevalCount;
@@ -55,11 +55,12 @@ function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_jfnk_crude( funchF, v
 		%
 		if ( f > fPrev )
 			msgif( prm.verbLev >= VERBLEV__NOTE, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: f > fPrev." );
-			return;
-		elseif ( fPrev - f <= fallTol )
+			break;
+		elseif ( fPrev - f <= prm.fallTol )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: Reached fallTol on fPrev - f." );
-			return;
+			break;
 		endif
 	endwhile
+	datOut.elapsedTime = time() - startTime;
 return;
 endfunction

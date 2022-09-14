@@ -1,4 +1,4 @@
-function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_fsolve( funchF, vecX0, fTol=1.0e-6, fevalLimit=[], prm=[] )
+function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_fsolve( funchF, vecX0, prm=[] )
 	%
 	groot__commonInit;
 	vecXBest = [];
@@ -9,11 +9,11 @@ function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_fsolve( funchF, vecX0
 	%
 	%
 	%
-	MaxIter = mygetfield( prm, "MaxIter", fevalLimit ); % { 400; ? }
-	MaxFunEvals = fevalLimit; % { Inf; ... }
+	MaxIter = mygetfield( prm, "MaxIter", prm.fevalLimit ); % { 400; ? }
+	MaxFunEvals = prm.fevalLimit; % { Inf; ... }
 	Jacobian = mygetfield( prm, "Jacobian", "off" ); % { "off"; ? }
-	TolX = stepTol; % { 1e-7; ... }
-	TolFun = fallTol; % { 1e-7; ... }
+	TolX = prm.stepTol; % { 1e-7; ... }
+	TolFun = prm.fallTol/100.0; % { 1e-7; ... } % Really crank this down, because fsolve does its own thing here.
 	OutputFcn = mygetfield( prm, "OutputFcn", @groot_fsolve__outputFcn ); % { []; }
 	Updating = mygetfield( prm, "Updating", "on" ); % { "on"; "off" } secant(/Broyden) update
 	FunValCheck = mygetfield( prm, "FunValCheck", "off" ); % { "off"; ? } check for NaN & Inf
@@ -45,7 +45,7 @@ function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_fsolve( funchF, vecX0
 	%
 	% Because fsovle respects only fallTol, we need to do a bit of work to find where we *would* have stopped.
 	for n = 1 : iterCount
-	if ( global_outputFcnDat.matCnvg(n,2) < fTol )
+	if ( global_outputFcnDat.matCnvg(n,2) < prm.fTol )
 		break;
 	endif
 	endfor

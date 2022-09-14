@@ -1,6 +1,4 @@
-% Function...
-
-function [ funchFOfX, vecX0, datOut ] = zcompare_genProb( strProbType, bigN0, probSeed=0, prm=[] )
+function [ funchFOfX, vecX0, datOut ] = zrun_genProb( strProbType, bigN0, probSeed=0, prm=[] )
 	backup_prngStateDat = getprngstatedat();
 	%
 	setprngstates(probSeed,printState=false);
@@ -47,7 +45,8 @@ function [ funchFOfX, vecX0, datOut ] = zcompare_genProb( strProbType, bigN0, pr
 		error([ "Invalid strProbType (\"" strProbType "\")." ]);
 	endswitch
 	%
-	datOut.bigN = bigN;
+	datOut.sizeX = bigN;
+	datOut.sizeF = bigM;
 	datOut.funchSeed = funchSeed;
 	datOut.genFunchPrm = gfaPrm;
 	datOut.genFunchDatOut = gfaDatOut;
