@@ -64,7 +64,7 @@ for probIndex = probList
 		zrunDat.succFevalVals = [ zrunDat.succFevalVals, fevalCount ];
 	case { STR_GROOT_FLAG__STOP, STR_GROOT_FLAG__STALL }
 		if ( fBest <= solverPrm.fTol*(1.0-100.0*eps) && fevalCount <= solverPrm.fevalLimit )
-			flaggedlog( __FILE__, __LINE__, "*** RUN MAKRED AS NON-CNVG WAS CLEARLY CNVGD! ***" )
+			flaggedlog( __FILE__, __LINE__, "*** A SOLVE THAT WAS MAKRED AS NON-CNVG WAS CLEARLY CNVGD! ***" )
 		endif
 		zrunDat.failCount++;
 	otherwise
