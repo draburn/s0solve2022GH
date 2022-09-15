@@ -19,7 +19,6 @@ function [ vecXBest, strGrootFlag, fevalCount, datOut ] = groot_fsolve( funchF, 
 	%
 	includeFJAC = mygetfield( prm, "includeFJAC", false );
 	%
-	%%%msg( __FILE__, __LINE__, "TODO: LET'S IMPROVE OUR UNDERSTANDING OF TOLFUN!" );
 	MaxIter = mygetfield( prm, "MaxIter", prm.fevalLimit ); % { 400; ? }
 	MaxFunEvals = prm.fevalLimit; % { Inf; ... }
 	Jacobian = mygetfield( prm, "Jacobian", "off" ); % { "off"; ? }

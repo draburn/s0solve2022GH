@@ -23,8 +23,8 @@ solverPrm.fallTol = solverPrm.fTol / 100.0;
 solverPrm.stepTol = 1.0e-8;
 solverPrm.epsFD = eps^(1.0/3.0);
 %
-solverPrm.solverFunch = @groot_fsolve;
-%solverPrm.solverFunch = @groot_jfnk_basic;
+%solverPrm.solverFunch = @groot_fsolve;
+solverPrm.solverFunch = @groot_jfnk_basic;
 %solverPrm.solverFunch = @groot_jfnk_basic; solverPrm.btCoeff = 0.0;
 %
 %solverPrm.btCoeff = 0.1;

@@ -1,0 +1,10 @@
+2022-09-14
+NEXT:
+groot_fsovle: Proper handling of tolFun?
+faster linsolf?
+groot_jfnk_baseline: dogleg-ball-tr and AP
+zrun: multiple solvers
+
+LATER:
+groot_jfnk_"TR&BT+linsolf"
+SJA (basic)
