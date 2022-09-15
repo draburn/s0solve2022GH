@@ -16,7 +16,7 @@ startTime = time();
 %
 %
 sizeX = size(vecX0,1);
-prm.verbLev = mygetfield( prm, "verbLev", VERBLEV__FLAGGED );
+prm.verbLev = mygetfield( prm, "verbLev", VERBLEV__WARNING );
 prm.valdLev = mygetfield( prm, "valdLev", VALDLEV__HIGH );
 prm.iterLimit = mygetfield( prm, "iterLimit", 100 );
 prm.fevalLimit = mygetfield( prm, "fevalLimit", 100*sizeX );
