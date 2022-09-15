@@ -22,6 +22,7 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_basic( funchF,
 	f0 = norm(vecF0);
 	%
 	%
+	datOut.prm = prm;
 	vecX = vecX0;
 	vecF = vecF0;
 	f = f0;

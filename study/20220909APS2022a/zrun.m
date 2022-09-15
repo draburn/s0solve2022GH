@@ -1,89 +1,27 @@
 clear
-printf("\n\n");
 mydefs;
-startTime = time();
+printf("\n\n");
 %
+% SET PRM.
 seedTime = mod( round(now*1E11), 1E8 ); % In case you want this.
-%
 probSetPrm = [];
 probSetPrm.numProbs = 10;
 probSetPrm.probType = "test1";
 probSetPrm.numUnknowns = 20;
 probSetPrm.setSeed = 0;
 %
+n = 0;
+n++; a.s(n).f = @groot_jfnk_basic;
+n++; a.s(n).f = @groot_jfnk_basic;
+n++; a.s(n).f = @groot_jfnk_basic; a.s(n).p.btCoeff = 0.0;
 %
-solverPrm = [];
-%
-solverPrm.verbLev = VERBLEV__FLAGGED;
-solverPrm.valdLev = VALDLEV__HIGH;
-solverPrm.iterLimit = 100;
-solverPrm.fevalLimit = 100*probSetPrm.numUnknowns;
-solverPrm.fTol = 1.0e-8;
-solverPrm.fallTol = solverPrm.fTol / 100.0;
-solverPrm.stepTol = 1.0e-8;
-solverPrm.epsFD = eps^(1.0/3.0);
-%
-%solverPrm.solverFunch = @groot_fsolve;
-solverPrm.solverFunch = @groot_jfnk_basic;
-%solverPrm.solverFunch = @groot_jfnk_basic; solverPrm.btCoeff = 0.0;
-%
-%solverPrm.btCoeff = 0.1;
-%solverPrm.linsolfPrm.tol = 1.0e-2;
-%
-%
+% Note: zapsrun__start converts "a" to "algoSetPrm".
 zrun__start;
 %
-probList = ( 1 : probSetPrm.numProbs );
-%probList = [3];
-for probIndex = probList
-	if ( stopsignalpresent() )
-		msg( __FILE__, __LINE__, "Received stopsignal." );
-		return;
-	endif
-	%
-	probGenPrm = [];
-	[ funchF, vecX0, probDat ] = zrun_genProb( probSetPrm.probType, probSetPrm.numUnknowns, probSetPrm.probSeeds(probIndex), probGenPrm );
-	assert( isrealarray(vecX0,[probDat.sizeX,1]) );
-	probSizeStr = sprintf( "(%dx%d)", probDat.sizeF, probDat.sizeX );
-	%
-	[ vecXBest, grootFlag, fevalCount, solverDatOut ] = solverPrm.solverFunch( funchF, vecX0, solverPrm );
-	%
-	assert( isrealarray(vecXBest,[probDat.sizeX,1]) );
-	assert( ischar(grootFlag) );
-	assert( isvector(grootFlag) );
-	assert( isposintscalar(fevalCount) );
-	%
-	vecFBest = funchF(vecXBest);
-	assert( isrealarray(vecFBest,[probDat.sizeF,1]) );
-	fBest = norm(vecFBest);
-	switch ( grootFlag )
-	case GROOT_FLAG__CNVG
-		assert( fBest <= solverPrm.fTol*(1.0+100.0*eps) );
-		assert( fevalCount <= solverPrm.fevalLimit );
-		zrunDat.succCount++;
-		zrunDat.succFevalVals = [ zrunDat.succFevalVals, fevalCount ];
-	case { GROOT_FLAG__STOP, GROOT_FLAG__FAIL }
-		if ( fBest <= solverPrm.fTol*(1.0-100.0*eps) && fevalCount <= solverPrm.fevalLimit )
-			flaggedlog( __FILE__, __LINE__, "*** A SOLVE THAT WAS MAKRED AS NON-CNVG WAS CLEARLY CNVGD! ***" )
-		endif
-		zrunDat.failCount++;
-	otherwise
-		error(["Unsupported value of grootFlag (\"" grootFlag "\")."]);
-	endswitch
-	msg( __FILE__, __LINE__, sprintf("    %3d  %11s:   %7s  %6d  %10.3e", probIndex, probSizeStr, grootFlag, fevalCount, fBest ) );
-	%
-	zrunDat.prob(probIndex).vecXBest = vecXBest;
-	zrunDat.prob(probIndex).fevalCount = fevalCount;
-	zrunDat.prob(probIndex).matRecordX = solverDatOut.matRecordX;
-	zrunDat.prob(probIndex).matInfoA = solverDatOut.matInfoA;
-	zrunDat.prob(probIndex).matInfoB = mygetfield( solverDatOut, "matInfoB", [] );
-	if ( max(size(probList)) == 1 )
-		semilogy( solverDatOut.matInfoA(:,2), solverDatOutmatInfoA(:,4), 'o-') ;
-		grid on;
-	endif
-endfor
+% DO WORK.
+compsolvDatOut = compsolv( probSetPrm, algoSetPrm, default_solverPrm, compsolvPrm );
+%
 %
 zrun__finish;
-%
 msg( __FILE__, __LINE__, "Goodbye." );
 printf("\n\n");

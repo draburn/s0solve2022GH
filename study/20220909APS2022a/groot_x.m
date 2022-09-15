@@ -46,10 +46,29 @@ function xDatOut = groot_x( funchF, vecX0, algoSetPrm=[], default_solverPrm=[], 
 		assert( ischar(this_strGrootFlag) );
 		assert( isvector(this_strGrootFlag) );
 		assert( isposintscalar(this_fevalCount) );
-		%
 		this_vecFBest = funchF( this_vecXBest );
 		assert( isrealarray(this_vecFBest,[sizeF,1]) );
 		this_fBest = norm(this_vecFBest);
+		%
+		switch ( this_strGrootFlag )
+		case GROOT_FLAG__CNVG
+			if ( ~isempty(mygetfield( this_solverPrm, "fTol", [] )) )
+				assert( this_fBest <= this_solverPrm.fTol*(1.0+100.0*eps) );
+			endif
+			if ( ~isempty(mygetfield( this_solverPrm, "fevalLimit", [] )) )
+				assert( this_fevalCount <= this_solverPrm.fevalLimit );
+			endif
+		case { GROOT_FLAG__STOP, GROOT_FLAG__FAIL }
+			if ( ~isempty(mygetfield( this_solverPrm, "fTol", [] )) )
+			if ( ~isempty(mygetfield( this_solverPrm, "fevalLimit", [] )) )
+			if ( this_fBest <= this_solverPrm.fTol*(1.0-100.0*eps) && this_fevalCount <= this_solverPrm.fevalLimit )
+				flaggedlog( __FILE__, __LINE__, "*** A SOLVE THAT WAS MAKRED AS NON-CNVG WAS CLEARLY CNVGD! ***" );
+			endif
+			endif
+			endif
+		otherwise
+			error(["Unsupported value of grootFlag (\"" grootFlag "\")."]);
+		endswitch
 		%
 		if ( xPrm.verbLev >= VERBLEV__PROGRESS )
 			msg( __FILE__, __LINE__, sprintf( ...

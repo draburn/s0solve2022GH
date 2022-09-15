@@ -93,6 +93,7 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_fsolve( funchF, vec
 	endswitch
 	%
 	%
+	datOut.prm = prm;
 	datOut.iterCount = iterCount;
 	datOut.fsolve_options = fsolve_options;
 	datOut.fsolve_x = fsolve_x;

@@ -3,11 +3,18 @@ function compsolvDatOut = compsolv( probSetPrm=[], algoSetPrm=[], default_solver
 	mydefs;
 	startTime = time();
 	if ( isempty(probSetPrm) )
-		probSetPrm.numProbs = 3;
+		probSetPrm.numProbs = 10;
 		probSetPrm.probType = "test1";
 		probSetPrm.numUnknowns = 20;
-		probSetPrm.setSeed = 1;
+		probSetPrm.setSeed = 0;
 		compsolvPrm.verbLev = mygetfield( compsolvPrm, "verbLev", VERBLEV__INFO );
+	endif
+	if ( isempty(algoSetPrm) )
+		algoSetPrm.n = 3;
+		algoSetPrm.s(1).f = @groot_jfnk_basic;
+		algoSetPrm.s(1).p.btCoeff = 0.0;
+		algoSetPrm.s(2).f = @groot_jfnk_basic;
+		algoSetPrm.s(3).f = @groot_fsolve;
 	endif
 	compsolvPrm.verbLev = mygetfield( compsolvPrm, "verbLev", VERBLEV__WARNING );
 	compsolvPrm.valdLev = mygetfield( compsolvPrm, "valdLev", VALDLEV__HIGH );
@@ -49,9 +56,9 @@ function compsolvDatOut = compsolv( probSetPrm=[], algoSetPrm=[], default_solver
 		this_probStr = sprintf( "Prob %d", probIndex);
 		this_probSizeStr = sprintf( "(%dx%d)", this_probDat.sizeF, this_probDat.sizeX );
 		if ( doCharLog )
-			msgnnl( __FILE__, __LINE__, sprintf( "  %15s  %s:  ", this_probStr, this_probSizeStr ) );
+			msgnnl( __FILE__, __LINE__, sprintf( "  %15s  %15s:  ", this_probStr, this_probSizeStr ) );
 		elseif ( compsolvPrm.verbLev >= VERBLEV__PROGRESS )
-			msg( __FILE__, __LINE__, sprintf( " %15s  %s....", this_probStr, this_probSizeStr ) );
+			msg( __FILE__, __LINE__, sprintf( " %15s  %15s....", this_probStr, this_probSizeStr ) );
 		endif
 		compsolvDatOut.prob(probIndex).sizeX = this_probDat.sizeX;
 		compsolvDatOut.prob(probIndex).sizeF = this_probDat.sizeF;
@@ -67,6 +74,11 @@ function compsolvDatOut = compsolv( probSetPrm=[], algoSetPrm=[], default_solver
 		endif
 		clear this_*;
 	endfor
+	if ( compsolvPrm.verbLev >= VERBLEV__INFO )
+		numAlgos = mygetfield( algoSetPrm, "n", -1 );
+		msg( __FILE__, __LINE__, sprintf( "Completed %dx%d algo(solves) in %gs.", probSetPrm.numProbs, numAlgos, time()-startTime )  );
+	endif
+	compsolvDatOut.elapsedTime = time()-startTime;
 	setprngstatedat(backup_prngStateDat); % May be redundant.
 return;
 endfunction
