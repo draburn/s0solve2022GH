@@ -23,8 +23,8 @@ solverPrm.fallTol = solverPrm.fTol / 100.0;
 solverPrm.stepTol = 1.0e-8;
 solverPrm.epsFD = eps^(1.0/3.0);
 %
-%solverPrm.solverFunch = @groot_fsolve;
-solverPrm.solverFunch = @groot_jfnk_basic;
+solverPrm.solverFunch = @groot_fsolve;
+%solverPrm.solverFunch = @groot_jfnk_basic;
 %solverPrm.solverFunch = @groot_jfnk_basic; solverPrm.btCoeff = 0.0;
 %
 %solverPrm.btCoeff = 0.1;
@@ -63,7 +63,9 @@ for probIndex = probList
 		zrunDat.succCount++;
 		zrunDat.succFevalVals = [ zrunDat.succFevalVals, fevalCount ];
 	case { STR_GROOT_FLAG__STOP, STR_GROOT_FLAG__STALL }
-		assert( fBest >= solverPrm.fTol*(1.0-100.0*eps) );
+		if ( fBest <= solverPrm.fTol*(1.0-100.0*eps) && fevalCount <= solverPrm.fevalLimit )
+			flaggedlog( __FILE__, __LINE__, "*** RUN MAKRED AS NON-CNVG WAS CLEARLY CNVGD! ***" )
+		endif
 		zrunDat.failCount++;
 	otherwise
 		error(["Unsupported value of strGrootFlag (\"" strGrootFlag "\")."]);

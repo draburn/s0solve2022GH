@@ -1,20 +1,25 @@
-function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_fsolve( funchF, vecX0, prm=[] )
+function [ vecXBest, strGrootFlag, fevalCount, datOut ] = groot_fsolve( funchF, vecX0, prm=[] )
 	if ( 0 == nargin )
 		vecXBest = __FILE__;
 		return;
+	elseif ( nargin < 2 )
+		error( "Too few input arguments." );
+	elseif ( 3 < nargin )
+		error( "Too many input arguments." );
+	elseif ( 4 < nargout )
+		error( "Too many output arguments." );
 	endif
-	%
 	groot__commonInit;
 	vecXBest = [];
+	strGrootFlag = STR_GROOT_FLAG__UNSET;
 	fevalCount = 0;
-	matCnvg = [];
 	datOut = [];
+	%
+	%
+	%
 	includeFJAC = mygetfield( prm, "includeFJAC", false );
 	%
-	%
-	%
-	error( "LET'S IMPROVE OUR UNDERSTANDING OF TOLFUN!" );
-	error( "MUST UPDATE PER STR_GROOT_FLAG, matInfo, etc" );
+	%%%msg( __FILE__, __LINE__, "TODO: LET'S IMPROVE OUR UNDERSTANDING OF TOLFUN!" );
 	MaxIter = mygetfield( prm, "MaxIter", prm.fevalLimit ); % { 400; ? }
 	MaxFunEvals = prm.fevalLimit; % { Inf; ... }
 	Jacobian = mygetfield( prm, "Jacobian", "off" ); % { "off"; ? }
@@ -35,8 +40,8 @@ function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_fsolve( funchF, vecX0
 	%
 	%
 	global global_outputFcnDat = [];
-	global_outputFcnDat.matCnvg = [];
-	global_outputFcnDat.matX = [];
+	global_outputFcnDat.matInfoA = [];
+	global_outputFcnDat.matRecordX = [];
 	if ( includeFJAC )
 		[ fsolve_x, fsolve_fvec, fsolve_info, fsolve_output, fsolve_fjac ] = fsolve( funchF, vecX0, fsolve_options );
 	else
@@ -44,22 +49,44 @@ function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_fsolve( funchF, vecX0
 		fsolve_fjac = [];
 	endif
 	iterCount = fsolve_output.iterations;
-	assert( size(global_outputFcnDat.matCnvg,1) == iterCount );
-	assert( size(global_outputFcnDat.matCnvg,2) == 2 );
-	assert( size(global_outputFcnDat.matX,1) == sizeX );
-	assert( size(global_outputFcnDat.matX,2) == iterCount );
+	assert( size(global_outputFcnDat.matInfoA,1) == iterCount );
+	assert( size(global_outputFcnDat.matInfoA,2) == 4 );
+	assert( size(global_outputFcnDat.matRecordX,1) == sizeX );
+	assert( size(global_outputFcnDat.matRecordX,2) == iterCount );
 	%
 	% Because fsovle respects only fallTol, we need to do a bit of work to find where we *would* have stopped.
 	for n = 1 : iterCount
-	if ( global_outputFcnDat.matCnvg(n,2) < prm.fTol )
+	if ( global_outputFcnDat.matInfoA(n,4) <= prm.fTol )
 		break;
 	endif
 	endfor
 	iterCount = n;
-	vecXBest = global_outputFcnDat.matX(:,n);
-	fevalCount = global_outputFcnDat.matCnvg(n,1);
-	matCnvg = global_outputFcnDat.matCnvg(1:n,:);
+	vecXBest = global_outputFcnDat.matRecordX(:,n);
+	matInfoA = global_outputFcnDat.matInfoA(1:n,:);
+	fevalCount = global_outputFcnDat.matInfoA(n,2);
+	fBest = global_outputFcnDat.matInfoA(n,4);
 	%
+	switch (fsolve_info)
+	case { 1 }
+		strGrootFlag = STR_GROOT_FLAG__CNVG;
+	case { 2 }
+		if ( fBest <= prm.fTol )
+			strGrootFlag = STR_GROOT_FLAG__CNVG;
+		else
+			if ( prm.verbLev >= VERBLEV__FLAGGED )
+				flaggedlog( __FILE__, __LINE__, "*** HIT FSOLVE TOLFUN WITHOUT HITTING MY FTOL. ***" );
+			endif
+			strGrootFlag = STR_GROOT_FLAG__STOP;
+		endif
+	case { 3 }
+		strGrootFlag = STR_GROOT_FLAG__STALL;
+	case { 0 }
+		strGrootFlag = STR_GROOT_FLAG__STOP;
+	case { -3 }
+		strGrootFlag = STR_GROOT_FLAG__STALL;
+	otherwise
+		error( "Invalid value of fsolve_info." );
+	endswitch
 	%
 	%
 	datOut.iterCount = iterCount;
@@ -69,8 +96,11 @@ function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_fsolve( funchF, vecX0
 	datOut.fsovle_info = fsolve_info;
 	datOut.fsovle_output = fsolve_output;
 	datOut.fsolve_fjac = fsolve_fjac;
-	datOut.matCnvg_orig = global_outputFcnDat.matCnvg;
+	datOut.matInfoA_orig = global_outputFcnDat.matInfoA;
 	datOut.elapsedTime = time()-startTime;
+	datOut.matRecordX = global_outputFcnDat.matRecordX;
+	datOut.matInfoA = matInfoA;
+	datOut.matInfoB = [];
 	%
 	%
 	%

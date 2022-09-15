@@ -32,7 +32,8 @@ else
 	grid on;
 	xlabel( "percentile" );
 	ylabel( "feval count" );
-	set( title( suiteName ), 'Interpreter', 'none' );
+	set( title(""), 'Interpreter', 'none' );
+	title( suiteName );
 	endif
 endif
 %

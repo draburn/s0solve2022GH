@@ -9,7 +9,6 @@ function [ vecXBest, strGrootFlag, fevalCount, datOut ] = groot_jfnk_basic( func
 	elseif ( 4 < nargout )
 		error( "Too many output arguments." );
 	endif
-	%
 	groot__commonInit;
 	vecXBest = [];
 	strGrootFlag = STR_GROOT_FLAG__UNSET;
@@ -28,7 +27,7 @@ function [ vecXBest, strGrootFlag, fevalCount, datOut ] = groot_jfnk_basic( func
 	f = f0;
 	iterCount = 0;
 	matRecordX(:,iterCount+1) = vecX;
-	matInfoA(iterCount+1,:) = [ iterCount, fevalCount, norm(vecX-vecX0), norm(vecF0) ];
+	matInfoA(iterCount+1,:) = [ iterCount, fevalCount, norm(vecX), norm(vecF) ];
 	matInfoB = [];
 	fBest = f0;
 	vecXBest = vecX0;
@@ -101,7 +100,7 @@ function [ vecXBest, strGrootFlag, fevalCount, datOut ] = groot_jfnk_basic( func
 		  size(linsolfDatOut.matV,2), norm(linsolfDatOut.vecRho) ];
 		iterCount++;
 		matRecordX(:,iterCount+1) = vecX;
-		matInfoA(iterCount+1,:) = [ iterCount, fevalCount, norm(vecX-vecX0), norm(vecF) ];
+		matInfoA(iterCount+1,:) = [ iterCount, fevalCount, norm(vecX), norm(vecF) ];
 		if ( f < fBest )
 			fBest = f;
 			vecXBest = vecX;
