@@ -7,11 +7,12 @@ function xDatOut = groot_x( funchF, vecX0, algoSetPrm=[], default_solverPrm=[], 
 		algoSetPrm.s(2).f = @groot_jfnk_basic;
 		algoSetPrm.s(3).f = @groot_jfnk_basic;
 		algoSetPrm.s(3).p.btCoeff = 0.0;
-		xPrm.verbLev = mygetfield( xPrm, "verbLev", VERBLEV__MAIN );
+		xPrm.verbLev = mygetfield( xPrm, "verbLev", VERBLEV__PROGRESS );
 	endif
 	xPrm.verbLev = mygetfield( xPrm, "verbLev", VERBLEV__WARNING );
 	xPrm.valdLev = mygetfield( xPrm, "valdLev", VALDLEV__HIGH );
 	%
+	assert( is_function_handle(funchF) );
 	sizeX = size( vecX0, 1 );
 	assert( isrealarray(vecX0,[sizeX,1]) );
 	vecF0 = funchF( vecX0 );
@@ -22,6 +23,10 @@ function xDatOut = groot_x( funchF, vecX0, algoSetPrm=[], default_solverPrm=[], 
 	assert( isvector(algoSetPrm.s) );
 	assert( max(size(algoSetPrm.s)) == algoSetPrm.n );
 	for algoIndex = 1 : algoSetPrm.n
+		if ( stopsignalpresent() )
+			msg( __FILE__, __LINE__, "Found stopsignal." );
+			break;
+		endif
 		this_s = algoSetPrm.s(algoIndex);
 		%
 		assert( is_function_handle( this_s.f ) );
@@ -46,10 +51,14 @@ function xDatOut = groot_x( funchF, vecX0, algoSetPrm=[], default_solverPrm=[], 
 		assert( isrealarray(this_vecFBest,[sizeF,1]) );
 		this_fBest = norm(this_vecFBest);
 		%
-		msgif( xPrm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, sprintf( ...
-		  "  %2d  %15s:  %c  (%10.3e)   %6d  (%0.3g)", ...
-		  algoIndex, this_strSolverName, ...
-		  this_strGrootFlag, this_fBest, this_fevalCount, this_elapsedTime ) );
+		if ( xPrm.verbLev >= VERBLEV__PROGRESS )
+			msg( __FILE__, __LINE__, sprintf( ...
+			  "     Algo%2d,  %15s:  %c,  (%10.3e);   %6d,  (%0.3g)", ...
+			  algoIndex, this_strSolverName, ...
+			  this_strGrootFlag, this_fBest, this_fevalCount, this_elapsedTime ) );
+		elseif ( xPrm.verbLev >= VERBLEV__INFO )
+			printf( "%c", this_strGrootFlag );
+		endif
 		%
 		xDatOut.s(algoIndex).fBest = this_fBest;
 		xDatOut.s(algoIndex).strGrootFlag = this_strGrootFlag;

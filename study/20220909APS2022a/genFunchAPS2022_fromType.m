@@ -1,4 +1,4 @@
-function [ funchFOfX, vecX0, datOut ] = zrun_genProb( strProbType, bigN0, probSeed=0, prm=[] )
+function [ funchFOfX, vecX0, datOut ] = genFunchAPS2022_fromType( strProbType, bigN0, probSeed=0, prm=[] )
 	backup_prngStateDat = getprngstatedat();
 	%
 	setprngstates(probSeed,printState=false);

@@ -26,6 +26,7 @@ prm.stepTol = mygetfield( prm, "stepTol", 1.0e-10 );
 prm.epsFD = mygetfield( prm, "epsFD", eps^(1.0/3.0) );
 %
 if ( prm.valdLev >= VALDLEV__LOW )
+	assert( is_function_handle(funchF) );
 	assert( 0 < sizeX );
 	assert( isrealarray(vecX0,[sizeX,1]) );
 	assert( isposintscalar(prm.iterLimit) );
