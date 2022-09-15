@@ -1,9 +1,11 @@
-function xDatOut = groot_x( funchF, vecX0, solveSetPrm=[], default_solverPrm=[], xPrm=[] )
+function xDatOut = groot_x( funchF, vecX0, algoSetPrm=[], default_solverPrm=[], xPrm=[] )
 	startTime = time();
-	if ( isempty(solveSetPrm) )
-		solveSetPrm.n = 2;
-		solveSetPrm.s(1).f = @groot_fsolve;
-		solveSetPrm.s(2).f = @groot_jfnk_basic;
+	if ( isempty(algoSetPrm) )
+		algoSetPrm.n = 3;
+		algoSetPrm.s(1).f = @groot_fsolve;
+		algoSetPrm.s(2).f = @groot_jfnk_basic;
+		algoSetPrm.s(3).f = @groot_jfnk_basic;
+		algoSetPrm.s(3).p.btCoeff = 0.0;
 	endif
 	%
 	sizeX = size( vecX0, 1 );
@@ -12,40 +14,47 @@ function xDatOut = groot_x( funchF, vecX0, solveSetPrm=[], default_solverPrm=[],
 	sizeF = size( vecF0, 1 );
 	assert( isrealarray(vecF0,[sizeF,1]) );
 	%
-	assert( isposintscalar(solveSetPrm.n) );
-	assert( isvector(solveSetPrm.s) );
-	assert( max(size(solveSetPrm.s)) == solveSetPrm.n );
-	for n = 1 : solveSetPrm.n
-		foo.f = solveSetPrm.s(n).f;
-		assert( is_function_handle( foo.f ) );
-		foo.fInfo = functions( foo.f );
-		foo.strSolverName = trimFileName(foo.fInfo.function)(7:end);
+	assert( isposintscalar(algoSetPrm.n) );
+	assert( isvector(algoSetPrm.s) );
+	assert( max(size(algoSetPrm.s)) == algoSetPrm.n );
+	for algoIndex = 1 : algoSetPrm.n
+		this_s = algoSetPrm.s(algoIndex);
 		%
-		foo.solverPrm = mygetfield( solveSetPrm.s(n), "p", [] );
-		foo.solverPrm = overwritefields( default_solverPrm, foo.solverPrm );
+		assert( is_function_handle( this_s.f ) );
+		this_fInfo = functions( this_s.f );
+		this_strSolverName = trimFileName(this_fInfo.function)(7:end);
+		if ( ~isempty(mygetfield( this_s, "p", [] )) )
+			this_strSolverName = [ "~" this_strSolverName ];
+		endif
 		%
-		foo.startTime = time();
-		[ foo.vecXBest, foo.strGrootFlag, foo.fevalCount, foo.datOut ] = foo.f( funchF, vecX0, foo.solverPrm );
-		foo.elapsedTime = time()-foo.startTime();
-		assert( isrealarray(foo.vecXBest,[sizeX,1]) );
-		assert( ischar(foo.strGrootFlag) );
-		assert( isvector(foo.strGrootFlag) );
-		assert( isposintscalar(foo.fevalCount) );
+		this_solverPrm = mygetfield( this_s, "p", [] );
+		this_solverPrm = overwritefields( default_solverPrm, this_solverPrm );
 		%
-		foo.vecFBest = funchF( foo.vecXBest );
-		assert( isrealarray(foo.vecFBest,[sizeF,1]) );
-		foo.fBest = norm(foo.vecFBest);
+		this_startTime = time();
+		[ this_vecXBest, this_strGrootFlag, this_fevalCount, this_datOut ] = this_s.f( funchF, vecX0, this_solverPrm );
+		this_elapsedTime = time()-this_startTime();
+		assert( isrealarray(this_vecXBest,[sizeX,1]) );
+		assert( ischar(this_strGrootFlag) );
+		assert( isvector(this_strGrootFlag) );
+		assert( isposintscalar(this_fevalCount) );
 		%
-		msg( __FILE__, __LINE__, sprintf( "  %10s:  %7s  %7d  %10.3e", foo.strSolverName, foo.strGrootFlag, foo.fevalCount, foo.fBest ) );
+		this_vecFBest = funchF( this_vecXBest );
+		assert( isrealarray(this_vecFBest,[sizeF,1]) );
+		this_fBest = norm(this_vecFBest);
 		%
-		xDatOut.s(n).strGrootFlag = foo.strGrootFlag;
-		xDatOut.s(n).fevalCount = foo.fevalCount;
-		xDatOut.s(n).fBest = foo.fBest;
-		xDatOut.s(n).matInfoA = foo.datOut.matInfoA;
-		xDatOut.s(n).matInfoB = foo.datOut.matInfoB;
-		xDatOut.s(n).elapsedTime = foo.elapsedTime;
+		msg( __FILE__, __LINE__, sprintf( ...
+		  "  %2d  %15s:  %c  (%10.3e)   %6d  (%0.3gs)", ...
+		  algoIndex, this_strSolverName, ...
+		  this_strGrootFlag, this_fBest, this_fevalCount, this_elapsedTime ) );
 		%
-		clear foo;
+		xDatOut.s(algoIndex).fBest = this_fBest;
+		xDatOut.s(algoIndex).strGrootFlag = this_strGrootFlag;
+		xDatOut.s(algoIndex).fevalCount = this_fevalCount;
+		xDatOut.s(algoIndex).matInfoA = this_datOut.matInfoA;
+		xDatOut.s(algoIndex).matInfoB = mygetfield( this_datOut, "matInfoB", [] );
+		xDatOut.s(algoIndex).elapsedTime = this_elapsedTime;
+		%
+		clear this_*;
 	endfor
 	xDatOut.elapsedTime = time() - startTime;
 return;

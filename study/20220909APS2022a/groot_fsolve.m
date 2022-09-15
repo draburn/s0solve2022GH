@@ -1,4 +1,4 @@
-function [ vecXBest, strGrootFlag, fevalCount, datOut ] = groot_fsolve( funchF, vecX0, prm=[] )
+function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_fsolve( funchF, vecX0, prm=[] )
 	if ( 0 == nargin )
 		vecXBest = __FILE__;
 		return;
@@ -11,7 +11,7 @@ function [ vecXBest, strGrootFlag, fevalCount, datOut ] = groot_fsolve( funchF, 
 	endif
 	groot__commonInit;
 	vecXBest = [];
-	strGrootFlag = STR_GROOT_FLAG__UNSET;
+	grootFlag = GROOT_FLAG__VOID;
 	fevalCount = 0;
 	datOut = [];
 	%
@@ -67,22 +67,22 @@ function [ vecXBest, strGrootFlag, fevalCount, datOut ] = groot_fsolve( funchF, 
 	%
 	switch (fsolve_info)
 	case { 1 }
-		strGrootFlag = STR_GROOT_FLAG__CNVG;
+		grootFlag = GROOT_FLAG__CNVG;
 	case { 2 }
 		if ( fBest <= prm.fTol )
-			strGrootFlag = STR_GROOT_FLAG__CNVG;
+			grootFlag = GROOT_FLAG__CNVG;
 		else
 			if ( prm.verbLev >= VERBLEV__FLAGGED )
 				flaggedlog( __FILE__, __LINE__, "*** HIT FSOLVE TOLFUN WITHOUT HITTING MY FTOL. ***" );
 			endif
-			strGrootFlag = STR_GROOT_FLAG__STOP;
+			grootFlag = GROOT_FLAG__STOP;
 		endif
 	case { 3 }
-		strGrootFlag = STR_GROOT_FLAG__STALL;
+		grootFlag = GROOT_FLAG__FAIL;
 	case { 0 }
-		strGrootFlag = STR_GROOT_FLAG__STOP;
+		grootFlag = GROOT_FLAG__STOP;
 	case { -3 }
-		strGrootFlag = STR_GROOT_FLAG__STALL;
+		grootFlag = GROOT_FLAG__FAIL;
 	otherwise
 		error( "Invalid value of fsolve_info." );
 	endswitch

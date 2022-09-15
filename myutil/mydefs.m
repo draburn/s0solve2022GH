@@ -64,7 +64,7 @@ RETCODE__NOT_SET = 9999;
 
 % 2022-09-14.
 % Let's make this groot-specific, and use friendly strings.
-STR_GROOT_FLAG__UNSET = "UNSET";
-STR_GROOT_FLAG__CNVG = "cnvg";
-STR_GROOT_FLAG__STOP = "STOP";
-STR_GROOT_FLAG__STALL = "STALL";
+GROOT_FLAG__VOID = "_";
+GROOT_FLAG__CNVG = "c";
+GROOT_FLAG__STOP = "S";
+GROOT_FLAG__FAIL = "X";

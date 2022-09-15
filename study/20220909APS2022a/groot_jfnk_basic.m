@@ -1,4 +1,4 @@
-function [ vecXBest, strGrootFlag, fevalCount, datOut ] = groot_jfnk_basic( funchF, vecX0, prm=[] )
+function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_basic( funchF, vecX0, prm=[] )
 	if ( 0 == nargin )
 		vecXBest = __FILE__;
 		return;
@@ -11,7 +11,7 @@ function [ vecXBest, strGrootFlag, fevalCount, datOut ] = groot_jfnk_basic( func
 	endif
 	groot__commonInit;
 	vecXBest = [];
-	strGrootFlag = STR_GROOT_FLAG__UNSET;
+	grootFlag = GROOT_FLAG__VOID;
 	fevalCount = 0;
 	datOut = [];
 	%
@@ -35,17 +35,17 @@ function [ vecXBest, strGrootFlag, fevalCount, datOut ] = groot_jfnk_basic( func
 	while (doMainLoop)
 		if ( f <= prm.fTol )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCCESS: Reached fTol." );
-			strGrootFlag = STR_GROOT_FLAG__CNVG;
+			grootFlag = GROOT_FLAG__CNVG;
 			doMainLoop = false; % Redundant.
 			break;
 		elseif ( fevalCount >= prm.fevalLimit )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: Reached fevalLimit." );
-			strGrootFlag = STR_GROOT_FLAG__STOP;
+			grootFlag = GROOT_FLAG__STOP;
 			doMainLoop = false; % Redundant.
 			break;
 		elseif ( stopsignalpresent() )
 			msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "IMPOSED STOP: Received stop signal." );
-			strGrootFlag = STR_GROOT_FLAG__STOP;
+			grootFlag = GROOT_FLAG__STOP;
 			doMainLoop = false; % Redundant.
 			break;
 		endif
@@ -58,7 +58,7 @@ function [ vecXBest, strGrootFlag, fevalCount, datOut ] = groot_jfnk_basic( func
 		fevalCount += linsolfDatOut.fevalCount;
 		if ( fevalCount >= prm.fevalLimit )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: Reached fevalLimit." );
-			strGrootFlag = STR_GROOT_FLAG__STOP;
+			grootFlag = GROOT_FLAG__STOP;
 			doMainLoop = false; % Redundant.
 			break;
 		endif
@@ -79,24 +79,24 @@ function [ vecXBest, strGrootFlag, fevalCount, datOut ] = groot_jfnk_basic( func
 		prm.btCoeff = mygetfield( prm, "btCoeff", 0.5 );
 		if ( needBT && prm.btCoeff <= 0.0 );
 			msgif( prm.verbLev >= VERBLEV__NOTE, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Reached fallTol with no BT." );
-			strGrootFlag = STR_GROOT_FLAG__STALL;
+			grootFlag = GROOT_FLAG__FAIL;
 			doMainLoop = false; % Redundant.
 			break;
 		endif
 		while ( needBT )
 			if ( norm(vecDelta) <= prm.stepTol )
 				msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Reached stepTol." );
-				strGrootFlag = STR_GROOT_FLAG__STALL;
+				grootFlag = GROOT_FLAG__FAIL;
 				doMainLoop = false;
 				break;
 			elseif ( fevalCount >= prm.fevalLimit )
 				msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: Reached fevalLimit." );
-				strGrootFlag = STR_GROOT_FLAG__STOP;
+				grootFlag = GROOT_FLAG__STOP;
 				doMainLoop = false;
 				break;
 			elseif ( stopsignalpresent() )
 				msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "IMPOSED STOP: Received stop signal." );
-				strGrootFlag = STR_GROOT_FLAG__STOP;
+				grootFlag = GROOT_FLAG__STOP;
 				doMainLoop = false;
 				break;
 			endif

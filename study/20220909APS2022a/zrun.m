@@ -46,31 +46,31 @@ for probIndex = probList
 	assert( isrealarray(vecX0,[probDat.sizeX,1]) );
 	probSizeStr = sprintf( "(%dx%d)", probDat.sizeF, probDat.sizeX );
 	%
-	[ vecXBest, strGrootFlag, fevalCount, solverDatOut ] = solverPrm.solverFunch( funchF, vecX0, solverPrm );
+	[ vecXBest, grootFlag, fevalCount, solverDatOut ] = solverPrm.solverFunch( funchF, vecX0, solverPrm );
 	%
 	assert( isrealarray(vecXBest,[probDat.sizeX,1]) );
-	assert( ischar(strGrootFlag) );
-	assert( isvector(strGrootFlag) );
+	assert( ischar(grootFlag) );
+	assert( isvector(grootFlag) );
 	assert( isposintscalar(fevalCount) );
 	%
 	vecFBest = funchF(vecXBest);
 	assert( isrealarray(vecFBest,[probDat.sizeF,1]) );
 	fBest = norm(vecFBest);
-	switch ( strGrootFlag )
-	case STR_GROOT_FLAG__CNVG
+	switch ( grootFlag )
+	case GROOT_FLAG__CNVG
 		assert( fBest <= solverPrm.fTol*(1.0+100.0*eps) );
 		assert( fevalCount <= solverPrm.fevalLimit );
 		zrunDat.succCount++;
 		zrunDat.succFevalVals = [ zrunDat.succFevalVals, fevalCount ];
-	case { STR_GROOT_FLAG__STOP, STR_GROOT_FLAG__STALL }
+	case { GROOT_FLAG__STOP, GROOT_FLAG__FAIL }
 		if ( fBest <= solverPrm.fTol*(1.0-100.0*eps) && fevalCount <= solverPrm.fevalLimit )
 			flaggedlog( __FILE__, __LINE__, "*** A SOLVE THAT WAS MAKRED AS NON-CNVG WAS CLEARLY CNVGD! ***" )
 		endif
 		zrunDat.failCount++;
 	otherwise
-		error(["Unsupported value of strGrootFlag (\"" strGrootFlag "\")."]);
+		error(["Unsupported value of grootFlag (\"" grootFlag "\")."]);
 	endswitch
-	msg( __FILE__, __LINE__, sprintf("    %3d  %11s:   %7s  %6d  %10.3e", probIndex, probSizeStr, strGrootFlag, fevalCount, fBest ) );
+	msg( __FILE__, __LINE__, sprintf("    %3d  %11s:   %7s  %6d  %10.3e", probIndex, probSizeStr, grootFlag, fevalCount, fBest ) );
 	%
 	zrunDat.prob(probIndex).vecXBest = vecXBest;
 	zrunDat.prob(probIndex).fevalCount = fevalCount;
