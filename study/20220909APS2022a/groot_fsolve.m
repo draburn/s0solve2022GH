@@ -83,8 +83,13 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_fsolve( funchF, vec
 		grootFlag = GROOT_FLAG__STOP;
 	case { -3 }
 		grootFlag = GROOT_FLAG__FAIL;
+	case { -1 }
+		grootFlag = GROOT_FLAG__STOP;
+		msg( __FILE__, __LINE__, [ "Invalid value of fsolve_info (" num2str(fsolve_info) "), as due to stopsignal." ] );
+		warning([ "Invalid value of fsolve_info (" num2str(fsolve_info) "), as due to stopsignal." ] );
 	otherwise
-		error( "Invalid value of fsolve_info." );
+		msg( __FILE__, __LINE__, [ "Invalid value of fsolve_info (" num2str(fsolve_info) ")." ] );
+		error([ "Invalid value of fsolve_info (" num2str(fsolve_info) ")." ]);
 	endswitch
 	%
 	%

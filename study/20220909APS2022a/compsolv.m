@@ -1,18 +1,18 @@
-function zapsgroot = zapgroot( probSetPrm=[], algoSetPrm=[], default_solverPrm=[], zPrm=[] )
+function compsolvDatOut = compsolv( probSetPrm=[], algoSetPrm=[], default_solverPrm=[], compsolvPrm=[] )
 	backup_prngStateDat = getprngstatedat();
 	mydefs;
 	startTime = time();
 	if ( isempty(probSetPrm) )
 		probSetPrm.numProbs = 3;
 		probSetPrm.probType = "test1";
-		probSetPrm.numUnknowns = 50;
+		probSetPrm.numUnknowns = 20;
 		probSetPrm.setSeed = 1;
-		zPrm.verbLev = mygetfield( zPrm, "verbLev", VERBLEV__INFO );
+		compsolvPrm.verbLev = mygetfield( compsolvPrm, "verbLev", VERBLEV__INFO );
 	endif
-	zPrm.verbLev = mygetfield( zPrm, "verbLev", VERBLEV__WARNING );
-	zPrm.valdLev = mygetfield( zPrm, "valdLev", VALDLEV__HIGH );
+	compsolvPrm.verbLev = mygetfield( compsolvPrm, "verbLev", VERBLEV__WARNING );
+	compsolvPrm.valdLev = mygetfield( compsolvPrm, "valdLev", VALDLEV__HIGH );
 	%
-	msgif( zPrm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
+	msgif( compsolvPrm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
 	  "Started zapgroot with numProbs = %d, probType = \"%s\", numUnknowns = %d, setSeed = %d.", ...
 	  probSetPrm.numProbs, probSetPrm.probType, probSetPrm.numUnknowns, probSetPrm.setSeed ) );
 	%
@@ -20,39 +20,41 @@ function zapsgroot = zapgroot( probSetPrm=[], algoSetPrm=[], default_solverPrm=[
 	setprngstates( probSetPrm.setSeed, false );
 	probSeeds = floor( 1E8*rand(1,probSetPrm.numProbs) );
 	setprngstatedat(backup_prngStateDat); % Do this ASAP, in case of abrupt return.
-	%
-	xPrm = [];
+	compsolvDatOut.probSeeds = probSeeds;
 	%
 	assert( isposintscalar(probSetPrm.numProbs) );
 	assert( isposintscalar(probSetPrm.numUnknowns) );
-	zDatOut.probSetPrm = probSetPrm;
-	zDatOut.algoSetPrm = algoSetPrm;
-	zDatOut.default_solverPrm = default_solverPrm;
-	zDatOut.zPrm = zPrm;
-	zDatOut.xPrm = xPrm;
-	doCharLog = (  ( zPrm.verbLev >= VERBLEV__INFO ) && ( zPrm.verbLev < VERBLEV__PROGRESS )  );
+	compsolvDatOut.probSetPrm = probSetPrm;
+	compsolvDatOut.algoSetPrm = algoSetPrm;
+	compsolvDatOut.default_solverPrm = default_solverPrm;
+	compsolvDatOut.compsolvPrm = compsolvPrm;
+	doCharLog = (  ( compsolvPrm.verbLev >= VERBLEV__INFO ) && ( compsolvPrm.verbLev < VERBLEV__PROGRESS )  );
 	for probIndex = 1 : probSetPrm.numProbs
 		if ( stopsignalpresent() )
 			msg( __FILE__, __LINE__, "Found stopsignal." );
 			break;
 		endif
+		this_probType = probSetPrm.probType;
+		this_sizeXIsh = probSetPrm.numUnknowns;
 		this_probSeed = probSeeds(probIndex);
 		this_probGenPrm = [];
-		[ this_funchF, this_vecX0, this_probDat ] = genFunchAPS2022_fromType( probSetPrm.probType, probSetPrm.numUnknowns, this_probSeed, this_probGenPrm );
+		%
+		compsolvDatOut.prob(probIndex).probType = this_probType;
+		compsolvDatOut.prob(probIndex).sizeXIsh = this_sizeXIsh;
+		compsolvDatOut.prob(probIndex).probSeed = this_probSeed;
+		compsolvDatOut.prob(probIndex).probGenPrm = this_probGenPrm;
+		[ this_funchF, this_vecX0, this_probDat ] = genFunchAPS2022_fromType( this_probType, this_sizeXIsh, this_probSeed, this_probGenPrm );
 		assert( is_function_handle(this_funchF) );
 		assert( isrealarray(this_vecX0,[this_probDat.sizeX,1]) );
 		this_probStr = sprintf( "Prob %d", probIndex);
 		this_probSizeStr = sprintf( "(%dx%d)", this_probDat.sizeF, this_probDat.sizeX );
 		if ( doCharLog )
 			msgnnl( __FILE__, __LINE__, sprintf( "  %15s  %s:  ", this_probStr, this_probSizeStr ) );
-		elseif ( zPrm.verbLev >= VERBLEV__PROGRESS )
+		elseif ( compsolvPrm.verbLev >= VERBLEV__PROGRESS )
 			msg( __FILE__, __LINE__, sprintf( " %15s  %s....", this_probStr, this_probSizeStr ) );
 		endif
-		%
-		zDatOut.prob(probIndex).probSeed = this_probSeed;
-		zDatOut.prob(probIndex).probGenPrm = this_probGenPrm;
-		zDatOut.prob(probIndex).sizeX = this_probDat.sizeX;
-		zDatOut.prob(probIndex).sizeF = this_probDat.sizeF;
+		compsolvDatOut.prob(probIndex).sizeX = this_probDat.sizeX;
+		compsolvDatOut.prob(probIndex).sizeF = this_probDat.sizeF;
 		%
 		this_xPrm = [];
 		if ( doCharLog )
@@ -65,7 +67,6 @@ function zapsgroot = zapgroot( probSetPrm=[], algoSetPrm=[], default_solverPrm=[
 		endif
 		clear this_*;
 	endfor
-	zDatOut.probSeeds = probSeeds;
 	setprngstatedat(backup_prngStateDat); % May be redundant.
 return;
 endfunction
