@@ -1,4 +1,4 @@
-function xDatOut = groot_x( funchF, vecX0, algoSetPrm=[], default_solverPrm=[], xPrm=[] )
+function grootXDatOut = groot_x( funchF, vecX0, algoSetPrm=[], default_solverPrm=[], xPrm=[] )
 	mydefs;
 	startTime = time();
 	if ( isempty(algoSetPrm) )
@@ -19,6 +19,9 @@ function xDatOut = groot_x( funchF, vecX0, algoSetPrm=[], default_solverPrm=[], 
 	sizeF = size( vecF0, 1 );
 	assert( isrealarray(vecF0,[sizeF,1]) );
 	%
+	grootXDatOut.algoSetPrm = algoSetPrm;
+	grootXDatOut.default_solverPrm = default_solverPrm;
+	grootXDatOut.xPrm = xPrm;
 	assert( isposintscalar(algoSetPrm.n) );
 	assert( isvector(algoSetPrm.s) );
 	assert( max(size(algoSetPrm.s)) == algoSetPrm.n );
@@ -40,17 +43,17 @@ function xDatOut = groot_x( funchF, vecX0, algoSetPrm=[], default_solverPrm=[], 
 		this_solverPrm = overwritefields( default_solverPrm, this_solverPrm );
 		%
 		this_startTime = time();
-		[ this_vecXBest, this_strGrootFlag, this_fevalCount, this_datOut ] = this_s.f( funchF, vecX0, this_solverPrm );
+		[ this_vecXBest, this_grootFlag, this_fevalCount, this_datOut ] = this_s.f( funchF, vecX0, this_solverPrm );
 		this_elapsedTime = time()-this_startTime();
 		assert( isrealarray(this_vecXBest,[sizeX,1]) );
-		assert( ischar(this_strGrootFlag) );
-		assert( isvector(this_strGrootFlag) );
+		assert( ischar(this_grootFlag) );
+		assert( isscalar(this_grootFlag) );
 		assert( isposintscalar(this_fevalCount) );
 		this_vecFBest = funchF( this_vecXBest );
 		assert( isrealarray(this_vecFBest,[sizeF,1]) );
 		this_fBest = norm(this_vecFBest);
 		%
-		switch ( this_strGrootFlag )
+		switch ( this_grootFlag )
 		case GROOT_FLAG__CNVG
 			if ( ~isempty(mygetfield( this_solverPrm, "fTol", [] )) )
 				assert( this_fBest <= this_solverPrm.fTol*(1.0+100.0*eps) );
@@ -74,20 +77,21 @@ function xDatOut = groot_x( funchF, vecX0, algoSetPrm=[], default_solverPrm=[], 
 			msg( __FILE__, __LINE__, sprintf( ...
 			  "     Algo%2d,  %15s:  %c,  (%10.3e);   %6d,  (%0.3g)", ...
 			  algoIndex, this_strSolverName, ...
-			  this_strGrootFlag, this_fBest, this_fevalCount, this_elapsedTime ) );
+			  this_grootFlag, this_fBest, this_fevalCount, this_elapsedTime ) );
 		elseif ( xPrm.verbLev >= VERBLEV__INFO )
-			printf( "%c", this_strGrootFlag );
+			printf( "%c", this_grootFlag );
 		endif
 		%
-		xDatOut.s(algoIndex).fBest = this_fBest;
-		xDatOut.s(algoIndex).strGrootFlag = this_strGrootFlag;
-		xDatOut.s(algoIndex).fevalCount = this_fevalCount;
-		xDatOut.s(algoIndex).matInfoA = this_datOut.matInfoA;
-		xDatOut.s(algoIndex).matInfoB = mygetfield( this_datOut, "matInfoB", [] );
-		xDatOut.s(algoIndex).elapsedTime = this_elapsedTime;
+		grootXDatOut.s(algoIndex).strSolverName = this_strSolverName;
+		grootXDatOut.s(algoIndex).fBest = this_fBest;
+		grootXDatOut.s(algoIndex).grootFlag = this_grootFlag;
+		grootXDatOut.s(algoIndex).fevalCount = this_fevalCount;
+		grootXDatOut.s(algoIndex).matInfoA = this_datOut.matInfoA;
+		grootXDatOut.s(algoIndex).matInfoB = mygetfield( this_datOut, "matInfoB", [] );
+		grootXDatOut.s(algoIndex).elapsedTime = this_elapsedTime;
 		%
 		clear this_*;
 	endfor
-	xDatOut.elapsedTime = time() - startTime;
+	grootXDatOut.elapsedTime = time() - startTime;
 return;
 endfunction

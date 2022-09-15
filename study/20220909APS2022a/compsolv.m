@@ -67,7 +67,8 @@ function compsolvDatOut = compsolv( probSetPrm=[], algoSetPrm=[], default_solver
 		if ( doCharLog )
 			this_xPrm.verbLev = VERBLEV__INFO;
 		endif
-		this_grootxDatOut = groot_x( this_funchF, this_vecX0, algoSetPrm, default_solverPrm, this_xPrm );
+		this_grootXDatOut = groot_x( this_funchF, this_vecX0, algoSetPrm, default_solverPrm, this_xPrm );
+		compsolvDatOut.prob(probIndex).grootXDatOut = this_grootXDatOut;
 		%
 		if ( doCharLog )	
 			printf( "\n" );

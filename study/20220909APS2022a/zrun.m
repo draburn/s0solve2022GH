@@ -11,7 +11,7 @@ probSetPrm.numUnknowns = 20;
 probSetPrm.setSeed = 0;
 %
 n = 0;
-n++; a.s(n).f = @groot_jfnk_basic;
+n++; a.s(n).f = @groot_fsolve;
 n++; a.s(n).f = @groot_jfnk_basic;
 n++; a.s(n).f = @groot_jfnk_basic; a.s(n).p.btCoeff = 0.0;
 %
@@ -19,7 +19,7 @@ n++; a.s(n).f = @groot_jfnk_basic; a.s(n).p.btCoeff = 0.0;
 zrun__start;
 %
 % DO WORK.
-compsolvDatOut = compsolv( probSetPrm, algoSetPrm, default_solverPrm, compsolvPrm );
+csdo = compsolv( probSetPrm, algoSetPrm, default_solverPrm, compsolvPrm );
 %
 %
 zrun__finish;
