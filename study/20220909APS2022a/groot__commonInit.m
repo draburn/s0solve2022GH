@@ -6,8 +6,8 @@ startTime = time();
 %  "fevalCount += linsolfDatOut.fevalCount" crashes but
 %  "fevalCount = fevalCount + linsolfDatOut.fevalCount" doesn't.
 %vecXBest = [];
+%strGrootFlag = STR_GROOT_FLAG__UNSET;
 %fevalCount = 0;
-%matCnvg = [];
 %datOut = [];
 % My largely speculative guess is that this has to do with
 % a function calling a script which sets a variable
@@ -34,7 +34,7 @@ if ( prm.valdLev >= VALDLEV__LOW )
 	assert( isrealscalar(prm.fallTol) );
 	assert( isrealscalar(prm.stepTol) );
 	assert( isrealscalar(prm.epsFD) );
-	assert( 0.0 <= prm.fTol );
+	assert( prm.fallTol < prm.fTol );
 	assert( 0.0 <= prm.fallTol );
 	assert( 0.0 <= prm.stepTol );
 	assert( 0.0 ~= prm.epsFD );

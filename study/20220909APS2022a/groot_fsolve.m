@@ -13,6 +13,8 @@ function [ vecXBest, fevalCount, matCnvg, datOut ] = groot_fsolve( funchF, vecX0
 	%
 	%
 	%
+	error( "LET'S IMPROVE OUR UNDERSTANDING OF TOLFUN!" );
+	error( "MUST UPDATE PER STR_GROOT_FLAG, matInfo, etc" );
 	MaxIter = mygetfield( prm, "MaxIter", prm.fevalLimit ); % { 400; ? }
 	MaxFunEvals = prm.fevalLimit; % { Inf; ... }
 	Jacobian = mygetfield( prm, "Jacobian", "off" ); % { "off"; ? }
