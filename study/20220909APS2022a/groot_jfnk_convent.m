@@ -1,4 +1,6 @@
-function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_basic( funchF, vecX0, prm=[] )
+% jfnk_conventional = _basic + dogleg-ellipsoid-TR
+
+function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_convent( funchF, vecX0, prm=[] )
 	if ( 0 == nargin )
 		vecXBest = __FILE__;
 		return;
@@ -25,10 +27,30 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_basic( funchF,
 	f0 = norm(vecF0);
 	%
 	%
+	useStepSearch = mygetfield( prm, "useStepSearch", true );
+	assert( isbool(useStepSearch) );
+	assert( isscalar(useStepSearch) );
+	if ( useStepSearch )
+		stepType = mygetfield( prm, "stepType", "newton" );
+		btCoeff = mygetfield( prm, "btCoeff", 0.2 );
+		assert( isrealscalar(btCoeff) );
+		assert( 0.0 < btCoeff );
+		useTR = mygetfield( prm, "useTR", true );
+		assert( isbool(useTR) );
+		assert( isscalar(useTR) );
+		if ( useTR )
+			ftCoeff = mygetfield( prm, "ftCoeff", 1.5 );
+			assert( isrealscalar(ftCoeff) );
+			assert( 0.0 < ftCoeff );
+		endif
+	endif
+	%
+	%
 	datOut.prm = prm;
 	vecX = vecX0;
 	vecF = vecF0;
 	f = f0;
+	stepInverseTRLimit = 0.0; % Limit step (||delta||) to Trust Region size.
 	iterCount = 0;
 	matRecordX(:,iterCount+1) = vecX;
 	matInfoA(iterCount+1,:) = [ iterCount, fevalCount, norm(vecX), norm(vecF) ];
@@ -69,53 +91,94 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_basic( funchF,
 			doMainLoop = false; % Redundant.
 			break;
 		endif
+		sizeK = size(linsolfDatOut.matV,2);
+		% Subspace Newton step...
+		vecYN = linsolfDatOut.vecY;
+		% Subspace Cauchy step...
+		% Take y = -p*matS*matW'*vecF, for scaling matrix matS.
+		% Find value of p such that d/dp ( 0.5*||vecF_model||^2 ) = 0.
+		matS = eye(sizeK);
+		vecG = linsolfDatOut.matW'*vecF;
+		assert( norm(vecG) > 0.0 );
+		vecGS =  matS*vecG;
+		assert( norm(vecGS) > 0.0 );
+		p = vecGS'*vecG / (vecGS'*vecGS);
+		vecYC = -p*vecGS;
 		%
 		%
 		vecXPrev = vecX;
 		vecFPrev = vecF;
 		fPrev = f;
 		%
+		%
 		vecDelta = vecDelta0;
-		vecX = vecXPrev + vecDelta;
-		vecF = funchF( vecX );
-		fevalCount++;
-		f = norm(vecF);
-		%
-		%
-		needBT = ( f >= fPrev - prm.fallTol );
-		prm.btCoeff = mygetfield( prm, "btCoeff", 0.5 );
-		if ( needBT && prm.btCoeff <= 0.0 );
-			msgif( prm.verbLev >= VERBLEV__NOTE, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Reached fallTol with no BT." );
-			grootFlag = GROOT_FLAG__FAIL;
-			doMainLoop = false; % Redundant.
-			break;
+		doSearchLoop = true;
+		if ( ~useStepSearch || ~useTR )
+			% If not using TR, then reset every time.
+			stepInverseTRLimit = 0.0;  % Possibly unnecessary code, to be safe.
 		endif
-		while ( needBT )
-			if ( norm(vecDelta) <= prm.stepTol )
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		while (doSearchLoop)
+			msgif( prm.verbLev >= VERBLEV__DETAILED, __FILE__, __LINE__, sprintf( ...
+			  "  BT  %3d,  %6d:  %10.3f,  %10.3f,  %10.3f.", ...
+			  iterCount, fevalCount, f, norm(vecDelta), stepInverseTRLimit ) );
+			if ( norm(vecDelta) * stepInverseTRLimit <= 1.0 + 100.0*eps )
+				% Step is in TR.
+				vecX = vecXPrev + vecDelta;
+				vecF = funchF( vecX );
+				fevalCount++;
+				f = norm(vecF);
+				if ( f <= fPrev - prm.fallTol )
+					doSearchLoop = false; % Possibly unnecessary code, to be safe.
+					break;
+				endif
+				targetStepSize = btCoeff * norm(vecDelta);
+			else
+				targetStepSize = ( 1.0 - 100.0*eps ) / stepInverseTRLimit;
+			endif
+			%
+			if ( ~useStepSearch )
+				msgif( prm.verbLev >= VERBLEV__NOTE, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Reached fallTol and doStepSearch is false." );
+				grootFlag = GROOT_FLAG__FAIL;
+				doMainLoop = false;
+				doSearchLoop = false; % Possibly unnecessary code, to be safe.
+				break;
+			elseif ( norm(vecDelta) <= prm.stepTol )
 				msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Reached stepTol." );
 				grootFlag = GROOT_FLAG__FAIL;
 				doMainLoop = false;
+				doSearchLoop = false; % Possibly unnecessary code, to be safe.
 				break;
 			elseif ( fevalCount >= prm.fevalLimit )
 				msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: Reached fevalLimit." );
 				grootFlag = GROOT_FLAG__STOP;
 				doMainLoop = false;
+				doSearchLoop = false; % Possibly unnecessary code, to be safe.
 				break;
 			elseif ( stopsignalpresent() )
 				msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "IMPOSED STOP: Received stop signal." );
 				grootFlag = GROOT_FLAG__STOP;
 				doMainLoop = false;
+				doSearchLoop = false; % Possibly unnecessary code, to be safe.
 				break;
 			endif
-			vecDelta *= prm.btCoeff;
-			vecX = vecXPrev + vecDelta;
-			vecF = funchF( vecX );
-			fevalCount++;
-			f = norm(vecF);
-			needBT = ( f >= fPrev - prm.fallTol );
+			%
+			switch ( tolower(stepType) )
+			case { "newton", "newt" }
+				vecDelta = targetStepSize * vecDelta0 / norm(vecDelta0);
+			case { "powell", "dogleg", "dog leg", "dog-leg" }
+				error( "Not implemented!" );
+			otherwise
+				error([ "Invalid value of stepType (\"" stepType "\")." ]);
+			endswitch
 		endwhile
 		if ( ~doMainLoop );
 			break;
+		endif
+		if ( useStepSearch && useTR )
+			stepInverseTRLimit = norm(vecDelta)/ftCoeff;
+		else
+			stepInverseTRLimit = 0; % Possibly unnecessary code, to be safe.
 		endif
 		%
 		%
