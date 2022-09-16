@@ -30,12 +30,12 @@ function scratch_zviz( csdo, prm=[] )
 	algoIndex = 1;
 	msk = (s(algoIndex).vecGrootFlag(:)==GROOT_FLAG__CNVG)';
 	mymin = min(s(algoIndex).vecFevalCount(msk));
-	plot( [ 0.0, vecPctCnvg((1:sum(msk))), vecPctCnvg(sum(msk)) ], [ mymin, sort(s(algoIndex).vecFevalCount(msk)), 0.0 ], 'o-' );
+	semilogy( [ 0.0, vecPctCnvg((1:sum(msk))), vecPctCnvg(sum(msk)) ], [ mymin, sort(s(algoIndex).vecFevalCount(msk)), mymin ], 'o-' );
 	hold on;
 	for algoIndex = 2 : numAlgos
 		msk = (s(algoIndex).vecGrootFlag(:)==GROOT_FLAG__CNVG)';
 		mymin = min(s(algoIndex).vecFevalCount(msk));
-		plot( [ 0.0, vecPctCnvg((1:sum(msk))), vecPctCnvg(sum(msk)) ], [ mymin, sort(s(algoIndex).vecFevalCount(msk)), 0.0 ], 'x-' );
+		semilogy( [ 0.0, vecPctCnvg((1:sum(msk))), vecPctCnvg(sum(msk)) ], [ mymin, sort(s(algoIndex).vecFevalCount(msk)), mymin ], 'x-' );
 	endfor
 	ax = axis();
 	axis([ 0.0, 100.0, ax(3), ax(4) ]);

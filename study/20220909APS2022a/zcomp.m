@@ -1,4 +1,4 @@
-function compsolvDatOut = compsolv( probSetPrm=[], algoSetPrm=[], default_solverPrm=[], compsolvPrm=[] )
+function zcompDatOut = zcomp( probSetPrm=[], algoSetPrm=[], default_solverPrm=[], zcompPrm=[] )
 	backup_prngStateDat = getprngstatedat();
 	mydefs;
 	startTime = time();
@@ -7,7 +7,7 @@ function compsolvDatOut = compsolv( probSetPrm=[], algoSetPrm=[], default_solver
 		probSetPrm.probType = "test1";
 		probSetPrm.numUnknowns = 20;
 		probSetPrm.setSeed = 0;
-		compsolvPrm.verbLev = mygetfield( compsolvPrm, "verbLev", VERBLEV__INFO );
+		zcompPrm.verbLev = mygetfield( zcompPrm, "verbLev", VERBLEV__INFO );
 	endif
 	if ( isempty(algoSetPrm) )
 		algoSetPrm.n = 3;
@@ -16,26 +16,26 @@ function compsolvDatOut = compsolv( probSetPrm=[], algoSetPrm=[], default_solver
 		algoSetPrm.s(2).f = @groot_jfnk_basic;
 		algoSetPrm.s(3).f = @groot_fsolve;
 	endif
-	compsolvPrm.verbLev = mygetfield( compsolvPrm, "verbLev", VERBLEV__WARNING );
-	compsolvPrm.valdLev = mygetfield( compsolvPrm, "valdLev", VALDLEV__HIGH );
+	zcompPrm.verbLev = mygetfield( zcompPrm, "verbLev", VERBLEV__WARNING );
+	zcompPrm.valdLev = mygetfield( zcompPrm, "valdLev", VALDLEV__HIGH );
 	%
-	msgif( compsolvPrm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
-	  "Started zapgroot with numProbs = %d, probType = \"%s\", numUnknowns = %d, setSeed = %d.", ...
+	msgif( zcompPrm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
+	  "Started zcomp with numProbs = %d, probType = \"%s\", numUnknowns = %d, setSeed = %d.", ...
 	  probSetPrm.numProbs, probSetPrm.probType, probSetPrm.numUnknowns, probSetPrm.setSeed ) );
 	%
 	%
 	setprngstates( probSetPrm.setSeed, false );
 	probSeeds = floor( 1E8*rand(1,probSetPrm.numProbs) );
 	setprngstatedat(backup_prngStateDat); % Do this ASAP, in case of abrupt return.
-	compsolvDatOut.probSeeds = probSeeds;
+	zcompDatOut.probSeeds = probSeeds;
 	%
 	assert( isposintscalar(probSetPrm.numProbs) );
 	assert( isposintscalar(probSetPrm.numUnknowns) );
-	compsolvDatOut.probSetPrm = probSetPrm;
-	compsolvDatOut.algoSetPrm = algoSetPrm;
-	compsolvDatOut.default_solverPrm = default_solverPrm;
-	compsolvDatOut.compsolvPrm = compsolvPrm;
-	doCharLog = (  ( compsolvPrm.verbLev >= VERBLEV__INFO ) && ( compsolvPrm.verbLev < VERBLEV__PROGRESS )  );
+	zcompDatOut.probSetPrm = probSetPrm;
+	zcompDatOut.algoSetPrm = algoSetPrm;
+	zcompDatOut.default_solverPrm = default_solverPrm;
+	zcompDatOut.zcompPrm = zcompPrm;
+	doCharLog = (  ( zcompPrm.verbLev >= VERBLEV__INFO ) && ( zcompPrm.verbLev < VERBLEV__PROGRESS )  );
 	for probIndex = 1 : probSetPrm.numProbs
 		if ( stopsignalpresent() )
 			msg( __FILE__, __LINE__, "Found stopsignal." );
@@ -46,10 +46,10 @@ function compsolvDatOut = compsolv( probSetPrm=[], algoSetPrm=[], default_solver
 		this_probSeed = probSeeds(probIndex);
 		this_probGenPrm = [];
 		%
-		compsolvDatOut.prob(probIndex).probType = this_probType;
-		compsolvDatOut.prob(probIndex).sizeXIsh = this_sizeXIsh;
-		compsolvDatOut.prob(probIndex).probSeed = this_probSeed;
-		compsolvDatOut.prob(probIndex).probGenPrm = this_probGenPrm;
+		zcompDatOut.prob(probIndex).probType = this_probType;
+		zcompDatOut.prob(probIndex).sizeXIsh = this_sizeXIsh;
+		zcompDatOut.prob(probIndex).probSeed = this_probSeed;
+		zcompDatOut.prob(probIndex).probGenPrm = this_probGenPrm;
 		[ this_funchF, this_vecX0, this_probDat ] = genFunchAPS2022_fromType( this_probType, this_sizeXIsh, this_probSeed, this_probGenPrm );
 		assert( is_function_handle(this_funchF) );
 		assert( isrealarray(this_vecX0,[this_probDat.sizeX,1]) );
@@ -57,29 +57,30 @@ function compsolvDatOut = compsolv( probSetPrm=[], algoSetPrm=[], default_solver
 		this_probSizeStr = sprintf( "(%dx%d)", this_probDat.sizeF, this_probDat.sizeX );
 		if ( doCharLog )
 			msgnnl( __FILE__, __LINE__, sprintf( "  %15s  %15s:  ", this_probStr, this_probSizeStr ) );
-		elseif ( compsolvPrm.verbLev >= VERBLEV__PROGRESS )
+		elseif ( zcompPrm.verbLev >= VERBLEV__PROGRESS )
 			msg( __FILE__, __LINE__, sprintf( " %15s  %15s....", this_probStr, this_probSizeStr ) );
 		endif
-		compsolvDatOut.prob(probIndex).sizeX = this_probDat.sizeX;
-		compsolvDatOut.prob(probIndex).sizeF = this_probDat.sizeF;
+		zcompDatOut.prob(probIndex).sizeX = this_probDat.sizeX;
+		zcompDatOut.prob(probIndex).sizeF = this_probDat.sizeF;
 		%
 		this_xPrm = [];
 		if ( doCharLog )
 			this_xPrm.verbLev = VERBLEV__INFO;
 		endif
+		zcompDatOut.prob(probIndex).xPrm = this_xPrm;
 		this_grootXDatOut = groot_x( this_funchF, this_vecX0, algoSetPrm, default_solverPrm, this_xPrm );
-		compsolvDatOut.prob(probIndex).grootXDatOut = this_grootXDatOut;
+		zcompDatOut.prob(probIndex).grootXDatOut = this_grootXDatOut;
 		%
 		if ( doCharLog )	
 			printf( "\n" );
 		endif
 		clear this_*;
 	endfor
-	if ( compsolvPrm.verbLev >= VERBLEV__INFO )
+	if ( zcompPrm.verbLev >= VERBLEV__INFO )
 		numAlgos = mygetfield( algoSetPrm, "n", -1 );
 		msg( __FILE__, __LINE__, sprintf( "Completed %dx%d algo(solves) in %gs.", probSetPrm.numProbs, numAlgos, time()-startTime )  );
 	endif
-	compsolvDatOut.elapsedTime = time()-startTime;
+	zcompDatOut.elapsedTime = time()-startTime;
 	setprngstatedat(backup_prngStateDat); % May be redundant.
 return;
 endfunction
