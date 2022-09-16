@@ -1,9 +1,9 @@
 2022-09-14
 NEXT:
-groot_fsovle: Proper handling of tolFun? (no: we'll leave fsolve behind shortly)
-faster linsolf? (no: incorporate in to new linsolf)
-groot_jfnk_baseline: dogleg-ball-tr and AP
-zrun: multiple solvers (ht structure?) =>> groot_x.m, zrun.m, zpost.m
+skip: groot_fsovle: Proper handling of tolFun? (no: we'll leave fsolve behind shortly)
+skip: faster linsolf? (no: incorporate in to new linsolf)
+NEXT: groot_jfnk_baseline: dogleg-ball-tr and AP
+done: zrun: multiple solvers (ht structure?) =>> groot_x.m, zrun.m, zpost.m
 
 LATER:
 groot_jfnk_"TR&BT+linsolf" (new linsolf)
