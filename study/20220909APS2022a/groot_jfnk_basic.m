@@ -14,6 +14,9 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_basic( funchF,
 	grootFlag = GROOT_FLAG__VOID;
 	fevalCount = 0;
 	datOut = [];
+	if ( prm.verbLev >= VERBLEV__DETAILS )
+		msg( __FILE__, __LINE__, "Welcome!" );
+	endif
 	%
 	vecF0 = funchF( vecX0 );
 	fevalCount++;
@@ -34,6 +37,9 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_basic( funchF,
 	vecXBest = vecX0;
 	doMainLoop = true;
 	while (doMainLoop)
+		if ( prm.verbLev >= VERBLEV__PROGRESS )
+			msg( __FILE__, __LINE__, sprintf( "  %3d,  %6d:  %10.3e.", iterCount, fevalCount, f ) );
+		endif
 		if ( f <= prm.fTol )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCCESS: Reached fTol." );
 			grootFlag = GROOT_FLAG__CNVG;
@@ -129,6 +135,9 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_basic( funchF,
 		datOut.matRecordX = matRecordX;
 		datOut.matInfoA = matInfoA;
 		datOut.matInfoB = matInfoB;
+	endif
+	if ( prm.verbLev >= VERBLEV__DETAILS )
+		msg( __FILE__, __LINE__, "Goodbye!" );
 	endif
 return;
 endfunction

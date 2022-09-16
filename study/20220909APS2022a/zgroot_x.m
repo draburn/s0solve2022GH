@@ -6,6 +6,9 @@ function grootXDatOut = zgroot_x( zcdo, probIndex, prm=[] );
 	probSetPrm = zcdo.probSetPrm;
 	algoSetPrm = zcdo.algoSetPrm;
 	default_solverPrm = zcdo.default_solverPrm;
+	assert( isposintscalar(probIndex) );
+	assert( 1 <= probIndex );
+	assert( probIndex <= probSetPrm.numProbs );
 	%
 	setprngstates( probSetPrm.setSeed, false );
 	probSeeds = floor( 1E8*rand(1,probSetPrm.numProbs) );
