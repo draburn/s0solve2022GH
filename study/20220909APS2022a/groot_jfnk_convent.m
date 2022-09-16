@@ -31,7 +31,7 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_convent( funch
 	assert( isbool(useStepSearch) );
 	assert( isscalar(useStepSearch) );
 	if ( useStepSearch )
-		stepType = mygetfield( prm, "stepType", "newton" );
+		stepType = mygetfield( prm, "stepType", "powell" );
 		btCoeff = mygetfield( prm, "btCoeff", 0.2 );
 		assert( isrealscalar(btCoeff) );
 		assert( 0.0 < btCoeff );
@@ -104,6 +104,7 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_convent( funch
 		assert( norm(vecGS) > 0.0 );
 		p = vecGS'*vecG / (vecGS'*vecGS);
 		vecYC = -p*vecGS;
+		assert( norm(vecYC) > 0.0 );
 		%
 		%
 		vecXPrev = vecX;
@@ -167,7 +168,21 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_convent( funch
 			case { "newton", "newt" }
 				vecDelta = targetStepSize * vecDelta0 / norm(vecDelta0);
 			case { "powell", "dogleg", "dog leg", "dog-leg" }
-				error( "Not implemented!" );
+				if ( targetStepSize < norm(vecYC) )
+					vecDelta = targetStepSize * linsolfDatOut.matV * ( vecYC / norm(vecYC) );
+				else
+					% Find where the second leg intersects the boundary.
+					vecYD = vecYN - vecYC;
+					a = sumsq(vecYD);
+					b = 2.0*(vecYC'*vecYD);
+					c = sumsq(vecYC) - targetStepSize^2;
+					discrim = (b^2) - (4.0*a*c);
+					assert( discrim >= 0.0 );
+					assert( 0.0 < a );
+					p = (-b+sqrt(discrim))/(2.0*a);
+					vecDelta = linsolfDatOut.matV * ( vecYC + p*vecYD );
+					assert( abs(norm(vecDelta)-targetStepSize) < 0.01*targetStepSize );
+				endif
 			otherwise
 				error([ "Invalid value of stepType (\"" stepType "\")." ]);
 			endswitch
