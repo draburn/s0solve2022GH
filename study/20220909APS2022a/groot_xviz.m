@@ -4,13 +4,13 @@ function groot_xviz( grootXDatOut );
 	%
 	n = 1;
 	semilogy( grootXDatOut.s(n).matInfoA(:,2), grootXDatOut.s(n).matInfoA(:,4), 'o-' );
-	cellAry_legend{n} = grootXDatOut.s(n).strSolverName;
 	cellAry_empty{n} = " ";
+	cellAry_legend{n} = grootXDatOut.s(n).strSolverName;
 	hold on;
 	for n=2:grootXDatOut.algoSetPrm.n;
-		semilogy( grootXDatOut.s(n).matInfoA(:,2), grootXDatOut.s(n).matInfoA(:,4), 'o-' );
-		cellAry_legend{n} = grootXDatOut.s(n).strSolverName;
+		semilogy( grootXDatOut.s(n).matInfoA(:,2), grootXDatOut.s(n).matInfoA(:,4), 'x-' );
 		cellAry_empty{n} = " ";
+		cellAry_legend{n} = grootXDatOut.s(n).strSolverName;
 	endfor
 	hold off;
 	grid on;

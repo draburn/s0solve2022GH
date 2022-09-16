@@ -31,16 +31,29 @@ function scratch_zviz( csdo, prm=[] )
 	msk = (s(algoIndex).vecGrootFlag(:)==GROOT_FLAG__CNVG)';
 	mymin = min(s(algoIndex).vecFevalCount(msk));
 	semilogy( [ 0.0, vecPctCnvg((1:sum(msk))), vecPctCnvg(sum(msk)) ], [ mymin, sort(s(algoIndex).vecFevalCount(msk)), mymin ], 'o-' );
+	cellAry_empty{algoIndex} = " ";
+	cellAry_legend{algoIndex} = csdo.prob(1).grootXDatOut.s(algoIndex).strSolverName;
 	hold on;
 	for algoIndex = 2 : numAlgos
 		msk = (s(algoIndex).vecGrootFlag(:)==GROOT_FLAG__CNVG)';
 		mymin = min(s(algoIndex).vecFevalCount(msk));
 		semilogy( [ 0.0, vecPctCnvg((1:sum(msk))), vecPctCnvg(sum(msk)) ], [ mymin, sort(s(algoIndex).vecFevalCount(msk)), mymin ], 'x-' );
+		cellAry_empty{algoIndex} = " ";
+		cellAry_legend{algoIndex} = csdo.prob(1).grootXDatOut.s(algoIndex).strSolverName;
 	endfor
 	ax = axis();
 	axis([ 0.0, 100.0, ax(3), ax(4) ]);
 	hold off;
-	grid on;	
+	grid on;
+	set( xlabel(""), "Interpreter", "none" );
+	set( ylabel(""), "Interpreter", "none" );
+	set( title(""), "Interpreter", "none" );
+	set( legend( cellAry_empty, "location", "eastoutside"), "Interpreter", "none" );
+	xlabel( "percentile" );
+	ylabel( "feval count" );
+	legend( cellAry_legend, "location", "eastoutside" );
+	%
+	%
 	%
 	perAlgo_numCnvg = zeros( numAlgos, 1 );
 	perAlgo_numFail = zeros( numAlgos, 1 );

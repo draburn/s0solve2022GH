@@ -5,9 +5,9 @@ printf("\n\n");
 % SET PRM.
 seedTime = mod( round(now*1E11), 1E8 ); % In case you want this.
 probSetPrm = [];
-probSetPrm.numProbs = 10;
+probSetPrm.numProbs = 100;
 probSetPrm.probType = "test1";
-probSetPrm.numUnknowns = 10;
+probSetPrm.numUnknowns = 100;
 probSetPrm.setSeed = 0;
 %
 n = 0;
