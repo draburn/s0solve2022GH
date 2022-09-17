@@ -23,6 +23,7 @@ function groot_xviz( grootXDatOut, prm=[] );
 	set( legend( cellAry_empty, "location", "eastoutside"), "Interpreter", "none" );
 	xlabel( "feval count" );
 	ylabel( "||f||" );
+	title([ grootXDatOut.xName " f v feval count" ]);
 	legend( cellAry_legend, "location", "eastoutside" );
 return;
 endfunction

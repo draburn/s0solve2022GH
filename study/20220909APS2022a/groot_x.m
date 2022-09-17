@@ -19,9 +19,17 @@ function grootXDatOut = groot_x( funchF, vecX0, algoSetPrm=[], default_solverPrm
 	sizeF = size( vecF0, 1 );
 	assert( isrealarray(vecF0,[sizeF,1]) );
 	%
+	%
+	dateStr = datestr(now,31);
+	dateStr(" "==dateStr) = "_";
+	dateStr("-"==dateStr) = "";
+	dateStr(":"==dateStr) = "";
+	xName = [ "A" num2str(algoSetPrm.n) "_X" num2str(sizeX) "_F" num2str(sizeF) "__" dateStr ];
+	%
 	grootXDatOut.algoSetPrm = algoSetPrm;
 	grootXDatOut.default_solverPrm = default_solverPrm;
 	grootXDatOut.xPrm = xPrm;
+	grootXDatOut.xName = xName;
 	assert( isposintscalar(algoSetPrm.n) );
 	assert( isvector(algoSetPrm.s) );
 	assert( max(size(algoSetPrm.s)) == algoSetPrm.n );
