@@ -46,6 +46,11 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_convent( funch
 	endif
 	%
 	%
+	testDogLeg = mygetfield( prm, "testDogLeg", false );
+	assert( isbool(testDogLeg) );
+	assert( isscalar(testDogLeg) );
+	%
+	%
 	datOut.prm = prm;
 	vecX = vecX0;
 	vecF = vecF0;
@@ -102,14 +107,78 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_convent( funch
 		assert( norm(vecG) > 0.0 );
 		vecGS =  matS*vecG;
 		assert( norm(vecGS) > 0.0 );
-		p = vecGS'*vecG / (vecGS'*vecGS);
+		p = vecGS'*vecG / sumsq( linsolfDatOut.matW * vecGS );
 		vecYC = -p*vecGS;
 		assert( norm(vecYC) > 0.0 );
+		vecYD = vecYN - vecYC;
 		%
 		%
 		vecXPrev = vecX;
 		vecFPrev = vecF;
 		fPrev = f;
+		%
+		%
+		if (testDogLeg)
+			msg( __FILE__, __LINE__, "Performing dog leg test(s)..." );
+			numFigs = 0;
+			vecDeltaN = linsolfDatOut.matV * vecYN;
+			vecDeltaC = linsolfDatOut.matV * vecYC;
+			vecDeltaD = linsolfDatOut.matV * vecYD;
+			numPts = 21;
+			x = linspace(0.0,1.0,numPts);
+			for n=1:numPts
+				vecDelta = x(n)* vecDeltaN;
+				vecF = funchF( vecXPrev + vecDelta );
+				deltaVals0N(n) = norm(vecDelta);
+				omegaVals0N(n) = sumsq(vecF)/2.0;
+				%
+				vecDelta = x(n)* vecDeltaC;
+				vecF = funchF( vecXPrev + vecDelta );
+				deltaVals0C(n) = norm(vecDelta);
+				omegaVals0C(n) = sumsq(vecF)/2.0;
+				%
+				vecDelta = vecDeltaC + x(n)* vecDeltaD;
+				vecF = funchF( vecXPrev + vecDelta );
+				deltaValsCD(n) = norm(vecDelta);
+				omegaValsCD(n) = sumsq(vecF)/2.0;
+				%
+				vecDelta = vecDeltaC + x(n)* vecDeltaC;
+				vecF = funchF( vecXPrev + vecDelta );
+				deltaValsCC(n) = norm(vecDelta);
+				omegaValsCC(n) = sumsq(vecF)/2.0;
+				%
+				vecDelta = vecDeltaN + x(n)*vecDeltaN;
+				vecF = funchF( vecXPrev + vecDelta );
+				deltaValsNN(n) = norm(vecDelta);
+				omegaValsNN(n) = sumsq(vecF)/2.0;
+				%
+				vecDelta = vecDeltaN + x(n)* vecDeltaD;
+				vecF = funchF( vecXPrev + vecDelta );
+				deltaValsND(n) = norm(vecDelta);
+				omegaValsND(n) = sumsq(vecF)/2.0;
+			endfor
+			numFigs++; figure(numFigs);
+			plot( ...
+			  deltaVals0N, omegaVals0N, "linewidth", 2, "markersize", 15, "o-", ...
+			  deltaVals0C, omegaVals0C, "linewidth", 2, "markersize", 20, "^-", ...
+			  deltaValsCD, omegaValsCD, "linewidth", 2, "markersize", 20, "v-", ...
+			  deltaValsNN, omegaValsNN, "linewidth", 2, "markersize", 10, "*-", ...
+			  deltaValsCC, omegaValsCC, "linewidth", 2, "markersize", 10, "+-", ...
+			  deltaValsND, omegaValsND, "linewidth", 2, "markersize", 10, "x-" );
+			grid on;
+			xlabel( "||delta||" );
+			ylabel( "omega" );
+			legend( ...
+			  "newt", ...
+			  "leg1", ...
+			  "leg2", ...
+			  "N->2N", ...
+			  "C->2C", ...
+			  "N->N+D", ...
+			  "location", "east" );
+			msg( __FILE__, __LINE__, "Please see figures." );
+			return;
+		endif
 		%
 		%
 		vecDelta = vecDelta0;
@@ -173,7 +242,6 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_convent( funch
 					vecDelta = targetStepSize * linsolfDatOut.matV * ( vecYC / norm(vecYC) );
 				else
 					% Find where the second leg intersects the boundary.
-					vecYD = vecYN - vecYC;
 					a = sumsq(vecYD);
 					b = 2.0*(vecYC'*vecYD);
 					c = sumsq(vecYC) - targetStepSize^2;

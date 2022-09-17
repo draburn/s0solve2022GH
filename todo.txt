@@ -1,7 +1,8 @@
 2022-09-17
 NEXT:
- * Add secant (Broyden) updating to AP in _baseline.
+~ Mk viz for "compare similar cases".
 
 UPCOMING:
+ * Krylov seed: perp allspace.
  * SJA (basic)
  * consider groot_jfnk_"TR&BT+linsolf" (new linsolf)

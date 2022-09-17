@@ -119,9 +119,10 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( func
 		assert( norm(vecG) > 0.0 );
 		vecGS =  matS*vecG;
 		assert( norm(vecGS) > 0.0 );
-		p = vecGS'*vecG / (vecGS'*vecGS);
+		p = vecGS'*vecG / sumsq( linsolfDatOut.matW * vecGS );
 		vecYC = -p*vecGS;
 		assert( norm(vecYC) > 0.0 );
+		vecYD = vecYN - vecYC;
 		%
 		%
 		vecXPrev = vecX;
@@ -190,7 +191,6 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( func
 					vecDelta = targetStepSize * linsolfDatOut.matV * ( vecYC / norm(vecYC) );
 				else
 					% Find where the second leg intersects the boundary.
-					vecYD = vecYN - vecYC;
 					a = sumsq(vecYD);
 					b = 2.0*(vecYC'*vecYD);
 					c = sumsq(vecYC) - targetStepSize^2;
