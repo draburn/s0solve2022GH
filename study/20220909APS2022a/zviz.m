@@ -1,4 +1,4 @@
-function scratch_zviz( csdo, prm=[] )
+function zviz( csdo, prm=[] )
 	mydefs;
 	startTime = time();
 	prm.verbLev = mygetfield( prm, "verbLev", VERBLEV__DETAILS );
@@ -12,46 +12,16 @@ function scratch_zviz( csdo, prm=[] )
 	numAlgos = size( csdo.prob(1).grootXDatOut.s, 2 );
 	assert( issize(csdo.prob(1).grootXDatOut.algoSetPrm.s,[1,numAlgos]) );
 	%
-	%for probIndex = 1 : numProbs
-	%for algoIndex = 1 : numAlgos
-	%	s(algoIndex).prob(probIndex) = csdo.prob(probIndex).grootXDatOut.s(algoIndex);
-	%endfor
-	%endfor
 	%
-	%
-	for algoIndex = 1 : numAlgos
-	for probIndex = 1 : numProbs
-		s(algoIndex).vecGrootFlag(probIndex) = csdo.prob(probIndex).grootXDatOut.s(algoIndex).grootFlag;
-		s(algoIndex).vecFevalCount(probIndex) = csdo.prob(probIndex).grootXDatOut.s(algoIndex).fevalCount;
-	endfor
+	for n = 1 : numAlgos
+		mksz{n} = 3+3*n;
+		mktp{n} = [ STR_MARKER_TYPES(1+mod(n,length(STR_MARKER_TYPES))) "-" ];
+		cellAry_empty{n} = " ";
+		cellAry_legend{n} = csdo.prob(1).grootXDatOut.s(n).strSolverName;
 	endfor
 	%
-	vecPctCnvg = 100.0*(1:numProbs)/double(numProbs);
-	algoIndex = 1;
-	msk = (s(algoIndex).vecGrootFlag(:)==GROOT_FLAG__CNVG)';
-	mymin = min(s(algoIndex).vecFevalCount(msk));
-	semilogy( [ 0.0, vecPctCnvg((1:sum(msk))), vecPctCnvg(sum(msk)) ], [ mymin, sort(s(algoIndex).vecFevalCount(msk)), mymin ], 'o-' );
-	cellAry_empty{algoIndex} = " ";
-	cellAry_legend{algoIndex} = csdo.prob(1).grootXDatOut.s(algoIndex).strSolverName;
-	hold on;
-	for algoIndex = 2 : numAlgos
-		msk = (s(algoIndex).vecGrootFlag(:)==GROOT_FLAG__CNVG)';
-		mymin = min(s(algoIndex).vecFevalCount(msk));
-		semilogy( [ 0.0, vecPctCnvg((1:sum(msk))), vecPctCnvg(sum(msk)) ], [ mymin, sort(s(algoIndex).vecFevalCount(msk)), mymin ], 'x-' );
-		cellAry_empty{algoIndex} = " ";
-		cellAry_legend{algoIndex} = csdo.prob(1).grootXDatOut.s(algoIndex).strSolverName;
-	endfor
-	ax = axis();
-	axis([ 0.0, 100.0, ax(3), ax(4) ]);
-	hold off;
-	grid on;
-	set( xlabel(""), "Interpreter", "none" );
-	set( ylabel(""), "Interpreter", "none" );
-	set( title(""), "Interpreter", "none" );
-	set( legend( cellAry_empty, "location", "eastoutside"), "Interpreter", "none" );
-	xlabel( "percentile" );
-	ylabel( "feval count" );
-	legend( cellAry_legend, "location", "eastoutside" );
+	%
+	zviz__cnvgFevalVPct;
 	%
 	%
 	%
