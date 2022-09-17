@@ -51,6 +51,9 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( func
 	assert( isscalar(useAP) );
 	if ( useAP )
 		apUpdateType = mygetfield( prm, "apUpdateType", "secant" );
+		useWoodbury = mygetfield( prm, "useWoodbury", true );
+		assert( isbool(useWoodbury) );
+		assert( isscalar(useWoodbury) );
 	endif
 	%
 	%
@@ -66,8 +69,13 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( func
 	fBest = f0;
 	vecXBest = vecX0;
 	if (useAP)
+	if (~useWoodbury)
 		assert( sizeF == sizeX );
 		matJA = eye(sizeX);
+	else
+		assert( sizeF == sizeX );
+		matJAInv = eye(sizeX);
+	endif
 	endif
 	doMainLoop = true;
 	while (doMainLoop)
@@ -96,8 +104,13 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( func
 		funchMatJProd = @(v)(  ( funchF( vecX + (prm.epsFD*v) ) - vecF ) / prm.epsFD  );
 		linsolfPrm = mygetfield( prm, "linsolfPrm", [] );
 		if (useAP)
+		if (~useWoodbury)
 			linsolfPrm.matP = pinv(matJA); % Ugly.
 			[ vecDelta0, linsolfDatOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
+		else
+			linsolfPrm.matP = matJAInv;
+			[ vecDelta0, linsolfDatOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
+		endif
 		else
 			[ vecDelta0, linsolfDatOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
 		endif
@@ -215,6 +228,7 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( func
 		endif
 		assert( norm(vecDelta) > 0.0 );
 		if ( useAP )
+		if (~useWoodbury)
 			switch ( tolower(apUpdateType) )
 			case { "none" }
 				matJA += ( linsolfDatOut.matW - (matJA*linsolfDatOut.matV) ) * (linsolfDatOut.matV');
@@ -237,6 +251,31 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( func
 			otherwise
 				error([ "Invalid value of apUpdateType (\"" apUpdateType "\"." ]);
 			endswitch
+		else
+			matV = linsolfDatOut.matV;
+			matW = linsolfDatOut.matW;
+			vecY = matV'*vecDelta;
+			switch ( tolower(apUpdateType) )
+			case { "none" }
+				matWUpdated = matW;
+				%
+				%matD = (matJAInv * matWUpdated) - matV;
+				%matA = eye(sizeX) + matD * (matV');
+				%matAInv = eye(sizeX) - matD * pinv( eye(sizeK) + matV'*matD ) * (matV');
+				%assert( reldiff( matA * matAInv, eye(sizeX) ) < sizeX*sqrt(eps) );
+				%assert( reldiff( matAInv * matA, eye(sizeX) ) < sizeX*sqrt(eps) );
+				%matJAInv = matAInv * matJAInv;
+			case { "secant", "broyden" }
+				matWUpdated = matW + ( vecF - vecFPrev - matW*vecY ) * ((vecY')/sumsq(vecDelta));
+			case { "osqu" } % "On Step Quadratic Update"
+				matWUpdated = matW + 2.0*( vecF - vecFPrev - matW*vecY ) * ((vecY')/sumsq(vecDelta));
+			otherwise
+				error([ "Invalid value of apUpdateType (\"" apUpdateType "\"." ]);
+			endswitch
+			matD = (matJAInv * matWUpdated) - matV;
+			matIK = eye(sizeK);
+			matJAInv -= ( matD * ( (matIK + matV'*matD) \ (matV') ) ) * matJAInv;
+		endif
 		endif
 		%
 		%
