@@ -1,6 +1,6 @@
-% jfnk_conventional = _basic + dogleg-ellipsoid-TR
+% jfnk_baseline = conventional + AP.
 
-function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_convent( funchF, vecX0, prm=[] )
+function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( funchF, vecX0, prm=[] )
 	if ( 0 == nargin )
 		vecXBest = __FILE__;
 		return;
@@ -19,6 +19,8 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_convent( funch
 	if ( prm.verbLev >= VERBLEV__DETAILS )
 		msg( __FILE__, __LINE__, "Welcome!" );
 	endif
+	%
+	msgif( prm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, "Updating of approximate Jacobian on step is not implemented!" );
 	%
 	vecF0 = funchF( vecX0 );
 	fevalCount++;
@@ -44,6 +46,9 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_convent( funch
 			assert( 0.0 < ftCoeff );
 		endif
 	endif
+	useAP = mygetfield( prm, "useAP", true );
+	assert( isbool(useAP) );
+	assert( isscalar(useAP) );
 	%
 	%
 	datOut.prm = prm;
@@ -57,6 +62,10 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_convent( funch
 	matInfoB = [];
 	fBest = f0;
 	vecXBest = vecX0;
+	if (useAP)
+		assert( sizeF == sizeX );
+		matJA = eye(sizeX);
+	endif
 	doMainLoop = true;
 	while (doMainLoop)
 		if ( prm.verbLev >= VERBLEV__PROGRESS )
@@ -83,7 +92,12 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_convent( funch
 		% We hypothetically could include fevalLimit - fevalCount - 1 as a limit inside linsolf.
 		funchMatJProd = @(v)(  ( funchF( vecX + (prm.epsFD*v) ) - vecF ) / prm.epsFD  );
 		linsolfPrm = mygetfield( prm, "linsolfPrm", [] );
-		[ vecDelta0, linsolfDatOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
+		if (useAP)
+			linsolfPrm.matP = pinv(matJA); % Ugly.
+			[ vecDelta0, linsolfDatOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
+		else
+			[ vecDelta0, linsolfDatOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
+		endif
 		fevalCount += linsolfDatOut.fevalCount;
 		if ( fevalCount >= prm.fevalLimit )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: Reached fevalLimit." );
@@ -110,6 +124,9 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_convent( funch
 		vecXPrev = vecX;
 		vecFPrev = vecF;
 		fPrev = f;
+		if (useAP)
+			matJA += ( linsolfDatOut.matW - (matJA*linsolfDatOut.matV) ) * (linsolfDatOut.matV');
+		endif
 		%
 		%
 		vecDelta = vecDelta0;

@@ -16,6 +16,7 @@ n++; a.s(n).f = @groot_jfnk_basic;
 n++; a.s(n).f = @groot_jfnk_convent; a.s(n).p.useStepSearch = false;
 n++; a.s(n).f = @groot_jfnk_convent; a.s(n).p.stepType = "newton";
 n++; a.s(n).f = @groot_jfnk_convent;
+n++; a.s(n).f = @groot_jfnk_baseline;
 %n++; a.s(n).f = @groot_jfnk_basic; a.s(n).p.btCoeff = 0.0;
 %
 % Note: zapsrun__start converts "a" to "algoSetPrm".
