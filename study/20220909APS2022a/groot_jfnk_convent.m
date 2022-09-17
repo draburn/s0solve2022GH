@@ -133,18 +133,20 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_convent( funch
 					doSearchLoop = false; % Possibly unnecessary code, to be safe.
 					break;
 				endif
+				if ( ~useStepSearch )
+					msgif( prm.verbLev >= VERBLEV__NOTE, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Reached fallTol and doStepSearch is false." );
+					grootFlag = GROOT_FLAG__FAIL;
+					doMainLoop = false;
+					doSearchLoop = false; % Possibly unnecessary code, to be safe.
+					break;
+				endif
 				targetStepSize = btCoeff * norm(vecDelta);
 			else
 				targetStepSize = ( 1.0 - 100.0*eps ) / stepInverseTRLimit;
 			endif
 			%
-			if ( ~useStepSearch )
-				msgif( prm.verbLev >= VERBLEV__NOTE, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Reached fallTol and doStepSearch is false." );
-				grootFlag = GROOT_FLAG__FAIL;
-				doMainLoop = false;
-				doSearchLoop = false; % Possibly unnecessary code, to be safe.
-				break;
-			elseif ( norm(vecDelta) <= prm.stepTol )
+			assert( useStepSearch );
+			if ( norm(vecDelta) <= prm.stepTol )
 				msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Reached stepTol." );
 				grootFlag = GROOT_FLAG__FAIL;
 				doMainLoop = false;
