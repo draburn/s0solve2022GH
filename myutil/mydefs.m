@@ -68,3 +68,5 @@ GROOT_FLAG__VOID = "_";
 GROOT_FLAG__CNVG = "c";
 GROOT_FLAG__STOP = "S";
 GROOT_FLAG__FAIL = "X";
+
+STR_MARKER_TYPES = "+o*xsd^v<>ph";

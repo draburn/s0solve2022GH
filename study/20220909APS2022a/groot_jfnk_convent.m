@@ -121,7 +121,7 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_convent( funch
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		while (doSearchLoop)
 			msgif( prm.verbLev >= VERBLEV__DETAILED, __FILE__, __LINE__, sprintf( ...
-			  "  BT  %3d,  %6d:  %10.3f,  %10.3f,  %10.3f.", ...
+			  "  BT  %3d,  %6d:  %10.3e,  %10.3e,  %10.3e.", ...
 			  iterCount, fevalCount, f, norm(vecDelta), stepInverseTRLimit ) );
 			if ( norm(vecDelta) * stepInverseTRLimit <= 1.0 + 100.0*eps )
 				% Step is in TR.
@@ -193,7 +193,7 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_convent( funch
 			break;
 		endif
 		if ( useStepSearch && useTR )
-			stepInverseTRLimit = norm(vecDelta)/ftCoeff;
+			stepInverseTRLimit = 1.0/( ftCoeff * norm(vecDelta) );
 		else
 			stepInverseTRLimit = 0; % Possibly unnecessary code, to be safe.
 		endif
