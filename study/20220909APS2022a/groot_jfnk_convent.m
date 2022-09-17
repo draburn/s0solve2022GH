@@ -118,7 +118,6 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_convent( funch
 			% If not using TR, then reset every time.
 			stepInverseTRLimit = 0.0;  % Possibly unnecessary code, to be safe.
 		endif
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		while (doSearchLoop)
 			msgif( prm.verbLev >= VERBLEV__DETAILED, __FILE__, __LINE__, sprintf( ...
 			  "  BT  %3d,  %6d:  %10.3e,  %10.3e,  %10.3e.", ...
