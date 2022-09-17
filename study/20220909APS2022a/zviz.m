@@ -12,7 +12,7 @@ function zviz( zcdo, prm=[] )
 	numAlgos = size( zcdo.prob(1).grootXDatOut.s, 2 );
 	assert( issize(zcdo.prob(1).grootXDatOut.algoSetPrm.s,[1,numAlgos]) );
 	%
-	numFigs0 = mygetfield( prm, "numFigs0", 10 );
+	numFigs0 = mygetfield( prm, "numFigs0", 100 );
 	numFigs = numFigs0;
 	%
 	%
@@ -26,7 +26,7 @@ function zviz( zcdo, prm=[] )
 	%
 	zviz__cnvgFevalVPct;
 	%
-	zviz__cnvgFevalVProbIndex;
+	%zviz__cnvgFevalVProbIndex;
 	%
 	%
 	%

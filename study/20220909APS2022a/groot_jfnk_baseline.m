@@ -49,6 +49,9 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( func
 	useAP = mygetfield( prm, "useAP", true );
 	assert( isbool(useAP) );
 	assert( isscalar(useAP) );
+	if ( useAP )
+		apUpdateType = mygetfield( prm, "apUpdateType", "secant" );
+	endif
 	%
 	%
 	datOut.prm = prm;
@@ -124,9 +127,6 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( func
 		vecXPrev = vecX;
 		vecFPrev = vecF;
 		fPrev = f;
-		if (useAP)
-			matJA += ( linsolfDatOut.matW - (matJA*linsolfDatOut.matV) ) * (linsolfDatOut.matV');
-		endif
 		%
 		%
 		vecDelta = vecDelta0;
@@ -212,6 +212,31 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( func
 			stepInverseTRLimit = 1.0/( ftCoeff * norm(vecDelta) );
 		else
 			stepInverseTRLimit = 0; % Possibly unnecessary code, to be safe.
+		endif
+		assert( norm(vecDelta) > 0.0 );
+		if ( useAP )
+			switch ( tolower(apUpdateType) )
+			case { "none" }
+				matJA += ( linsolfDatOut.matW - (matJA*linsolfDatOut.matV) ) * (linsolfDatOut.matV');
+			case { "full space secant" }
+				matJA += ( linsolfDatOut.matW - (matJA*linsolfDatOut.matV) ) * (linsolfDatOut.matV');
+				matJA += ( vecF - vecFPrev - (matJA*vecDelta) ) * ((vecDelta')/sumsq(vecDelta));
+			case { "secant", "broyden" }
+				matW = linsolfDatOut.matW;
+				matV = linsolfDatOut.matV;
+				vecY = matV'*vecDelta;
+				matW += ( vecF - vecFPrev - matW*vecY ) * ((vecY')/sumsq(vecDelta));
+				matJA += ( matW - (matJA*matV) ) * (matV');
+			case { "osqu" }
+				% "On Step Quadratic Update"
+				matW = linsolfDatOut.matW;
+				matV = linsolfDatOut.matV;
+				vecY = matV'*vecDelta;
+				matW += 2.0*( vecF - vecFPrev - matW*vecY ) * ((vecY')/sumsq(vecDelta));
+				matJA += ( matW - (matJA*matV) ) * (matV');
+			otherwise
+				error([ "Invalid value of apUpdateType (\"" apUpdateType "\"." ]);
+			endswitch
 		endif
 		%
 		%
