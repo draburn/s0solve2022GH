@@ -16,12 +16,23 @@ function zcompDatOut = zcomp( probSetPrm=[], algoSetPrm=[], default_solverPrm=[]
 		algoSetPrm.s(2).f = @groot_jfnk_basic;
 		algoSetPrm.s(3).f = @groot_fsolve;
 	endif
-	zcompPrm.verbLev = mygetfield( zcompPrm, "verbLev", VERBLEV__WARNING );
+	zcompPrm.verbLev = mygetfield( zcompPrm, "verbLev", VERBLEV__INFO );
 	zcompPrm.valdLev = mygetfield( zcompPrm, "valdLev", VALDLEV__HIGH );
 	%
-	msgif( zcompPrm.verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
-	  "Started zcomp with numProbs = %d, probType = \"%s\", numUnknowns = %d, setSeed = %d.", ...
-	  probSetPrm.numProbs, probSetPrm.probType, probSetPrm.numUnknowns, probSetPrm.setSeed ) );
+	dateStr = datestr(now,31);
+	dateStr(" "==dateStr) = "_";
+	dateStr("-"==dateStr) = "";
+	dateStr(":"==dateStr) = "";
+	runName = [ ...
+	  num2str(probSetPrm.numProbs) "X_" probSetPrm.probType ...
+	  "_SZ" num2str(probSetPrm.numUnknowns) ...
+	  "_SD" num2str(probSetPrm.setSeed) ...
+	  "__" dateStr ];
+	if ( zcompPrm.verbLev >= VERBLEV__INFO )
+		msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" );
+		msg( __FILE__, __LINE__, sprintf( "Starting runName \"%s\".", runName ) );
+		msg( __FILE__, __LINE__, "" );
+	endif
 	%
 	%
 	setprngstates( probSetPrm.setSeed, false );
@@ -35,6 +46,8 @@ function zcompDatOut = zcomp( probSetPrm=[], algoSetPrm=[], default_solverPrm=[]
 	zcompDatOut.algoSetPrm = algoSetPrm;
 	zcompDatOut.default_solverPrm = default_solverPrm;
 	zcompDatOut.zcompPrm = zcompPrm;
+	zcompDatOut.runName = runName;
+	%
 	doCharLog = (  ( zcompPrm.verbLev >= VERBLEV__INFO ) && ( zcompPrm.verbLev < VERBLEV__PROGRESS )  );
 	for probIndex = 1 : probSetPrm.numProbs
 		if ( stopsignalpresent() )
@@ -81,6 +94,14 @@ function zcompDatOut = zcomp( probSetPrm=[], algoSetPrm=[], default_solverPrm=[]
 		msg( __FILE__, __LINE__, sprintf( "Completed %dx%d algo(solves) in %gs.", probSetPrm.numProbs, numAlgos, time()-startTime )  );
 	endif
 	zcompDatOut.elapsedTime = time()-startTime;
+	%
+	if ( zcompPrm.verbLev >= VERBLEV__INFO )
+		msg( __FILE__, __LINE__, "" );
+		msg( __FILE__, __LINE__, sprintf( "Finished runName \"%s\".", runName ) );
+		msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" );
+		msg( __FILE__, __LINE__, sprintf( "Elapsed time is %gs.", time()-startTime ) );
+	endif
+	%
 	setprngstatedat(backup_prngStateDat); % May be redundant.
 return;
 endfunction

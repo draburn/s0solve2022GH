@@ -1,7 +1,10 @@
-function groot_xviz( grootXDatOut );
+function groot_xviz( grootXDatOut, prm=[] );
 	mydefs;
 	startTime = time();
+	numFigs0 = mygetfield( prm, "numFigs0", 20 );
+	numFigs = numFigs0;
 	%
+	numFigs++; figure(numFigs);
 	for n=1:grootXDatOut.algoSetPrm.n;
 		semilogy( ...
 		  grootXDatOut.s(n).matInfoA(:,2), ...

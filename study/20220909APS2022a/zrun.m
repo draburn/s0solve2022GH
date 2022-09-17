@@ -6,8 +6,8 @@ printf("\n\n");
 seedTime = mod( round(now*1E11), 1E8 ); % In case you want this.
 probSetPrm = [];
 probSetPrm.probType = "test1";
-probSetPrm.numProbs = 20;
-probSetPrm.numUnknowns = 50;
+probSetPrm.numProbs = 10;
+probSetPrm.numUnknowns = 20;
 probSetPrm.setSeed = 0;
 %
 n = 0;
@@ -22,9 +22,9 @@ n++; a.s(n).f = @groot_jfnk_convent;
 zrun__start;
 %
 % DO WORK.
-zcdo = zcomp( probSetPrm, algoSetPrm, default_solverPrm, compsolvPrm );
+zcdo = zcomp( probSetPrm, algoSetPrm, default_solverPrm, zcompPrm );
 %
+zrun__finish; % Does nothing?
 %
-zrun__finish;
 msg( __FILE__, __LINE__, "Goodbye." );
 printf("\n\n");
