@@ -50,9 +50,10 @@ function zviz( zcdo, prm=[] )
 	endfor
 	endfor
 	%
+	% Consider reporting over just cases where ALL converge!
 	perAlgo_cnvgFrac = perAlgo_numCnvg./(eps+perAlgo_numCnvg+perAlgo_numFail);
 	perAlgo_cevalAvg = perAlgo_sumCeval./(eps+perAlgo_numCnvg);
-	perAlgo_cevalSqAvg = perAlgo_sumCevalSq./(eps+perAlgo_numCnvg(algoIndex));
+	perAlgo_cevalSqAvg = perAlgo_sumCevalSq./(eps+perAlgo_numCnvg);
 	perAlgo_cevalVarSq = perAlgo_cevalSqAvg - (perAlgo_cevalAvg.^2);
 	for algoIndex = 1 : numAlgos
 		this_cevalAvg = perAlgo_cevalAvg(algoIndex);

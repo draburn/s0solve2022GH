@@ -15,7 +15,7 @@ n++; a.s(n).f = @groot_fsolve;
 n++; a.s(n).f = @groot_jfnk_basic;
 n++; a.s(n).f = @groot_jfnk_convent;
 n++; a.s(n).f = @groot_jfnk_baseline;
-n++; a.s(n).f = @groot_jfnk_scratch100;
+n++; a.s(n).f = @groot_findZero_800;
 %
 % Note: zapsrun__start converts "a" to "algoSetPrm".
 zrun__start;
