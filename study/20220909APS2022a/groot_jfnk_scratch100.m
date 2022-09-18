@@ -1,6 +1,6 @@
-% jfnk_baseline = conventional + AP.
+% THIS = jfnk_baseline + ???
 
-function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( funchF, vecX0, prm=[] )
+function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_scratch100( funchF, vecX0, prm=[] )
 	if ( 0 == nargin )
 		vecXBest = __FILE__;
 		return;
@@ -51,9 +51,6 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( func
 	assert( isscalar(useAP) );
 	if ( useAP )
 		apUpdateType = mygetfield( prm, "apUpdateType", "secant" );
-		useWoodbury = mygetfield( prm, "useWoodbury", true );
-		assert( isbool(useWoodbury) );
-		assert( isscalar(useWoodbury) );
 	endif
 	%
 	%
@@ -69,13 +66,8 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( func
 	fBest = f0;
 	vecXBest = vecX0;
 	if (useAP)
-	if (~useWoodbury)
-		assert( sizeF == sizeX );
-		matJA = eye(sizeX);
-	else
 		assert( sizeF == sizeX );
 		matJAInv = eye(sizeX);
-	endif
 	endif
 	doMainLoop = true;
 	while (doMainLoop)
@@ -104,13 +96,8 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( func
 		funchMatJProd = @(v)(  ( funchF( vecX + (prm.epsFD*v) ) - vecF ) / prm.epsFD  );
 		linsolfPrm = mygetfield( prm, "linsolfPrm", [] );
 		if (useAP)
-		if (~useWoodbury)
-			linsolfPrm.matP = pinv(matJA); % Ugly.
-			[ vecDelta0, linsolfDatOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
-		else
 			linsolfPrm.matP = matJAInv;
 			[ vecDelta0, linsolfDatOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
-		endif
 		else
 			[ vecDelta0, linsolfDatOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
 		endif
@@ -228,30 +215,6 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( func
 		endif
 		assert( norm(vecDelta) > 0.0 );
 		if ( useAP )
-		if (~useWoodbury)
-			switch ( tolower(apUpdateType) )
-			case { "none" }
-				matJA += ( linsolfDatOut.matW - (matJA*linsolfDatOut.matV) ) * (linsolfDatOut.matV');
-			case { "full space secant" }
-				matJA += ( linsolfDatOut.matW - (matJA*linsolfDatOut.matV) ) * (linsolfDatOut.matV');
-				matJA += ( vecF - vecFPrev - (matJA*vecDelta) ) * ((vecDelta')/sumsq(vecDelta));
-			case { "secant", "broyden" }
-				matW = linsolfDatOut.matW;
-				matV = linsolfDatOut.matV;
-				vecY = matV'*vecDelta;
-				matW += ( vecF - vecFPrev - matW*vecY ) * ((vecY')/sumsq(vecDelta));
-				matJA += ( matW - (matJA*matV) ) * (matV');
-			case { "osqu" }
-				% "On Step Quadratic Update"
-				matW = linsolfDatOut.matW;
-				matV = linsolfDatOut.matV;
-				vecY = matV'*vecDelta;
-				matW += 2.0*( vecF - vecFPrev - matW*vecY ) * ((vecY')/sumsq(vecDelta));
-				matJA += ( matW - (matJA*matV) ) * (matV');
-			otherwise
-				error([ "Invalid value of apUpdateType (\"" apUpdateType "\"." ]);
-			endswitch
-		else
 			matV = linsolfDatOut.matV;
 			matW = linsolfDatOut.matW;
 			vecY = matV'*vecDelta;
@@ -275,7 +238,6 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( func
 			matD = (matJAInv * matWUpdated) - matV;
 			matIK = eye(sizeK);
 			matJAInv -= ( matD * ( (matIK + matV'*matD) \ (matV') ) ) * matJAInv;
-		endif
 		endif
 		%
 		%
