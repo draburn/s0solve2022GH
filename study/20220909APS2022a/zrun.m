@@ -5,9 +5,9 @@ printf("\n\n");
 % SET PRM.
 seedTime = mod( round(now*1E11), 1E8 ); % In case you want this.
 probSetPrm = [];
-probSetPrm.probType = "test_no_i";
-probSetPrm.numProbs = 10;
-probSetPrm.numUnknowns = 10;
+probSetPrm.probType = "test1";
+probSetPrm.numProbs = 30;
+probSetPrm.numUnknowns = 30;
 probSetPrm.setSeed = 0;
 %
 n = 0;
@@ -15,7 +15,6 @@ n++; a.s(n).f = @groot_fsolve;
 n++; a.s(n).f = @groot_jfnk_basic;
 n++; a.s(n).f = @groot_jfnk_convent;
 n++; a.s(n).f = @groot_jfnk_baseline;
-n++; a.s(n).f = @groot_findZero_800;
 %
 % Note: zapsrun__start converts "a" to "algoSetPrm".
 zrun__start;

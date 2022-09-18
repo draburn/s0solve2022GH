@@ -1,57 +1,34 @@
-function zviz( zcdo, prm=[] )
-	mydefs;
-	startTime = time();
-	prm.verbLev = mygetfield( prm, "verbLev", VERBLEV__DETAILS );
-	prm.valdLev = mygetfield( prm, "valdLev", VALDLEV__HIGH );
-	%
-	assert( ~isempty( zcdo ) );
-	assert( ~isempty( mygetfield( zcdo, "probSetPrm", [] ) ) );
-	numProbs = mygetfield( zcdo.probSetPrm, "numProbs", [] );
-	assert( isposintscalar(numProbs) );
-	%
-	numAlgos = size( zcdo.prob(1).grootXDatOut.s, 2 );
-	assert( issize(zcdo.prob(1).grootXDatOut.algoSetPrm.s,[1,numAlgos]) );
-	%
-	numFigs0 = mygetfield( prm, "numFigs0", 100 );
-	numFigs = numFigs0;
-	%
-	%
-	for n = 1 : numAlgos
-		mksz{n} = 3+3*n;
-		mktp{n} = [ STR_MARKER_TYPES(1+mod(n,length(STR_MARKER_TYPES))) "-" ];
-		cellAry_empty{n} = " ";
-		cellAry_legend{n} = zcdo.prob(1).grootXDatOut.s(n).strSolverName;
-	endfor
-	%
-	%
-	zviz__cnvgFevalVPct;
-	%
-	%zviz__cnvgFevalVProbIndex;
-	%
-	zviz__allCnvgFevalVPct;
-	%
-	zviz__allCnvgStats;
-	%
-	%
-	%
 	perAlgo_numCnvg = zeros( numAlgos, 1 );
 	perAlgo_numFail = zeros( numAlgos, 1 );
-	perAlgo_sumCeval = zeros( numAlgos, 1 );
-	perAlgo_sumCevalSq = zeros( numAlgos, 1 );
 	for probIndex = 1 : numProbs
 	for algoIndex = 1 : numAlgos
 		this_s = zcdo.prob(probIndex).grootXDatOut.s(algoIndex);
 		switch ( this_s.grootFlag )
 		case { GROOT_FLAG__CNVG }
 			perAlgo_numCnvg(algoIndex)++;
-			perAlgo_sumCeval(algoIndex) += this_s.fevalCount;
-			perAlgo_sumCevalSq(algoIndex) += ((this_s.fevalCount)^2);
 		case { GROOT_FLAG__FAIL, GROOT_FLAG__STOP }
 			perAlgo_numFail(algoIndex)++;
 		otherwise
 			error([ "Unsupported value of grootFlag (\"" s.grootFlag "\"." ]);
 		endswitch
 	endfor
+	endfor
+	%
+	%
+	for algoIndex = 1 : numAlgos
+	for probIndex = 1 : numProbs
+		s(algoIndex).vecGrootFlag(probIndex) = zcdo.prob(probIndex).grootXDatOut.s(algoIndex).grootFlag;
+		s(algoIndex).vecFevalCount(probIndex) = zcdo.prob(probIndex).grootXDatOut.s(algoIndex).fevalCount;
+	endfor
+	endfor
+	clear algoIndex;
+	clear probIndex;
+	%
+	perAlgo_sumCeval = zeros( numAlgos, 1 );
+	perAlgo_sumCevalSq = zeros( numAlgos, 1 );
+	for algoIndex = 1 : numAlgos
+		perAlgo_sumCeval(algoIndex) = sum( s(algoIndex).vecFevalCount(allCnvgMask) );
+		perAlgo_sumCevalSq(algoIndex) = sum( s(algoIndex).vecFevalCount(allCnvgMask).^2 );
 	endfor
 	%
 	% Consider reporting over just cases where ALL converge!
@@ -77,5 +54,3 @@ function zviz( zcdo, prm=[] )
 			  100.0*perAlgo_cnvgFrac(algoIndex) ) );
 		endif
 	endfor
-return;
-endfunction
