@@ -3,14 +3,15 @@ setprngstates(81560416);
 numFigs = 0;
 %sizeK = 3; sizeX = 5; sizeF = 5;
 %sizeK = 10; sizeX = 100; sizeF = 1;
-sizeK = 20; sizeX = 100; sizeF = 1;
-%sizeK = 30; sizeX = 100; sizeF = sizeX;
+%sizeK = 20; sizeX = 100; sizeF = 1;
+sizeK = 30; sizeX = 100; sizeF = sizeX;
 matV = utorthdrop( randn(sizeX,sizeK) );
 %
 matJSecret = zeros(sizeF,sizeX);
 for nf=1:sizeF
 for m=1:10
-	nx = 1 + floor(sizeX*(1.0-100.0*eps)*rand)
+	nx = 1 + floor(sizeX*(1.0-100.0*eps)*rand);
+	nzeListSecret(m) = nx;
 	matJSecret(nf,nx) += randn();
 endfor
 endfor
@@ -21,6 +22,7 @@ prm.maxNumNZEPerRow = floor( sizeK - sqrt(sizeK) );
 time0 = time(); [ matJApprox100, datOut ] = sja_scratch100( matV, matW, prm ); time100 = time()-time0;
 time0 = time(); [ matJApprox200, datOut ] = sja_scratch200( matV, matW, prm ); time200 = time()-time0;
 time0 = time(); [ matJApprox300, datOut ] = sja_scratch300( matV, matW, prm ); time300 = time()-time0;
+sort(nzeListSecret)
 rd100 = reldiff( matJSecret, matJApprox100 );
 rd200 = reldiff( matJSecret, matJApprox200 );
 rd300 = reldiff( matJSecret, matJApprox300 );
