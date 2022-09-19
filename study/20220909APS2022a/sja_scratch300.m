@@ -3,7 +3,7 @@ function [ matJ, datOut ] = sja_scratch300( matV, matW, prm=[] )
 	sizeX = size(matV,1);
 	sizeF = size(matW,1);
 	sizeK = size(matV,2);
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__INFO );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__HIGH );
 	maxNumNZEPerRow = mygetfield( prm, "maxNumNZEPerRow", sizeK-1 );
 	tol = mygetfield( prm, "tol", sqrt(eps) );
@@ -102,8 +102,9 @@ function [ matJ, datOut ] = sja_scratch300( matV, matW, prm=[] )
 			% Look at which elements would be worst to drop.
 			% And pseudo-cement those as nzeList for the next iteration.
 			minListSize++;
-			dropResVals = best_res + zeros(1,minListSize);
-			for trial_nz = 1:minListSize
+			sizeL = max(size(temp_nzeList));
+			dropResVals = best_res + zeros(1,sizeL);
+			for trial_nz = 1:sizeL
 				trial_vecJ = zeros(sizeX,1);
 				trial_vecJ(temp_nzeList([1:trial_nz-1,trial_nz+1:end])) = matA(:,temp_nzeList([1:trial_nz-1,trial_nz+1:end])) \ vecB;
 				dropResVals(trial_nz) = norm( vecB - matA * trial_vecJ );
