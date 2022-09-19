@@ -3,7 +3,7 @@ function [ matJ, datOut ] = sja_scratch100( matV, matW, prm=[] )
 	sizeX = size(matV,1);
 	sizeF = size(matW,1);
 	sizeK = size(matV,2);
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__HIGH );
 	maxNZEPerRow = mygetfield( prm, "maxNZEPerRow", sizeK );
 	tol = mygetfield( prm, "tol", sqrt(eps) );
@@ -28,7 +28,7 @@ function [ matJ, datOut ] = sja_scratch100( matV, matW, prm=[] )
 	matJ = zeros(sizeF,sizeX);
 	datOut = [];
 	for nf = 1 : sizeF
-		msg( __FILE__, __LINE__, sprintf( "Analyzing row %d...", nf ) );
+		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "Analyzing row %d...", nf ) );
 		vecB = matW(nf,:)';
 		res0 = norm(vecB);
 		%
@@ -41,7 +41,7 @@ function [ matJ, datOut ] = sja_scratch100( matV, matW, prm=[] )
 		%vecG = matV*vecBeta;
 		%g = norm(vecG);
 		while (doRowLoop)
-			msg( __FILE__, __LINE__, sprintf( "  %3d:  %10.3f,  %10.3f.", max(size(nzeList)), norm(vecJ), res ) );
+			msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "  %3d:  %10.3f,  %10.3f.", max(size(nzeList)), norm(vecJ), res ) );
 			best_nx = 0;
 			best_nzeList = nzeList;
 			best_vecJ = vecJ;
@@ -90,12 +90,14 @@ function [ matJ, datOut ] = sja_scratch100( matV, matW, prm=[] )
 			clear trial_*;
 			clear best_*;
 			%
-			if ( max(size(nzeList)) >= maxNZEPerRow )
-				msg( __FILE__, __LINE__, sprintf( "Row %d: Reached maxNZEPerRow.", nf ) );
+			if ( res < tol*res0 )
+				msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( ...
+				  "Row %d: Reached tol with NZE %d.", nf, max(size(nzeList)) ) );
 				doRowLoop = false; % Superfluous?
 				break;
-			elseif ( res < tol*res0 )
-				msg( __FILE__, __LINE__, sprintf( "Row %d: Reached tol.", nf ) );
+			elseif ( max(size(nzeList)) >= maxNZEPerRow )
+				msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( ...
+				  "Row %d: Reached maxNZEPerRow with rel res %0.3e.", nf, res / res0 ) );
 				doRowLoop = false; % Superfluous?
 				break;
 			endif
