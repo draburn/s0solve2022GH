@@ -1,4 +1,4 @@
-function [ matJ, datOut ] = sja_scratch300( matV, matW, prm=[] )
+function [ matJ, datOut ] = sja_scratch350( matV, matW, prm=[] )
 	mydefs;
 	sizeX = size(matV,1);
 	sizeF = size(matW,1);
@@ -32,6 +32,10 @@ function [ matJ, datOut ] = sja_scratch300( matV, matW, prm=[] )
 		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "Analyzing row %d...", nf ) );
 		vecB = matW(nf,:)';
 		res0 = norm(vecB);
+		if ( 0.0 == res0 )
+			matJ(nf,:) = vecJ;
+			continue;
+		endif
 		%
 		doRowLoop = true;
 		minListSize = 0; % row loop iterations.
@@ -39,6 +43,7 @@ function [ matJ, datOut ] = sja_scratch300( matV, matW, prm=[] )
 		vecJ = zeros(sizeX,1);
 		vecBeta = vecB - matA * vecJ;
 		res = norm(vecBeta);
+		prev_nzeList = [];
 		while (doRowLoop)
 			msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "  %3d:  %10.3f,  %10.3f.", max(size(nzeList)), norm(vecJ), res ) );
 			%
@@ -47,9 +52,7 @@ function [ matJ, datOut ] = sja_scratch300( matV, matW, prm=[] )
 			nzeMask(nzeList) = true;
 			singlemenResVals = zeros(1,sizeX); % Code below counts on this suffic small for the nzeList elements.
 			for trial_nx = (1:sizeX)(~nzeMask)
-				trial_vecJ = zeros(sizeX,1);
-				trial_vecJ([nzeList,trial_nx]) = matA(:,[nzeList,trial_nx]) \ vecB;
-				singlemenResVals(trial_nx) = norm( vecB - matA * trial_vecJ );
+				singlemenResVals(trial_nx) = norm( vecB - matA(:,[nzeList,trial_nx]) * ( matA(:,[nzeList,trial_nx]) \ vecB ) );
 			endfor
 			%
 			% Check short-circuit for [ pseudo-cemented, several best per signlemen ].
@@ -71,13 +74,12 @@ function [ matJ, datOut ] = sja_scratch300( matV, matW, prm=[] )
 			%
 			% Look at [ pseudo-cemented, several best per signlemen, * ].
 			temp_nzeList = temp_sorted(1:maxNumNZEPerRow-1);
+			%
 			temp_nzeMask = logical(zeros(1,sizeX));
 			temp_nzeMask(temp_nzeList) = true;
 			multiemenResVals = res0 + zeros(1,sizeX); % Code below counts on this being suffic large for the temp_nzeList elements.
 			for trial_nx = (1:sizeX)(~temp_nzeMask)
-				trial_vecJ = zeros(sizeX,1);
-				trial_vecJ([temp_nzeList,trial_nx]) = matA(:,[temp_nzeList,trial_nx]) \ vecB;
-				multiemenResVals(trial_nx) = norm( vecB - matA * trial_vecJ );
+				multiemenResVals(trial_nx) = norm( vecB - matA(:,[temp_nzeList,trial_nx]) * ( matA(:,[temp_nzeList,trial_nx])\ vecB ) );
 			endfor
 			[ best_res, best_nx ] = min( multiemenResVals ); % Assumes singlemenResVals(nzeList) is suffic large (res0).
 			temp_nzeList = [ temp_nzeList, best_nx ];
@@ -91,12 +93,21 @@ function [ matJ, datOut ] = sja_scratch300( matV, matW, prm=[] )
 				nzeList = trial_nzeList;
 				doRowLoop = false; % Superfluous?
 				break;
+			elseif ( ~isempty(prev_nzeList) && 0 == sum( temp_nzeList ~= prev_nzeList ) )
+				% We could actually perform this check before the multiemen loop and fetch the result from the previous iter,
+				% but, I doubt that would be worth the effort.
+				msgif( verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
+				  "Row %d: Reached repetition with rel res %0.3e and minListSize %d.", nf, best_res / res0, minListSize ) );
+				nzeList = temp_nzeList;
+				doRowLoop = false; % Superfluous?
+				break;
 			elseif ( minListSize >= maxNumNZEPerRow )
-				msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( "Row %d: Reached maxNumNZEPerRow with rel res %0.3e.", nf, res / res0 ) );
+				msgif( verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( "Row %d: Reached maxNumNZEPerRow with rel res %0.3e.", nf, res / res0 ) );
 				nzeList = temp_nzeList;
 				doRowLoop = false; % Superfluous?
 				break;
 			endif
+			prev_nzeList = temp_nzeList;
 			%
 			% Look at which elements would be worst to drop.
 			% And pseudo-cement those as nzeList for the next iteration.
@@ -104,9 +115,7 @@ function [ matJ, datOut ] = sja_scratch300( matV, matW, prm=[] )
 			sizeL = max(size(temp_nzeList));
 			dropResVals = best_res + zeros(1,sizeL);
 			for trial_nz = 1:sizeL
-				trial_vecJ = zeros(sizeX,1);
-				trial_vecJ(temp_nzeList([1:trial_nz-1,trial_nz+1:end])) = matA(:,temp_nzeList([1:trial_nz-1,trial_nz+1:end])) \ vecB;
-				dropResVals(trial_nz) = norm( vecB - matA * trial_vecJ );
+				dropResVals(trial_nz) = norm( vecB -  matA(:,temp_nzeList([1:trial_nz-1,trial_nz+1:end])) * (  matA(:,temp_nzeList([1:trial_nz-1,trial_nz+1:end])) \ vecB ) );
 			endfor
 			[ foo, temp_sorted ] = sort( dropResVals, "descend" );
 			nzeList = temp_nzeList(temp_sorted(1:minListSize));
