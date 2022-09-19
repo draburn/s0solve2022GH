@@ -5,7 +5,7 @@ function [ matJ, datOut ] = sja_scratch100( matV, matW, prm=[] )
 	sizeK = size(matV,2);
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__HIGH );
-	maxNZEPerRow = mygetfield( prm, "maxNZEPerRow", sizeK );
+	maxNumNZEPerRow = mygetfield( prm, "maxNumNZEPerRow", sizeK-1 );
 	tol = mygetfield( prm, "tol", sqrt(eps) );
 	%useVWeight = mygetfield( prm, "useVWeight", true );
 	if ( valdLev >= VALDLEV__MEDIUM )
@@ -15,7 +15,7 @@ function [ matJ, datOut ] = sja_scratch100( matV, matW, prm=[] )
 		assert( isposintscalar(sizeK) );
 		assert( isrealarray(matV,[sizeX,sizeK]) );
 		assert( isrealarray(matW,[sizeF,sizeK]) );
-		assert( isposintscalar(maxNZEPerRow) );
+		assert( isposintscalar(maxNumNZEPerRow) );
 		assert( 0.0 < tol );
 		assert( tol < 1.0 );
 		%assert( isscalar(useVWeight) );
@@ -95,9 +95,9 @@ function [ matJ, datOut ] = sja_scratch100( matV, matW, prm=[] )
 				  "Row %d: Reached tol with NZE %d.", nf, max(size(nzeList)) ) );
 				doRowLoop = false; % Superfluous?
 				break;
-			elseif ( max(size(nzeList)) >= maxNZEPerRow )
+			elseif ( max(size(nzeList)) >= maxNumNZEPerRow )
 				msgif( verbLev >= VERBLEV__PROGRESS, __FILE__, __LINE__, sprintf( ...
-				  "Row %d: Reached maxNZEPerRow with rel res %0.3e.", nf, res / res0 ) );
+				  "Row %d: Reached maxNumNZEPerRow with rel res %0.3e.", nf, res / res0 ) );
 				doRowLoop = false; % Superfluous?
 				break;
 			endif
