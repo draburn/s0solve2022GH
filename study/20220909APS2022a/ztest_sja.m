@@ -1,13 +1,13 @@
 clear;
-setprngstates(58994832);
+setprngstates(87705072);
 numFigs = 0;
 %sizeK = 3; sizeX = 5; sizeF = 5;
 %sizeK = 10; sizeX = 100; sizeF = 1;
-sizeK = 7; sizeX = 10; sizeF = sizeX;
+sizeK = 7; sizeX = 15; sizeF = 1;
 %sizeK = 30; sizeX = 100; sizeF = sizeX;
 matV = utorthdrop( randn(sizeX,sizeK) );
 %
-matJSecret = zeros(sizeX);
+matJSecret = zeros(sizeF,sizeX);
 for nf=1:sizeF
 for m=1:3
 	nx = 1 + floor(sizeX*(1.0-100.0*eps)*rand);
@@ -18,9 +18,9 @@ matW = matJSecret * matV;
 %
 prm = [];
 prm.maxNumNZEPerRow = floor( sizeK - sqrt(sizeK) );
-time0 = time(); [ matJApprox300, datOut ] = sja_scratch300( matV, matW, prm ); time300 = time()-time0;
-time0 = time(); [ matJApprox200, datOut ] = sja_scratch200( matV, matW, prm ); time200 = time()-time0;
 time0 = time(); [ matJApprox100, datOut ] = sja_scratch100( matV, matW, prm ); time100 = time()-time0;
+time0 = time(); [ matJApprox200, datOut ] = sja_scratch200( matV, matW, prm ); time200 = time()-time0;
+time0 = time(); [ matJApprox300, datOut ] = sja_scratch300( matV, matW, prm ); time300 = time()-time0;
 rd100 = reldiff( matJSecret, matJApprox100 );
 rd200 = reldiff( matJSecret, matJApprox200 );
 rd300 = reldiff( matJSecret, matJApprox300 );
@@ -39,8 +39,8 @@ numFigs++; figure(numFigs);
 n = 1;
 n = 1;
 plot( ...
-  matJApprox100(:,n), 'x-', ...
-  matJApprox200(:,n), 's-', ...
-  matJApprox300(:,n), '^-', ...
-  matJSecret(:,n), 'o-' );
+  matJApprox100(n,:), 'x-', ...
+  matJApprox200(n,:), 's-', ...
+  matJApprox300(n,:), '^-', ...
+  matJSecret(n,:), 'o-' );
 grid on;
