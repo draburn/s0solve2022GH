@@ -70,7 +70,21 @@ function [ matJ, datOut ] = sja_scratch350( matV, matW, prm=[] )
 				nzeList = temp_nzeList;
 				doRowLoop = false; % Superfluous?
 				break;
+			elseif ( minListSize+1 >= maxNumNZEPerRow )
+				msgif( verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( "Row %d: Reached maxNumNZEPerRow with rel res %0.3e.", nf, res / res0 ) );
+				nzeList = temp_nzeList;
+				doRowLoop = false; % Superfluous?
+				break;
+			elseif ( ~isempty(prev_nzeList) && 0 == sum( temp_nzeList ~= prev_nzeList ) )
+				% We could actually perform this check before the multiemen loop and fetch the result from the previous iter,
+				% but, I doubt that would be worth the effort.
+				msgif( verbLev >= VERBLEV__FLAG, __FILE__, __LINE__, sprintf( ...
+				  "Row %d: Reached repetition with rel res %0.3e and minListSize %d.", nf, best_res / res0, minListSize ) );
+				nzeList = temp_nzeList;
+				doRowLoop = false; % Superfluous?
+				break;
 			endif
+			prev_nzeList = temp_nzeList;
 			%
 			% Look at [ pseudo-cemented, several best per signlemen, * ].
 			temp_nzeList = temp_sorted(1:maxNumNZEPerRow-1);
@@ -93,21 +107,13 @@ function [ matJ, datOut ] = sja_scratch350( matV, matW, prm=[] )
 				nzeList = trial_nzeList;
 				doRowLoop = false; % Superfluous?
 				break;
-			elseif ( ~isempty(prev_nzeList) && 0 == sum( temp_nzeList ~= prev_nzeList ) )
-				% We could actually perform this check before the multiemen loop and fetch the result from the previous iter,
-				% but, I doubt that would be worth the effort.
-				msgif( verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( ...
-				  "Row %d: Reached repetition with rel res %0.3e and minListSize %d.", nf, best_res / res0, minListSize ) );
-				nzeList = temp_nzeList;
-				doRowLoop = false; % Superfluous?
-				break;
-			elseif ( minListSize >= maxNumNZEPerRow )
+			elseif ( minListSize+1 >= maxNumNZEPerRow )
+				% Unreachable?
 				msgif( verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( "Row %d: Reached maxNumNZEPerRow with rel res %0.3e.", nf, res / res0 ) );
 				nzeList = temp_nzeList;
 				doRowLoop = false; % Superfluous?
 				break;
 			endif
-			prev_nzeList = temp_nzeList;
 			%
 			% Look at which elements would be worst to drop.
 			% And pseudo-cement those as nzeList for the next iteration.

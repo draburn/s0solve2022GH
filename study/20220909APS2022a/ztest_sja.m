@@ -2,7 +2,7 @@ clear;
 setprngstates(0);
 numFigs = 0;
 sizeX = 100
-sizeF = 10
+sizeF = 1
 sizeK = ceil(sizeX^0.8)
 sizeL = ceil(sizeK/2.0)
 matV = utorthdrop( randn(sizeX,sizeK) );
