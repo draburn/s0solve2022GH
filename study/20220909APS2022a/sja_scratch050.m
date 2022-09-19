@@ -1,4 +1,4 @@
-function [ matJ, datOut ] = sja_scratch350( matV, matW, prm=[] )
+function [ matJ, datOut ] = sja_scratch050( matV, matW, prm=[] )
 	mydefs;
 	sizeX = size(matV,1);
 	sizeF = size(matW,1);
@@ -7,7 +7,6 @@ function [ matJ, datOut ] = sja_scratch350( matV, matW, prm=[] )
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__HIGH );
 	maxNumNZEPerRow = mygetfield( prm, "maxNumNZEPerRow", sizeK-1 );
 	tol = mygetfield( prm, "tol", sqrt(eps) );
-	%useVWeight = mygetfield( prm, "useVWeight", true );
 	if ( valdLev >= VALDLEV__MEDIUM )
 		assert( isscalar(valdLev) );
 		assert( isscalar(verbLev) );
@@ -19,12 +18,9 @@ function [ matJ, datOut ] = sja_scratch350( matV, matW, prm=[] )
 		assert( maxNumNZEPerRow <= sizeK );
 		assert( 0.0 < tol );
 		assert( tol < 1.0 );
-		%assert( isscalar(useVWeight) );
-		%assert( islogical(useVWeight) );
 	endif
 	%
 	% NZE = (identified) non-zero element.
-	%
 	matA = matV';
 	matJ = zeros(sizeF,sizeX);
 	datOut = [];
@@ -86,49 +82,8 @@ function [ matJ, datOut ] = sja_scratch350( matV, matW, prm=[] )
 			endif
 			prev_nzeList = temp_nzeList;
 			%
-			% Look at [ pseudo-cemented, several best per signlemen, * ].
-			temp_nzeList = temp_sorted(1:maxNumNZEPerRow-1);
-			%
-			temp_nzeMask = logical(zeros(1,sizeX));
-			temp_nzeMask(temp_nzeList) = true;
-			multiemenResVals = res0 + zeros(1,sizeX); % Code below counts on this being suffic large for the temp_nzeList elements.
-			for trial_nx = (1:sizeX)(~temp_nzeMask)
-				multiemenResVals(trial_nx) = norm( vecB - matA(:,[temp_nzeList,trial_nx]) * ( matA(:,[temp_nzeList,trial_nx])\ vecB ) );
-			endfor
-			[ best_res, best_nx ] = min( multiemenResVals ); % Assumes singlemenResVals(nzeList) is suffic large (res0).
-			temp_nzeList = [ temp_nzeList, best_nx ];
-			if ( verbLev >= VERBLEV__INFO )
-				msg( __FILE__, __LINE__, "After multiemen analysis..." );
-				temp_nzeList
-			endif
-			if ( best_res < tol*res0 )
-				trial_nzeList = temp_nzeList;
-				msgif( verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( "Row %d: Reached tol with minListSize %d.", nf, minListSize ) );
-				nzeList = trial_nzeList;
-				doRowLoop = false; % Superfluous?
-				break;
-			elseif ( minListSize+1 >= maxNumNZEPerRow )
-				% Unreachable?
-				msgif( verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( "Row %d: Reached maxNumNZEPerRow with rel res %0.3e.", nf, res / res0 ) );
-				nzeList = temp_nzeList;
-				doRowLoop = false; % Superfluous?
-				break;
-			endif
-			%
-			% Look at which elements would be worst to drop.
-			% And pseudo-cement those as nzeList for the next iteration.
 			minListSize++;
-			sizeL = max(size(temp_nzeList));
-			dropResVals = best_res + zeros(1,sizeL);
-			for trial_nz = 1:sizeL
-				dropResVals(trial_nz) = norm( vecB -  matA(:,temp_nzeList([1:trial_nz-1,trial_nz+1:end])) * (  matA(:,temp_nzeList([1:trial_nz-1,trial_nz+1:end])) \ vecB ) );
-			endfor
-			[ foo, temp_sorted ] = sort( dropResVals, "descend" );
-			nzeList = temp_nzeList(temp_sorted(1:minListSize));
-			if ( verbLev >= VERBLEV__INFO )
-				msg( __FILE__, __LINE__, "After drop analysis..." );
-				nzeList
-			endif
+			nzeList = temp_sorted(1:minListSize);
 		endwhile
 		vecJ = zeros(sizeX,1);
 		vecJ(nzeList) = matA(:,nzeList) \ vecB;
