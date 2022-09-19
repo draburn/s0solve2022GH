@@ -101,7 +101,7 @@ function [ matJ, datOut ] = sja_scratch300( matV, matW, prm=[] )
 				dropResVals(trial_nz) = norm( vecB - matA * trial_vecJ );
 			endfor
 			[ foo, temp_sorted ] = sort( dropResVals, "descend" );
-			nzeList = temp_sorted(1:minListSize);
+			nzeList = temp_nzeList(temp_sorted(1:minListSize));
 			%
 			%msg( __FILE__, __LINE__, "Goodbye." );
 			%return;
