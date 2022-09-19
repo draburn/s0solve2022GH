@@ -81,6 +81,10 @@ function [ matJ, datOut ] = sja_scratch050( matV, matW, prm=[] )
 				break;
 			endif
 			prev_nzeList = temp_nzeList;
+			if ( verbLev >= VERBLEV__INFO )
+				msg( __FILE__, __LINE__, "After setting...." );
+				nzeList
+			endif
 			%
 			minListSize++;
 			nzeList = temp_sorted(1:minListSize);

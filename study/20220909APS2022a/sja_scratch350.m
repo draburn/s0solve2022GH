@@ -60,7 +60,9 @@ function [ matJ, datOut ] = sja_scratch350( matV, matW, prm=[] )
 			temp_nzeList = temp_sorted(1:maxNumNZEPerRow);
 			if ( verbLev >= VERBLEV__INFO )
 				msg( __FILE__, __LINE__, "After singlemen analysis..." );
+				singlemenResVals
 				temp_nzeList
+				singlemenResVals(temp_nzeList)
 			endif
 			temp_vecJ = zeros(sizeX,1);
 			temp_vecJ(temp_nzeList) = matA(:,temp_nzeList) \ vecB;
@@ -89,9 +91,11 @@ function [ matJ, datOut ] = sja_scratch350( matV, matW, prm=[] )
 			% Look at [ pseudo-cemented, several best per signlemen, * ].
 			temp_nzeList = temp_sorted(1:maxNumNZEPerRow-1);
 			%
+			resBeforePlusAndMinus = norm( vecB - matA(:,temp_nzeList) * ( matA(:,temp_nzeList)\ vecB ) );
+			%
 			temp_nzeMask = logical(zeros(1,sizeX));
 			temp_nzeMask(temp_nzeList) = true;
-			multiemenResVals = res0 + zeros(1,sizeX); % Code below counts on this being suffic large for the temp_nzeList elements.
+			multiemenResVals = resBeforePlusAndMinus + zeros(1,sizeX); % Code below counts on this being suffic large for the temp_nzeList elements.
 			for trial_nx = (1:sizeX)(~temp_nzeMask)
 				multiemenResVals(trial_nx) = norm( vecB - matA(:,[temp_nzeList,trial_nx]) * ( matA(:,[temp_nzeList,trial_nx])\ vecB ) );
 			endfor
@@ -99,6 +103,8 @@ function [ matJ, datOut ] = sja_scratch350( matV, matW, prm=[] )
 			temp_nzeList = [ temp_nzeList, best_nx ];
 			if ( verbLev >= VERBLEV__INFO )
 				msg( __FILE__, __LINE__, "After multiemen analysis..." );
+				resBeforePlusAndMinus
+				multiemenResVals
 				temp_nzeList
 			endif
 			if ( best_res < tol*res0 )
@@ -119,7 +125,7 @@ function [ matJ, datOut ] = sja_scratch350( matV, matW, prm=[] )
 			% And pseudo-cement those as nzeList for the next iteration.
 			minListSize++;
 			sizeL = max(size(temp_nzeList));
-			dropResVals = best_res + zeros(1,sizeL);
+			dropResVals = resBeforePlusAndMinus + zeros(1,sizeL);
 			for trial_nz = 1:sizeL
 				dropResVals(trial_nz) = norm( vecB -  matA(:,temp_nzeList([1:trial_nz-1,trial_nz+1:end])) * (  matA(:,temp_nzeList([1:trial_nz-1,trial_nz+1:end])) \ vecB ) );
 			endfor
@@ -127,6 +133,7 @@ function [ matJ, datOut ] = sja_scratch350( matV, matW, prm=[] )
 			nzeList = temp_nzeList(temp_sorted(1:minListSize));
 			if ( verbLev >= VERBLEV__INFO )
 				msg( __FILE__, __LINE__, "After drop analysis..." );
+				dropResVals
 				nzeList
 			endif
 		endwhile
