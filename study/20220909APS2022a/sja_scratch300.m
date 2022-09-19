@@ -3,7 +3,7 @@ function [ matJ, datOut ] = sja_scratch300( matV, matW, prm=[] )
 	sizeX = size(matV,1);
 	sizeF = size(matW,1);
 	sizeK = size(matV,2);
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__INFO );
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__HIGH );
 	maxNumNZEPerRow = mygetfield( prm, "maxNumNZEPerRow", sizeK-1 );
 	tol = mygetfield( prm, "tol", sqrt(eps) );
@@ -55,6 +55,10 @@ function [ matJ, datOut ] = sja_scratch300( matV, matW, prm=[] )
 			% Check short-circuit for [ pseudo-cemented, several best per signlemen ].
 			[ foo, temp_sorted ] = sort( singlemenResVals );
 			temp_nzeList = temp_sorted(1:maxNumNZEPerRow);
+			if ( verbLev >= VERBLEV__INFO )
+				msg( __FILE__, __LINE__, "After singlemen analysis..." );
+				temp_nzeList
+			endif
 			temp_vecJ = zeros(sizeX,1);
 			temp_vecJ(temp_nzeList) = matA(:,temp_nzeList) \ vecB;
 			temp_res = norm( vecB - matA * temp_vecJ );
@@ -78,6 +82,10 @@ function [ matJ, datOut ] = sja_scratch300( matV, matW, prm=[] )
 			endfor
 			[ best_res, best_nx ] = min( multiemenResVals ); % Assumes singlemenResVals(nzeList) is suffic large (res0).
 			temp_nzeList = [ temp_nzeList, best_nx ];
+			if ( verbLev >= VERBLEV__INFO )
+				msg( __FILE__, __LINE__, "After multiemen analysis..." );
+				temp_nzeList
+			endif
 			if ( best_res < tol*res0 )
 				trial_nzeList = temp_nzeList;
 				msgif( verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( "Row %d: Reached tol with minListSize %d.", nf, minListSize ) );
@@ -102,6 +110,10 @@ function [ matJ, datOut ] = sja_scratch300( matV, matW, prm=[] )
 			endfor
 			[ foo, temp_sorted ] = sort( dropResVals, "descend" );
 			nzeList = temp_nzeList(temp_sorted(1:minListSize));
+			if ( verbLev >= VERBLEV__INFO )
+				msg( __FILE__, __LINE__, "After drop analysis..." );
+				nzeList
+			endif
 			%
 			%msg( __FILE__, __LINE__, "Goodbye." );
 			%return;

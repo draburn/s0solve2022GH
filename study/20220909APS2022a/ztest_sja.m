@@ -1,9 +1,9 @@
 clear;
-setprngstates(87705072);
+setprngstates(12347824);
 numFigs = 0;
 %sizeK = 3; sizeX = 5; sizeF = 5;
 %sizeK = 10; sizeX = 100; sizeF = 1;
-sizeK = 7; sizeX = 15; sizeF = 1;
+sizeK = 7; sizeX = 100; sizeF = 1;
 %sizeK = 30; sizeX = 100; sizeF = sizeX;
 matV = utorthdrop( randn(sizeX,sizeK) );
 %
