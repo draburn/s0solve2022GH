@@ -6,6 +6,7 @@ function [ matJ, datOut ] = sja_scratch200( matV, matW, prm=[] )
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__HIGH );
 	maxNZEPerRow = mygetfield( prm, "maxNZEPerRow", sizeK );
+	bunchSize = mygetfield( prm, "bunchSize", sizeK );
 	tol = mygetfield( prm, "tol", sqrt(eps) );
 	%useVWeight = mygetfield( prm, "useVWeight", true );
 	if ( valdLev >= VALDLEV__MEDIUM )
@@ -16,6 +17,10 @@ function [ matJ, datOut ] = sja_scratch200( matV, matW, prm=[] )
 		assert( isrealarray(matV,[sizeX,sizeK]) );
 		assert( isrealarray(matW,[sizeF,sizeK]) );
 		assert( isposintscalar(maxNZEPerRow) );
+		assert( isposintscalar(bunchSize) );
+		assert( maxNZEPerRow <= sizeK );
+		assert( maxNZEPerRow <= bunchSize );
+		assert( bunchSize <= sizeK );
 		assert( 0.0 < tol );
 		assert( tol < 1.0 );
 		%assert( isscalar(useVWeight) );
@@ -40,17 +45,33 @@ function [ matJ, datOut ] = sja_scratch200( matV, matW, prm=[] )
 		%
 		while (doRowLoop)
 			msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "  %3d:  %10.3f,  %10.3f.", max(size(nzeList)), norm(vecJ), res ) );
-			best_nx = 0;
-			best_nzeList = nzeList;
-			best_vecJ = vecJ;
-			best_vecBeta = vecBeta;
-			best_res = res;
 			%
-			for trial_nx = 1 : sizeX
-				if ( ismember( trial_nx, nzeList ) )
+			singlemenResVals = zeros(1,sizeX);
+			for nx = 1 : sizeX
+				if ( ismember( nx, nzeList ) )
+					% We below assume these singlemenResVals(nx) are left at zero.
 					continue;
 				endif
-				trial_nzeList = [ nzeList, trial_nx ];
+				trial_nzeList = [ nzeList, nx ];
+				trial_vecJ = zeros(sizeX,1);
+				trial_vecJ(trial_nzeList) = matA(:,trial_nzeList) \ vecB;
+				trial_vecBeta = vecB - matA * trial_vecJ;
+				singlemenResVals(nx) = norm(trial_vecBeta);
+			endfor
+			[ foo, temp_sorted ] = sort( singlemenResVals );
+			temp_nzeList = temp_sorted(1:bunchSize-1);
+			clear trial_*;
+			clear nx;
+			%
+			% temp_nzeList is probably pretty good.
+			% Let's loop over all elem and see if we can make it better.
+			best_nx = 0;
+			best_res = res0; % Any sufficiently large value is fine here.
+			for trial_nx = 1 : sizeX
+				if ( ismember( trial_nx, temp_nzeList ) )
+					continue;
+				endif
+				trial_nzeList = [ temp_nzeList, trial_nx ];
 				trial_vecJ = zeros(sizeX,1);
 				trial_vecJ(trial_nzeList) = matA(:,trial_nzeList) \ vecB;
 				trial_vecBeta = vecB - matA * trial_vecJ;
@@ -64,10 +85,40 @@ function [ matJ, datOut ] = sja_scratch200( matV, matW, prm=[] )
 					best_res = trial_res;
 				endif
 			endfor
-			nzeList = best_nzeList;
-			vecJ = best_vecJ;
-			vecBeta = best_vecBeta;
-			res = best_res;
+			temp_nzeList = best_nzeList;
+			clear trial_*;
+			clear best_*;
+			%
+			% Great, now we need to decide which to cement.
+			% The "best" is the worst one to drop.
+			best_nx = 0;
+			best_res = 0.0; % Any sufficiently small value is fine here.
+			for trial_nx = 1 : sizeX
+				if ( ismember( trial_nx, nzeList ) )
+					continue;
+				elseif ( ~ismember( trial_nx, temp_nzeList ) )
+					continue;
+				endif
+				trial_nzeList = temp_nzeList( temp_nzeList ~= trial_nx );
+				trial_vecJ = zeros(sizeX,1);
+				trial_vecJ(trial_nzeList) = matA(:,trial_nzeList) \ vecB;
+				trial_vecBeta = vecB - matA * trial_vecJ;
+				trial_res = norm(trial_vecBeta);
+				%
+				if ( trial_res > best_res )
+					best_nx = trial_nx;
+					best_nzeList = trial_nzeList;
+					best_vecJ = trial_vecJ;
+					best_vecBeta = trial_vecBeta;
+					best_res = trial_res;
+				endif
+			endfor
+			% Finally, cement this one.
+			nzeList = [ nzeList, best_nx ];
+			vecJ = zeros(sizeX,1);
+			vecJ(nzeList) = matA(:,nzeList) \ vecB;
+			vecBeta = vecB - matA * vecJ;
+			res = norm(vecBeta);
 			clear trial_*;
 			clear best_*;
 			%

@@ -13,5 +13,5 @@ matV = utorthdrop( randn(sizeX,sizeK) );
 matW = matJSecret * matV;
 %
 prm.maxNZEPerRow = 2;
-[ matJApprox, datOut ] = sja_scratch100( matV, matW, prm );
+[ matJApprox, datOut ] = sja_scratch200( matV, matW, prm );
 reldiff( matJSecret, matJApprox )
