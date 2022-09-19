@@ -1,4 +1,4 @@
-function [ matJ, datOut ] = sja_scratch100( matV, matW, prm=[] )
+function [ matJ, datOut ] = sja_scratch200( matV, matW, prm=[] )
 	mydefs;
 	sizeX = size(matV,1);
 	sizeF = size(matW,1);
@@ -38,8 +38,6 @@ function [ matJ, datOut ] = sja_scratch100( matV, matW, prm=[] )
 		vecBeta = vecB - matA * vecJ;
 		res = norm(vecBeta);
 		%
-		%vecG = matV*vecBeta;
-		%g = norm(vecG);
 		while (doRowLoop)
 			msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "  %3d:  %10.3f,  %10.3f.", max(size(nzeList)), norm(vecJ), res ) );
 			best_nx = 0;
@@ -47,13 +45,6 @@ function [ matJ, datOut ] = sja_scratch100( matV, matW, prm=[] )
 			best_vecJ = vecJ;
 			best_vecBeta = vecBeta;
 			best_res = res;
-			%
-			%best_vecG = vecG;
-			%best_g = g;
-			%msg( __FILE__, __LINE__, sprintf( "  nx %d yields res %10.3e and g %10.3e.", 0, res, g ) );
-			%echo__vecJT = vecJ'
-			%echo__vecBetaT = vecBeta'
-			%echo__vecGT = vecG'
 			%
 			for trial_nx = 1 : sizeX
 				if ( ismember( trial_nx, nzeList ) )
@@ -65,22 +56,12 @@ function [ matJ, datOut ] = sja_scratch100( matV, matW, prm=[] )
 				trial_vecBeta = vecB - matA * trial_vecJ;
 				trial_res = norm(trial_vecBeta);
 				%
-				%trial_vecG = matV*trial_vecBeta;
-				%trial_g = norm(trial_vecG); % Note: g = res because ||V*beta|| = ||beta||.
-				%msg( __FILE__, __LINE__, sprintf( "  nx %d yields res %10.3e and g %10.3e.", trial_nx, trial_res, trial_g ) );
-				%echo__trial_vecJT = trial_vecJ'
-				%echo__trial_vecBetaT = trial_vecBeta'
-				%echo__trial_vecGT = trial_vecG'
-				%
 				if ( trial_res < best_res )
 					best_nx = trial_nx;
 					best_nzeList = trial_nzeList;
 					best_vecJ = trial_vecJ;
 					best_vecBeta = trial_vecBeta;
 					best_res = trial_res;
-					%
-					%best_vecG = trial_vecG;
-					%best_g = trial_g;
 				endif
 			endfor
 			nzeList = best_nzeList;
