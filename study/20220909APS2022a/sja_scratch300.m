@@ -53,7 +53,7 @@ function [ matJ, datOut ] = sja_scratch300( matV, matW, prm=[] )
 			endfor
 			%
 			% Check short-circuit for [ pseudo-cemented, several best per signlemen ].
-			[ foo, temp_sorted ] = sort( singlemenResVals );
+			[ foo, temp_sorted ] = sort( singlemenResVals ); % Assumes singlemenResVals(nzeList) is suffic small (0.0).
 			temp_nzeList = temp_sorted(1:maxNumNZEPerRow);
 			if ( verbLev >= VERBLEV__INFO )
 				msg( __FILE__, __LINE__, "After singlemen analysis..." );
@@ -70,7 +70,6 @@ function [ matJ, datOut ] = sja_scratch300( matV, matW, prm=[] )
 			endif
 			%
 			% Look at [ pseudo-cemented, several best per signlemen, * ].
-			[ foo, temp_sorted ] = sort( singlemenResVals ); % Assumes singlemenResVals(nzeList) is suffic small (0.0).
 			temp_nzeList = temp_sorted(1:maxNumNZEPerRow-1);
 			temp_nzeMask = logical(zeros(1,sizeX));
 			temp_nzeMask(temp_nzeList) = true;

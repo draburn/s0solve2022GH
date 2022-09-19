@@ -1,15 +1,15 @@
 clear;
-setprngstates(12347824);
+setprngstates(81560416);
 numFigs = 0;
 %sizeK = 3; sizeX = 5; sizeF = 5;
 %sizeK = 10; sizeX = 100; sizeF = 1;
-sizeK = 7; sizeX = 100; sizeF = 1;
+sizeK = 20; sizeX = 100; sizeF = 1;
 %sizeK = 30; sizeX = 100; sizeF = sizeX;
 matV = utorthdrop( randn(sizeX,sizeK) );
 %
 matJSecret = zeros(sizeF,sizeX);
 for nf=1:sizeF
-for m=1:3
+for m=1:10
 	nx = 1 + floor(sizeX*(1.0-100.0*eps)*rand)
 	matJSecret(nf,nx) += randn();
 endfor
