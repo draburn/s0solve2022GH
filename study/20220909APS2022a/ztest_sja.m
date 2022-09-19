@@ -1,8 +1,8 @@
 clear;
 setprngstates(0);
-sizeX = 5;
+%sizeK = 3; sizeX = 5;
+sizeK = 4; sizeX = 100;
 sizeF = sizeX;
-sizeK = 3;
 %
 matJSecret = diag( (1:sizeX) );
 for nf=1:sizeF
@@ -13,5 +13,7 @@ matV = utorthdrop( randn(sizeX,sizeK) );
 matW = matJSecret * matV;
 %
 prm.maxNZEPerRow = 2;
-[ matJApprox, datOut ] = sja_scratch200( matV, matW, prm );
-reldiff( matJSecret, matJApprox )
+[ matJApprox100, datOut ] = sja_scratch100( matV, matW, prm );
+rd100 = reldiff( matJSecret, matJApprox100 )
+[ matJApprox200, datOut ] = sja_scratch200( matV, matW, prm );
+rd200 = reldiff( matJSecret, matJApprox200 )

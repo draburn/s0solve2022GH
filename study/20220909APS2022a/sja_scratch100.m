@@ -3,7 +3,7 @@ function [ matJ, datOut ] = sja_scratch100( matV, matW, prm=[] )
 	sizeX = size(matV,1);
 	sizeF = size(matW,1);
 	sizeK = size(matV,2);
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__HIGH );
 	maxNZEPerRow = mygetfield( prm, "maxNZEPerRow", sizeK );
 	tol = mygetfield( prm, "tol", sqrt(eps) );

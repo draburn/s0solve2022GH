@@ -3,10 +3,10 @@ function [ matJ, datOut ] = sja_scratch200( matV, matW, prm=[] )
 	sizeX = size(matV,1);
 	sizeF = size(matW,1);
 	sizeK = size(matV,2);
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__PROGRESS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__HIGH );
-	maxNZEPerRow = mygetfield( prm, "maxNZEPerRow", sizeK );
-	bunchSize = mygetfield( prm, "bunchSize", sizeK );
+	maxNZEPerRow = mygetfield( prm, "maxNZEPerRow", sizeK-1 );
+	bunchSize = mygetfield( prm, "bunchSize", sizeK-1 );
 	tol = mygetfield( prm, "tol", sqrt(eps) );
 	%useVWeight = mygetfield( prm, "useVWeight", true );
 	if ( valdLev >= VALDLEV__MEDIUM )
@@ -46,6 +46,7 @@ function [ matJ, datOut ] = sja_scratch200( matV, matW, prm=[] )
 		while (doRowLoop)
 			msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "  %3d:  %10.3f,  %10.3f.", max(size(nzeList)), norm(vecJ), res ) );
 			%
+			%msg( __FILE__, __LINE__, "cemented + 1..." );
 			singlemenResVals = zeros(1,sizeX);
 			for nx = 1 : sizeX
 				if ( ismember( nx, nzeList ) )
@@ -56,13 +57,15 @@ function [ matJ, datOut ] = sja_scratch200( matV, matW, prm=[] )
 				trial_vecJ = zeros(sizeX,1);
 				trial_vecJ(trial_nzeList) = matA(:,trial_nzeList) \ vecB;
 				trial_vecBeta = vecB - matA * trial_vecJ;
-				singlemenResVals(nx) = norm(trial_vecBeta);
+				trial_res = norm(trial_vecBeta);
+				singlemenResVals(nx) = trial_res;
 			endfor
 			[ foo, temp_sorted ] = sort( singlemenResVals );
 			temp_nzeList = temp_sorted(1:bunchSize-1);
 			clear trial_*;
 			clear nx;
 			%
+			%msg( __FILE__, __LINE__, "cemented + best + 1..." );
 			% temp_nzeList is probably pretty good.
 			% Let's loop over all elem and see if we can make it better.
 			best_nx = 0;
@@ -89,6 +92,7 @@ function [ matJ, datOut ] = sja_scratch200( matV, matW, prm=[] )
 			clear trial_*;
 			clear best_*;
 			%
+			%msg( __FILE__, __LINE__, "cemented + best - 1..." );
 			% Great, now we need to decide which to cement.
 			% The "best" is the worst one to drop.
 			best_nx = 0;
@@ -133,6 +137,8 @@ function [ matJ, datOut ] = sja_scratch200( matV, matW, prm=[] )
 				doRowLoop = false; % Superfluous?
 				break;
 			endif
+			%msg( __FILE__, __LINE__, "Goodbye." );
+			%return;
 		endwhile
 		matJ(nf,:) = vecJ;
 		clear vecB;
