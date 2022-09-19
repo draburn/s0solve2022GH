@@ -6,7 +6,6 @@ function [ matJ, datOut ] = sja_scratch200( matV, matW, prm=[] )
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__HIGH );
 	maxNumNZEPerRow = mygetfield( prm, "maxNumNZEPerRow", sizeK-1 );
-	bunchSize = mygetfield( prm, "bunchSize", sizeK-1 );
 	tol = mygetfield( prm, "tol", sqrt(eps) );
 	%useVWeight = mygetfield( prm, "useVWeight", true );
 	if ( valdLev >= VALDLEV__MEDIUM )
@@ -18,8 +17,6 @@ function [ matJ, datOut ] = sja_scratch200( matV, matW, prm=[] )
 		assert( isrealarray(matW,[sizeF,sizeK]) );
 		assert( isposintscalar(maxNumNZEPerRow) );
 		assert( maxNumNZEPerRow <= sizeK );
-		assert( maxNumNZEPerRow <= bunchSize );
-		assert( bunchSize <= sizeK );
 		assert( 0.0 < tol );
 		assert( tol < 1.0 );
 		%assert( isscalar(useVWeight) );
@@ -74,9 +71,9 @@ function [ matJ, datOut ] = sja_scratch200( matV, matW, prm=[] )
 			clear trial_*;
 			%
 			% Try short-circuit.
-			if (1)
+			if ( 1 )
 				[ foo, trial_sorted ] = sort( singlemenResVals );
-				trial_nzeList = trial_sorted(1:bunchSize);
+				trial_nzeList = trial_sorted(1:maxNumNZEPerRow);
 				trial_vecJ = zeros(sizeX,1);
 				trial_vecJ(trial_nzeList) = matA(:,trial_nzeList) \ vecB;
 				trial_vecBeta = vecB - matA * trial_vecJ;
@@ -97,7 +94,7 @@ function [ matJ, datOut ] = sja_scratch200( matV, matW, prm=[] )
 			% First, let's do a bit better than the singlemenResVals...
 			%msg( __FILE__, __LINE__, "cemented + best + 1..." );
 			[ foo, temp_sorted ] = sort( singlemenResVals );
-			temp_nzeList = temp_sorted(1:bunchSize-1);
+			temp_nzeList = temp_sorted(1:maxNumNZEPerRow-1);
 			% temp_nzeList is probably pretty good, so let's try it...
 			% Let's loop over all elem and see if we can make it better.
 			best_nx = 0;

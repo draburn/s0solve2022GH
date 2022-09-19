@@ -1,7 +1,7 @@
 clear;
 setprngstates(0);
 %sizeK = 3; sizeX = 5; sizeF = 5;
-sizeK = 13; sizeX = 50; sizeF = 1;
+sizeK = 10; sizeX = 100; sizeF = 1;
 matV = utorthdrop( randn(sizeX,sizeK) );
 %
 matJSecret = eye(sizeX);
@@ -15,7 +15,7 @@ matJSecret = matJSecret(1,:);
 matW = matJSecret * matV;
 %
 prm = [];
-prm.maxNumNZEPerRow = sizeK-1;
+prm.maxNumNZEPerRow = floor( sizeK - sqrt(sizeK) );
 tic();
 [ matJApprox100, datOut ] = sja_scratch100( matV, matW, prm );
 toc();
