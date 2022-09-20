@@ -1,11 +1,4 @@
-% Function...
-%  solve for vecX: matA * vecX = vecB.
-%  More important than vecX, however, is matV and matW;
-%   matV provides an orthonormal basis,
-%   and matW = matA*matV;
-%  This code is simple but slow.
-
-function [ vecX, datOut ] = linsolf( funchMatAProd, vecB, vecX0, prm = [] )
+function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 	time0 = time();
 	fevalCount = 0;
 	%setVerbLevs;
@@ -32,7 +25,12 @@ function [ vecX, datOut ] = linsolf( funchMatAProd, vecB, vecX0, prm = [] )
 		return;
 	endif
 	%
-	matP = mygetfield(prm,"matP",[]);
+	matP = mygetfield( prm, "matP", [] );
+	useSJA = mygetfield( prm, "useSJA", true );
+	if ( useSJA )
+		sja_prm = mygetfield( prm, "sja_prm", [] );
+	endif
+	sja_matJA = [];
 	%
 	%
 	%
@@ -78,6 +76,16 @@ function [ vecX, datOut ] = linsolf( funchMatAProd, vecB, vecX0, prm = [] )
 		assert( isrealarray(vecW,[sizeF,1]) );
 		matV = [ matV, vecV ];
 		matW = [ matW, vecW ];
+		%
+		if ( useSJA && isempty(sja_matJA) )
+			[ sja_matJA, sja_datOut ] = sja_basic( matV, matW, sja_prm );
+			if ( sum(sumsq( matW - sja_matJA*matV )) < sja_tol^2 * sum(sumsq(matW)) )
+				msg( __FILE__, __LINE__, "Captured sparse Jacobian!" );
+				matP = pinv(sja_matJA);
+			else
+				sja_matJA = [];
+			endif
+		endif
 	endwhile
 	vecX = matV*vecY;
 	if ( 2 <= nargout )
@@ -87,6 +95,7 @@ function [ vecX, datOut ] = linsolf( funchMatAProd, vecB, vecX0, prm = [] )
 		datOut.matW = matW;
 		datOut.vecZ = matW*vecY;
 		datOut.vecRho = vecB - datOut.vecZ;
+		datOut.sja_matJA = sja_matJA;
 	endif
 return;
 end
