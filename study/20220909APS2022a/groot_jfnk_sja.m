@@ -1,6 +1,6 @@
-% jfnk_baseline = conventional + AP.
+% jfnk_sja = _baseline + sja
 
-function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( funchF, vecX0, prm=[] )
+function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_sja( funchF, vecX0, prm=[] )
 	if ( 0 == nargin )
 		vecXBest = __FILE__;
 		return;
@@ -55,6 +55,12 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( func
 		assert( isbool(useWoodbury) );
 		assert( isscalar(useWoodbury) );
 	endif
+	useSJA = mygetfield( prm, "useSJA", true );
+	assert( isbool(useSJA) );
+	assert( isscalar(useSJA) );
+	if ( useSJA )
+		sja_matJAInv = [];
+	endif
 	%
 	%
 	datOut.prm = prm;
@@ -103,17 +109,23 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( func
 		% We hypothetically could include fevalLimit - fevalCount - 1 as a limit inside linsolf.
 		funchMatJProd = @(v)(  ( funchF( vecX + (prm.epsFD*v) ) - vecF ) / prm.epsFD  );
 		linsolfPrm = mygetfield( prm, "linsolfPrm", [] );
+	if ( useSJA && ~isempty(sja_matJAInv) )
+		linsolfPrm.matP = sja_matJAInv;
+		linsolfPrm.useSJA = false;
+		[ vecDelta0, linsolfDatOut ] = linsolf_sja( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
+	else
 		if (useAP)
 		if (~useWoodbury)
 			linsolfPrm.matP = pinv(matJA); % Ugly.
-			[ vecDelta0, linsolfDatOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
+			[ vecDelta0, linsolfDatOut ] = linsolf_sja( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
 		else
 			linsolfPrm.matP = matJAInv;
-			[ vecDelta0, linsolfDatOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
+			[ vecDelta0, linsolfDatOut ] = linsolf_sja( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
 		endif
 		else
-			[ vecDelta0, linsolfDatOut ] = linsolf( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
+			[ vecDelta0, linsolfDatOut ] = linsolf_sja( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
 		endif
+	endif
 		fevalCount += linsolfDatOut.fevalCount;
 		if ( fevalCount >= prm.fevalLimit )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: Reached fevalLimit." );
@@ -288,6 +300,9 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_baseline( func
 		if ( f < fBest )
 			fBest = f;
 			vecXBest = vecX;
+		endif
+		if ( useSJA && isempty(sja_matJAInv) )
+			sja_matJAInv = linsolfDatOut.sja_matJAInv;
 		endif
 	endwhile
 	if ( nargout>=4 )

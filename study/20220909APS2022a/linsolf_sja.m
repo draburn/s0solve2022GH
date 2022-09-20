@@ -3,7 +3,8 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 	fevalCount = 0;
 	%setVerbLevs;
 	mydefs;
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__FLAGGED );
+	%%%verbLev = mygetfield( prm, "verbLev", VERBLEV__FLAGGED );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
 	fevalCount = 0;
 	%
 	sizeX = size(vecX0,1);
@@ -26,11 +27,12 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 	endif
 	%
 	matP = mygetfield( prm, "matP", [] );
-	useSJA = mygetfield( prm, "useSJA", true );
+	useSJA = mygetfield( prm, "useSJA", true )
 	if ( useSJA )
 		sja_prm = mygetfield( prm, "sja_prm", [] );
 	endif
 	sja_matJA = [];
+	sja_matJAInv = [];
 	%
 	%
 	%
@@ -50,8 +52,9 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 		assert( reldiff( matV'*matV, eye(sizeV,sizeV) ) < sqrt(eps) );
 		%
 		vecY = __getY( matW, vecB );
-		rho = norm( vecB - matW*vecY ) / norm(vecB);
+		rho = norm( vecB - matW*vecY ) / norm(vecB)
 		tol = mygetfield( prm, "tol", 0.1 );
+		%%%tol = mygetfield( prm, "tol", eps );
 		if ( rho < tol )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "STRONG SUCCESS: rho < tol." );
 			break;
@@ -67,6 +70,10 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 			vecU = matP*vecU;
 		endif
 		vecV = __orth( vecU, matV, prm );
+		if ( isempty(vecV) && ~isempty(sja_matJAInv) )
+			% Let's try again...
+			vecV = __orth( sja_matJAInv*vecB, matV, prm );
+		endif
 		if ( isempty(vecV) )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Data became linearly dependent." );
 			break;
@@ -78,12 +85,32 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 		matW = [ matW, vecW ];
 		%
 		if ( useSJA && isempty(sja_matJA) )
-			[ sja_matJA, sja_datOut ] = sja_basic( matV, matW, sja_prm );
-			if ( sum(sumsq( matW - sja_matJA*matV )) < sja_tol^2 * sum(sumsq(matW)) )
-				msg( __FILE__, __LINE__, "Captured sparse Jacobian!" );
-				matP = pinv(sja_matJA);
-			else
-				sja_matJA = [];
+			sizeK = size(matV,2);
+			sizeK_hidden = ceil(sqrt(sizeK/2.0));
+			sizeK_margin = 1;ceil(sqrt(sizeK/2.0));
+			sizeK_pass = sizeK - sizeK_hidden;
+			sizeK_nze = sizeK_pass - sizeK_margin;
+			if ( sizeK_nze >= 5 )
+				sja_prm.maxNumNZEPerRow = sizeK_nze;
+				sja_prm.abortOnBadRow = true;
+				sja_tol = 1.0e-3;
+				%msg( __FILE__, __LINE__, sprintf( "Attempting SJA with %d / %d...", size(matV,2) ) );
+				[ sja_matJA, sja_datOut ] = sja_basic( matV(:,1:sizeK_pass), matW(:,1:sizeK_pass), sja_prm );
+				%[ sum(sumsq( sja_matJA*matV - matW )), sum(sumsq( matW )) ]
+				%[ sum(sumsq( sja_matJA*matV(:,sizeK_pass+1:end) - matW(:,sizeK_pass+1:end) )), sum(sumsq( matW(:,sizeK_pass+1:end) )) ]
+				if ( ~isempty(sja_matJA) ...
+				 && sum(sumsq( sja_matJA*matV - matW )) < sja_tol^2 * sum(sumsq( matW ))
+				 && sum(sumsq( sja_matJA*matV(:,sizeK_pass+1:end) - matW(:,sizeK_pass+1:end) )) < sja_tol^2 * sum(sumsq( matW(:,sizeK_pass+1:end) )) )
+					msg( __FILE__, __LINE__, sprintf( "  Captured sparse Jacobian! ( %d / %d / %d ).", sizeK_nze, sizeK_pass, sizeK ) );
+					%matV
+					%sja_matJA
+					matP = pinv(sja_matJA);
+					sja_matJAInv = matP;
+				else
+					msg( __FILE__, __LINE__, sprintf( "  SJA failed ( %d / %d / %d ).", sizeK_nze, sizeK_pass, sizeK ) );
+					sja_matJA = [];
+					sja_matJAInv = [];
+				endif
 			endif
 		endif
 	endwhile
@@ -96,6 +123,7 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 		datOut.vecZ = matW*vecY;
 		datOut.vecRho = vecB - datOut.vecZ;
 		datOut.sja_matJA = sja_matJA;
+		datOut.sja_matJAInv = sja_matJAInv;
 	endif
 return;
 end

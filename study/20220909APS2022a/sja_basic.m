@@ -7,7 +7,9 @@ function [ matJ, datOut ] = sja_basic( matV, matW, prm=[] )
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__HIGH );
 	maxNumNZEPerRow = mygetfield( prm, "maxNumNZEPerRow", sizeK-1 );
 	tol = mygetfield( prm, "tol", sqrt(eps) );
+	abortOnBadRow = mygetfield( prm, "abortOnBadRow", true );
 	useVWeight = mygetfield( prm, "useVWeight", false );
+	resumeOnRow = mygetfield( prm, "resumeOnRow", 0 );
 	if ( valdLev >= VALDLEV__MEDIUM )
 		assert( isscalar(valdLev) );
 		assert( isscalar(verbLev) );
@@ -19,8 +21,12 @@ function [ matJ, datOut ] = sja_basic( matV, matW, prm=[] )
 		assert( maxNumNZEPerRow <= sizeK );
 		assert( 0.0 < tol );
 		assert( tol < 1.0 );
+		assert( isscalar(abortOnBadRow) );
+		assert( islogical(abortOnBadRow) );
 		assert( isscalar(useVWeight) );
 		assert( islogical(useVWeight) );
+		assert( isscalar(resumeOnRow) );
+		assert( 0 <= resumeOnRow );
 	endif
 	%
 	% NZE = (identified) non-zero element.
@@ -38,6 +44,9 @@ function [ matJ, datOut ] = sja_basic( matV, matW, prm=[] )
 	endif
 	matJ = zeros(sizeF,sizeX);
 	datOut = [];
+	if ( 0 ~= resumeOnRow )
+		error( "resumeOnRow is not implemented!" );
+	endif
 	for nf = 1 : sizeF
 		msgif( verbLev >= VERBLEV__COPIOUS, __FILE__, __LINE__, sprintf( "Analyzing row %d...", nf ) );
 		vecB = matW(nf,:)';
@@ -82,6 +91,11 @@ function [ matJ, datOut ] = sja_basic( matV, matW, prm=[] )
 				break;
 			elseif ( minListSize+1 >= maxNumNZEPerRow )
 				msgif( verbLev >= VERBLEV__INFO, __FILE__, __LINE__, sprintf( "Row %d: Reached maxNumNZEPerRow with rel res %0.3e.", nf, res / res0 ) );
+				if ( abortOnBadRow )
+					matJ = [];
+					datOut = [];
+					return;
+				endif
 				nzeList = temp_nzeList;
 				doRowLoop = false; % Superfluous?
 				break;
@@ -89,7 +103,12 @@ function [ matJ, datOut ] = sja_basic( matV, matW, prm=[] )
 				% We could actually perform this check before the multiemen loop and fetch the result from the previous iter,
 				% but, I doubt that would be worth the effort.
 				msgif( verbLev >= VERBLEV__FLAG, __FILE__, __LINE__, sprintf( ...
-				  "Row %d: Reached repetition with rel res %0.3e and minListSize %d.", nf, best_res / res0, minListSize ) );
+				  "Row %d: Reached repetition with rel res %0.3e and minListSize %d.", nf, res / res0, minListSize ) );
+				if ( abortOnBadRow )
+					matJ = [];
+					datOut = [];
+					return;
+				endif
 				nzeList = temp_nzeList;
 				doRowLoop = false; % Superfluous?
 				break;
