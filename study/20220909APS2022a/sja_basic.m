@@ -1,4 +1,4 @@
-function [ matJ, datOut ] = sja_scratch050( matV, matW, prm=[] )
+function [ matJ, datOut ] = sja_basic( matV, matW, prm=[] )
 	mydefs;
 	sizeX = size(matV,1);
 	sizeF = size(matW,1);
@@ -7,6 +7,7 @@ function [ matJ, datOut ] = sja_scratch050( matV, matW, prm=[] )
 	valdLev = mygetfield( prm, "valdLev", VALDLEV__HIGH );
 	maxNumNZEPerRow = mygetfield( prm, "maxNumNZEPerRow", sizeK-1 );
 	tol = mygetfield( prm, "tol", sqrt(eps) );
+	useVWeight = mygetfield( prm, "useVWeight", false );
 	if ( valdLev >= VALDLEV__MEDIUM )
 		assert( isscalar(valdLev) );
 		assert( isscalar(verbLev) );
@@ -18,10 +19,23 @@ function [ matJ, datOut ] = sja_scratch050( matV, matW, prm=[] )
 		assert( maxNumNZEPerRow <= sizeK );
 		assert( 0.0 < tol );
 		assert( tol < 1.0 );
+		assert( isscalar(useVWeight) );
+		assert( islogical(useVWeight) );
 	endif
 	%
 	% NZE = (identified) non-zero element.
 	matA = matV';
+	if (useVWeight)
+		msg( __FILE__, __LINE__, "WARNING: useVWeight is not fully tested." );
+		matASq = matA.^2;
+		alphaVals = 1.0 - max(matA.^2);
+		assert( min(alphaVals) >= -sqrt(eps) );
+		alphaVals = sqrt( alphaVals.*(alphaVals>0.0) );
+		assert( isrealarray(alphaVals,[1,sizeX]) );
+		clear matASq;
+	else
+		alphaVals = ones(1,sizeX); % Biasing weight; lower means favor more.
+	endif
 	matJ = zeros(sizeF,sizeX);
 	datOut = [];
 	for nf = 1 : sizeF
@@ -52,7 +66,7 @@ function [ matJ, datOut ] = sja_scratch050( matV, matW, prm=[] )
 			endfor
 			%
 			% Check short-circuit for [ pseudo-cemented, several best per signlemen ].
-			[ foo, temp_sorted ] = sort( singlemenResVals ); % Assumes singlemenResVals(nzeList) is suffic small (0.0).
+			[ foo, temp_sorted ] = sort( alphaVals.*singlemenResVals ); % Assumes singlemenResVals(nzeList) is suffic small (0.0).
 			temp_nzeList = temp_sorted(1:maxNumNZEPerRow);
 			if ( verbLev >= VERBLEV__INFO )
 				msg( __FILE__, __LINE__, "After singlemen analysis..." );

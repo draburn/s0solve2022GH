@@ -6,7 +6,8 @@ sizeX = 100
 sizeF = 1
 sizeK = ceil(sizeX^0.8)
 sizeL = ceil(sizeK/2.0)
-matV = utorthdrop( randn(sizeX,sizeK) );
+matV = randn(sizeX,sizeK);
+matV = utorthdrop( matV );
 %
 matJSecret = zeros(sizeF,sizeX);
 for nf=1:sizeF
@@ -23,6 +24,13 @@ prm.maxNumNZEPerRow = floor( sizeK - sqrt(sizeK) );
 %prm.verbLev = VERBLEV__INFO;
 %sorted_nzeListSecret = sort(nzeListSecret)
 %return;
+%
+if (1)
+	time0 = time(); [ matJA_basic, datOut ] = sja_basic( matV, matW, prm ); time_basic= time()-time0;
+	rd_basic = reldiff( matJSecret, matJA_basic );
+	msg( __FILE__, __LINE__, sprintf( " sja_scratch100() produced %0.3e in %0.3f seconds.", rd_basic, time_basic ) );
+	return;
+endif
 %
 if (1)
 	time0 = time(); [ matJApprox050, datOut ] = sja_scratch050( matV, matW, prm ); time050 = time()-time0;
