@@ -83,8 +83,10 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 		%
 		if ( useSJA && isempty(sja_matJA) )
 			sizeK = size(matV,2);
-			sizeK_hidden = 1;ceil(sqrt(sizeK/2.0));
-			sizeK_margin = 1;ceil(sqrt(sizeK/2.0));
+			%%%sizeK_hidden = 1;
+			%%%sizeK_margin = 1;
+			sizeK_hidden = ceil(sqrt(sizeK/2.0));
+			sizeK_margin = ceil(sqrt(sizeK/2.0));
 			sizeK_pass = sizeK - sizeK_hidden;
 			sizeK_nze = sizeK_pass - sizeK_margin;
 			if ( sizeK_nze >= 1 )
