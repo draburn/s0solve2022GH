@@ -1,4 +1,7 @@
-function [ matJ, datOut ] = sja_scratch050( matV, matW, prm=[] )
+function [ matJ, datOut ] = sja_scratch060( matV, matW, prm=[] )
+
+	error( "NOT IMPLEMENTED." );
+	
 	mydefs;
 	sizeX = size(matV,1);
 	sizeF = size(matW,1);
@@ -20,8 +23,19 @@ function [ matJ, datOut ] = sja_scratch050( matV, matW, prm=[] )
 		assert( tol < 1.0 );
 	endif
 	%
-	% NZE = (identified) non-zero element.
+	
+	
 	matA = matV';
+	matB = matW';
+	
+	% We should be able to do something like this to calculate singlemenResVals for all rows
+	% for the first iteration, and perhaps consider whether or not to proceed based on that.
+	foo = zeros(sizeX,sizeF);
+	for mx = 1 : sizeX
+		foo(mx,:) = sumsq( matB - matA(:,m) * ( matA(:,m)*matB ) / sumsq(matA(:,m)), 1 );
+	endfor
+	
+	
 	matJ = zeros(sizeF,sizeX);
 	datOut = [];
 	for nf = 1 : sizeF
