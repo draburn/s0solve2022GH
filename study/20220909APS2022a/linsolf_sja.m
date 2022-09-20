@@ -1,10 +1,8 @@
 function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 	time0 = time();
 	fevalCount = 0;
-	%setVerbLevs;
 	mydefs;
-	%%%verbLev = mygetfield( prm, "verbLev", VERBLEV__FLAGGED );
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__MAIN );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__FLAGGED );
 	fevalCount = 0;
 	%
 	sizeX = size(vecX0,1);
@@ -27,7 +25,7 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 	endif
 	%
 	matP = mygetfield( prm, "matP", [] );
-	useSJA = mygetfield( prm, "useSJA", true )
+	useSJA = mygetfield( prm, "useSJA", true );
 	if ( useSJA )
 		sja_prm = mygetfield( prm, "sja_prm", [] );
 	endif
@@ -52,9 +50,8 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 		assert( reldiff( matV'*matV, eye(sizeV,sizeV) ) < sqrt(eps) );
 		%
 		vecY = __getY( matW, vecB );
-		rho = norm( vecB - matW*vecY ) / norm(vecB)
+		rho = norm( vecB - matW*vecY ) / norm(vecB);
 		tol = mygetfield( prm, "tol", 0.1 );
-		%%%tol = mygetfield( prm, "tol", eps );
 		if ( rho < tol )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "STRONG SUCCESS: rho < tol." );
 			break;
@@ -86,11 +83,11 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 		%
 		if ( useSJA && isempty(sja_matJA) )
 			sizeK = size(matV,2);
-			sizeK_hidden = ceil(sqrt(sizeK/2.0));
+			sizeK_hidden = 1;ceil(sqrt(sizeK/2.0));
 			sizeK_margin = 1;ceil(sqrt(sizeK/2.0));
 			sizeK_pass = sizeK - sizeK_hidden;
 			sizeK_nze = sizeK_pass - sizeK_margin;
-			if ( sizeK_nze >= 5 )
+			if ( sizeK_nze >= 1 )
 				sja_prm.maxNumNZEPerRow = sizeK_nze;
 				sja_prm.abortOnBadRow = true;
 				sja_tol = 1.0e-3;
@@ -107,7 +104,7 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 					matP = pinv(sja_matJA);
 					sja_matJAInv = matP;
 				else
-					msg( __FILE__, __LINE__, sprintf( "  SJA failed ( %d / %d / %d ).", sizeK_nze, sizeK_pass, sizeK ) );
+					%msg( __FILE__, __LINE__, sprintf( "  SJA failed ( %d / %d / %d ).", sizeK_nze, sizeK_pass, sizeK ) );
 					sja_matJA = [];
 					sja_matJAInv = [];
 				endif

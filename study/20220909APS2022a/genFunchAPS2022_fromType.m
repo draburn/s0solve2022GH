@@ -94,6 +94,24 @@ function [ funchFOfX, vecX0, datOut ] = genFunchAPS2022_fromType( strProbType, b
 		gfaPrm.s3 = gfaPrm.s1 * 0.5 * abs(randn());
 		[ funchFOfX, gfaDatOut ] = genFunchAPS2022( bigN, funchSeed, gfaPrm );
 		vecX0 = zeros(bigN,1);
+	case { "test_sja0" }
+		bigN = bigN0;
+		bigM = bigN;
+		funchSeed = probSeed;
+		gfaPrm = [];
+		gfaPrm.bigM = bigM;
+		gfaPrm.bigP = min([ ceil(5.0*sqrt(bigN)), bigN, bigM ]);
+		gfaPrm.lambda = 2.0;
+		gfaPrm.cx = 1.0;
+		gfaPrm.c0 = 1.0;
+		gfaPrm.c1 = 0.0;
+		gfaPrm.c2 = 0.0;
+		gfaPrm.c3 = 0.0;
+		gfaPrm.s1 = 1.0;
+		gfaPrm.s2 = 0.1;
+		gfaPrm.s3 = 0.1;
+		[ funchFOfX, gfaDatOut ] = genFunchAPS2022( bigN, funchSeed, gfaPrm );
+		vecX0 = zeros(bigN,1);
 	otherwise
 		setprngstatedat(backup_prngStateDat);
 		error([ "Invalid strProbType (\"" strProbType "\")." ]);
