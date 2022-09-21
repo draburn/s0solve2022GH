@@ -92,7 +92,8 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 			if ( sizeK_nze >= 1 )
 				sja_prm.maxNumNZEPerRow = sizeK_nze;
 				sja_prm.abortOnBadRow = true;
-				sja_tol = 1.0e-3;
+				%%%sja_tol = 1.0e-3;
+				sja_tol = 1.0e-2;
 				%msg( __FILE__, __LINE__, sprintf( "Attempting SJA with %d / %d...", size(matV,2) ) );
 				[ sja_matJA, sja_datOut ] = sja_basic( matV(:,1:sizeK_pass), matW(:,1:sizeK_pass), sja_prm );
 				%[ sum(sumsq( sja_matJA*matV - matW )), sum(sumsq( matW )) ]
