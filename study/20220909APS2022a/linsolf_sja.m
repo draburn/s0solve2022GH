@@ -89,7 +89,8 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 			sizeK_margin = ceil(sqrt(sizeK/2.0));
 			sizeK_pass = sizeK - sizeK_hidden;
 			sizeK_nze = sizeK_pass - sizeK_margin;
-			if ( sizeK_nze >= 1 )
+			%%%if ( sizeK_nze >= 1 )
+			if ( sizeK_nze >= 2 )
 				sja_prm.maxNumNZEPerRow = sizeK_nze;
 				sja_prm.abortOnBadRow = true;
 				%%%sja_tol = 1.0e-3;
@@ -107,7 +108,7 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 					matP = pinv(sja_matJA);
 					sja_matJAInv = matP;
 				else
-					%msg( __FILE__, __LINE__, sprintf( "  SJA failed ( %d / %d / %d ).", sizeK_nze, sizeK_pass, sizeK ) );
+					msg( __FILE__, __LINE__, sprintf( "  SJA failed ( %d / %d / %d ).", sizeK_nze, sizeK_pass, sizeK ) );
 					sja_matJA = [];
 					sja_matJAInv = [];
 				endif
