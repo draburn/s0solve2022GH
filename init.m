@@ -1,5 +1,5 @@
 page_screen_output(0)
-pkg load optim;
+%pkg load optim;
 addpath( "myutil" );
 %
 %my_editor = "/usr/bin/codeblocks";
