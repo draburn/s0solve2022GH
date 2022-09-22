@@ -30,6 +30,10 @@ function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, funchSeed=0, prm=[] )
 	bigL = ceil( lambda * bigN );
 	assert( 0 == bigL || bigN <= bigL );
 	%
+	forceEqualNumberLambdaPerRow = mygetfield( prm, "forceEqualNumberLambdaPerRow", false );
+	assert( isscalar(forceEqualNumberLambdaPerRow) );
+	assert( islogical(forceEqualNumberLambdaPerRow) );
+	%
 	% Check anticipated memory usage.
 	% Note that inclusion of data in datOut is free.
 	% But, about 50% additional memory is required during construction.
@@ -107,6 +111,18 @@ function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, funchSeed=0, prm=[] )
 		matB31 = sparse( [], [], [], bigM, bigN );
 		matB32 = sparse( [], [], [], bigM, bigN );
 		matB33 = sparse( [], [], [], bigM, bigN );
+	elseif ( forceEqualNumberLambdaPerRow )
+		numLambdaPerRow = round(bigL/bigM)
+		assert( bigL == numLambdaPerRow * bigM );
+		vecM = repmat( (1:bigM)', [ numLambdaPerRow, 1 ] );
+		vecN = 1 + floor( (bigN-eps)*rand(bigL,1) );
+		% Note that some elements may be repeated, so there may be fewer than bigL "Large Entries".
+		matB1  = sparse( vecM, vecN, s1*randn(bigL,1), bigM, bigN );
+		matB21 = sparse( vecM, vecN, s2*randn(bigL,1), bigM, bigN );
+		matB22 = sparse( vecM, vecN, s2*randn(bigL,1), bigM, bigN );
+		matB31 = sparse( vecM, vecN, s3*randn(bigL,1), bigM, bigN );
+		matB32 = sparse( vecM, vecN, s3*randn(bigL,1), bigM, bigN );
+		matB33 = sparse( vecM, vecN, s3*randn(bigL,1), bigM, bigN );
 	else
 		assert( bigL >= bigM ); % Require at least one per row.
 		vecM = 1 + floor( (bigM-eps)*rand(bigL,1) );

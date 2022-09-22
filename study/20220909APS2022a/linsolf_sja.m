@@ -87,23 +87,26 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 		%
 		if ( useSJA && isempty(sja_matJA) )
 			sizeK = size(matV,2);
-			sizeK_hidden = 1;
-			sizeK_margin = 1;
+			%%%sizeK_hidden = 1;
+			%%%sizeK_margin = 1;
 			%%%sizeK_hidden = ceil(sqrt(sizeK)/2.0);
 			%%%sizeK_margin = ceil(sqrt(sizeK)/2.0);
 			%%%sizeK_hidden = ceil(sqrt(sizeK/2.0));
 			%%%sizeK_margin = ceil(sqrt(sizeK/2.0));
+			sizeK_hidden = ceil(sqrt(sizeK));
+			sizeK_margin = 0;
 			sizeK_pass = sizeK - sizeK_hidden;
 			sizeK_nze = sizeK_pass - sizeK_margin;
 			%%%sizeK_nze = max([ sizeK_pass - sizeK_margin, sqrt(N) ]);
 			%%%if ( sizeK_nze >= 1 )
-			if ( sizeK_nze >= 2 )
+			if ( sizeK_nze >= 1 && 0 == mod(sizeK_nze,10) )
 				sja_prm.maxNumNZEPerRow = sizeK_nze;
 				sja_prm.abortOnBadRow = true;
 				%%%sja_tol = 1.0e-3;
 				sja_tol = 1.0e-2;
 				%msg( __FILE__, __LINE__, sprintf( "Attempting SJA with %d / %d...", size(matV,2) ) );
-				[ sja_matJA, sja_datOut ] = sja_basic( matV(:,1:sizeK_pass), matW(:,1:sizeK_pass), sja_prm );
+				%%%[ sja_matJA, sja_datOut ] = sja_basic( matV(:,1:sizeK_pass), matW(:,1:sizeK_pass), sja_prm );
+				[ sja_matJA, sja_datOut ] = sja_corr( matV(:,1:sizeK_pass), matW(:,1:sizeK_pass), sja_prm );
 				%[ sum(sumsq( sja_matJA*matV - matW )), sum(sumsq( matW )) ]
 				%[ sum(sumsq( sja_matJA*matV(:,sizeK_pass+1:end) - matW(:,sizeK_pass+1:end) )), sum(sumsq( matW(:,sizeK_pass+1:end) )) ]
 				if ( ~isempty(sja_matJA) ...
@@ -115,7 +118,7 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 					matP = pinv(sja_matJA);
 					sja_matJAInv = matP;
 				else
-					msg( __FILE__, __LINE__, sprintf( "  SJA failed ( %d / %d / %d ).", sizeK_nze, sizeK_pass, sizeK ) );
+					%msg( __FILE__, __LINE__, sprintf( "  SJA failed ( %d / %d / %d ).", sizeK_nze, sizeK_pass, sizeK ) );
 					sja_matJA = [];
 					sja_matJAInv = [];
 				endif
