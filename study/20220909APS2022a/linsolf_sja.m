@@ -61,6 +61,10 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: sizeV >= iterMax." );
 			break;
 		endif
+		if ( stopsignalpresent() )
+			msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "IMPOSED STOP: Received stop signal." );
+			break;
+		endif
 		%
 		vecU = vecW;
 		if ( ~isempty(matP) )
@@ -85,10 +89,13 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 			sizeK = size(matV,2);
 			sizeK_hidden = 1;
 			sizeK_margin = 1;
+			%%%sizeK_hidden = ceil(sqrt(sizeK)/2.0);
+			%%%sizeK_margin = ceil(sqrt(sizeK)/2.0);
 			%%%sizeK_hidden = ceil(sqrt(sizeK/2.0));
 			%%%sizeK_margin = ceil(sqrt(sizeK/2.0));
 			sizeK_pass = sizeK - sizeK_hidden;
 			sizeK_nze = sizeK_pass - sizeK_margin;
+			%%%sizeK_nze = max([ sizeK_pass - sizeK_margin, sqrt(N) ]);
 			%%%if ( sizeK_nze >= 1 )
 			if ( sizeK_nze >= 2 )
 				sja_prm.maxNumNZEPerRow = sizeK_nze;
