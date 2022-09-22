@@ -85,6 +85,12 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 		matV = [ matV, vecV ];
 		matW = [ matW, vecW ];
 		%
+		%if ( useSJA && ~isempty(sja_matJA) )
+		%	msg( __FILE__, __LINE__, "Looks like sja_matJA didn't work. Kaboom!" );
+		%	sja_matJA = [];
+		%	sja_matJAInv = [];
+		%endif
+		%
 		if ( useSJA && isempty(sja_matJA) )
 			sizeK = size(matV,2);
 			%%%sizeK_hidden = 1;
@@ -115,6 +121,8 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 					msg( __FILE__, __LINE__, sprintf( "  Captured sparse Jacobian! ( %d / %d / %d ).", sizeK_nze, sizeK_pass, sizeK ) );
 					%matV
 					%sja_matJA
+					%figure( 300 );
+					%imagesc(sja_matJA);
 					matP = pinv(sja_matJA);
 					sja_matJAInv = matP;
 				else

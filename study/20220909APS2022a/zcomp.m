@@ -76,6 +76,15 @@ function zcompDatOut = zcomp( probSetPrm=[], algoSetPrm=[], default_solverPrm=[]
 		zcompDatOut.prob(probIndex).sizeX = this_probDat.sizeX;
 		zcompDatOut.prob(probIndex).sizeF = this_probDat.sizeF;
 		%
+		%
+		%if ( 1 )
+		%	foo = this_probDat.genFunchDatOut;
+		%	matJSecret = foo.matA11L*foo.matA11R + foo.matA12L*foo.matA12R + foo.matB1;
+		%	figure(200);
+		%	imagesc(matJSecret);
+		%endif
+		%
+		%
 		this_xPrm = [];
 		if ( doCharLog )
 			this_xPrm.verbLev = VERBLEV__INFO;
