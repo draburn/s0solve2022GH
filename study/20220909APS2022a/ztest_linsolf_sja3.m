@@ -24,5 +24,5 @@ matW = matJSecret*matV;
 prm = [];
 %prm.maxNumNZEPerRow = 5;
 %tic(); [ matJA, datOut ] = sja_scratch350( matV, matW, prm ); toc(); rd = reldiff( matJSecret, matJA )
-tic(); [ matJA, datOut ] = sja_basic( matV, matW, prm ); toc(); rd = reldiff( matJSecret, matJA )
+tic(); [ matJA, datOut ] = sja_basic( matV, matW, prm ); toc(); if ( ~isempty(matJA)) rd = reldiff( matJSecret, matJA ) endif
 tic(); [ matJA, datOut ] = sja_fast( matV, matW, prm ); toc(); rd = reldiff( matJSecret, matJA )
