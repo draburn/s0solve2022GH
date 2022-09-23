@@ -26,11 +26,11 @@ function zviz( zcdo, prm=[] )
 	%
 	zviz__cnvgFevalVPct;
 	%
-	%zviz__cnvgFevalVProbIndex;
-	%
 	zviz__allCnvgFevalVPct;
 	%
 	zviz__allCnvgStats;
+	%
+	zviz__cnvgFevalVProbIndex;
 	%
 	%
 	%
