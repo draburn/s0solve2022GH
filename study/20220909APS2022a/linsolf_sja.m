@@ -62,7 +62,7 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 			break;
 		endif
 		if ( stopsignalpresent() )
-			msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "IMPOSED STOP: Received stop signal." );
+			msgif( verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "IMPOSED STOP: Received stop signal." );
 			break;
 		endif
 		%
@@ -110,26 +110,33 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 				sja_prm.abortOnBadRow = true;
 				%%%sja_tol = 1.0e-3;
 				sja_tol = 1.0e-2;
-				%msg( __FILE__, __LINE__, sprintf( "Attempting SJA with %d / %d...", size(matV,2) ) );
-				%%%[ sja_matJA, sja_datOut ] = sja_basic( matV(:,1:sizeK_pass), matW(:,1:sizeK_pass), sja_prm );
-				[ sja_matJA, sja_datOut ] = sja_corr( matV(:,1:sizeK_pass), matW(:,1:sizeK_pass), sja_prm );
-				%[ sum(sumsq( sja_matJA*matV - matW )), sum(sumsq( matW )) ]
-				%[ sum(sumsq( sja_matJA*matV(:,sizeK_pass+1:end) - matW(:,sizeK_pass+1:end) )), sum(sumsq( matW(:,sizeK_pass+1:end) )) ]
-				if ( ~isempty(sja_matJA) ...
-				 && sum(sumsq( sja_matJA*matV - matW )) < sja_tol^2 * sum(sumsq( matW ))
-				 && sum(sumsq( sja_matJA*matV(:,sizeK_pass+1:end) - matW(:,sizeK_pass+1:end) )) < sja_tol^2 * sum(sumsq( matW(:,sizeK_pass+1:end) )) )
-					msg( __FILE__, __LINE__, sprintf( "  Captured sparse Jacobian! ( %d / %d / %d ).", sizeK_nze, sizeK_pass, sizeK ) );
+				[ temp_matJA, sja_datOut ] = sja_corr( matV(:,1:sizeK_pass), matW(:,1:sizeK_pass), sja_prm );
+				%[ sum(sumsq( temp_matJA*matV - matW )), sum(sumsq( matW )) ]
+				%[ sum(sumsq( temp_matJA*matV(:,sizeK_pass+1:end) - matW(:,sizeK_pass+1:end) )), sum(sumsq( matW(:,sizeK_pass+1:end) )) ]
+				if ( ~isempty(temp_matJA) ...
+				 && sum(sumsq( temp_matJA*matV - matW )) < sja_tol^2 * sum(sumsq( matW )) ...
+				 && sum(sumsq( temp_matJA*matV(:,sizeK_pass+1:end) - matW(:,sizeK_pass+1:end) )) < sja_tol^2 * sum(sumsq( matW(:,sizeK_pass+1:end) )) )
+					msg( __FILE__, __LINE__, sprintf( "  Tentatively captured sparse Jacobian! ( %d / %d / %d ).", sizeK_nze, sizeK_pass, sizeK ) );
 					%matV
 					%sja_matJA
 					%figure( 300 );
 					%imagesc(sja_matJA);
-					matP = pinv(sja_matJA);
-					sja_matJAInv = matP;
-				else
-					%msg( __FILE__, __LINE__, sprintf( "  SJA failed ( %d / %d / %d ).", sizeK_nze, sizeK_pass, sizeK ) );
-					sja_matJA = [];
-					sja_matJAInv = [];
+					if ( rcond(temp_matJA) > sqrt(eps)  )
+						temp_matJAInv = inv(temp_matJA);
+						if ( sum(sumsq( matV - temp_matJAInv*matW )) < sja_tol^2 * sum(sumsq( matV )) ...
+						  && sum(sumsq( matV(:,sizeK_pass+1:end) - temp_matJAInv*matW(:,sizeK_pass+1:end) )) ...
+						   < sja_tol^2 * sum(sumsq( matV(:,sizeK_pass+1:end) )) )
+							msg( __FILE__, __LINE__, "  Captured sparse Jacobian!" );
+							sja_matJA = temp_matJA;
+							matP = temp_matJAInv;
+							sja_matJAInv = temp_matJAInv;
+						else
+							msg( __FILE__, __LINE__, "  Rejected sparse Jacobian on inverse check." );
+						endif
+					endif
 				endif
+				temp_matJA = [];
+				temp_matJAInv = [];
 			endif
 		endif
 	endwhile
