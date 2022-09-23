@@ -105,7 +105,7 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 			sizeK_nze = sizeK_pass - sizeK_margin;
 			%%%sizeK_nze = max([ sizeK_pass - sizeK_margin, sqrt(N) ]);
 			%%%if ( sizeK_nze >= 1 )
-			if ( sizeK_nze >= 1 && 0 == mod(sizeK_nze,10) )
+			if ( sizeK_nze >= 1 && 0 == mod(sizeK_nze,30) )
 				sja_prm.maxNumNZEPerRow = sizeK_nze;
 				sja_prm.abortOnBadRow = true;
 				%%%sja_tol = 1.0e-3;
