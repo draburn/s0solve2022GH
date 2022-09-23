@@ -297,6 +297,25 @@ function [ funchFOfX, vecX0, datOut ] = genFunchAPS2022_fromType( strProbType, b
 		gfaPrm.s3 = gfaPrm.s1*0.1;
 		[ funchFOfX, gfaDatOut ] = genFunchAPS2022( bigN, funchSeed, gfaPrm );
 		vecX0 = zeros(bigN,1);
+	case { "sja556" }
+		bigN = ceil( bigN0*(1.0+rand())/1.5 );
+		bigM = bigN;
+		funchSeed = round( 1.0E12*rand() );
+		gfaPrm = [];
+		gfaPrm.bigM = bigM;
+		gfaPrm.bigP = min([ ceil(5.0*sqrt(bigN)), bigN, bigM ]);
+		gfaPrm.lambda = 1 + ( sqrt(bigN)*(1.0+abs(randn()))/2.0 );
+		gfaPrm.forceEqualNumberLambdaPerRow = false;
+		gfaPrm.cx = 1.0;
+		gfaPrm.c0 = 0.0;
+		gfaPrm.c1 = 1.0e-8*abs(randn())/bigN;
+		gfaPrm.c2 = gfaPrm.c1*abs(randn());
+		gfaPrm.c3 = gfaPrm.c1*abs(randn());
+		gfaPrm.s1 = 1.0*abs(randn());
+		gfaPrm.s2 = gfaPrm.s1*0.1*abs(randn());
+		gfaPrm.s3 = gfaPrm.s1*0.1*abs(randn());
+		[ funchFOfX, gfaDatOut ] = genFunchAPS2022( bigN, funchSeed, gfaPrm );
+		vecX0 = zeros(bigN,1);
 	case { "sja600" }
 		% Here, we see a need to update the SJA on step.
 		bigN = ceil( bigN0*(1.0+rand())/1.5 );
