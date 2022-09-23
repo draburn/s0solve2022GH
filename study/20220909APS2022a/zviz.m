@@ -32,6 +32,8 @@ function zviz( zcdo, prm=[] )
 	%
 	zviz__cnvgFevalVProbIndex;
 	%
+	zviz__probStats;
+	%
 	%
 	%
 	perAlgo_numCnvg = zeros( numAlgos, 1 );
