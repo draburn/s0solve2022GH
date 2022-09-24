@@ -6,14 +6,14 @@ printf("\n\n");
 seedTime = mod( round(now*1E11), 1E8 ); % In case you want this.
 probSetPrm = [];
 probSetPrm.probType = "aps2022base";
-probSetPrm.numProbs = 10;
-probSetPrm.numUnknowns = 200;
-probSetPrm.setSeed = 0;
+probSetPrm.numProbs = 1;
+probSetPrm.numUnknowns = 500;
+probSetPrm.setSeed = 1;
 %
 n = 0;
 n++; a.s(n).f = @groot_fsolve;
-n++; a.s(n).f = @groot_jfnk_basic;
-n++; a.s(n).f = @groot_jfnk_convent;
+%n++; a.s(n).f = @groot_jfnk_basic;
+%n++; a.s(n).f = @groot_jfnk_convent;
 n++; a.s(n).f = @groot_jfnk_baseline;
 n++; a.s(n).f = @groot_jfnk_sja;
 %

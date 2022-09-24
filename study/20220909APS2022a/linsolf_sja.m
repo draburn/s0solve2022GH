@@ -99,8 +99,12 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 			%%%sizeK_margin = ceil(sqrt(sizeK)/2.0);
 			%%%sizeK_hidden = ceil(sqrt(sizeK/2.0));
 			%%%sizeK_margin = ceil(sqrt(sizeK/2.0));
-			sizeK_hidden = ceil(sqrt(sizeK));
-			sizeK_margin = 0;
+			%
+			%sizeK_hidden = ceil(sqrt(sizeK));
+			%sizeK_margin = 0;
+			sizeK_hidden = ceil(sqrt(sizeK)/3.0);
+			sizeK_margin = ceil(sqrt(sizeK)/3.0);
+			%
 			sizeK_pass = sizeK - sizeK_hidden;
 			sizeK_nze = sizeK_pass - sizeK_margin;
 			%%%sizeK_nze = max([ sizeK_pass - sizeK_margin, sqrt(N) ]);
@@ -111,6 +115,7 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 				%%%sja_tol = 1.0e-3;
 				sja_tol = 1.0e-2;
 				[ temp_matJA, sja_datOut ] = sja_corr( matV(:,1:sizeK_pass), matW(:,1:sizeK_pass), sja_prm );
+				%%%[ temp_matJA, sja_datOut ] = sja_corr_oneshot( matV(:,1:sizeK_pass), matW(:,1:sizeK_pass), sja_prm );
 				%[ sum(sumsq( temp_matJA*matV - matW )), sum(sumsq( matW )) ]
 				%[ sum(sumsq( temp_matJA*matV(:,sizeK_pass+1:end) - matW(:,sizeK_pass+1:end) )), sum(sumsq( matW(:,sizeK_pass+1:end) )) ]
 				if ( ~isempty(temp_matJA) ...
