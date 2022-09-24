@@ -1,4 +1,4 @@
-function grootXDatOut = zgroot_x( zcdo, probIndex, prm=[] );
+function grootXDatOut = zgroot_x( zcdo, probIndex=1, prm=[] );
 	backup_prngStateDat = getprngstatedat();
 	mydefs;
 	startTime = time();

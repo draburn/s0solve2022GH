@@ -20,6 +20,31 @@ function [ matJ, datOut ] = sja_corr( matV, matW, prm=[] )
 		assert( 0.0 < tol );
 		assert( tol < 1.0 );
 	endif
+	%
+	%
+	% Try one-shot.
+	tryOneShot = false;
+	if ( tryOneShot )
+	[ foo, vecPriorityList ] = sort( diag(1.0./(eps+sumsq(matW,2))) * ((matW * (matV')).^ 2) * diag(1.0./(eps+sumsq(matV,2))), 2, "descend" );
+	vecNZEList = vecPriorityList(:,1:maxNumNZEPerRow);
+	matJ = zeros( sizeF, sizeX );
+	for m = 1 : sizeF
+		matJ(m,vecNZEList(m,:)) = (matV(vecNZEList(m,:),:)') \ (matW(m,:)');
+	endfor
+	vecRes = sum( (matJ*matV - matW).^2, 2 );
+	vecNorm = sum( matW.^2, 2 );
+	oneShotTol = mygetfield( prm, "oneShotTol", 0.01 );
+	oneShotCaptureRows = sum( vecRes <= oneShotTol^2 * vecNorm );
+	msg( __FILE__, __LINE__, sprintf( "One-shot capture percentage: %0.3f (%0.3f required).", ...
+	  oneShotCaptureRows*100.0/sizeF, sqrt(sizeF)*100.0/sizeF ) );
+	if ( oneShotCaptureRows < sqrt(sizeF) )
+		matJ = [];
+		datOut = [];
+		return;
+	endif
+	endif
+	%
+	%
 	% DRaburn 2022-09-22:
 	% Realized that identifying an element to be zero is a possibility;
 	% really, it's not a question of number of Non-Zero-Elements per row,

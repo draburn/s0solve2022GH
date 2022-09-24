@@ -55,7 +55,9 @@ function zcompDatOut = zcomp( probSetPrm=[], algoSetPrm=[], default_solverPrm=[]
 	zcompDatOut.runName = runName;
 	%
 	doCharLog = (  ( zcompPrm.verbLev >= VERBLEV__INFO ) && ( zcompPrm.verbLev < VERBLEV__PROGRESS )  );
-	for probIndex = 1 : probSetPrm.numProbs
+	probRunList = mygetfield( zcompPrm, "probRunList", (1:probSetPrm.numProbs) );
+	for probIndex = probRunList
+	%%%for probIndex = 1 : probSetPrm.numProbs
 		if ( stopsignalpresent() )
 			msg( __FILE__, __LINE__, "Found stopsignal." );
 			break;

@@ -64,10 +64,20 @@ function grootXDatOut = groot_x( funchF, vecX0, algoSetPrm=[], default_solverPrm
 		switch ( this_grootFlag )
 		case GROOT_FLAG__CNVG
 			if ( ~isempty(mygetfield( this_solverPrm, "fTol", [] )) )
-				assert( this_fBest <= this_solverPrm.fTol*(1.0+100.0*eps) );
+			if ( this_fBest > this_solverPrm.fTol*(1.0+100.0*eps) )
+				flaggedlog( __FILE__, __LINE__, sprintf( ...
+				  "*** A SOLVE THAT WAS MARKED AS CNVG APPEARS NON-CNVGD ( %10.3e, %10.3e )***", ...
+				  this_fBest, this_solverPrm.fTol ) );
+				%%%assert( this_fBest <= this_solverPrm.fTol*(1.0+100.0*eps) );
+			endif
 			endif
 			if ( ~isempty(mygetfield( this_solverPrm, "fevalLimit", [] )) )
-				assert( this_fevalCount <= this_solverPrm.fevalLimit );
+			if ( this_fevalCount > this_solverPrm.fevalLimit )
+				flaggedlog( __FILE__, __LINE__, sprintf( ...
+				  "*** A SOLVE THAT WAS MARKED AS CNVG WENT OVER THE FEVAL LIMIT ( %d, %d )***", ...
+				  this_fevalCount, this_solverPrm.fevalLimit ) );
+				%%%assert( this_fevalCount <= this_solverPrm.fevalLimit );
+			endif
 			endif
 		case { GROOT_FLAG__STOP, GROOT_FLAG__FAIL }
 			if ( ~isempty(mygetfield( this_solverPrm, "fTol", [] )) )
