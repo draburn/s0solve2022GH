@@ -5,8 +5,8 @@ printf("\n\n");
 % SET PRM.
 seedTime = mod( round(now*1E11), 1E8 ); % In case you want this.
 probSetPrm = [];
-probSetPrm.probType = "aps2022base";
-probSetPrm.numProbs = 100;
+probSetPrm.probType = "aps2022isparse";
+probSetPrm.numProbs = 10;
 probSetPrm.numUnknowns = 200;
 probSetPrm.setSeed = 1;
 %
@@ -22,7 +22,7 @@ zrun__start;
 default_solverPrm.linsolfPrm.tol = 0.01;
 %
 % DO WORK.
-zcompPrm.probRunList = 61;
+%zcompPrm.probRunList = 61;
 zcdo = zcomp( probSetPrm, algoSetPrm, default_solverPrm, zcompPrm );
 %
 zrun__finish; % Does nothing?

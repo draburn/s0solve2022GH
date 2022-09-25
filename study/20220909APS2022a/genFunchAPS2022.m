@@ -112,7 +112,7 @@ function [ funchFOfX, datOut ] = genFunchAPS2022( bigN, funchSeed=0, prm=[] )
 		matB32 = sparse( [], [], [], bigM, bigN );
 		matB33 = sparse( [], [], [], bigM, bigN );
 	elseif ( forceEqualNumberLambdaPerRow )
-		numLambdaPerRow = round(bigL/bigM)
+		numLambdaPerRow = round(bigL/bigM);
 		assert( bigL == numLambdaPerRow * bigM );
 		vecM = repmat( (1:bigM)', [ numLambdaPerRow, 1 ] );
 		vecN = 1 + floor( (bigN-eps)*rand(bigL,1) );
