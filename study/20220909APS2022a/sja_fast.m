@@ -1,4 +1,5 @@
 function [ matJ, datOut ] = sja_fast( matV, matW, prm=[] )
+	% AKA sja_omp
 	mydefs;
 	sizeX = size(matV,1);
 	sizeF = size(matW,1);

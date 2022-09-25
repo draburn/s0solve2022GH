@@ -114,7 +114,18 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 				sja_prm.abortOnBadRow = true;
 				%%%sja_tol = 1.0e-3;
 				sja_tol = 1.0e-2;
-				[ temp_matJA, sja_datOut ] = sja_corr( matV(:,1:sizeK_pass), matW(:,1:sizeK_pass), sja_prm );
+				%
+				sjaMethod = mygetfield( prm, "sjaMethod", "corr" );
+				switch (tolower(sjaMethod))
+				case { "corr" }
+					msg( __FILE__, __LINE__, "Using sja_corr()." );
+					[ temp_matJA, sja_datOut ] = sja_corr( matV(:,1:sizeK_pass), matW(:,1:sizeK_pass), sja_prm );
+				case { "omp" }
+					msg( __FILE__, __LINE__, "Using \"sja_fast()\" (which is OMP)." );
+					[ temp_matJA, sja_datOut ] = sja_fast( matV(:,1:sizeK_pass), matW(:,1:sizeK_pass), sja_prm );
+				otherwise
+					error( "Unsupported value of sjaMethod." );
+				endswitch
 				%%%[ temp_matJA, sja_datOut ] = sja_corr_oneshot( matV(:,1:sizeK_pass), matW(:,1:sizeK_pass), sja_prm );
 				%[ sum(sumsq( temp_matJA*matV - matW )), sum(sumsq( matW )) ]
 				%[ sum(sumsq( temp_matJA*matV(:,sizeK_pass+1:end) - matW(:,sizeK_pass+1:end) )), sum(sumsq( matW(:,sizeK_pass+1:end) )) ]
