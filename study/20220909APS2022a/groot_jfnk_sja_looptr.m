@@ -116,8 +116,8 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_sja_looptr( fu
 		% NEW FOR LOOPTR
 		assert( useStepSearch );
 		assert( useTR );
+		assert( strcmp(tolower(stepType),"powell") );
 		linsolfPrm.btCoeff = mygetfield( prm, "btCoeff", btCoeff );
-		linsolfPrm.stepType = stepType;
 		linsolfPrm.stepInverseTRLimit = stepInverseTRLimit;
 		%
 	if ( useSJA && ~isempty(sja_matJAInv) )
@@ -161,6 +161,7 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_sja_looptr( fu
 		vecDelta = vecDelta0;
 		doSearchLoop = true;
 		if ( ~useStepSearch || ~useTR )
+			error( "This line should be unreachable." );
 			% If not using TR, then reset every time.
 			stepInverseTRLimit = 0.0;  % Possibly unnecessary code, to be safe.
 		endif
@@ -176,6 +177,7 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_sja_looptr( fu
 		if ( useStepSearch && useTR )
 			stepInverseTRLimit = 1.0/( ftCoeff * norm(vecDelta) );
 		else
+			error( "This line should be unreachable." );
 			stepInverseTRLimit = 0; % Possibly unnecessary code, to be safe.
 		endif
 		assert( norm(vecDelta) > 0.0 );
