@@ -119,6 +119,7 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_sja_looptr( fu
 		assert( strcmp(tolower(stepType),"powell") );
 		linsolfPrm.btCoeff = mygetfield( prm, "btCoeff", btCoeff );
 		linsolfPrm.stepInverseTRLimit = stepInverseTRLimit;
+		linsolfPrm.funchFshift = @(delta_dummy)( funchF( vecX + delta_dummy ) );
 		%
 	if ( useSJA && ~isempty(sja_matJAInv) )
 		linsolfPrm.matP = sja_matJAInv;
@@ -146,6 +147,7 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_sja_looptr( fu
 		endif
 		if ( ~isrealarray(vecDelta0,[sizeX,1]) )
 			msgif( prm.verbLev >= VERBLEV__FLAG, __FILE__, __LINE__, "INTERNAL ERROR: linsolf_sja_looptr() returned an invalid value." );
+			vecDelta0
 			grootFlag = GROOT_FLAG__STOP;
 			doMainLoop = false; % Redundant.
 			break;

@@ -1,8 +1,9 @@
-function [ vecX, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0, prm = [] )
+function [ vecX_final, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0, prm = [] )
 	time0 = time();
 	fevalCount = 0;
 	mydefs;
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__FLAGGED );
+	%%%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	fevalCount = 0;
 	%
 	sizeX = size(vecX0,1);
@@ -48,7 +49,8 @@ function [ vecX, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0, prm 
 	%
 	% Trust Region stuff.
 	tol_bound = mygetfield( prm, "tol_bound", tol );
-	%%%clear tol;
+	clear tol;
+	tol_actual = mygetfield( prm, "tol_actual", (1.0+tol_bound)/2.0 );
 	tol_unbound = mygetfield( prm, "tol_unbound", 100.0*eps );
 	btCoeff = mygetfield( prm, "btCoeff", 0.2 );
 	stepInverseTRLimit = mygetfield( prm, "stepInverseTRLimit", 0.0 );
@@ -58,7 +60,8 @@ function [ vecX, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0, prm 
 	assert( isrealscalar( stepInverseTRLimit ) );
 	assert( 0.0 <= tol_unbound );
 	assert( tol_unbound <= tol_bound );
-	assert( tol_bound <= 1.0 );
+	assert( tol_bound <= tol_actual );
+	assert( tol_actual <= 1.0 );
 	assert( 0.0 < btCoeff );
 	assert( btCoeff < 1.0 );
 	assert( 0.0 <= stepInverseTRLimit );
@@ -67,6 +70,8 @@ function [ vecX, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0, prm 
 	%
 	%
 	% Everything past here is iterated upon.
+	vecX_final = [];
+	vecF_final = [];
 	vecU = vecB;
 	if ( ~isempty(matP) )
 		vecU = matP*vecU;
@@ -77,12 +82,13 @@ function [ vecX, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0, prm 
 	assert( isrealarray(vecW,[sizeF,1]) );
 	matV = vecV;
 	matW = vecW;
+	successiveBTCount = 0;
 	while (1)
 		sizeV = size(matV,2);
 		assert( reldiff( matV'*matV, eye(sizeV,sizeV) ) < sqrt(eps) );
-		
-		
-		%%%%%
+		%
+		%
+		%
 		matH = matW' * matW;
 		[ matR, cholFlag ] = chol( matH );
 		if ( 0 ~= cholFlag || min(diag(matR)) < cholTol*max(abs(diag(matR))) )
@@ -97,15 +103,42 @@ function [ vecX, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0, prm 
 			msgif( verbLev >= VERBLEV__FLAG, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: __getYBound() failed." );
 			break;
 		endif
-		%%%%%
-		
-		
-		vecY = __getY( matW, vecB );
-		rho = norm( vecB - matW*vecY ) / norm(vecB);
-		if ( rho < tol )
-			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "STRONG SUCCESS: rho < tol." );
-			break;
+		%msg( __FILE__, __LINE__, sprintf( ...
+		%  "foo = %f = %f * %f", ...
+		%  norm(vecY_bound)*stepInverseTRLimit, ...
+		%  norm(vecY_bound), ...
+		%  stepInverseTRLimit ) );
+		if ( norm(vecY_bound)*stepInverseTRLimit > 1.0 + 100.0*eps )
+			norm(vecY_bound)
+			stepInverseTRLimit
+			norm(vecY_bound)*stepInverseTRLimit
 		endif
+		assert( norm(vecY_bound)*stepInverseTRLimit <= 1.0 + 100.0*eps );
+		%
+		rho_unbound = norm( vecB - matW*vecY_unbound ) / norm(vecB);
+		rho_bound = norm( vecB - matW*vecY_bound ) / norm(vecB);
+		vecX_bound = matV * vecY_bound;
+		%
+		if ( rho_bound <= tol_bound )
+			vecF_actual = prm.funchFshift( vecX_bound );
+			fevalCount++;
+			rho_actual = norm(vecF_actual) / norm(vecB);
+			if ( rho_actual <= tol_actual )
+				vecX_final = vecX_bound;
+				vecF_final = vecF_actual;
+				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "STRONG SUCCESS: rho_actual <= tol_actual." );
+				break;
+			else
+				stepInverseTRLimit = norm(vecY_bound) / btCoeff;
+				successiveBTCount++;
+				assert( successiveBTCount < 100 );
+				continue;
+			endif
+		endif
+		successiveBTCount = 0;
+		%
+		%
+		%
 		iterMax = mygetfield( prm, "iterMax", sizeX );
 		if ( sizeV >= iterMax )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: sizeV >= iterMax." );
@@ -206,16 +239,20 @@ function [ vecX, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0, prm 
 			endif
 		endif
 	endwhile
-	vecX = matV*vecY;
+	if ( isempty(vecX_final) )
+		vecX_final = vecX_bound;
+		vecF_final = [];
+	endif
 	if ( 2 <= nargout )
 		datOut.fevalCount = fevalCount;
-		datOut.vecY = vecY;
+		%datOut.vecY = vecY;
 		datOut.matV = matV;
 		datOut.matW = matW;
-		datOut.vecZ = matW*vecY;
-		datOut.vecRho = vecB - datOut.vecZ;
+		%datOut.vecZ = matW*vecY;
+		datOut.vecRho = vecB - matW*vecY_bound;
 		datOut.sja_matJA = sja_matJA;
 		datOut.sja_matJAInv = sja_matJAInv;
+		datOut.vecF_final = vecF_final;
 	endif
 return;
 end
@@ -273,6 +310,11 @@ function [ vecY_bound ] = __getYBound( matR, vecG, vecY_newton, stepInverseTRLim
 	if ( stepInverseTRLimit*norm(vecY_newton) <= 1.0 )
 		% Even full Newton step is within trust region, so, take it.
 		vecY_bound = vecY_newton;
+		%msg( __FILE__, __LINE__, sprintf( ...
+		%  "foo = %f = %f * %f", ...
+		%  norm(vecY_bound)*stepInverseTRLimit, ...
+		%  norm(vecY_bound), ...
+		%  stepInverseTRLimit ) );
 		return;
 	endif
 	p = (vecG'*vecG) / sumsq(matR*vecG);
@@ -281,7 +323,12 @@ function [ vecY_bound ] = __getYBound( matR, vecG, vecY_newton, stepInverseTRLim
 	%
 	if ( stepInverseTRLimit*norm(vecY_cauchy) >= 1.0 )
 		% Even full Cauchy step goes outside trust region, so, take a fraction of it.
-		vecY_bound = vecY_cauchy/stepInverseTRLimit;
+		vecY_bound = vecY_cauchy/(stepInverseTRLimit*norm(vecY_cauchy));
+		%msg( __FILE__, __LINE__, sprintf( ...
+		%  "foo = %f = %f * %f", ...
+		%  norm(vecY_bound)*stepInverseTRLimit, ...
+		%  norm(vecY_bound), ...
+		%  stepInverseTRLimit ) );
 		return;
 	endif
 	%
@@ -295,7 +342,7 @@ function [ vecY_bound ] = __getYBound( matR, vecG, vecY_newton, stepInverseTRLim
 	c = sumsq(vecY_cauchy) - (targetStepSize^2);
 	discrim = (b^2) - (4.0*a*c);
 	if ( discrim < 0.0 || a < 0.0 )
-		if ( verbLev >= VERBLEV__FLAG )
+		if ( true )
 			msg( __FILE__, __LINE__, "INTERNAL ERROR: Dog-leg was poorly behaved." );
 			msg( __FILE__, __LINE__, "  Info dump..." );
 			size(matR)
@@ -314,6 +361,29 @@ function [ vecY_bound ] = __getYBound( matR, vecG, vecY_newton, stepInverseTRLim
 	endif
 	p = (-b+sqrt(discrim))/(2.0*a);
 	vecY_bound = vecY_cauchy + (p*vecY_diff);
+	if ( norm(vecY_bound)*stepInverseTRLimit >= 1.0 + 10.0*eps )
+		if ( true )
+			msg( __FILE__, __LINE__, "INTERNAL ERROR: Dog-leg was poorly behaved." );
+			msg( __FILE__, __LINE__, "  Info dump..." );
+			size(matR)
+			sumsq(vecY_newton)
+			sumsq(vecY_cauchy)
+			sumsq(vecY_diff)
+			stepInverseTRLimit
+			a
+			b
+			c
+			discrim
+			vecY_bound = [];
+			msg( __FILE__, __LINE__, "  End info dump." );
+		endif
+	endif
+	%msg( __FILE__, __LINE__, sprintf( ...
+	%  "foo = %f = %f * %f", ...
+	%  norm(vecY_bound)*stepInverseTRLimit, ...
+	%  norm(vecY_bound), ...
+	%  stepInverseTRLimit ) );
+	assert( norm(vecY_bound)*stepInverseTRLimit <= 1.0 + 100.0*eps );
 	assert( abs(norm(vecY_bound)-targetStepSize) < 0.01*targetStepSize );
 return;
 endfunction
