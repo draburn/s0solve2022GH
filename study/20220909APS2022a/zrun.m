@@ -5,9 +5,9 @@ printf("\n\n");
 % SET PRM.
 seedTime = mod( round(now*1E11), 1E8 ); % In case you want this.
 probSetPrm = [];
-probSetPrm.probType = "aps2022bg6";
-probSetPrm.numProbs = 100;
-probSetPrm.numUnknowns = 200;
+probSetPrm.probType = "aps2022simplesparse";
+probSetPrm.numProbs = 50;
+probSetPrm.numUnknowns = 100;
 probSetPrm.setSeed = 0;
 %
 n = 0;
@@ -16,6 +16,7 @@ n++; a.s(n).f = @groot_jfnk_basic;
 n++; a.s(n).f = @groot_jfnk_convent;
 n++; a.s(n).f = @groot_jfnk_baseline;
 n++; a.s(n).f = @groot_jfnk_sja;
+%n++; a.s(n).f = @groot_findZero_800;
 %n++; a.s(n).f = @groot_jfnk_sja; a.s(n).p.linsolfPrm.sjaMethod = "omp";
 %
 % Note: zapsrun__start converts "a" to "algoSetPrm".
