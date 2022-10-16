@@ -1,6 +1,9 @@
-% jfnk_sja = _baseline + sja
+% jfnk_sja_looptr = _baseline + sja + in-(linsolf)-loop trust region
 
-function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_sja( funchF, vecX0, prm=[] )
+function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_sja_looptr( funchF, vecX0, prm=[] )
+	
+	msg( __FILE__, __LINE__, "WARNING: WORK-IN-PROGRESS!!!" );
+	
 	if ( 0 == nargin )
 		vecXBest = __FILE__;
 		return;
@@ -112,23 +115,29 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_sja( funchF, v
 	if ( useSJA && ~isempty(sja_matJAInv) )
 		linsolfPrm.matP = sja_matJAInv;
 		linsolfPrm.useSJA = false;
-		[ vecDelta0, linsolfDatOut ] = linsolf_sja( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
+		[ vecDelta0, linsolfDatOut ] = linsolf_sja_looptr( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
 	else
 		if (useAP)
 		if (~useWoodbury)
 			linsolfPrm.matP = pinv(matJA); % Ugly.
-			[ vecDelta0, linsolfDatOut ] = linsolf_sja( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
+			[ vecDelta0, linsolfDatOut ] = linsolf_sja_looptr( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
 		else
 			linsolfPrm.matP = matJAInv;
-			[ vecDelta0, linsolfDatOut ] = linsolf_sja( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
+			[ vecDelta0, linsolfDatOut ] = linsolf_sja_looptr( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
 		endif
 		else
-			[ vecDelta0, linsolfDatOut ] = linsolf_sja( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
+			[ vecDelta0, linsolfDatOut ] = linsolf_sja_looptr( funchMatJProd, -vecF, zeros(sizeX,1), linsolfPrm );
 		endif
 	endif
 		fevalCount += linsolfDatOut.fevalCount;
 		if ( fevalCount >= prm.fevalLimit )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: Reached fevalLimit." );
+			grootFlag = GROOT_FLAG__STOP;
+			doMainLoop = false; % Redundant.
+			break;
+		endif
+		if ( ~isrealarray(vecDelta0,[sizeX,1]) )
+			msgif( prm.verbLev >= VERBLEV__FLAG, __FILE__, __LINE__, "INTERNAL ERROR: linsolf_sja_looptr() returned an invalid value." );
 			grootFlag = GROOT_FLAG__STOP;
 			doMainLoop = false; % Redundant.
 			break;

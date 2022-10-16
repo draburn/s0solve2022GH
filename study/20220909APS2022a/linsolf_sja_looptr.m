@@ -1,4 +1,4 @@
-function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
+function [ vecX, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0, prm = [] )
 	time0 = time();
 	fevalCount = 0;
 	mydefs;
@@ -24,13 +24,48 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 		return;
 	endif
 	%
+	tol = mygetfield( prm, "tol", 0.1 );
+	assert( isrealscalar(tol) );
+	assert( 0.0 <= tol );
+	assert( tol <= 1.0 );
+	%.
+	cholTol = mygetfield( prm, "cholTol", 1e-6 );
+	assert( isrealscalar(cholTol) );
+	assert( 0.0 <= cholTol );
+	assert( cholTol <= 1.0 );
+	% DRaburn 2022-10-16: Shouldn't "cholTol" be "cholThresh"???
+	%
 	matP = mygetfield( prm, "matP", [] );
 	useSJA = mygetfield( prm, "useSJA", true );
+	assert( isbool(useSJA) );
+	assert( isscalar(useSJA) );
 	if ( useSJA )
 		sja_prm = mygetfield( prm, "sja_prm", [] );
 	endif
 	sja_matJA = [];
 	sja_matJAInv = [];
+	%
+	%
+	% Trust Region stuff.
+	tol_bound = mygetfield( prm, "tol_bound", tol );
+	%%%clear tol;
+	tol_unbound = mygetfield( prm, "tol_unbound", 100.0*eps );
+	btCoeff = mygetfield( prm, "btCoeff", 0.2 );
+	ftCoeff = mygetfield( prm, "ftCoeff", 1.5 );
+	stepInverseTRLimit = mygetfield( prm, "stepInverseTRLimit", 0.0 );
+	assert( isrealscalar( tol_bound ) );
+	assert( isrealscalar( tol_unbound ) );
+	assert( isrealscalar( btCoeff ) );
+	assert( isrealscalar( ftCoeff ) );
+	assert( isrealscalar( stepInverseTRLimit ) );
+	assert( 0.0 <= tol_unbound );
+	assert( tol_unbound <= tol_bound );
+	assert( tol_bound <= 1.0 );
+	assert( 0.0 < btCoeff );
+	assert( btCoeff < 1.0 );
+	assert( 1.0 < ftCoeff );
+	assert( 0.0 <= stepInverseTRLimit );
+	boundStepPrm = mygetfield( prm, "boundStepPrm", [] );
 	%
 	%
 	%
@@ -48,10 +83,28 @@ function [ vecX, datOut ] = linsolf_sja( funchMatAProd, vecB, vecX0, prm = [] )
 	while (1)
 		sizeV = size(matV,2);
 		assert( reldiff( matV'*matV, eye(sizeV,sizeV) ) < sqrt(eps) );
+		
+		
+		%%%%%
+		matH = matW' * matW;
+		[ matR, cholFlag ] = chol( matH );
+		if ( 0 ~= cholFlag || min(diag(matR)) < cholTol*max(abs(diag(matR))) )
+			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Cholesky factorization of Hessian failed." );
+			break;
+		endif
+		vecG = matW' * vecB;
 		%
+		vecY_unbound = matR \ ( matR' \ vecG );
+		vecY_bound = __getYBound( matR, vecG, vecY_unbound, stepInverseTRLimit, boundStepPrm );
+		if ( isempty(vecY_bound) || ~issize(vecY_bound,[sizeV,1]) )
+			msgif( verbLev >= VERBLEV__FLAG, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: __getYBound() failed." );
+			break;
+		endif
+		%%%%%
+		
+		
 		vecY = __getY( matW, vecB );
 		rho = norm( vecB - matW*vecY ) / norm(vecB);
-		tol = mygetfield( prm, "tol", 0.1 );
 		if ( rho < tol )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "STRONG SUCCESS: rho < tol." );
 			break;
@@ -215,5 +268,55 @@ function vecY = __getY( matW, vecB, prm=[] )
 		assert( min(diag(matR)) > max(abs(diag(matR)))*cholTol );
 	endif
 	vecY = matR \ ( matR' \ (matW'*vecB) );
+return;
+endfunction
+
+
+function [ vecY_bound ] = __getYBound( matR, vecG, vecY_newton, stepInverseTRLimit, boundStepPrm )
+	if ( stepInverseTRLimit*norm(vecY_newton) <= 1.0 )
+		% Even full Newton step is within trust region, so, take it.
+		vecY_bound = vecY_newton;
+		return;
+	endif
+	p = (vecG'*vecG) / sumsq(matR*vecG);
+	vecY_cauchy = -p*vecG;
+	vecY_diff = vecY_newton - vecY_cauchy;
+	%
+	if ( stepInverseTRLimit*norm(vecY_cauchy) >= 1.0 )
+		% Even full Cauchy step goes outside trust region, so, take a fraction of it.
+		vecY_bound = vecY_cauchy/stepInverseTRLimit;
+		return;
+	endif
+	%
+	assert( 0.0 < stepInverseTRLimit );
+	assert( isfinite(stepInverseTRLimit) );
+	assert( isreal(stepInverseTRLimit) );
+	assert( isscalar(stepInverseTRLimit) );
+	targetStepSize = ( 1.0 - 100.0*eps ) / stepInverseTRLimit;
+	a = sumsq(vecY_diff);
+	b = 2.0*(vecY_cauchy'*vecY_diff);
+	c = sumsq(vecY_cauchy) - (targetStepSize^2);
+	discrim = (b^2) - (4.0*a*c);
+	if ( discrim < 0.0 || a < 0.0 )
+		if ( verbLev >= VERBLEV__FLAG )
+			msg( __FILE__, __LINE__, "INTERNAL ERROR: Dog-leg was poorly behaved." );
+			msg( __FILE__, __LINE__, "  Info dump..." );
+			size(matR)
+			sumsq(vecY_newton)
+			sumsq(vecY_cauchy)
+			sumsq(vecY_diff)
+			stepInverseTRLimit
+			a
+			b
+			c
+			discrim
+			vecY_bound = [];
+			msg( __FILE__, __LINE__, "  End info dump." );
+		endif
+		return;
+	endif
+	p = (-b+sqrt(discrim))/(2.0*a);
+	vecY_bound = vecY_cauchy + (p*vecY_diff);
+	assert( abs(norm(vecY_bound)-targetStepSize) < 0.01*targetStepSize );
 return;
 endfunction
