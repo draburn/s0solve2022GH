@@ -51,19 +51,16 @@ function [ vecX, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0, prm 
 	%%%clear tol;
 	tol_unbound = mygetfield( prm, "tol_unbound", 100.0*eps );
 	btCoeff = mygetfield( prm, "btCoeff", 0.2 );
-	ftCoeff = mygetfield( prm, "ftCoeff", 1.5 );
 	stepInverseTRLimit = mygetfield( prm, "stepInverseTRLimit", 0.0 );
 	assert( isrealscalar( tol_bound ) );
 	assert( isrealscalar( tol_unbound ) );
 	assert( isrealscalar( btCoeff ) );
-	assert( isrealscalar( ftCoeff ) );
 	assert( isrealscalar( stepInverseTRLimit ) );
 	assert( 0.0 <= tol_unbound );
 	assert( tol_unbound <= tol_bound );
 	assert( tol_bound <= 1.0 );
 	assert( 0.0 < btCoeff );
 	assert( btCoeff < 1.0 );
-	assert( 1.0 < ftCoeff );
 	assert( 0.0 <= stepInverseTRLimit );
 	boundStepPrm = mygetfield( prm, "boundStepPrm", [] );
 	%

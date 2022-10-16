@@ -112,6 +112,14 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_sja_looptr( fu
 		% We hypothetically could include fevalLimit - fevalCount - 1 as a limit inside linsolf.
 		funchMatJProd = @(v)(  ( funchF( vecX + (prm.epsFD*v) ) - vecF ) / prm.epsFD  );
 		linsolfPrm = mygetfield( prm, "linsolfPrm", [] );
+		%
+		% NEW FOR LOOPTR
+		assert( useStepSearch );
+		assert( useTR );
+		linsolfPrm.btCoeff = mygetfield( prm, "btCoeff", btCoeff );
+		linsolfPrm.stepType = stepType;
+		linsolfPrm.stepInverseTRLimit = stepInverseTRLimit;
+		%
 	if ( useSJA && ~isempty(sja_matJAInv) )
 		linsolfPrm.matP = sja_matJAInv;
 		linsolfPrm.useSJA = false;
@@ -143,20 +151,6 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_sja_looptr( fu
 			break;
 		endif
 		sizeK = size(linsolfDatOut.matV,2);
-		% Subspace Newton step...
-		vecYN = linsolfDatOut.vecY;
-		% Subspace Cauchy step...
-		% Take y = -p*matS*matW'*vecF, for scaling matrix matS.
-		% Find value of p such that d/dp ( 0.5*||vecF_model||^2 ) = 0.
-		matS = eye(sizeK);
-		vecG = linsolfDatOut.matW'*vecF;
-		assert( norm(vecG) > 0.0 );
-		vecGS =  matS*vecG;
-		assert( norm(vecGS) > 0.0 );
-		p = vecGS'*vecG / sumsq( linsolfDatOut.matW * vecGS );
-		vecYC = -p*vecGS;
-		assert( norm(vecYC) > 0.0 );
-		vecYD = vecYN - vecYC;
 		%
 		%
 		vecXPrev = vecX;
@@ -170,78 +164,15 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_sja_looptr( fu
 			% If not using TR, then reset every time.
 			stepInverseTRLimit = 0.0;  % Possibly unnecessary code, to be safe.
 		endif
-		while (doSearchLoop)
-			msgif( prm.verbLev >= VERBLEV__DETAILED, __FILE__, __LINE__, sprintf( ...
-			  "  BT  %3d,  %6d:  %10.3e,  %10.3e,  %10.3e.", ...
-			  iterCount, fevalCount, f, norm(vecDelta), stepInverseTRLimit ) );
-			if ( norm(vecDelta) * stepInverseTRLimit <= 1.0 + 100.0*eps )
-				% Step is in TR.
-				vecX = vecXPrev + vecDelta;
-				vecF = funchF( vecX );
-				fevalCount++;
-				f = norm(vecF);
-				if ( f <= fPrev - prm.fallTol )
-					doSearchLoop = false; % Possibly unnecessary code, to be safe.
-					break;
-				endif
-				if ( ~useStepSearch )
-					msgif( prm.verbLev >= VERBLEV__NOTE, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Reached fallTol and doStepSearch is false." );
-					grootFlag = GROOT_FLAG__FAIL;
-					doMainLoop = false;
-					doSearchLoop = false; % Possibly unnecessary code, to be safe.
-					break;
-				endif
-				targetStepSize = btCoeff * norm(vecDelta);
-			else
-				targetStepSize = ( 1.0 - 100.0*eps ) / stepInverseTRLimit;
-			endif
-			%
-			assert( useStepSearch );
-			if ( norm(vecDelta) <= prm.stepTol )
-				msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Reached stepTol." );
-				grootFlag = GROOT_FLAG__FAIL;
-				doMainLoop = false;
-				doSearchLoop = false; % Possibly unnecessary code, to be safe.
-				break;
-			elseif ( fevalCount >= prm.fevalLimit )
-				msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: Reached fevalLimit." );
-				grootFlag = GROOT_FLAG__STOP;
-				doMainLoop = false;
-				doSearchLoop = false; % Possibly unnecessary code, to be safe.
-				break;
-			elseif ( stopsignalpresent() )
-				msgif( prm.verbLev >= VERBLEV__FLAGGED, __FILE__, __LINE__, "IMPOSED STOP: Received stop signal." );
-				grootFlag = GROOT_FLAG__STOP;
-				doMainLoop = false;
-				doSearchLoop = false; % Possibly unnecessary code, to be safe.
-				break;
-			endif
-			%
-			switch ( tolower(stepType) )
-			case { "newton", "newt" }
-				vecDelta = targetStepSize * vecDelta0 / norm(vecDelta0);
-			case { "powell", "dogleg", "dog leg", "dog-leg" }
-				if ( targetStepSize < norm(vecYC) )
-					vecDelta = targetStepSize * linsolfDatOut.matV * ( vecYC / norm(vecYC) );
-				else
-					% Find where the second leg intersects the boundary.
-					a = sumsq(vecYD);
-					b = 2.0*(vecYC'*vecYD);
-					c = sumsq(vecYC) - targetStepSize^2;
-					discrim = (b^2) - (4.0*a*c);
-					assert( discrim >= 0.0 );
-					assert( 0.0 < a );
-					p = (-b+sqrt(discrim))/(2.0*a);
-					vecDelta = linsolfDatOut.matV * ( vecYC + p*vecYD );
-					assert( abs(norm(vecDelta)-targetStepSize) < 0.01*targetStepSize );
-				endif
-			otherwise
-				error([ "Invalid value of stepType (\"" stepType "\")." ]);
-			endswitch
-		endwhile
-		if ( ~doMainLoop );
-			break;
-		endif
+		%
+		%
+		% NEW FOR LOOPTR
+		vecX = vecXPrev + vecDelta;
+		vecF = funchF( vecX );
+		fevalCount++;
+		f = norm(vecF);
+		%
+		%
 		if ( useStepSearch && useTR )
 			stepInverseTRLimit = 1.0/( ftCoeff * norm(vecDelta) );
 		else
