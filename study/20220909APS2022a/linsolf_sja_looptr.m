@@ -1,9 +1,10 @@
 function [ vecX_final, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0, prm = [] )
+	error( "NOT FULLY IMPLEMENTED!" );
 	time0 = time();
 	fevalCount = 0;
 	mydefs;
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__FLAGGED );
-	%%%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	fevalCount = 0;
 	%
 	sizeX = size(vecX0,1);
