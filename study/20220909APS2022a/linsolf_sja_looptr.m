@@ -93,6 +93,14 @@ function [ vecX_final, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0
 	matV = vecV;
 	matW = vecW;
 	successiveBTCount = 0;
+	vecY_unbound = [];
+	vecX_unbound = [];
+	vecRho_unbound = vecB;
+	rho_unbound = 1.0;
+	vecY_bound = [];
+	vecX_bound = [];
+	vecRho_bound = vecB;
+	rho_bound = 1.0;
 	while (1)
 		sizeV = size(matV,2);
 		assert( reldiff( matV'*matV, eye(sizeV,sizeV) ) < sqrt(eps) );
@@ -103,6 +111,8 @@ function [ vecX_final, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0
 		[ matR, cholFlag ] = chol( matH );
 		if ( 0 ~= cholFlag || min(diag(matR)) < cholTol*max(abs(diag(matR))) )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: Cholesky factorization of Hessian failed." );
+			sizeV
+			diag(matH)'
 			break;
 		endif
 		vecG = matW' * vecB;
@@ -110,27 +120,25 @@ function [ vecX_final, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0
 		%stepInverseTRLimit
 		%
 		vecY_unbound = matR \ ( matR' \ vecG );
+		vecX_unbound = matV * vecY_unbound;
+		vecRho_unbound = vecB - matW*vecY_unbound; % "vecRho" and "rho" have inconsistent normalization!
+		rho_unbound = norm( vecRho_unbound ) / norm(vecB);
+		%
 		vecY_bound = __getYBound( matR, vecG, vecY_unbound, stepInverseTRLimit, boundStepPrm );
 		if ( isempty(vecY_bound) || ~issize(vecY_bound,[sizeV,1]) )
 			msgif( verbLev >= VERBLEV__FLAG, __FILE__, __LINE__, "ALGORITHM BREAKDOWN: __getYBound() failed." );
+			sizeV
 			break;
 		endif
-		%msg( __FILE__, __LINE__, sprintf( ...
-		%  "foo = %f = %f * %f", ...
-		%  norm(vecY_bound)*stepInverseTRLimit, ...
-		%  norm(vecY_bound), ...
-		%  stepInverseTRLimit ) );
 		if ( norm(vecY_bound)*stepInverseTRLimit > 1.0 + 100.0*eps )
 			norm(vecY_bound)
 			stepInverseTRLimit
 			norm(vecY_bound)*stepInverseTRLimit
 		endif
 		assert( norm(vecY_bound)*stepInverseTRLimit <= 1.0 + 100.0*eps );
-		%
-		rho_unbound = norm( vecB - matW*vecY_unbound ) / norm(vecB);
-		rho_bound = norm( vecB - matW*vecY_bound ) / norm(vecB);
 		vecX_bound = matV * vecY_bound;
-		%[ norm(vecY_unbound), norm(vecY_bound); rho_unbound, rho_bound ]
+		vecRho_bound = vecB - matW*vecY_bound; % "vecRho" and "rho" have inconsistent normalization!
+		rho_bound = norm( vecRho_bound ) / norm(vecB);
 		%
 		if ( rho_bound <= tol_bound || rho_unbound <= tol_unbound || sizeV >= iterMax )
 			vecF_actual = prm.funchFshift( vecX_bound );
@@ -270,7 +278,7 @@ function [ vecX_final, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0
 		datOut.matV = matV;
 		datOut.matW = matW;
 		%datOut.vecZ = matW*vecY;
-		datOut.vecRho = vecB - matW*vecY_bound;
+		datOut.vecRho = vecRho_bound;
 		datOut.sja_matJA = sja_matJA;
 		datOut.sja_matJAInv = sja_matJAInv;
 		datOut.vecF_final = vecF_final;
