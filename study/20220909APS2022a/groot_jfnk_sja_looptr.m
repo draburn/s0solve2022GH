@@ -2,7 +2,7 @@
 
 function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_sja_looptr( funchF, vecX0, prm=[] )
 	
-	error( "NOT FULLY IMPLEMENTED!" );
+	%error( "NOT FULLY IMPLEMENTED!" );
 	msg( __FILE__, __LINE__, "WARNING: WORK-IN-PROGRESS!!!" );
 	
 	if ( 0 == nargin )

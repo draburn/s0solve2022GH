@@ -1,10 +1,10 @@
 function [ vecX_final, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0, prm = [] )
-	error( "NOT FULLY IMPLEMENTED!" );
+	%error( "NOT FULLY IMPLEMENTED!" );
 	time0 = time();
 	fevalCount = 0;
 	mydefs;
 	verbLev = mygetfield( prm, "verbLev", VERBLEV__FLAGGED );
-	verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
+	%verbLev = mygetfield( prm, "verbLev", VERBLEV__COPIOUS );
 	fevalCount = 0;
 	%
 	sizeX = size(vecX0,1);
@@ -30,6 +30,10 @@ function [ vecX_final, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0
 	assert( isrealscalar(tol) );
 	assert( 0.0 <= tol );
 	assert( tol <= 1.0 );
+	% We'll replace "tol" with "tol_bound" below.
+	%
+	iterMax = mygetfield( prm, "iterMax", sizeX );
+	assert( isposintscalar(iterMax) );
 	%.
 	cholTol = mygetfield( prm, "cholTol", 1e-6 );
 	assert( isrealscalar(cholTol) );
@@ -68,6 +72,11 @@ function [ vecX_final, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0
 	assert( 0.0 <= stepInverseTRLimit );
 	boundStepPrm = mygetfield( prm, "boundStepPrm", [] );
 	%
+	stepRelTol = mygetfield( prm, "stepRelTol", 1.0e-8 );
+	assert( isrealscalar(stepRelTol) );
+	assert( 0.0 <= stepRelTol );
+	assert( stepRelTol <= 1.0 );
+	%
 	%
 	%
 	% Everything past here is iterated upon.
@@ -97,6 +106,8 @@ function [ vecX_final, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0
 			break;
 		endif
 		vecG = matW' * vecB;
+		%sizeV
+		%stepInverseTRLimit
 		%
 		vecY_unbound = matR \ ( matR' \ vecG );
 		vecY_bound = __getYBound( matR, vecG, vecY_unbound, stepInverseTRLimit, boundStepPrm );
@@ -119,8 +130,9 @@ function [ vecX_final, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0
 		rho_unbound = norm( vecB - matW*vecY_unbound ) / norm(vecB);
 		rho_bound = norm( vecB - matW*vecY_bound ) / norm(vecB);
 		vecX_bound = matV * vecY_bound;
+		%[ norm(vecY_unbound), norm(vecY_bound); rho_unbound, rho_bound ]
 		%
-		if ( rho_bound <= tol_bound )
+		if ( rho_bound <= tol_bound || rho_unbound <= tol_unbound || sizeV >= iterMax )
 			vecF_actual = prm.funchFshift( vecX_bound );
 			fevalCount++;
 			rho_actual = norm(vecF_actual) / norm(vecB);
@@ -129,8 +141,17 @@ function [ vecX_final, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0
 				vecF_final = vecF_actual;
 				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "STRONG SUCCESS: rho_actual <= tol_actual." );
 				break;
+			elseif ( norm(vecY_bound) <= stepRelTol*norm(vecY_unbound) )
+				vecX_final = vecX_bound;
+				vecF_final = vecF_actual;
+				msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: norm(vecY_bound) <= stepRelTol*norm(vecY_unbound)." );
+				break;
 			else
-				stepInverseTRLimit = norm(vecY_bound) / btCoeff;
+				%stepInverseTRLimit
+				%btCoeff
+				%norm(vecY_bound)
+				stepInverseTRLimit = 1.0 / (btCoeff*norm(vecY_bound));
+				%stepInverseTRLimit
 				successiveBTCount++;
 				assert( successiveBTCount < 100 );
 				continue;
@@ -140,7 +161,6 @@ function [ vecX_final, datOut ] = linsolf_sja_looptr( funchMatAProd, vecB, vecX0
 		%
 		%
 		%
-		iterMax = mygetfield( prm, "iterMax", sizeX );
 		if ( sizeV >= iterMax )
 			msgif( verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: sizeV >= iterMax." );
 			break;

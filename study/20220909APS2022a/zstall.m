@@ -11,11 +11,11 @@ probSetPrm.numUnknowns = 50;
 probSetPrm.setSeed = 0;
 %
 n = 0;
-%n++; a.s(n).f = @groot_fsolve;
+n++; a.s(n).f = @groot_fsolve;
 %n++; a.s(n).f = @groot_jfnk_basic;
 %n++; a.s(n).f = @groot_jfnk_convent;
 %n++; a.s(n).f = @groot_jfnk_baseline;
-%n++; a.s(n).f = @groot_jfnk_sja;
+n++; a.s(n).f = @groot_jfnk_sja;
 n++; a.s(n).f = @groot_jfnk_sja_looptr;
 %n++; a.s(n).f = @groot_jfnk_sja; a.s(n).p.linsolfPrm.sjaMethod = "omp";
 %
