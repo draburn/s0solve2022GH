@@ -354,6 +354,7 @@ function [ funchFOfX, vecX0, datOut ] = genFunchAPS2022_fromType( strProbType, b
 		gfaPrm.s2 = gfaPrm.s1*0.1*exp(randn());
 		gfaPrm.s3 = gfaPrm.s1*0.1*exp(randn());
 		[ funchFOfX, gfaDatOut ] = genFunchAPS2022( bigN, funchSeed, gfaPrm );
+		vecX0 = zeros(bigN,1);
 	case { "aps2022bg6" }
 		bigN = ceil( bigN0*(1.0+rand())/1.5 );
 		bigM = bigN;

@@ -172,8 +172,13 @@ function [ vecXBest, grootFlag, fevalCount, datOut ] = groot_jfnk_sja_looptr( fu
 		%
 		% NEW FOR LOOPTR
 		vecX = vecXPrev + vecDelta;
-		vecF = funchF( vecX );
-		fevalCount++;
+		if ( isempty(linsolfDatOut.vecF_final) )
+			vecF = funchF( vecX );
+			fevalCount++;
+		else
+			vecF = linsolfDatOut.vecF_final;
+			assert( isrealarray(vecF,[sizeF,1]) );
+		endif
 		f = norm(vecF);
 		%
 		%
