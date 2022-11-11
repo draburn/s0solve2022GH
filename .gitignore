@@ -6,3 +6,4 @@ extFit/deprecate
 *.exe
 output
 runspc
+dat/
