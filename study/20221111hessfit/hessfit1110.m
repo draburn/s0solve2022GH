@@ -7,6 +7,11 @@ function [ f, vecG, matH, datOut ] = hessfit1110( matX, rvecF, matG, prm=[] )
 	assert( isrealarray(rvecF,[1,numPts]) );
 	assert( isrealarray(matG,[sizeX,numPts]) );
 	%
+	rvecW0 = mygetfield( prm, "rvecW0", ones(1,numPts) );
+	if ( ~isempty(rvecW0) )
+		assert( isrealarray(rvecW0,[1,numPts]) );
+	endif
+	%
 	rvecW1 = mygetfield( prm, "rvecW1", [] );
 	if ( ~isempty(rvecW1) )
 		assert( isrealarray(rvecW1,[1,numPts]) );
@@ -39,11 +44,15 @@ function [ f, vecG, matH, datOut ] = hessfit1110( matX, rvecF, matG, prm=[] )
 	vecG = zeros(sizeX,1);
 	matH = zeros(sizeX,sizeX);
 	vecResGL = __funchResGL( sizeX, vecG, matH, sumW1, vecSumX1, matSumXXT1, vecC1, matC2, epsHRegu );
+	size__vecReGL = size(vecResGL)
 	echo__normResGL = norm(vecResGL)
 	%
-	rvecW0 = mygetfield( prm, "rvecW0", ones(1,numPts) );
+	if ( isempty(rvecW0) )
+		rvecW0 = ones(1,numPts);
+	endif
 	vecResFGL = __funchResFGL_withW0( sizeX, numPts, f, vecG, matH, ...
 	  matX, rvecF, matG, rvecW0, sumW1, vecSumX1, matSumXXT1, vecC1, matC2, epsHRegu );
+	size__vecReFGL = size(vecResFGL)
 	echo__normResFGL = norm(vecResFGL)
 	msg( __FILE__, __LINE__, "End test code." );
 	
