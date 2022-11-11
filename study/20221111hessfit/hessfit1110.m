@@ -36,6 +36,16 @@ function [ f, vecG, matH, datOut ] = hessfit1110( matX, rvecF, matG, prm=[] )
 		endif
 	endif
 	clear rvecW2;
+	%
+	%
+	%
+	f_initialGuess = mygetfield( prm, "f_initialGuess", 0.0 );
+	vecG_initialGuess = mygetfield( prm, "vecG_initialGuess", zeros(sizeX,1) );
+	matH_initialGuess = mygetfield( prm, "matH_initialGuess", zeros(sizeX,sizeX) );
+	assert( isrealscalar(f_initialGuess) );
+	assert( isrealarray(vecG_initialGuess,[sizeX,1]) );
+	assert( isrealarray(matH_initialGuess,[sizeX,sizeX]) );
+	assert( issymmetric(matH_initialGuess) );
 	
 	
 	
