@@ -14,6 +14,24 @@ function [ f, vecG, matH, datOut ] = hessfit1110( matX, rvecF, matG, prm=[] )
 	else
 		[ sumS1, vecSumX1, matSumXXT1, vecC1, matC2 ] = __calcCnst_sansW( matX, rvecF, matG );
 	endif
+	clear rvecW1;
+	%
+	epsHRegu = mygetfield( prm, "epsHRegu", [] );
+	rvecW2 = mygetfield( prm, "rvecW2", [] );
+	if ( ~isempty(rvecW2) )
+		if ( ~isempty(epsHReg) )
+			error( "prm.epsHRegu and prm.rvecW2 were both specified." );
+		else
+			assert( isrealarray(rvecW2,[1,numPts]) );
+			epsHReg = 2.0 * sum( rvecW2, 2 );
+		endif
+	else
+		if ( isempty(epsHRegu) )
+			epsHRegu = 0.0; % This is maybe safe?
+		endif
+	endif
+	clear rvecW2;
+	%
 	%
 	%
 	f = 0.0;
@@ -61,7 +79,7 @@ function [ sumW1, vecSumX1, matSumXXT1, vecC1, matC2 ] = __calcCnst_sansW( matX,
 	%
 	sumW1 = numPts;
 	%
-	vecSumX1 = sum( matX, 2 ); % autobroadcast
+	vecSumX1 = sum( matX, 2 );
 	%
 	matSumXXT1 = zeros( sizeX, sizeX );
 	for p=1:numPts
