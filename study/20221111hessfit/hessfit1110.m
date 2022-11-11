@@ -10,9 +10,9 @@ function [ f, vecG, matH, datOut ] = hessfit1110( matX, rvecF, matG, prm=[] )
 	rvecW1 = mygetfield( prm, "rvecW1", [] );
 	if ( ~isempty(rvecW1) )
 		assert( isrealarray(rvecW1,[1,numPts]) );
-		[ sumS1, vecSumX1, matSumXXT1, vecC1, matC2 ] = __calcCnst_withW( matX, rvecF, matG, rvecW1 );
+		[ sumW1, vecSumX1, matSumXXT1, vecC1, matC2 ] = __calcCnst_withW1( matX, rvecF, matG, rvecW1 );
 	else
-		[ sumS1, vecSumX1, matSumXXT1, vecC1, matC2 ] = __calcCnst_sansW( matX, rvecF, matG );
+		[ sumW1, vecSumX1, matSumXXT1, vecC1, matC2 ] = __calcCnst_sansW1( matX, rvecF, matG );
 	endif
 	clear rvecW1;
 	%
@@ -31,6 +31,23 @@ function [ f, vecG, matH, datOut ] = hessfit1110( matX, rvecF, matG, prm=[] )
 		endif
 	endif
 	clear rvecW2;
+	
+	
+	
+	msg( __FILE__, __LINE__, "Begin test code..." );
+	f = 0.0;
+	vecG = zeros(sizeX,1);
+	matH = zeros(sizeX,sizeX);
+	vecResGL = __funchResGL( sizeX, vecG, matH, sumW1, vecSumX1, matSumXXT1, vecC1, matC2, epsHRegu );
+	echo__normResGL = norm(vecResGL)
+	%
+	rvecW0 = mygetfield( prm, "rvecW0", ones(1,numPts) );
+	vecResFGL = __funchResFGL_withW0( sizeX, numPts, f, vecG, matH, ...
+	  matX, rvecF, matG, rvecW0, sumW1, vecSumX1, matSumXXT1, vecC1, matC2, epsHRegu );
+	echo__normResFGL = norm(vecResFGL)
+	msg( __FILE__, __LINE__, "End test code." );
+	
+	
 	%
 	%
 	%
@@ -42,7 +59,7 @@ return;
 endfunction
 
 
-function [ sumW1, vecSumX1, matSumXXT1, vecC1, matC2 ] = __calcCnst_withW( matX, rvecF, matG, rvecW1 )
+function [ sumW1, vecSumX1, matSumXXT1, vecC1, matC2 ] = __calcCnst_withW1( matX, rvecF, matG, rvecW1 )
 	sizeX = size(matX,1);
 	numPts = size(matX,2);
 	assert( isrealarray(matX,[sizeX,numPts]) );
@@ -70,7 +87,7 @@ function [ sumW1, vecSumX1, matSumXXT1, vecC1, matC2 ] = __calcCnst_withW( matX,
 	endfor
 return;
 endfunction
-function [ sumW1, vecSumX1, matSumXXT1, vecC1, matC2 ] = __calcCnst_sansW( matX, rvecF, matG )
+function [ sumW1, vecSumX1, matSumXXT1, vecC1, matC2 ] = __calcCnst_sansW1( matX, rvecF, matG )
 	sizeX = size(matX,1);
 	numPts = size(matX,2);
 	assert( isrealarray(matX,[sizeX,numPts]) );
@@ -95,5 +112,33 @@ function [ sumW1, vecSumX1, matSumXXT1, vecC1, matC2 ] = __calcCnst_sansW( matX,
 		foo = matX(:,p) * (matG(:,p)');
 		matC2 += foo' + foo;
 	endfor
+return;
+endfunction
+
+
+function vecResFGL = __funchResFGL_withW0( sizeX, numPts, f, vecG, matH, ...
+  matX, rvecF, matG, rvecW0, sumW1, vecSumX1, matSumXXT1, vecC1, matC2, epsHRegu )
+	sizeFGL = 1 + sizeX + ((sizeX*(sizeX+1))/2);
+	vecResFGL = zeros(sizeFGL,1);
+	%
+	rvecW0Rho = rvecW0 .* ( f + sum( matX .*( vecG + (matH*(matX/2.0)) ), 1 ) - rvecF );
+	%
+	vecResFGL( 1 ) = sum( rvecW0Rho, 2 );
+	vecResFGL( 2 : 1+sizeX ) = sum( rvecW0Rho .* matX, 2 ) + ( sumW1 * vecG ) + ( matH * vecSumX1 ) - vecC1;
+	%
+	foo = vecG * (vecSumX1') + matH * matSumXXT1;
+	matNablaL = foo' + foo - matC2 + (epsHRegu*matH);
+	% Is there a better way to do this?
+	for p = 1 : numPts
+		matNablaL += (rvecW0(p) * matX(:,p)) * (matX(:,p)');
+	endfor
+	vecResFGL( 2+sizeX : end ) = vech( matNablaL );
+return;
+endfunction
+function vecResGL = __funchResGL( sizeX, vecG, matH, sumW1, vecSumX1, matSumXXT1, vecC1, matC2, epsHRegu )
+	vecResGL = zeros( sizeX + ((sizeX*(sizeX+1))/2), 1 );
+	vecResGL( 1 : sizeX ) = ( sumW1 * vecG ) + ( matH * vecSumX1 ) - vecC1;
+	foo = vecG * (vecSumX1') + matH * matSumXXT1;
+	vecResGL( 1+sizeX : end ) = vech( foo' + foo - matC2 + (epsHRegu*matH) );
 return;
 endfunction
