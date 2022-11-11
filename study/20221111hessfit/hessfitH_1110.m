@@ -1,11 +1,10 @@
 function [ matH, datOut ] = hessfitH_1110( sizeX, numPts, vecG, matX, matG, prm=[] )
-	error( "Yo! This is a work-in-progress!" );
-	
 	assert( 1 <= sizeX );
 	assert( 1 <= numPts );
 	assert( isrealarray(vecG,[sizeX,1]) );
 	assert( isrealarray(matX,[sizeX,numPts]) );
 	assert( isrealarray(matG,[sizeX,numPts]) );
+	numUnk = ((sizeX*(sizeX+1))/2);
 	%
 	rvecW1 = mygetfield( prm, "rvecW1", [] );
 	if ( ~isempty(rvecW1) )
@@ -40,16 +39,22 @@ function [ matH, datOut ] = hessfitH_1110( sizeX, numPts, vecG, matX, matG, prm=
 	%
 	%
 	%
+	funchF = @(l)( __funcResL( sizeX, numPts, avech(l), vecG, sumW1, vecSumX1, matSumXXT1, matC2, epsHRegu ) );
 	vecL_initialGuess = vech(matH_initialGuess);
-	
-	
-	msg( __FILE__, __LINE__, "Begin test code..." );
-	vecResL = __funcResL( sizeX, numPts, matH_initialGuess, vecG, sumW1, vecSumX1, matSumXXT1, matC2, epsHRegu );
-	size__vecReL = size(vecResL)
-	echo__normResL = norm(vecResL)
-	
-	
-	matH = zeros( sizeX, sizeX );
+	vecResL_initialGuess = funchF( vecL_initialGuess );
+	funchA = @(l)( funchF(vecL_initialGuess + l) - vecResL_initialGuess );
+	%
+	%
+	%
+	gmres_RTOL = mygetfield( prm, "gmres_RTOL", 1.0e-12 );
+	gmres_MAXIT = mygetfield( prm, "gmres_MAXIT", numUnk );
+	msg( __FILE__, __LINE__, "Calling gmres()..." );
+	[ vecL_delta, gmres_FLAG, gmres_RELRES, gmres_ITER, gmres_RESVEC ] = gmres( funchA, -vecResL_initialGuess, [], gmres_RTOL, gmres_MAXIT );
+	%vecL_delta = gmres( funchA, -vecResL_initialGuess, [], gmres_RTOL, gmres_MAXIT )
+	vecL = vecL_initialGuess + vecL_delta;
+	msg( __FILE__, __LINE__, "Finished gmres()." );
+	%
+	matH = avech(vecL);
 	datOut = [];
 return;
 endfunction
@@ -87,7 +92,7 @@ function [ sumW1, vecSumX1, matSumXXT1, matC2 ] = __calcCnst_sansW1( sizeX, numP
 	vecSumX1 = sum( matX, 2 );
 	matSumXXT1 = zeros( sizeX, sizeX );
 	for p=1:numPts
-		matSumXXT1 += matX(:,p)' * matX(:,p);
+		matSumXXT1 += matX(:,p) * (matX(:,p)');
 	endfor
 	%
 	matC2 = zeros( sizeX, sizeX );

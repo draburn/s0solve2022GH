@@ -1,4 +1,5 @@
 function matH = avech( vechL, sizeX=[], doChecks=false )
+	error( "Change this to give vech(L) <=> matH; note factor of 2 on diagonal." );
 	if (isempty(sizeX))
 		sizeX = floor(sqrt(2.0*size(vechL,1)));
 	endif
