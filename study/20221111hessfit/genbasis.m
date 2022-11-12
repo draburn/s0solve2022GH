@@ -4,7 +4,7 @@
 %
 % DRaburn 2022-11-11.
 
-function matV = genbasis( matX, prm=[] )
+function [ matV, matDX ] = genbasis( matX, prm=[] )
 	sizeX = size(matX,1);
 	numPts = size(matX,2);
 	%assert( isposintscalar(sizeX) );
