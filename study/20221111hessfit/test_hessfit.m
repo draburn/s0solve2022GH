@@ -2,8 +2,8 @@ clear
 mydefs;
 setprngstates( 0 );
 %
-sizeX = 10
-numPts = 10
+sizeX = 50
+numPts = 1000
 numUnk = (sizeX*(sizeX+1))/2
 numGvn = (1+sizeX)*numPts
 %

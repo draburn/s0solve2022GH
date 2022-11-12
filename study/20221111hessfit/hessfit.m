@@ -9,13 +9,13 @@ function [ f, vecG, matH, datOut ] = hessfit( sizeX, numPts, matX, rvecF, matG, 
 	vecRes0 = funchRes( vecFGL0 );
 	funchA = @(fgl)( funchRes(vecFGL0+fgl) - vecRes0 );
 	%
-	gmres_RTOL = mygetfield( prm, "gmres_RTOL", 1.0e-12 );
-	gmres_MAXIT = mygetfield( prm, "gmres_MAXIT", (sizeX*(sizeX+1))/2 );
-	%msg( __FILE__, __LINE__, "Calling gmres()..." );
-	%[ vecFGL_delta, gmres_FLAG, gmres_RELRES, gmres_ITER, gmres_RESVEC ] = gmres( funchA, -vecRes0, [], gmres_RTOL, gmres_MAXIT );
-	vecFGL_delta = gmres( funchA, -vecRes0, [], gmres_RTOL, gmres_MAXIT );
-	vecFGL = vecFGL0 + vecFGL_delta;
+	rTol = mygetfield( prm, "rTol", 1.0e-6 );
+	maxIt = mygetfield( prm, "maxIt", (sizeX*(sizeX+1))/2 );
+	assert( 0.0 < rTol );
+	assert( isposintscalar(maxIt) );
+	vecFGL_delta = cgs( funchA, -vecRes0, rTol, maxIt );
 	%
+	vecFGL = vecFGL0 + vecFGL_delta;
 	[ f, vecG, matH ] = __unpackFGL( sizeX, vecFGL, hess2lambdaDat );
 return;
 endfunction
