@@ -1,3 +1,9 @@
+% function [ f, vecG, matH, datOut ] = hessfit( sizeX, numPts, matX, rvecF, matG, prm=[] )
+%
+% Generate a Hessian/quadratic fit to the given x, f, and nablaF values.
+%
+% DRaburn 2022-11-11.
+
 function [ f, vecG, matH, datOut ] = hessfit( sizeX, numPts, matX, rvecF, matG, prm=[] )
 	%
 	[ datCnsts, vecFGL0, hess2lambdaDat ] = __init( sizeX, numPts, matX, rvecF, matG, prm );
