@@ -23,5 +23,7 @@ sizeFGL = 1 + sizeX + ((sizeX*(sizeX+1))/2)
 prm = [];
 msg( __FILE__, __LINE__, "Calling hessfit()..." );
 [ calc_f, calc_vecG, calc_matH, datOut ] = hessfit( sizeX, numPts, matX, rvecF, matG, prm )
+calc_vecX0 = -(calc_matH\calc_vecG)
+secret_vecX0
 %
 msg( __FILE__, __LINE__, "End of test." ); return;
