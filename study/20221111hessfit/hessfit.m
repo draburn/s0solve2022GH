@@ -3,6 +3,7 @@ function [ f, vecG, matH, datOut ] = hessfit( sizeX, numPts, matX, rvecF, matG, 
 	[ datCnsts, vecFGL0, hess2lambdaDat ] = __init( sizeX, numPts, matX, rvecF, matG, prm );
 	datOut = [];
 	%
+	rTol = mygetfield( prm, "rTol", 1.0e-12 );
 	useCnstF = mygetfield( prm, "useCnstF", false );
 	useCnstG = mygetfield( prm, "useCnstG", false ); % subsumes useCnstF.
 	if ( useCnstG && useCnstF )
@@ -14,7 +15,6 @@ function [ f, vecG, matH, datOut ] = hessfit( sizeX, numPts, matX, rvecF, matG, 
 		vecB = -vecRes0;
 		numUnk = (sizeX*(sizeX+1))/2;
 		%
-		rTol = mygetfield( prm, "rTol", 1.0e-6 );
 		maxIt = mygetfield( prm, "maxIt", numUnk  );
 		assert( 0.0 < rTol );
 		assert( isposintscalar(maxIt) );
@@ -31,7 +31,6 @@ function [ f, vecG, matH, datOut ] = hessfit( sizeX, numPts, matX, rvecF, matG, 
 		vecB = -vecRes0;
 		numUnk = (sizeX*(sizeX+1))/2 + sizeX;
 		%
-		rTol = mygetfield( prm, "rTol", 1.0e-6 );
 		maxIt = mygetfield( prm, "maxIt", numUnk  );
 		assert( 0.0 < rTol );
 		assert( isposintscalar(maxIt) );
@@ -48,7 +47,6 @@ function [ f, vecG, matH, datOut ] = hessfit( sizeX, numPts, matX, rvecF, matG, 
 		vecB = -vecRes0;
 		numUnk = (sizeX*(sizeX+1))/2 + sizeX + 1;
 		%
-		rTol = mygetfield( prm, "rTol", 1.0e-6 );
 		maxIt = mygetfield( prm, "maxIt", numUnk  );
 		assert( 0.0 < rTol );
 		assert( isposintscalar(maxIt) );
@@ -57,6 +55,26 @@ function [ f, vecG, matH, datOut ] = hessfit( sizeX, numPts, matX, rvecF, matG, 
 		vecFGL = vecFGL0 + vecFGL_delta;
 	endif
 	[ f, vecG, matH ] = __unpackFGL( sizeX, vecFGL, hess2lambdaDat );
+	%
+	if ( nargout >= 4 )
+		[ f, vecG, matH ] = __unpackFGL( sizeX, vecFGL, hess2lambdaDat );
+		%
+		datOut.rvecRho =  f + (vecG'*matX) + (sum( matX .* ( matH * matX ), 1 )/2.0) - rvecF; % Autobroadcast vecG.
+		datOut.rvecW0Rho = datCnsts.rvecW0 .* datOut.rvecRho;
+		datOut.matR = vecG + ( matH * matX ) - matG;
+		datOut.matW1R = datCnsts.rvecW1 .* datOut.matR; % Autobroadcast rvecW1.
+		datOut.rvecRNorm = sqrt( sum(datOut.matR.^2,1) );
+		datOut.rvecW1RNorm = sqrt( sum(datOut.matW1R.^2,1) );
+		%
+		datOut.stats.rho = [ mean(datOut.rvecRho), std(datOut.rvecRho) ];
+		datOut.stats.absRho = [ mean(abs(datOut.rvecRho)), std(abs(datOut.rvecRho)) ];
+		datOut.stats.rNorm = [ mean(datOut.rvecRNorm), std(datOut.rvecRNorm) ];
+		datOut.stats.hFrobNorm = sqrt(sum(sum(matH.^2)));
+		datOut.stats.w0rho = [ mean(datOut.rvecW0Rho), std(datOut.rvecW0Rho) ];
+		datOut.stats.absW0Rho = [ mean(abs(datOut.rvecW0Rho)), std(abs(datOut.rvecW0Rho)) ];
+		datOut.stats.w1RNorm = [ mean(datOut.rvecW1RNorm), std(datOut.rvecW1RNorm) ];
+		datOut.stats.hReguFrobNorm = datCnsts.epsHRegu * datOut.stats.hFrobNorm;
+	endif
 return;
 endfunction
 
@@ -77,7 +95,8 @@ function [ datCnsts, vecFGL0, hess2lambdaDat ] = __init( sizeX, numPts, matX, rv
 	datCnsts.rvecW0 = mygetfield( prm, "rvecW0", ones(1,numPts) );
 	assert( isrealarray(datCnsts.rvecW0,[1,numPts]) );
 	%
-	datCnsts.rvecW1 = mygetfield( prm, "rvecW1", ones(1,numPts) );
+	datCnsts.rvecW1 = mygetfield( prm, "rvecW1", ones(1,numPts)*(eps^0.4)/sizeX );
+	%%%datCnsts.rvecW1 = mygetfield( prm, "rvecW1", ones(1,numPts) );
 	assert( isrealarray(datCnsts.rvecW1,[1,numPts]) );
 	datCnsts.s1 = sum( datCnsts.rvecW1, 2 );
 	datCnsts.vecS1X = sum( datCnsts.rvecW1 .* matX, 2 ); % Autobroadcast rvecW1.
@@ -90,7 +109,7 @@ function [ datCnsts, vecFGL0, hess2lambdaDat ] = __init( sizeX, numPts, matX, rv
 	clear p;
 	datCnsts.matS1XGTPGXT += (datCnsts.matS1XGTPGXT');
 	%
-	datCnsts.epsHRegu = mygetfield( prm, "epsHRegu", 0.0 );
+	datCnsts.epsHRegu = mygetfield( prm, "epsHRegu", (eps^0.8)/(sizeX^2) );
 	assert( isrealscalar(datCnsts.epsHRegu) );
 	%
 	f0 = mygetfield( prm, "f0", 0.0 );
