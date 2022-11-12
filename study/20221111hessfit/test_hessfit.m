@@ -21,12 +21,7 @@ msg( __FILE__, __LINE__, "Begin test main..." );
 sizeFGL = 1 + sizeX + ((sizeX*(sizeX+1))/2)
 %
 prm = [];
-msg( __FILE__, __LINE__, "Calling hessfitH_1110()..." );
-[ calc_matH, datOut ] = hessfitH_1110( sizeX, numPts, matG(:,1), matX, matG, prm )
+msg( __FILE__, __LINE__, "Calling hessfit()..." );
+[ calc_f, calc_vecG, calc_matH, datOut ] = hessfit( sizeX, numPts, matX, rvecF, matG, prm )
 %
 msg( __FILE__, __LINE__, "End of test." ); return;
-%
-prm = [];
-%prm.rvecW1 = ones(1,numPts);
-msg( __FILE__, __LINE__, "Calling hessfit_1110()..." );
-[ calc_f, calc_vecG, calc_matH, datOut ] = hessfit1110( matX, rvecF, matG, prm )
