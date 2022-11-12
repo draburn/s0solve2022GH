@@ -3,19 +3,59 @@ function [ f, vecG, matH, datOut ] = hessfit( sizeX, numPts, matX, rvecF, matG, 
 	[ datCnsts, vecFGL0, hess2lambdaDat ] = __init( sizeX, numPts, matX, rvecF, matG, prm );
 	datOut = [];
 	%
-	%msg( __FILE__, __LINE__, "TODO: Add options to keep f and even vecG constant." );
-	%
-	funchRes = @(fgl)( __funcResFGL( fgl, sizeX, numPts, matX, rvecF, matG, datCnsts, hess2lambdaDat ) );
-	vecRes0 = funchRes( vecFGL0 );
-	funchA = @(fgl)( funchRes(vecFGL0+fgl) - vecRes0 );
-	%
-	rTol = mygetfield( prm, "rTol", 1.0e-6 );
-	maxIt = mygetfield( prm, "maxIt", (sizeX*(sizeX+1))/2 );
-	assert( 0.0 < rTol );
-	assert( isposintscalar(maxIt) );
-	vecFGL_delta = cgs( funchA, -vecRes0, rTol, maxIt );
-	%
-	vecFGL = vecFGL0 + vecFGL_delta;
+	useCnstF = mygetfield( prm, "useCnstF", false );
+	useCnstG = mygetfield( prm, "useCnstG", false ); % subsumes useCnstF.
+	if ( useCnstG && useCnstF )
+		vecFG0 = vecFGL0(1:1+sizeX);
+		vecL0 = vecFGL0(2+sizeX:end);
+		funchRes = @(vecL)( __funcResFGL( [vecFG0;vecL], sizeX, numPts, matX, rvecF, matG, datCnsts, hess2lambdaDat )(2+sizeX:end) );
+		vecRes0 = funchRes( vecL0 );
+		funchA = @(vecL)( funchRes(vecL0+vecL) - vecRes0 );
+		vecB = -vecRes0;
+		numUnk = (sizeX*(sizeX+1))/2;
+		%
+		rTol = mygetfield( prm, "rTol", 1.0e-6 );
+		maxIt = mygetfield( prm, "maxIt", numUnk  );
+		assert( 0.0 < rTol );
+		assert( isposintscalar(maxIt) );
+		vecGL_delta = cgs( funchA, vecB, rTol, maxIt );
+		%
+		vecFGL = vecFGL0;
+		vecFGL(2+sizeX:end) += vecGL_delta;
+	elseif ( useCnstF )
+		f0 = vecFGL0(1);
+		vecGL0 = vecFGL0(2:end);
+		funchRes = @(gl)( __funcResFGL( [f0;gl], sizeX, numPts, matX, rvecF, matG, datCnsts, hess2lambdaDat )(2:end) );
+		vecRes0 = funchRes( vecGL0 );
+		funchA = @(gl)( funchRes(vecGL0+gl) - vecRes0 );
+		vecB = -vecRes0;
+		numUnk = (sizeX*(sizeX+1))/2 + sizeX;
+		%
+		rTol = mygetfield( prm, "rTol", 1.0e-6 );
+		maxIt = mygetfield( prm, "maxIt", numUnk  );
+		assert( 0.0 < rTol );
+		assert( isposintscalar(maxIt) );
+		vecGL_delta = cgs( funchA, vecB, rTol, maxIt );
+		%
+		vecFGL = vecFGL0;
+		vecFGL(2:end) += vecGL_delta;
+	elseif ( useCnstG )
+		error( "Use of useCnstG without useCnstF is not supported." );
+	else
+		funchRes = @(fgl)( __funcResFGL( fgl, sizeX, numPts, matX, rvecF, matG, datCnsts, hess2lambdaDat ) );
+		vecRes0 = funchRes( vecFGL0 );
+		funchA = @(fgl)( funchRes(vecFGL0+fgl) - vecRes0 );
+		vecB = -vecRes0;
+		numUnk = (sizeX*(sizeX+1))/2 + sizeX + 1;
+		%
+		rTol = mygetfield( prm, "rTol", 1.0e-6 );
+		maxIt = mygetfield( prm, "maxIt", numUnk  );
+		assert( 0.0 < rTol );
+		assert( isposintscalar(maxIt) );
+		vecFGL_delta = cgs( funchA, vecB, rTol, maxIt );
+		%
+		vecFGL = vecFGL0 + vecFGL_delta;
+	endif
 	[ f, vecG, matH ] = __unpackFGL( sizeX, vecFGL, hess2lambdaDat );
 return;
 endfunction
