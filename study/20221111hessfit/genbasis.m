@@ -14,14 +14,16 @@ function [ matV, matDX ] = genbasis( matX, prm=[] )
 	%assert( isrealarray(rvecF,[1,numPts]) );
 	%assert( isrealarray(matG,[sizeX,numPts]) );
 	%
-	vecX0 = matX(:,1);
+	vecX0 = mygetfield( prm, "vecX0", matX(:,1) );
 	matDX = matX - vecX0; % Autobroadcast vecX0.
 	%
 	matU = zeros( sizeX, numPts - 1 );
 	for p = 1 : numPts-1
 		vecDX = matDX(:,p+1);
 		s = norm(vecDX);
-		assert( s > 0.0 );
+		if ( s < eps )
+			continue;
+		endif
 		matU(:,p) = vecDX / s;
 	endfor
 	%

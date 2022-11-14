@@ -3,7 +3,7 @@ mydefs;
 setprngstates( 0 );
 %
 sizeX = 10
-numPts = 201
+numPts = 51
 %numPts = 200
 numUnk = (sizeX*(sizeX+1))/2 + sizeX + 1
 numGvn = (1+sizeX)*numPts
@@ -27,9 +27,11 @@ msg( __FILE__, __LINE__, "Calling hessfitss()..." );
 tic();
 [ matV, fss, vecGss, matHss, hessfitssDat ] = hessfitss( sizeX, numPts, matX, rvecF, matG, prm );
 toc();
-calc_vecX0 = -matV*(matHss\vecGss);
+calc_vecX0ss = matHss\vecGss;
+calc_vecX0 = -matV*calc_vecX0ss;
 secret_vecDX0 = calc_vecX0 - secret_vecX0;
 f_minWas = min(rvecF)
+f_expect = fss + (vecGss'*calc_vecX0ss) + (calc_vecX0ss'*matHss*calc_vecX0ss)/2.0
 f_wouldBe = secret_f0 + (secret_vecDX0'*secret_matH*secret_vecDX0)/2.0
 %
 msg( __FILE__, __LINE__, "End of test." ); return;
