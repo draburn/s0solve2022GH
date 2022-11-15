@@ -27,7 +27,7 @@ function [ matV, matDX ] = genbasis( matX, prm=[] )
 		matU(:,p) = vecDX / s;
 	endfor
 	%
-	looseyness = 1;
+	looseyness = 2;
 	switch (looseyness)
 	case 3
 		bigKMax = mygetfield( prm, "bigKMax", sizeX );

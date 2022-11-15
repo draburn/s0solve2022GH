@@ -2,8 +2,8 @@ clear
 mydefs;
 setprngstates( 0 );
 %
-sizeX = 5
-numPts = 50
+sizeX = 100
+numPts = 20
 %numPts = 200
 numUnk = (sizeX*(sizeX+1))/2 + sizeX + 1
 numGvn = (1+sizeX)*numPts
@@ -20,7 +20,7 @@ secret_matDX = matX - secret_vecX0;
 rvecF = secret_f0 + sum( secret_matDX .* ( secret_matH * secret_matDX ), 1 )/2.0;
 matG = secret_matH * secret_matDX;
 %
-%%%matG += 0.1*randn(size(matG));
+matG += randn(size(matG));
 
 [ f_minWas, pt0 ] = min(rvecF);
 %
@@ -29,8 +29,13 @@ prm.pt0 = pt0;
 msg( __FILE__, __LINE__, "Calling hessfitss()..." );
 tic();
 [ matV, fss, vecGss, matHss, hessfitssDat ] = hessfitss( sizeX, numPts, matX, rvecF, matG, pt0, prm );
-eigsOfMatHss = eig(matHss)
 toc();
+eigsOfMatHss = eig(matHss)
+if ( min(eigsOfMatHss) <= 0.0 )
+	%matHss +=  (abs(min(eigsOfMatHss)) + sqrt(eps)*max(abs(eigsOfMatHss)) )*eye(size(matHss)); %???
+	foo = abs(min(eigsOfMatHss)) + 0.1*max(abs(eigsOfMatHss));
+	matHss += foo*eye(size(matHss));
+endif
 f_minWas = f_minWas
 vecYNewton = -(matHss\vecGss);
 vecXNext = matX(:,pt0) + matV * vecYNewton;

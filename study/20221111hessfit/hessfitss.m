@@ -17,12 +17,14 @@ function [ matV, fss, vecGss, matHss, datOut ] = hessfitss( sizeX, numPts, matX,
 	hessfitPrm.f0 = rvecF(pt0);
 	hessfitPrm.useCnstF = true;
 	hessfitPrm.vecG0 = matVTG(:,pt0);
-	hessfitPrm.useCnstG = true;
-	%hessfitPrm.rvecW0 = sum( matY.^2, 1 ) ./ ( eps + sum( matDX.^2, 1) );
-	%hessfitPrm.vecW0(pt0) = 1.0;
-	%hessfitPrm.rvecW1 = hessfitPrm.rvecW0 * 0.01 / sizeX;
+	%hessfitPrm.useCnstG = true;
+	hessfitPrm.rvecW0 = sum( matY.^2, 1 ) ./ ( eps + sum( matDX.^2, 1) );
+	hessfitPrm.rvecW0(pt0) = 1.0;
+	hessfitPrm.rvecW0 .^= 8
+	hessfitPrm.rvecW1 = hessfitPrm.rvecW0 * 0.01 / sizeX;
 	hessfitPrm = mygetfield( prm, "hessfitPrm", hessfitPrm );
 	[ fss, vecGss, matHss, hessfitDat ] = hessfit( sizeV, numPts, matY, rvecF, matVTG, hessfitPrm );
+	hessfitDat.stats
 return;
 endfunction
 
