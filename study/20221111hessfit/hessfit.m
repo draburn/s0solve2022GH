@@ -61,6 +61,11 @@ function [ f, vecG, matH, datOut ] = hessfit( sizeX, numPts, matX, rvecF, matG, 
 		vecFGL = vecFGL0 + vecFGL_delta;
 	endif
 	[ f, vecG, matH ] = __unpackFGL( sizeX, vecFGL, hess2lambdaDat );
+	
+	
+	vecRes = funchRes(vecFGL)
+	
+	
 	%
 	if ( nargout >= 4 )
 		[ f, vecG, matH ] = __unpackFGL( sizeX, vecFGL, hess2lambdaDat );
