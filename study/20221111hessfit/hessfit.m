@@ -9,7 +9,7 @@ function [ f, vecG, matH, datOut ] = hessfit( sizeX, numPts, matX, rvecF, matG, 
 	[ datCnsts, vecFGL0, hess2lambdaDat ] = __init( sizeX, numPts, matX, rvecF, matG, prm );
 	datOut = [];
 	%
-	rTol = mygetfield( prm, "rTol", 1.0e-12 );
+	rTol = mygetfield( prm, "rTol", 1.0e-14 );
 	useCnstF = mygetfield( prm, "useCnstF", false );
 	useCnstG = mygetfield( prm, "useCnstG", false ); % subsumes useCnstF.
 	if ( useCnstG && useCnstF )

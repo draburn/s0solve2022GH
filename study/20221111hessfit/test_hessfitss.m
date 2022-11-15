@@ -3,7 +3,7 @@ mydefs;
 setprngstates( 0 );
 %
 sizeX = 5
-numPts = 11
+numPts = 50
 %numPts = 200
 numUnk = (sizeX*(sizeX+1))/2 + sizeX + 1
 numGvn = (1+sizeX)*numPts
@@ -31,14 +31,20 @@ tic();
 [ matV, fss, vecGss, matHss, hessfitssDat ] = hessfitss( sizeX, numPts, matX, rvecF, matG, pt0, prm );
 eigsOfMatHss = eig(matHss)
 toc();
+f_minWas = f_minWas
 vecYNewton = -(matHss\vecGss);
 vecXNext = matX(:,pt0) + matV * vecYNewton;
-secret_vecDX0 = vecXNext - secret_vecX0;
-f_minWas = f_minWas
-vecYTest = -0.001*vecGss;
-f_test = fss + ( vecGss'*vecYTest ) + ( vecYTest'*matHss*vecYTest )/2.0
+secret_vecDXNext = vecXNext - secret_vecX0;
+%
+if (1)
+	vecYTest = -0.001*vecGss;
+	f_test = fss + ( vecGss'*vecYTest ) + ( vecYTest'*matHss*vecYTest )/2.0
+	vecXTest = matX(:,pt0) + matV*vecYTest;
+	secret_vecDXTest = vecXTest - secret_vecX0;
+	f_testWouldBe = secret_f0 + (secret_vecDXTest'*secret_matH*secret_vecDXTest)/2.0
+endif
+%
 f_expect = fss + ( vecGss'*vecYNewton ) + ( vecYNewton'*matHss*vecYNewton )/2.0
-%vecNablaYF_expect = vecGss + matHss*vecYNewton
-f_wouldBe = secret_f0 + (secret_vecDX0'*secret_matH*secret_vecDX0)/2.0
+f_wouldBe = secret_f0 + (secret_vecDXNext'*secret_matH*secret_vecDXNext)/2.0
 %
 msg( __FILE__, __LINE__, "End of test." ); return;

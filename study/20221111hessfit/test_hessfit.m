@@ -2,7 +2,7 @@ clear
 mydefs;
 setprngstates( 0 );
 %
-sizeX = 50
+sizeX = 5
 numPts = 50
 numUnk = (sizeX*(sizeX+1))/2 + sizeX + 1
 numGvn = (1+sizeX)*numPts
@@ -19,7 +19,7 @@ secret_matDX = matX - secret_vecX0;
 rvecF = secret_f0 + sum( secret_matDX .* ( secret_matH * secret_matDX ), 1 )/2.0;
 matG = secret_matH * secret_matDX;
 %
-matG += 0.1*randn(size(matG));
+%matG += 0.1*randn(size(matG));
 %matG = randn(size(matG));
 %
 msg( __FILE__, __LINE__, "Begin test main..." );
