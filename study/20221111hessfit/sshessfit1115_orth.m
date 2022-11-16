@@ -1,4 +1,4 @@
-function [ vecX0, matV, f, vecGss, matHss, datOut ] = sshessfit1115_nonorth( sizeX, numPts, matX, rvecF, matG, pt0, prm=[] )
+function [ vecX0, matV, f, vecGss, matHss, datOut ] = sshessfit1115_orth( sizeX, numPts, matX, rvecF, matG, pt0, prm=[] )
 	assert( isposintscalar(sizeX) );
 	assert( isposintscalar(numPts) );
 	assert( isrealarray(matX,[sizeX,numPts]) );
@@ -6,16 +6,14 @@ function [ vecX0, matV, f, vecGss, matHss, datOut ] = sshessfit1115_nonorth( siz
 	assert( isrealarray(matG,[sizeX,numPts]) );
 	assert( isposintscalar(pt0) );
 	assert( pt0 <= numPts );
-	%
-	assert( sizeX > numPts ); % Not exact criteria.
+	%assert( sizeX > numPts );
 	%
 	vecX0 = matX(:,pt0);
-	matV = [ matX(:,1:pt0-1), matX(:,pt0+1:end) ] - vecX0;
-	bigK = numPts-1;
-	matI = eye(bigK);
-	matY = [ matI(:,1:pt0-1), zeros(bigK,1), matI(:,pt0:end) ];
-	% Leaving the zero in place is eaiser, though perhaps less elegant.
-	matGss = matV'*matG; % ... Yeah?
+	matDX = matX - vecX0;
+	matV = utorthdrop( matDX );
+	bigK = size(matV,2);
+	matY = matV'*matDX;
+	matGss = matV'*matG;
 	%
 	hessfitPrm = mygetfield( prm, "hessfitPrm", [] );
 	[ f, vecGss, matHss, hessfitDat ] = hessfit( bigK, numPts, matY, rvecF, matGss, hessfitPrm );

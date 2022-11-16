@@ -24,7 +24,8 @@ function [ f, vecG, matH, datOut ] = hessfit( sizeX, numPts, matX, rvecF, matG, 
 		maxIt = mygetfield( prm, "maxIt", numUnk  );
 		assert( 0.0 < rTol );
 		assert( isposintscalar(maxIt) );
-		vecGL_delta = cgs( funchA, vecB, rTol, maxIt );
+		%%%vecGL_delta = cgs( funchA, vecB, rTol, maxIt );
+		vecGL_delta = gmres( funchA, vecB, [], rTol, maxIt );
 		%
 		vecFGL = vecFGL0;
 		vecFGL(2+sizeX:end) += vecGL_delta;
@@ -40,7 +41,8 @@ function [ f, vecG, matH, datOut ] = hessfit( sizeX, numPts, matX, rvecF, matG, 
 		maxIt = mygetfield( prm, "maxIt", numUnk  );
 		assert( 0.0 < rTol );
 		assert( isposintscalar(maxIt) );
-		vecGL_delta = cgs( funchA, vecB, rTol, maxIt );
+		%%%vecGL_delta = cgs( funchA, vecB, rTol, maxIt );
+		vecGL_delta = cgs( funchA, vecB, [], rTol, maxIt );
 		%
 		vecFGL = vecFGL0;
 		vecFGL(2:end) += vecGL_delta;
@@ -56,16 +58,15 @@ function [ f, vecG, matH, datOut ] = hessfit( sizeX, numPts, matX, rvecF, matG, 
 		maxIt = mygetfield( prm, "maxIt", numUnk  );
 		assert( 0.0 < rTol );
 		assert( isposintscalar(maxIt) );
-		vecFGL_delta = cgs( funchA, vecB, rTol, maxIt );
+		%%%vecFGL_delta = cgs( funchA, vecB, rTol, maxIt );
+		vecFGL_delta = gmres( funchA, vecB, [], rTol, maxIt );
 		%
 		vecFGL = vecFGL0 + vecFGL_delta;
 	endif
 	[ f, vecG, matH ] = __unpackFGL( sizeX, vecFGL, hess2lambdaDat );
-	
-	
-	vecRes = funchRes(vecFGL)
-	
-	
+	%
+	%res0 = norm(funchRes(vecFGL0))
+	%res = norm(funchRes(vecFGL))
 	%
 	if ( nargout >= 4 )
 		[ f, vecG, matH ] = __unpackFGL( sizeX, vecFGL, hess2lambdaDat );
