@@ -42,7 +42,7 @@ function [ f, vecG, matH, datOut ] = hessfit( sizeX, numPts, matX, rvecF, matG, 
 		assert( 0.0 < rTol );
 		assert( isposintscalar(maxIt) );
 		%%%vecGL_delta = cgs( funchA, vecB, rTol, maxIt );
-		vecGL_delta = cgs( funchA, vecB, [], rTol, maxIt );
+		vecGL_delta = gmres( funchA, vecB, [], rTol, maxIt );
 		%
 		vecFGL = vecFGL0;
 		vecFGL(2:end) += vecGL_delta;
