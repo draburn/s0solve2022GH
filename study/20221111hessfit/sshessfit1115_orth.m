@@ -16,11 +16,11 @@ function [ vecX0, matV, f, vecGss, matHss, datOut ] = sshessfit1115_orth( sizeX,
 	matGss = matV'*matG;
 	%
 	hessfitPrm = [];
-	if ( mygetfield(prm,"useCnstF",false) )
+	if ( mygetfield(prm,"useCnstF",true) )
 		hessfitPrm.useCnstF = true;
 		hessfitPrm.f0 = rvecF(pt0);
 	endif
-	if ( mygetfield(prm,"useCnstG",true) )
+	if ( mygetfield(prm,"useCnstG",false) )
 		hessfitPrm.useCnstG = true;
 		hessfitPrm.vecG0 = matGss(:,pt0);
 	endif
