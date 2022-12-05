@@ -3,7 +3,7 @@ mydefs;
 setprngstates(0);
 %
 sizeX = 100
-numPts = 31
+numPts = 41
 gNoiseLevel = 0.000
 fNoiseLevel = 0.000
 %

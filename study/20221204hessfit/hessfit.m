@@ -105,7 +105,9 @@ endfunction
 function [ vecFGL, solveDat ] = __solve( funchRes, vecFGL0, prm )
 	startTime = time();
 	%[ vecFGL, solveDat ] = __solve_gmres( funchRes, vecFGL0, prm );
-	%return;
+	%[ vecFGL, solveDat ] = __solve_fullMat( funchRes, vecFGL0, prm );
+	[ vecFGL, solveDat ] = __solve_sparseMat( funchRes, vecFGL0, prm );
+	return;
 	vecRes0 = funchRes(vecFGL0);
 	funchA = @(fgl)( funchRes(fgl+vecFGL0) - vecRes0 );
 	linsolfPrm = [];
@@ -132,6 +134,42 @@ function [ vecFGL, solveDat ] = __solve_gmres( funchRes, vecFGL0, prm )
 	solveDat.relres = relres;
 	solveDat.iterCount = iterCount;
 	solveDat.vecRes = vecRes;
+return
+endfunction
+function [ vecFGL, solveDat ] = __solve_fullMat( funchRes, vecFGL0, prm )
+	vecRes0 = funchRes(vecFGL0);
+	funchA = @(fgl)( funchRes(fgl+vecFGL0) - vecRes0 );
+	sz = length(vecRes0);
+	% May take way to much memory.
+	matM = zeros(sz,sz);
+	for n = 1:sz
+		fgl = zeros(sz,1);
+		fgl(n) = 1.0;
+		matM(:,n) = funchA(fgl);
+	endfor
+	clear fgl;
+	vecFGL = vecFGL0 - matM \ vecRes0;
+	solveDat = [];
+return
+endfunction
+function [ vecFGL, solveDat ] = __solve_sparseMat( funchRes, vecFGL0, prm )
+	vecRes0 = funchRes(vecFGL0);
+	funchA = @(fgl)( funchRes(fgl+vecFGL0) - vecRes0 );
+	sz = length(vecRes0);
+	matM = spalloc( sz, sz, ceil(100 + 10*sz) );
+	% The size is just a guess. nnz seems to be about 4.8 ~ 5.0 * sz.
+	for n = 1:sz
+		fgl = zeros(sz,1);
+		fgl(n) = 1.0;
+		vecT = funchA(fgl);
+		t = sqrt(sum(vecT.^2)/sz);
+		matM(:,n) = vecT.*(abs(vecT)>(eps^0.75)*t);
+	endfor
+	clear fgl;
+	%matM
+	%[ sz, nnz(matM) ]
+	vecFGL = vecFGL0 - matM \ vecRes0;
+	solveDat = [];
 return
 endfunction
 
