@@ -2,10 +2,10 @@ clear;
 mydefs;
 setprngstates(0);
 %
-sizeX = 5
-numPts = 50
-gNoiseLevel = 0.001
-fNoiseLevel = 0.001
+sizeX = 10
+numPts = 5
+gNoiseLevel = 0.0
+fNoiseLevel = 0.0
 %
 f0 = 0.0;
 vecX0 = randn(sizeX,1);
@@ -32,14 +32,13 @@ funchG = @(x)( funchGSmooth(x) + gNoiseLevel*randn(size(x)) );
 matX = randn(sizeX,numPts);
 rvecF = funchF(matX);
 matG = funchG(matX);
-sum(sum(matG.^2))
 %
 switch (10)
 case 0
 	vecA = matX(:,1);
 	matV = eye(sizeX);
-	f = funchF(vecA);
-	vecG = funchG(vecA);
+	f = funchFSmooth(vecA);
+	vecG = funchGSmooth(vecA);
 	msg( __FILE__, __LINE__, "Calculating full Hessian..." ); tic();
 	matH = matA * (matA');
 	msgnnl( __FILE__, __LINE__, "Finished calculating full hessian. " ); toc();
@@ -61,13 +60,15 @@ endif
 matR = chol( matH );
 vecY = matR \ ( matR' \ (-vecG) );
 vecXNext = vecA + (matV * vecY);
+fModelNext = f + vecG'*vecY + 0.5*(vecY'*matH*vecY);
+vecGModelNext = vecG + matH*vecY;
 %
 msg( __FILE__, __LINE__, "Results..." );
 [ foo, ptAIdeal ] = min(sumsq(matX-vecX0,1));
 vecAIdeal = matX(:,ptAIdeal);
-msg( __FILE__, __LINE__, sprintf( "  ||x-x_0||: (%10.3e) %10.3e -> %10.3e", norm(vecAIdeal-vecX0), norm(vecA-vecX0), norm(vecXNext-vecX0) ) );
-msg( __FILE__, __LINE__, sprintf( "          f: (%10.3e) %10.3e -> %10.3e", funchFSmooth(vecAIdeal), funchFSmooth(vecA), funchFSmooth(vecXNext) ) );
-msg( __FILE__, __LINE__, sprintf( "      ||g||: (%10.3e) %10.3e -> %10.3e", norm(funchGSmooth(vecAIdeal)), norm(funchGSmooth(vecA)), norm(funchGSmooth(vecXNext)) ) );
-msg( __FILE__, __LINE__, sprintf( "  ||V^T*g||: (%10.3e) %10.3e -> %10.3e", norm(matV'*funchGSmooth(vecAIdeal)), norm(matV'*funchGSmooth(vecA)), norm(matV'*funchGSmooth(vecXNext)) ) );
+msg( __FILE__, __LINE__, sprintf( "  ||x-x_0||: (%10.3e) %10.3e -> %10.3e (%10.3e)", norm(vecAIdeal-vecX0), norm(vecA-vecX0), norm(vecXNext-vecX0), 0.0 ) );
+msg( __FILE__, __LINE__, sprintf( "          f: (%10.3e) %10.3e -> %10.3e (%10.3e)", funchFSmooth(vecAIdeal), funchFSmooth(vecA), funchFSmooth(vecXNext), fModelNext ) );
+msg( __FILE__, __LINE__, sprintf( "      ||g||: (%10.3e) %10.3e -> %10.3e (%10.3e)", norm(funchGSmooth(vecAIdeal)), norm(funchGSmooth(vecA)), norm(funchGSmooth(vecXNext)), norm(vecGModelNext) ) );
+msg( __FILE__, __LINE__, sprintf( "  ||V^T*g||: (%10.3e) %10.3e -> %10.3e (%10.3e)", norm(matV'*funchGSmooth(vecAIdeal)), norm(matV'*funchGSmooth(vecA)), norm(matV'*funchGSmooth(vecXNext)), norm(matV'*vecGModelNext) ) );
 
 return;
