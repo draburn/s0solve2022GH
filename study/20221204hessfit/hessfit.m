@@ -42,9 +42,16 @@ function [ vecFGL0, precalcDat, hess2lambdaDat ] = __init( matX, rvecF, matG, pr
 	clear p;
 	%
 	%
-	precalcDat.rvecW0 = mygetfield( prm, "rvecW0", ones(1,numPts) );
-	precalcDat.rvecW1 = mygetfield( prm, "rvecW1", ones(1,numPts)*(eps^0.4)/sizeX );
-	precalcDat.epsHRegu = mygetfield( prm, "epsHRegu", (eps^0.8)/(sizeX^2) );
+	rvecG = sqrt(sum(matG.^2,1));
+	rvecW0 = 1.0./( abs(rvecF) + sqrt(eps)*max(abs(rvecF)) );
+	rvecW1 = 1.0./( abs(rvecG) + sqrt(eps)*max(abs(rvecG)) );
+	epsHRegu = (eps^0.8)*sum(rvecF.^2)/sum(sum(matG.^2));
+	%rvecW0 = ones(1,numPts);
+	%rvecW1 = ones(1,numPts)/sizeX;
+	%epsHRegu = (eps^0.8)/(sizeX^2)
+	precalcDat.rvecW0 = mygetfield( prm, "rvecW0", rvecW0 );
+	precalcDat.rvecW1 = mygetfield( prm, "rvecW1", rvecW1 );
+	precalcDat.epsHRegu = mygetfield( prm, "epsHRegu", epsHRegu );
 	assert( isrealarray(precalcDat.rvecW0,[1,numPts]) );
 	assert( isrealarray(precalcDat.rvecW1,[1,numPts]) );
 	assert( isrealscalar(precalcDat.epsHRegu) );
@@ -75,7 +82,6 @@ endfunction
 
 
 function vecResFGL = __funcResFGL( vecFGL, matX, rvecF, matG, precalcDat, hess2lambdaDat )
-	msg( __FILE__, __LINE__, "Called __funcResFGL()." );
 	sizeX = size(matX,1);
 	numPts = size(matX,2);
 	[ f, vecG, matH ] = __unpackFGL( sizeX, vecFGL, hess2lambdaDat );
@@ -98,7 +104,7 @@ endfunction
 function [ vecFGL, solveDat ] = __solve( funchRes, vecFGL0, prm )
 	vecRes0 = funchRes(vecFGL0);
 	funchA = @(fgl)( funchRes(fgl+vecFGL0) - vecRes0 );
-	rTol = mygetfield( prm, "rTol", 1e-14 ); % Do we need 1e-16?!?!
+	rTol = mygetfield( prm, "rTol", 1e-12 );
 	maxIt = mygetfield( prm, "maxIt", length(vecRes0) );
 	assert( isrealscalar(rTol) );
 	assert( 0.0 < rTol );
@@ -109,15 +115,14 @@ function [ vecFGL, solveDat ] = __solve( funchRes, vecFGL0, prm )
 	[ vecFGL, statFlag, relres, iterCount, vecRes ] = gmres( funchA, -vecRes0, [], rTol, maxIt );
 	elapsedTime = time()-startTime();
 	msg( __FILE__, __LINE__, sprintf( "  solve: statFlag = %d", statFlag ) );
-	msg( __FILE__, __LINE__, sprintf( "  solve: relres = %0.3e", relres ) );
-	msg( __FILE__, __LINE__, sprintf( "  solve: iterCount = %d, %d", iterCount(1), iterCount(2) ) );
+	msg( __FILE__, __LINE__, sprintf( "  solve: relres = %0.3e / %0.3e", relres, rTol ) );
+	msg( __FILE__, __LINE__, sprintf( "  solve: iterCount = %d, %d / %d, %d.", iterCount(1), iterCount(2), maxIt, length(vecRes0) ) );
 	msg( __FILE__, __LINE__, sprintf( "  solve: elapsedTime = %f", elapsedTime ) );
 	solveDat.statFlag = statFlag;
 	solveDat.relres = relres;
 	solveDat.iterCount = iterCount;
 	solveDat.vecRes = vecRes;
 	solveDat.elapsedTime = elapsedTime;
-	maxIt
 return
 endfunction
 
