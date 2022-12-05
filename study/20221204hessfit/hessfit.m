@@ -1,4 +1,4 @@
-% function [ f0, vecG0, matH, datOut ] = hessfit( matX, rvecF, matG, prm=[] )
+% function [ f, vecG, matH, datOut ] = hessfit( matX, rvecF, matG, prm=[] )
 %
 % Generate a Hessian/quadratic fit to the given values about the origin.
 % Intended for cases where there is large noise in f and g.
@@ -29,6 +29,10 @@ function [ vecFGL0, precalcDat, hess2lambdaDat ] = __init( matX, rvecF, matG, pr
 	assert( isrealarray(matX,[sizeX,numPts]) );
 	assert( isrealarray(rvecF,[1,numPts]) );
 	assert( isrealarray(matG,[sizeX,numPts]) );
+	%
+	if ( numPts <= sizeX )
+		msg( __FILE__, __LINE__, "Warning: numPts <= sizeX; result may be ill-behaved." );
+	endif
 	%
 	%
 	precalcDat.ary3XXT = zeros(sizeX,sizeX,numPts);
@@ -101,10 +105,10 @@ function [ vecFGL, solveDat ] = __solve( funchRes, vecFGL0, prm )
 	assert( isposintscalar(maxIt) );
 	assert( maxIt <= length(vecRes0) );
 	[ vecFGL, statFlag, relres, iterCount, vecRes ] = gmres( funchA, -vecRes0, [], rTol, maxIt );
-	solverDat.statFlag = statFlag;
-	solverDat.relres = relres;
-	solverDat.iterCount = iterCount;
-	solverDat.vecRes = vecRes;
+	solveDat.statFlag = statFlag;
+	solveDat.relres = relres;
+	solveDat.iterCount = iterCount;
+	solveDat.vecRes = vecRes;
 return
 endfunction
 
