@@ -48,7 +48,7 @@ function [ vecFGL0, precalcDat, hess2lambdaDat ] = __init( matX, rvecF, matG, pr
 	epsHRegu = (eps^0.8)*sum(rvecF.^2)/sum(sum(matG.^2));
 	%rvecW0 = ones(1,numPts);
 	%rvecW1 = ones(1,numPts);
-	%epsHRegu = (eps^0.8)/(sizeX^2)
+	%epsHRegu = (eps^0.7)/(sizeX^2);
 	precalcDat.rvecW0 = mygetfield( prm, "rvecW0", rvecW0 );
 	precalcDat.rvecW1 = mygetfield( prm, "rvecW1", rvecW1 );
 	precalcDat.epsHRegu = mygetfield( prm, "epsHRegu", epsHRegu );
@@ -166,7 +166,8 @@ function [ vecFGL, solveDat ] = __solve_sparseMat( funchRes, vecFGL0, prm )
 		fgl(n) = 1.0;
 		vecT = funchA(fgl);
 		t = sqrt(sum(vecT.^2)/sz);
-		matM(:,n) = vecT.*(abs(vecT)>(eps^0.75)*t);
+		matM(:,n) = vecT.*(abs(vecT)>(eps^0.8)*t);
+		% This thresholding might eliminate the regularization for H. Oh well.
 	endfor
 	clear fgl;
 	%msg( __FILE__, __LINE__, "About our matrix..." );

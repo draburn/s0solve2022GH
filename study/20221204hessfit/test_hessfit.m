@@ -2,13 +2,15 @@ clear;
 mydefs;
 setprngstates(0);
 %
-sizeX = 100
-numPts = 41
-gNoiseLevel = 0.000
-fNoiseLevel = 0.000
+sizeX = 1000
+numPts = 21
+numSubPtsPerSuperPt = 100
+gNoiseLevel = 0.01
+fNoiseLevel = 0.01
 %
 f0 = 0.0;
 vecX0 = randn(sizeX,1);
+% Or, just use sprandn()?
 sizeL = ceil(sizeX*sqrt(sizeX));
 matA = sparse(diag(randn(sizeX,1))) + sparse( ...
   1 + floor( (sizeX-eps) * rand(sizeL,1) ), ...
@@ -29,9 +31,31 @@ funchGSmooth = @(x)( funchGSmoothOfD(funchD(x)) );
 funchF = @(x)( funchFSmooth(x) + fNoiseLevel*randn([1,size(x,2)]) );
 funchG = @(x)( funchGSmooth(x) + gNoiseLevel*randn(size(x)) );
 %
-matX = randn(sizeX,numPts);
-rvecF = funchF(matX);
-matG = funchG(matX);
+if ( 1 == numSubPtsPerSuperPt )
+	matX = randn(sizeX,numPts);
+	rvecF = funchF(matX);
+	matG = funchG(matX);
+else
+	avgOverSubPts = @(z)( sum(z,2)/numSubPtsPerSuperPt );
+	matX = zeros(sizeX,numPts);
+	rvecF = zeros(1,numPts);
+	matG = zeros(sizeX,numPts);
+	for p = 1 : numPts
+		vecXTemp = randn(sizeX,1);
+		matXTemp = vecXTemp + (0.1*randn(sizeX,numSubPtsPerSuperPt));
+		rvecFTemp = funchF(matXTemp);
+		matGTemp = funchG(matXTemp);
+		matX(:,p) = avgOverSubPts( matXTemp );
+		matG(:,p) = avgOverSubPts( matGTemp );
+		%rvecF(p) = sum(rvecFTemp,2)/numSubPtsPerSuperPt;
+		rvecF(p) = avgOverSubPts(rvecFTemp) - 0.5*( avgOverSubPts(sum(matXTemp.*matGTemp,1)) - matX(:,p)'*matG(:,p) );
+		%[ avgOverSubPts(rvecFTemp), rvecF(p) ]
+		clear vecXTemp;
+		clear matXTemp;
+		clear rvecFTemp;
+		clear matGTemp;
+	endfor
+endif
 %
 switch (20)
 case 0
