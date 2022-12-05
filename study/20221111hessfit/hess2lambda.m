@@ -6,6 +6,7 @@ function [ vecLambda, datOut ] = hess2lambda( matHess )
 	sz = size(matHess,1);
 	datOut.sz = sz;
 	datOut.matDuplish = sparse(duplication_matrix(sz));
+	% We need to halve the coeff corresponding to the diagona of the hessian.
 	for n = 1 : sz
 		m = (n-1)*sz + n;
 		datOut.matDuplish( m, m - (n*(n-1))/2 ) = 2.0;

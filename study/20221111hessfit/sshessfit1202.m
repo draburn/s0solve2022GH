@@ -9,8 +9,9 @@ function [ vecA, matV, fSS, vecGSS, matHSS, datOut ] = sshessfit1202( sizeX, num
 	[ foo, ptA ] = min(rvecF);
 	vecA = matX(:,ptA);
 	matDX = matX - vecA; % Autobroadcast.
-	msg( __FILE__, __LINE__, "USING GRAD IN V. THIS IS A BAD IDEA." );
-	matV = utorthdrop([ matDX(:,1:ptA-1), matDX(:,ptA+1:end), matG(:,ptA) ]);
+	%%%msg( __FILE__, __LINE__, "USING GRAD IN V. THIS IS A BAD IDEA." );
+	%%%matV = utorthdrop([ matDX(:,1:ptA-1), matDX(:,ptA+1:end), matG(:,ptA) ]);
+	matV = utorthdrop([ matDX(:,1:ptA-1), matDX(:,ptA+1:end) ]);
 	bigK = size(matV,2)
 	matY = matV'*matDX;
 	%%%matY = matV \ matDX;

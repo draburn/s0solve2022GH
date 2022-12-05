@@ -33,7 +33,7 @@ matX = randn(sizeX,numPts);
 rvecF = funchF(matX);
 matG = funchG(matX);
 %
-switch (10)
+switch (9)
 case 0
 	vecA = matX(:,1);
 	matV = eye(sizeX);
@@ -47,6 +47,7 @@ case 9
 	msg( __FILE__, __LINE__, "Calling sshessfit1202()..." ); tic();
 	[ vecA, matV, fSS, vecGSS, matHSS ] = sshessfit1202( sizeX, numPts, matX, rvecF, matG, prm );
 	msgnnl( __FILE__, __LINE__, "Finished sshessfit1202(). " ); toc();
+	echo__matHSS = matHSS
 case 10
 	prm = [];
 	msg( __FILE__, __LINE__, "Calling sshessfit1203()..." ); tic();

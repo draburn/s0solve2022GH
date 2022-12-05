@@ -9,7 +9,7 @@ function [ vecA, matV, fSS, vecGSS, matHSS, datOut ] = sshessfit1203( sizeX, num
 	[ foo, ptA ] = min(rvecF);
 	vecA = matX(:,ptA);
 	matDX = matX - vecA; % Autobroadcast.
-	doOrtho = mygetfield( prm, "doOrtho", false );
+	doOrtho = mygetfield( prm, "doOrtho", true );
 	if (doOrtho)
 		matV = utorthdrop([ matDX(:,1:ptA-1), matDX(:,ptA+1:end) ]);
 		bigK = size(matV,2);
@@ -27,5 +27,27 @@ function [ vecA, matV, fSS, vecGSS, matHSS, datOut ] = sshessfit1203( sizeX, num
 	hessfitPrm = mygetfield( prm, "hessfitPrm", hessfitPrm );
 	[ fSS, vecGSS, matHSS, hessfitDat ] = hessfit( bigK, numPts, matY, rvecF, matGSS, hessfitPrm );
 	datOut.hessfitDat = hessfitDat;
+	%
+	inclGrad = mygetfield( prm, "inclGrad", false );
+	if (inclGrad)
+		error( "Not implemented!" );
+		assert(doOrtho);
+		vecU0 = matG(:,ptA);
+		vecU = vecU0;
+		vecU -= matV*(matV'*vecU);
+		vecU -= matV*(matV'*vecU);
+		dropThresh = sqrt(eps);
+		if ( norm(vecU) > dropThresh * norm(vecU0) )
+			vecU /= norm(vecU);
+			matV = [ matV, vecU ];
+			vecGSS = [vecGSS; 0.0];
+			% Hmm.... maybe it should be included in solve??? Because H is sym?
+			matHSS_old = matHSS;
+			matHSS = zeros(bigK+1,bigK+1);
+			matHSS(1:bigK,1:bigK) = matHSS_old;
+			bigK++;
+			%matHSS(bigK,bigK) = ???
+		endif
+	endif
 return;
 endfunction
