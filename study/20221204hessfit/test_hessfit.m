@@ -2,10 +2,10 @@ clear;
 mydefs;
 setprngstates(0);
 %
-sizeX = 20
-numPts = sizeX+1
-gNoiseLevel = 0.0
-fNoiseLevel = 0.0
+sizeX = 100
+numPts = 31
+gNoiseLevel = 0.000
+fNoiseLevel = 0.000
 %
 f0 = 0.0;
 vecX0 = randn(sizeX,1);
@@ -33,7 +33,7 @@ matX = randn(sizeX,numPts);
 rvecF = funchF(matX);
 matG = funchG(matX);
 %
-switch (10)
+switch (20)
 case 0
 	vecA = matX(:,1);
 	matV = eye(sizeX);
@@ -49,10 +49,14 @@ case 10
 	msgnnl( __FILE__, __LINE__, "Finished hessfit(). " ); toc();
 	vecA = zeros(sizeX,1);
 	matV = eye(sizeX);
+case 20
+	prm = [];
+	msg( __FILE__, __LINE__, "Calling sshessfit()..." ); tic();
+	[ vecA, matV, f, vecG, matH ] = sshessfit( matX, rvecF, matG, prm );
+	msgnnl( __FILE__, __LINE__, "Finished sshessfit(). " ); toc();
 endswitch
 sizeK = size(matV,2);
 vecLambda = eig(matH);
-msg( __FILE__, __LINE__, sprintf( "Eigen value range: %11.3e ~ %11.3e", min(vecLambda), max(vecLambda) ) );
 if (min(vecLambda)<=eps)
 	matH += ( abs(min(vecLambda)) + sqrt(eps)*max(abs(vecLambda)) ) * eye(sizeK);
 endif
@@ -61,11 +65,14 @@ matR = chol( matH );
 vecY = matR \ ( matR' \ (-vecG) );
 vecXNext = vecA + (matV * vecY);
 fModelNext = f + vecG'*vecY + 0.5*(vecY'*matH*vecY);
-vecGModelNext = vecG + matH*vecY;
+vecGModelNext = matV*(vecG + matH*vecY);
 %
-msg( __FILE__, __LINE__, "Results..." );
+msg( __FILE__, __LINE__, "General results..." );
 [ foo, ptAIdeal ] = min(sumsq(matX-vecX0,1));
 vecAIdeal = matX(:,ptAIdeal);
+msg( __FILE__, __LINE__, sprintf( "  sizeK = %d / %d", sizeK, sizeX ) );
+msg( __FILE__, __LINE__, sprintf( "  Eigen value range: %11.3e ~ %11.3e", min(vecLambda), max(vecLambda) ) );
+msg( __FILE__, __LINE__, "Step..." );
 msg( __FILE__, __LINE__, sprintf( "  ||x-x_0||: (%10.3e) %10.3e -> %10.3e (%10.3e)", norm(vecAIdeal-vecX0), norm(vecA-vecX0), norm(vecXNext-vecX0), 0.0 ) );
 msg( __FILE__, __LINE__, sprintf( "          f: (%10.3e) %10.3e -> %10.3e (%10.3e)", funchFSmooth(vecAIdeal), funchFSmooth(vecA), funchFSmooth(vecXNext), fModelNext ) );
 msg( __FILE__, __LINE__, sprintf( "      ||g||: (%10.3e) %10.3e -> %10.3e (%10.3e)", norm(funchGSmooth(vecAIdeal)), norm(funchGSmooth(vecA)), norm(funchGSmooth(vecXNext)), norm(vecGModelNext) ) );

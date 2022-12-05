@@ -82,6 +82,7 @@ endfunction
 
 
 function vecResFGL = __funcResFGL( vecFGL, matX, rvecF, matG, precalcDat, hess2lambdaDat )
+	%msg( __FILE__, __LINE__, "Greetings from __funcResFGL()!" );
 	sizeX = size(matX,1);
 	numPts = size(matX,2);
 	[ f, vecG, matH ] = __unpackFGL( sizeX, vecFGL, hess2lambdaDat );
@@ -102,27 +103,35 @@ endfunction
 
 
 function [ vecFGL, solveDat ] = __solve( funchRes, vecFGL0, prm )
+	startTime = time();
+	%[ vecFGL, solveDat ] = __solve_gmres( funchRes, vecFGL0, prm );
+	%return;
 	vecRes0 = funchRes(vecFGL0);
 	funchA = @(fgl)( funchRes(fgl+vecFGL0) - vecRes0 );
-	rTol = mygetfield( prm, "rTol", 1e-12 );
+	linsolfPrm = [];
+	linsolfPrm.tol = mygetfield( prm, "tol", 1e-14 );
+	vecDeltaFGL = linsolf( funchA, -vecRes0, zeros(length(vecFGL0),1), linsolfPrm );
+	vecFGL = vecDeltaFGL + vecFGL0;
+	solveDat.elapsedTime = time()-startTime;
+	msg( __FILE__, __LINE__, sprintf( "__solve() time: %f", time()-startTime ) );
+return
+endfunction
+function [ vecFGL, solveDat ] = __solve_gmres( funchRes, vecFGL0, prm )
+	vecRes0 = funchRes(vecFGL0);
+	funchA = @(fgl)( funchRes(fgl+vecFGL0) - vecRes0 );
+	rTol = mygetfield( prm, "rTol", 1e-16 );
 	maxIt = mygetfield( prm, "maxIt", length(vecRes0) );
 	assert( isrealscalar(rTol) );
 	assert( 0.0 < rTol );
 	assert( rTol < 1.0 );
 	assert( isposintscalar(maxIt) );
 	assert( maxIt <= length(vecRes0) );
-	startTime = time();
-	[ vecFGL, statFlag, relres, iterCount, vecRes ] = gmres( funchA, -vecRes0, [], rTol, maxIt );
-	elapsedTime = time()-startTime();
-	msg( __FILE__, __LINE__, sprintf( "  solve: statFlag = %d", statFlag ) );
-	msg( __FILE__, __LINE__, sprintf( "  solve: relres = %0.3e / %0.3e", relres, rTol ) );
-	msg( __FILE__, __LINE__, sprintf( "  solve: iterCount = %d, %d / %d, %d.", iterCount(1), iterCount(2), maxIt, length(vecRes0) ) );
-	msg( __FILE__, __LINE__, sprintf( "  solve: elapsedTime = %f", elapsedTime ) );
+	[ vecDeltaFGL, statFlag, relres, iterCount, vecRes ] = gmres( funchA, -vecRes0, [], rTol, maxIt );
+	vecFGL = vecDeltaFGL + vecFGL0;
 	solveDat.statFlag = statFlag;
 	solveDat.relres = relres;
 	solveDat.iterCount = iterCount;
 	solveDat.vecRes = vecRes;
-	solveDat.elapsedTime = elapsedTime;
 return
 endfunction
 
