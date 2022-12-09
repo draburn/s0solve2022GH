@@ -137,7 +137,7 @@ function [ vecFGL, solveDat ] = __solve_fullMat( funchRes, vecFGL0, prm )
 	vecRes0 = funchRes(vecFGL0);
 	funchA = @(fgl)( funchRes(fgl+vecFGL0) - vecRes0 );
 	sz = length(vecRes0);
-	% May take way to much memory.
+	% May take way too much memory.
 	matM = zeros(sz,sz);
 	for n = 1:sz
 		fgl = zeros(sz,1);
@@ -148,7 +148,8 @@ function [ vecFGL, solveDat ] = __solve_fullMat( funchRes, vecFGL0, prm )
 	%msg( __FILE__, __LINE__, "About our matrix..." );
 	%msg( __FILE__, __LINE__, sprintf("  sz = %d", sz ) );
 	%msg( __FILE__, __LINE__, sprintf("  cond() = %0.3e", cond(matM) ) )
-	vecFGL = vecFGL0 - matM \ vecRes0;
+	%vecFGL = vecFGL0 - matM \ vecRes0;
+	vecFGL = vecFGL0 - mycholdiv( matM, vecRes0 );
 	solveDat = [];
 return
 endfunction

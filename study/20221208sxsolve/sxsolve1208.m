@@ -129,7 +129,13 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 			matVTGWB = matV' * [ matG, vecGBest ];
 			rvecFWB = [ rvecF, fBest ];
 			[ fFit, vecGamma, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
-			vecDeltaNewton = matV * ( matH \ (-currentTRFactor*vecGamma) );
+			%if ( sizeX == size(matV,2) )
+			%	matHFS = matV * matH * (matV');
+			%	resH = sqrt( ...
+			%	   sum(sum((matHFS-prm.matHSecret).^2)) ...
+			%	 / ( sum(sum(matHFS.^2)) + sum(sum(prm.matHSecret.^2)) ) )
+			%endif
+			vecDeltaNewton = matV * mycholdiv( matH, -currentTRFactor*vecGamma );
 			vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
 			vecDeltaGrad = -currentTRFactor * prm.gradStepCoeff * vecGradPerp;
 			vecDelta = vecDeltaNewton + vecDeltaGrad;
@@ -172,11 +178,6 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 				matX = [ vecXTrial, matX ];
 				rvecF = [ fTrial, rvecF ];
 				matG = [ vecGTrial, matG ];
-				
-				%%% HAXOR
-				msg( __FILE__, __LINE__, "HAXOR: Reducing currentTRFactor for merely bad step." );
-				currentTRFactor *= prm.btFactor;
-				%%% /HAXOR
 			endif
 		endif
 		%
@@ -269,7 +270,7 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	%
 	% Step generation params.
 	prm.smallFallTrgt = 0.1;
-	prm.gradStepCoeff = 5.0;
+	prm.gradStepCoeff = 0.1;
 	prm.dropThresh = eps^0.7;
 	%prm.epsFNegativityCoeff = 0.01;
 	%
