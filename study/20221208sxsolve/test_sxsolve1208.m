@@ -35,5 +35,5 @@ endif
 vecX0 = zeros(sizeX,1);
 prm.funch_vecGSecret = @(x)( matHSecret*(x-vecXSecret) );
 prm.matHSecret = matHSecret;
-echo__prm = prm
+%echo__prm = prm
 sxsolve1208( funchFG, vecX0, prm );

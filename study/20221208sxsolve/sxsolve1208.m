@@ -1,14 +1,18 @@
 function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] )
+	% Init - Universal.
 	mydefs;
 	startTime = time();
+	%
+	% Init - Default return values.
 	vecXBest = [];
 	retCode = RETCODE__NOT_SET;
 	datOut = [];
 	%
+	% Init - Parse input.
 	sizeX = size(vecXInit,1);
 	assert( isposintscalar(sizeX) );
 	assert( isrealarray(vecXInit,[sizeX,1]) );
-	prm = __init( funchFG, vecXInit, prm );
+	[ prm, fevalCount ] = __init( funchFG, vecXInit, prm );
 	if ( prm.stopSignalCheckInterval >= 0.0 )
 		if ( stopsignalpresent() )
 			msg( __FILE__, __LINE__, "ERROR: Stop signal already present." );
@@ -17,40 +21,66 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		endif
 		stopSignalCheckedTime = time();
 	endif
+	[ fInit, vecGInit ] = funchFG( vecXInit );
+	fevalCount++;
+	assert( isrealscalar(fInit) );
+	assert( isrealarray(vecGInit,[sizeX,1]) );
 	%
-	[ f0, vecG0 ] = funchFG( vecXInit );
-	fevalCount = 1;
-	assert( isrealscalar(f0) );
-	assert( isrealarray(vecG0,[sizeX,1]) );
-	matX = vecXInit;
-	rvecF = f0;
-	matG = vecG0;
-	iterCount = 0;
-	%indexOfBest = 1;
-	%
-	vecXBestPrev = vecXInit;
-	fBestPrev = f0;
-	vecGBestPrev = vecG0;
+	% Init - Solver.
 	vecXBest = vecXInit;
-	fBest = f0;
-	vecGBest = vecG0;
+	fBest = fInit;
+	vecGBest = vecGInit;
+	matX = [];
+	rvecF = [];
+	matG = [];
+	iterCount = 0;
+	stepCount = 0;
+	currentTRFactor = 1.0;
+	vecXBestPrev = [];
+	fBestPrev = [];
+	vecGBestPrev = [];
 	%
-	progressReportedTime = time();
+	% Init - Progress reporting.
+	if ( prm.progressReportInterval >= 0.0 )
+		msg( __FILE__, __LINE__, sprintf( ...
+		  "  %8.2e, %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %8.2e;  %d", ...
+		  time()-startTime, ...
+		  stepCount, ...
+		  size(matX,2), ...
+		  iterCount, ...
+		  currentTRFactor, ...
+		  0.0, ... % norm(vecXBestPrev - vecXBest)
+		  fBest, ...
+		  0.0, ... % fBestPrev - fBest
+		  norm(vecGBest), ...
+		  0.0, ... % norm(vecGBestPrev) - norm(vecGBest)
+		  fevalCount ) );
+		progressReportedTime = time();
+	endif
+	%
+	% MAIN LOOP
 	doMainLoop = true;
-	stepFactor = 1.0;
 	while (doMainLoop)
+		iterCount++;
+		%
+		% Check stopping criteria.
 		if ( prm.fTol >= 0.0 && fBest <= prm.fTol )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCESS: f0 < prm.fTol." );
 			retCode = RETCODE__SUCCESS;
 			doMainLoop = false;
 			break;
-		elseif ( prm.gNormTol >= 0.0 && norm(vecGBest) <= prm.gNormTol )
-			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCESS: norm(vecGBest) <= prm.gNormTol." );
+		elseif ( prm.gTol >= 0.0 && norm(vecGBest) <= prm.gTol )
+			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCESS: norm(vecGBest) <= prm.gTol." );
 			retCode = RETCODE__SUCCESS;
 			doMainLoop = false;
 			break;
-		elseif ( prm.fevalLimit >= 0 && iterCount >= prm.fevalLimit )
-			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: iterCount >= prm.fevalLimi." );
+		elseif ( prm.fevalLimit >= 0 && fevalCount >= prm.fevalLimit )
+			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: fevalCount >= prm.fevalLimit." );
+			retCode = RETCODE__IMPOSED_STOP;
+			doMainLoop = false;
+			break;
+		elseif ( prm.stepLimit >= 0 && stepCount >= prm.stepLimit )
+			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: stepCount >= prm.stepLimit." );
 			retCode = RETCODE__IMPOSED_STOP;
 			doMainLoop = false;
 			break;
@@ -75,13 +105,66 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		endif
 		%
 		%
-		if ( prm.progressReportInterval >= 0.0 )
-		if ( 0 == iterCount || time() - progressReportedTime >= prm.progressReportInterval )
+		vecDelta = -currentTRFactor * prm.gradStepCoeff * vecGBest;
+		%
+		%
+		vecXTrial = vecXBest + vecDelta;
+		[ fTrial, vecGTrial ] = funchFG( vecXTrial );
+		fevalCount++;
+		%
+		%
+		% For step assessment, might be nice to consider median values in records?
+		haveNewBest = false; % Unless...
+		whollyRejectStep = false; % Unless...
+		if ( fTrial > prm.horribleFCoeff * fBest )
+			whollyRejectStep = true;
+		elseif ( fTrial > fBest && norm(vecGTrial) > prm.horribleGCoeff * norm(vecGBest) )
+			whollyRejectStep = true;
+		endif
+		if ( whollyRejectStep )
+			currentTRFactor *= prm.btFactor;
+		else
+			if ( fTrial < fBest )
+				% Put new info in *front*, so it gets orthonormalized first.
+				vecXBestPrev = vecXBest;
+				fBestPrev = fBest;
+				vecGBestPrev = vecGBest;
+				matX = [ vecXBest, matX ];
+				rvecF = [ fBest, rvecF ];
+				matG = [ vecGBest, matG ];
+				vecXBest = vecXTrial;
+				fBest = fTrial;
+				vecGBest = vecGTrial;
+				currentTRFactor = 1.0;
+				haveNewBest = true;
+				stepCount++;
+			else
+				% Put new info in *front*, so it gets orthonormalized first.
+				matX = [ vecXTrial, matX ];
+				rvecF = [ fTrial, rvecF ];
+				matG = [ vecGTrial, matG ];
+				
+				%%% HAXOR
+				currentTRFactor *= prm.btFactor;
+				%%% /HAXOR
+			endif
+		endif
+		%
+		%
+		
+		% TODO: Check fall stop crit.
+		
+		%
+		%
+		if ( haveNewBest && prm.progressReportInterval >= 0.0 )
+		if ( time() - progressReportedTime >= prm.progressReportInterval )
 			msg( __FILE__, __LINE__, sprintf( ...
-			  " %8.2e, %3d;  %2d;  %8.2e;  %8.2e,  %8.2e;  %8.2e, %8.2e; %d", ...
+			  "  %8.2e, %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %8.2e;  %d", ...
 			  time()-startTime, ...
-			  iterCount, ...
+			  stepCount, ...
 			  size(matX,2), ...
+			  iterCount, ...
+			  currentTRFactor, ...
 			  norm(vecXBestPrev - vecXBest), ...
 			  fBest, ...
 			  fBestPrev - fBest, ...
@@ -91,91 +174,16 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 			progressReportedTime = time();
 		endif
 		endif
-		iterCount++;
-		%
-		%
-		if ( 1 == size(matX,2) )
-			vecDelta = -stepFactor * prm.smallFallTrgt * fBest * vecGBest / sumsq(vecGBest);
-		else
-			matD = matX - vecXBest;
-			matV = utorthdrop( matD, prm.dropThresh );
-			sizeK = size(matV,2);
-			matVTD = matV' * matD;
-			matVTG = matV' * matG;
-			[ fFit, vecVTGFit, matVTHVFit ] = hessfit( matVTD, rvecF, matVTG );
-			if ( size(matV,2) >= sizeX )
-				echo__matHFit = matV * matVTHVFit * (matV')
-			endif
-			%matD
-			%matV
-			%matVTD
-			%matVTG
-			%matG
-			matG_before = matG;
-			check_matG_before = matV*( vecVTGFit + matVTHVFit*matVTD );
-			%rd_matG = reldiff( check_matG_before, matG )
-			%
-			vecGPerp = vecGBest - matV * ( matV'*vecGBest );
-			normGPerp = norm(vecGPerp);
-			if ( normGPerp > prm.dropThresh*norm(vecGBest) )
-				vecGHat = vecGPerp/normGPerp;
-				matV = [ matV, vecGHat ];
-				matVTD = matV' * matD;
-				matVTG = matV' * matG;
-				%vecGPerp
-				%matV
-				%matD
-				%matG
-				%matVTD
-				%matVTG
-				%vecVTGFit
-				matVTHVFit
-				eigH_before = eig(matVTHVFit)
-				[ vecVTGFit, matVTHVFit ] = __appendFit( matVTD, matVTG, vecVTGFit, matVTHVFit );
-				%vecVTGFit
-				matVTHVFit
-				eigH_after = eig(matVTHVFit)
-				%
-				check_matG_before
-				matG_before
-				matG
-				%check_matG = matV*( vecVTGFit + matVTHVFit*matVTD )
-				%rd_matG = reldiff( check_matG, matG )
-				error( "Begone!" );
-			endif
-			%
-			%matB = diag(max( abs(matVTD), [], 2 ));
-		endif
-		%
-		vecXTrial = vecXBest + vecDelta;
-		[ fTrial, vecGTrial ] = funchFG( vecXTrial );
-		fevalCount++;
-		%
-		matX = [ matX, vecXTrial ];
-		rvecF = [ rvecF, fTrial ];
-		matG = [ matG, vecGTrial ];
-		if ( fTrial < fBest )
-			vecXBestPrev = vecXBest;
-			fBestPrev = fBest;
-			vecGBestPrev = vecGBest;
-			vecXBest = vecXTrial;
-			fBest = fTrial;
-			vecGBest = vecGTrial;
-			doStepLoop = false;
-			stepFactor = 1.0;
-		else
-			stepFactor *= prm.btCoeff;
-		endif
-		%
-		%
 	endwhile
 	%
 	if ( prm.verbLev >= VERBLEV__MAIN )
 		msg( __FILE__, __LINE__, sprintf( ...
-		  " %8.2e, %3d;  %2d;  %8.2e;  %8.2e,  %8.2e;  %8.2e, %8.2e; %d", ...
+		  "  %8.2e, %3d / %2d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %8.2e;  %d", ...
 		  time()-startTime, ...
-		  iterCount, ...
+		  stepCount, ...
 		  size(matX,2), ...
+		  iterCount, ...
+		  currentTRFactor, ...
 		  norm(vecXBestPrev - vecXBest), ...
 		  fBest, ...
 		  fBestPrev - fBest, ...
@@ -188,89 +196,57 @@ return;
 endfunction
 
 
-function prm = __init( funchFG, vecXInit, prmIn )
+function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	mydefs;
+	%
+	% Common stuff.
 	sizeX = size(vecXInit,1);
 	prm.verbLev = VERBLEV__DETAILED;
 	prm.valdLev = VALDLEV__UNLIMITED;
-	prm.progressReportInterval = 0.0;
+	prm.progressReportInterval = 1.0;
 	%
+	% Stopping criteria - pre-step.
 	prm.fTol = eps;
-	prm.gNormTol = eps;
-	prm.iterLimit = 100;
+	prm.gTol = eps;
+	prm.stepLimit = -1;
+	prm.iterLimit = -1;
 	prm.fevalLimit = -1;
 	prm.timeLimit = 10.0;
-	prm.stopSignalCheckInterval = 1.0;
-	% fall thresholds?
+	prm.stopSignalCheckInterval = 10.0;
 	%
+	% Stopping criteria - post-step.
+	prm.fFallAbsTol = eps;
+	prm.fFallRelTol = eps;
+	prm.gFallAbsTol = eps;
+	prm.gFallRelTol = eps;
+	%
+	% Step generation params.
 	prm.smallFallTrgt = 0.1;
 	prm.gradStepCoeff = 0.1;
 	prm.dropThresh = eps^0.7;
+	%prm.epsFNegativityCoeff = 0.01;
+	%
+	% Step assessment and BT/dynamic TR params.
+	prm.horribleFCoeff = 2.0;
+	prm.horribleGCoeff = 2.0;
 	prm.btCoeff = 0.1;
 	%
-	prm.numPtPerSuperPt = 100;
-	prm.momentumCoeff = 0.9;
-	prm.learningRate = 0.01;
+	% Super-point param.
+	%prm.numPtPerSuperPt = 100;
+	%prm.momentumCoeff = 0.9;
+	%prm.learningRate = 0.01;
 	%
 	prm = overwritefields( prm, prmIn );
 	assert( prm.smallFallTrgt > 0.0 );
-return;
-endfunction
-
-
-function [ fevalCount, vecXSuperPt, fSuperPt, vecGSuperPt, weightSuperPt, vecXFin, vecPFin ] = __evalSuperPt( funchFG, vecXInit, vecPInit, prm )
+	assert( prm.smallFallTrgt < 1.0 );
+	assert( prm.gradStepCoeff > 0.0 );
+	assert( prm.dropThresh > 0.0 );
+	assert( prm.dropThresh < 1.0 );
+	assert( prm.horribleGCoeff > 1.0 );
+	assert( prm.horribleFCoeff > 1.0 );
+	assert( prm.btCoeff > 0.0 );
+	assert( prm.btCoeff < 1.0 );
+	%
 	fevalCount = 0;
-	vecXSuperPt = vecXInit;
-	xtgSuperPt = 0.0;
-	fSuperPt = 0.0;
-	vecGSuperPt = zeros(size(vecXInit));
-	weightSuperPt = 0.0;
-	vecX = vecXInit;
-	vecP = vecPInit;
-	for p = 1 : prm.numPtPerSuperPt
-		[ f, vecG ] = funchFG( vecX );
-		fevalCount++;
-		vecXSuprtPt += vecX;
-		fSuperPt += f;
-		xtgSuperPt += vecX'*vecG;
-		vecGSuperPt += vecG;
-		weightSuperPt += 1.0;
-		vecP = prm.momentumCoeff * vecP + prm.learningRate * vecG;
-		vecX += vecP;
-	endfor
-	vecXSuperPt /= weightSuperPt;
-	vecGSuperPt /= weightSuperPt;
-	xtgSuperPt /= weightSuperPt;
-	fSuperPt = (fSuperPt/prm.numPtPerSuperPt) - 0.5 *( xtgSuperPt - (vecXSuperPt'*vecGSuperPt) );
-	vecXFin = vecX;
-	vecPFin = vecP;
-return;
-endfunction
-
-
-function [ vecVTGFit, matVTHVFit ] = __appendFit( matVTD, matVTG, vecVTGFit, matVTHVFit )
-	sizeK_before = size(matVTHVFit,1)
-	%
-	appendTo_vecVTGFit = matVTG(end);
-	%
-	[ foo, indexAnchor ] = min( sum(matVTD.^2, 1) );
-	assert( foo < eps*max( sum(matVTD.^2, 1) ) );
-	%
-	%matY = [ matVTD(:,1:indexAnchor-1), matVTD(:,indexAnchor+1:end) ];
-	%matY = [ matY(1:indexAnchor-1,:); matY(indexAnchor+1:end,:) ];
-	%matO = [ matVTG(:,1:indexAnchor-1), matVTG(:,indexAnchor+1:end) ];
-	%vecO = matO(indexAnchor,:)';
-	matY = [ matVTD(:,1:indexAnchor-1), matVTD(:,indexAnchor+1:end) ];
-	matY = matY(1:end-1,:);
-	matO = [ matVTG(:,1:indexAnchor-1), matVTG(:,indexAnchor+1:end) ];
-	vecO = matO(indexAnchor,:)';
-	%
-	vec_appendTo_matVTHVFit = matY \ (vecO - appendTo_vecVTGFit);
-	%vec_appendTo_matVTHVFit = zeros( sizeK_before, 1 );
-	%
-	h = sqrt( sumsq(vec_appendTo_matVTHVFit) + sumsq(diag(matVTHVFit))/sizeK_before );
-	%h =  sqrt(sumsq(vec_appendTo_matVTHVFit)) + sqrt(sumsq(diag(matVTHVFit)));
-	vecVTGFit = [ vecVTGFit; appendTo_vecVTGFit ];
-	matVTHVFit = [ matVTHVFit, vec_appendTo_matVTHVFit; vec_appendTo_matVTHVFit', h ];
 return;
 endfunction
