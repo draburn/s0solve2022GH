@@ -46,9 +46,6 @@ function [ vecFGL0, precalcDat, hess2lambdaDat ] = __init( matX, rvecF, matG, pr
 	rvecW0 = 1.0./( abs(rvecF) + sqrt(eps)*max(abs(rvecF)) );
 	rvecW1 = 1.0./( abs(rvecG) + sqrt(eps)*max(abs(rvecG)) );
 	epsHRegu = (eps^0.8)*sum(rvecF.^2)/sum(sum(matG.^2));
-	%rvecW0 = ones(1,numPts);
-	%rvecW1 = ones(1,numPts);
-	%epsHRegu = (eps^0.7)/(sizeX^2);
 	precalcDat.rvecW0 = mygetfield( prm, "rvecW0", rvecW0 );
 	precalcDat.rvecW1 = mygetfield( prm, "rvecW1", rvecW1 );
 	precalcDat.epsHRegu = mygetfield( prm, "epsHRegu", epsHRegu );
@@ -105,8 +102,8 @@ endfunction
 function [ vecFGL, solveDat ] = __solve( funchRes, vecFGL0, prm )
 	startTime = time();
 	%[ vecFGL, solveDat ] = __solve_gmres( funchRes, vecFGL0, prm );
-	%[ vecFGL, solveDat ] = __solve_fullMat( funchRes, vecFGL0, prm );
-	[ vecFGL, solveDat ] = __solve_sparseMat( funchRes, vecFGL0, prm );
+	[ vecFGL, solveDat ] = __solve_fullMat( funchRes, vecFGL0, prm );
+	%[ vecFGL, solveDat ] = __solve_sparseMat( funchRes, vecFGL0, prm );
 	return;
 	vecRes0 = funchRes(vecFGL0);
 	funchA = @(fgl)( funchRes(fgl+vecFGL0) - vecRes0 );
@@ -210,3 +207,58 @@ function [ f, vecG, matH ] = __unpackFGL( sizeX, vecFGL, hess2lambdaDat )
 	matH = __lambda2hess( vecFGL(2+sizeX:end), hess2lambdaDat );
 return;
 endfunction
+
+
+%!test
+%!	tic();
+%!	%setprngstates(55436400);
+%!	setprngstates();
+%!	gNoiseLevel = 0.0
+%!	fNoiseLevel = 0.0
+%!	expVarCoeff = 1.0
+%!	forceOrthogonalBasis = true
+%!	prm = []
+%!	
+%!	sizeX = 20
+%!	sizeF = sizeX;
+%!	numPts = sizeX+1
+%!	
+%!	vecX0 = randn(sizeX,1) .* exp(expVarCoeff*abs(randn(sizeX,1)));
+%!	f0 = max([ exp(expVarCoeff*randn()), 0.0 ]);
+%!	matSF = diag(exp(expVarCoeff*randn(sizeX,1)));
+%!	matSX = diag(exp(expVarCoeff*randn(sizeX,1)));
+%!	matA = randn(sizeX,sizeX) .* exp(expVarCoeff*randn(sizeX,sizeX));
+%!	matB = matSF * matA * matSX;
+%!	matH = matA' * matA;
+%!	condH = cond(matH)
+%!	
+%!	funchD = @(x)( x - vecX0 );
+%!	funchHDOfD = @(d)( matH*d );
+%!	funchFSmoothOfD = @(d)( f0 + 0.5*sum( d .* funchHDOfD(d), 1 ) );
+%!	funchGSmoothOfD = @(d)( funchHDOfD(d) );
+%!	funchFSmooth = @(x)( funchFSmoothOfD(funchD(x)) );
+%!	funchGSmooth = @(x)( funchGSmoothOfD(funchD(x)) );
+%!	funchF = @(x)( funchFSmooth(x) .* (1.0 + fNoiseLevel*randn([1,size(x,2)])) );
+%!	funchG = @(x)( funchGSmooth(x) .* (1.0 + gNoiseLevel*randn(size(x))) );
+%!	
+%!	matX = randn( sizeX, numPts ) .* exp(expVarCoeff*abs(randn(sizeX,numPts)));
+%!	if (forceOrthogonalBasis)
+%!		matX(:,1:numPts) = full(eye(sizeX,numPts));
+%!	endif
+%!	rvecF = funchF(matX);
+%!	matG = funchG(matX);
+%!	condX = cond(matX)
+%!	
+%!	[ f_fit, vecG_fit, matH_fit, datOut ] = hessfit( matX, rvecF, matG, prm );
+%!	vecXNewton = -(matH_fit\vecG_fit);
+%!	
+%!	vecG0_true = funchGSmooth(zeros(sizeX,1));
+%!	relresG = norm(vecG_fit-vecG0_true) / sqrt( sumsq(vecG_fit)  + sumsq(vecG0_true) )
+%!	relresH = sqrt( sum(sum((matH_fit-matH).^2)) ) / sqrt( sum(sum(matH_fit.^2)) + sum(sum(matH.^2)) )
+%!	
+%!	dist0 = norm(vecX0);
+%!	minDistAmongPts = sqrt(min(sum( (matX - vecX0).^2, 1 )));
+%!	distNewton = norm( vecXNewton - vecX0 );
+%!	dist = [ dist0, minDistAmongPts, distNewton ]
+%!	
+%!	toc()
