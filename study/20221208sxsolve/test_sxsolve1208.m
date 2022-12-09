@@ -20,6 +20,20 @@ matHSecret = full(diag(abs(randn(sizeX,1))));
 condHSecret = cond(matHSecret)
 %
 funchFG = @(x) funcSimpleQuad( x, vecXSecret, fSecret, matHSecret, noiseDat );
+%
+if (0)
+	%matX = full(eye(sizeX,sizeX+1));
+	%matX = randn(sizeX,sizeX+1);
+	%matX = [ randn(sizeX,sizeX), zeros(sizeX,1) ];
+	matX = randn(sizeX,sizeX+1) + [ 1000.0; zeros(sizeX-1,1) ];
+	[ rvecF, matG ] = funchFG(matX);
+	[ fFit, vecGFit, matHFit ] = hessfit( matX, rvecF, matG );
+	matHFit
+	return;
+endif
+%
 vecX0 = zeros(sizeX,1);
+prm.funch_vecGSecret = @(x)( matHSecret*(x-vecXSecret) );
+prm.matHSecret = matHSecret;
 echo__prm = prm
 sxsolve1208( funchFG, vecX0, prm );
