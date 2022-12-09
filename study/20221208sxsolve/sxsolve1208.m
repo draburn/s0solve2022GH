@@ -52,8 +52,8 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		  "|deltaX|", ...
 		  "fBest", ...
 		  "fB fall", ...
-		  "|g|", ...
-		  "|g| fall", ...
+		  "|gBest|", ...
+		  "|gB|fall", ...
 		  "fevalCount" ) );
 		msg( __FILE__, __LINE__, sprintf( ...
 		  "  %8.2e, %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %8.2e;  %d", ...
@@ -72,9 +72,10 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 	endif
 	%
 	% MAIN LOOP
-	doMainLoop = true;
+	doMainLoop = true; % May be redundant.
 	while (doMainLoop)
 		iterCount++;
+		%
 		%
 		% Check static stopping criteria.
 		if ( prm.fTol >= 0.0 && fBest <= prm.fTol )
@@ -118,9 +119,24 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		endif
 		%
 		%
-		vecDelta = -currentTRFactor * prm.gradStepCoeff * vecGBest;
+		% Generate step.
+		if ( 0 == size(matX,2) )
+			vecDelta = -currentTRFactor * prm.gradStepCoeff * vecGBest;
+		else
+			matD = matX - vecXBest;
+			matV = utorthdrop( matD, prm.dropThresh );
+			matVTDWB = matV' * [ matD, zeros(sizeX,1) ];
+			matVTGWB = matV' * [ matG, vecGBest ];
+			rvecFWB = [ rvecF, fBest ];
+			[ fFit, vecGamma, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
+			vecDeltaNewton = matV * ( matH \ (-currentTRFactor*vecGamma) );
+			vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
+			vecDeltaGrad = -currentTRFactor * prm.gradStepCoeff * vecGradPerp;
+			vecDelta = vecDeltaNewton + vecDeltaGrad;
+		endif
 		%
 		%
+		% Try the step.
 		vecXTrial = vecXBest + vecDelta;
 		[ fTrial, vecGTrial ] = funchFG( vecXTrial );
 		fevalCount++;
@@ -158,6 +174,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 				matG = [ vecGTrial, matG ];
 				
 				%%% HAXOR
+				msg( __FILE__, __LINE__, "HAXOR: Reducing currentTRFactor for merely bad step." );
 				currentTRFactor *= prm.btFactor;
 				%%% /HAXOR
 			endif
@@ -186,6 +203,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		endif
 		%
 		%
+		% Report progress.
 		if ( haveNewBest && prm.progressReportInterval >= 0.0 )
 		if ( time() - progressReportedTime >= prm.progressReportInterval )
 			msg( __FILE__, __LINE__, sprintf( ...
@@ -208,7 +226,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 	%
 	if ( prm.verbLev >= VERBLEV__MAIN )
 		msg( __FILE__, __LINE__, sprintf( ...
-		  "  %8.2e, %3d / %2d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %8.2e;  %d", ...
+		  "  %8.2e, %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %8.2e;  %d", ...
 		  time()-startTime, ...
 		  stepCount, ...
 		  size(matX,2), ...
@@ -251,14 +269,14 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	%
 	% Step generation params.
 	prm.smallFallTrgt = 0.1;
-	prm.gradStepCoeff = 0.1;
+	prm.gradStepCoeff = 5.0;
 	prm.dropThresh = eps^0.7;
 	%prm.epsFNegativityCoeff = 0.01;
 	%
 	% Step assessment and BT/dynamic TR params.
 	prm.horribleFCoeff = 2.0;
 	prm.horribleGCoeff = 2.0;
-	prm.btCoeff = 0.1;
+	prm.btFactor = 0.1;
 	%
 	% Super-point param.
 	%prm.numPtPerSuperPt = 100;
@@ -273,8 +291,8 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	assert( prm.dropThresh < 1.0 );
 	assert( prm.horribleGCoeff > 1.0 );
 	assert( prm.horribleFCoeff > 1.0 );
-	assert( prm.btCoeff > 0.0 );
-	assert( prm.btCoeff < 1.0 );
+	assert( prm.btFactor > 0.0 );
+	assert( prm.btFactor < 1.0 );
 	%
 	fevalCount = 0;
 return;
