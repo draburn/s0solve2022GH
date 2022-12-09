@@ -196,7 +196,8 @@ return;
 endfunction
 
 function matH = __lambda2hess( vecLambda, datIn )
-	matH = reshape( datIn.matDuplish * vecLambda, [datIn.sz,datIn.sz] );
+	%%%matH = reshape( datIn.matDuplish * vecLambda, [datIn.sz,datIn.sz] );
+	matH = full(reshape( datIn.matDuplish * vecLambda, [datIn.sz,datIn.sz] ));
 return;
 endfunction
 

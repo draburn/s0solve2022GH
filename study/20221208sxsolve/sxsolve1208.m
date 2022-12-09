@@ -19,13 +19,14 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecX0, prm=[] )
 	endif
 	%
 	[ f0, vecG0 ] = funchFG( vecX0 );
+	fevalCount = 1;
 	assert( isrealscalar(f0) );
 	assert( isrealarray(vecG0,[sizeX,1]) );
 	matX = vecX0;
 	rvecF = f0;
 	matG = vecG0;
-	fevalCount = 1; % Includes geval.
 	iterCount = 0;
+	%indexOfBest = 1;
 	%
 	vecXBestPrev = vecX0;
 	fBestPrev = f0;
@@ -36,6 +37,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecX0, prm=[] )
 	%
 	progressReportedTime = time();
 	doMainLoop = true;
+	stepFactor = 1.0;
 	while (doMainLoop)
 		if ( prm.fTol >= 0.0 && fBest <= prm.fTol )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCESS: f0 < prm.fTol." );
@@ -89,10 +91,50 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecX0, prm=[] )
 			progressReportedTime = time();
 		endif
 		endif
-		iterCount++
+		iterCount++;
 		%
 		%
-		% DO WORK HERE.
+		if ( 1 == size(matX,2) )
+			vecDelta = -stepFactor * prm.smallFallTrgt * fBest * vecGBest / sumsq(vecGBest);
+		else
+			%matD = matX - matX(:,indexOfBest);
+			%matV = utorthdrop([ matD(:,1:indexOfBest-1), matD(:,indexOfBest+1:end) ]);
+			%matX
+			matD = matX - vecXBest;
+			matV = utorthdrop( matD, prm.dropThresh );
+			matVTD = matV' * matD;
+			matVTG = matV' * matG;
+			[ fFit, vecVTGFit, matVTHVFit ] = hessfit( matVTD, rvecF, matVTG );
+			if ( size(matV,2) >= sizeX )
+				echo__matHFit = matV * matVTHVFit * (matV')
+			endif
+			%
+			%matB = diag(max( abs(matVTD), [], 2 ));
+			vecDeltaNewton =  -stepFactor * matV * ( matVTHVFit \ vecVTGFit );
+			vecGPerp = vecGBest - matV * ( matV'*vecGBest );
+			vecDeltaGrad = -stepFactor * prm.gradStepCoeff * vecGPerp;
+			vecDelta = vecDeltaNewton + vecGPerp;
+		endif
+		%
+		vecXTrial = vecXBest + vecDelta;
+		[ fTrial, vecGTrial ] = funchFG( vecXTrial );
+		fevalCount++;
+		%
+		matX = [ matX, vecXTrial ];
+		rvecF = [ rvecF, fTrial ];
+		matG = [ matG, vecGTrial ];
+		if ( fTrial < fBest )
+			vecXBestPrev = vecXBest;
+			fBestPrev = fBest;
+			vecGBestPrev = vecGBest;
+			vecXBest = vecXTrial;
+			fBest = fTrial;
+			vecGBest = vecGTrial;
+			doStepLoop = false;
+			stepFactor = 1.0;
+		else
+			stepFactor *= prm.btCoeff
+		endif
 		%
 		%
 	endwhile
@@ -111,7 +153,6 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecX0, prm=[] )
 		  fevalCount ) );
 		progressReportedTime = time();
 	endif
-	%
 return;	
 endfunction
 
@@ -121,16 +162,22 @@ function prm = __init( funchFG, vecX0, prmIn )
 	sizeX = size(vecX0,1);
 	prm.verbLev = VERBLEV__DETAILED;
 	prm.valdLev = VALDLEV__UNLIMITED;
-	prm.progressReportInterval = 3.0;
+	prm.progressReportInterval = 0.0;
 	%
 	prm.fTol = eps;
 	prm.gNormTol = eps;
-	prm.iterLimit = 1;
+	prm.iterLimit = 100;
 	prm.fevalLimit = -1;
 	prm.timeLimit = 10.0;
 	prm.stopSignalCheckInterval = 1.0;
 	% fall thresholds?
 	%
+	prm.smallFallTrgt = 0.1;
+	prm.gradStepCoeff = 0.01;
+	prm.dropThresh = eps^0.7;
+	prm.btCoeff = 0.1;
+	%
 	prm = overwritefields( prm, prmIn );
+	assert( prm.smallFallTrgt > 0.0 );
 return;
 endfunction
