@@ -43,6 +43,19 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 	% Init - Progress reporting.
 	if ( prm.progressReportInterval >= 0.0 )
 		msg( __FILE__, __LINE__, sprintf( ...
+		  "  %8s, %3s / %3s / %3s;  %8s, %8s;  %8s,  %8s;  %8s, %8s;  %s", ...
+		  "time", ...
+		  "stp", ...
+		  "szX", ...
+		  "itr", ...
+		  "TRFactor", ...
+		  "|deltaX|", ...
+		  "fBest", ...
+		  "fB fall", ...
+		  "|g|", ...
+		  "|g| fall", ...
+		  "fevalCount" ) );
+		msg( __FILE__, __LINE__, sprintf( ...
 		  "  %8.2e, %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %8.2e;  %d", ...
 		  time()-startTime, ...
 		  stepCount, ...
@@ -63,7 +76,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 	while (doMainLoop)
 		iterCount++;
 		%
-		% Check stopping criteria.
+		% Check static stopping criteria.
 		if ( prm.fTol >= 0.0 && fBest <= prm.fTol )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCESS: f0 < prm.fTol." );
 			retCode = RETCODE__SUCCESS;
@@ -151,9 +164,26 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		endif
 		%
 		%
-		
-		% TODO: Check fall stop crit.
-		
+		% Check post-iter stop crit.
+		if ( prm.deltaTol >= 0.0 && norm(vecDelta) <= prm.deltaTol )
+			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: norm(vecDelta) <= prm.deltaTol." );
+			retCode = RETCODE__IMPOSED_STOP;
+			doMainLoop = false;
+			break;
+		elseif ( haveNewBest )
+			fFall = fBestPrev - fBest;
+			if ( prm.fFallAbsTol >= 0.0 && fFall <= prm.fFallAbsTol )
+				msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: fFall <= prm.fFallAbsTol." );
+				retCode = RETCODE__IMPOSED_STOP;
+				doMainLoop = false;
+				break;
+			elseif ( prm.fFallRelTol >= 0.0 && fFall <= prm.fFallRelTol * fBestPrev )
+				msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: fFall <= prm.fFallRelTol * fBestPrev." );
+				retCode = RETCODE__IMPOSED_STOP;
+				doMainLoop = false;
+				break;
+			endif
+		endif
 		%
 		%
 		if ( haveNewBest && prm.progressReportInterval >= 0.0 )
@@ -208,17 +238,16 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	% Stopping criteria - pre-step.
 	prm.fTol = eps;
 	prm.gTol = eps;
-	prm.stepLimit = -1;
-	prm.iterLimit = -1;
+	prm.stepLimit = 999;
+	prm.iterLimit = 999;
 	prm.fevalLimit = -1;
 	prm.timeLimit = 10.0;
 	prm.stopSignalCheckInterval = 10.0;
 	%
 	% Stopping criteria - post-step.
+	prm.deltaTol = eps;
 	prm.fFallAbsTol = eps;
 	prm.fFallRelTol = eps;
-	prm.gFallAbsTol = eps;
-	prm.gFallRelTol = eps;
 	%
 	% Step generation params.
 	prm.smallFallTrgt = 0.1;
