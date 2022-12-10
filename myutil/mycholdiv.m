@@ -1,4 +1,5 @@
-function vecX = mycholdiv( matH, vecB, cholTol=sqrt(eps), prm=[] )
+function [ vecX, matR, vecLambda ] = mycholdiv( matH, vecB, cholTol=sqrt(eps), prm=[] )
+	vecLambda = [];
 	[ matR, cholFlag ] = chol( matH );
 	if ( 0 == cholFlag && min(diag(matR)) > cholTol*max(abs(diag(matR))) )
 		vecX = matR \ ( matR' \ vecB );
@@ -19,9 +20,9 @@ function vecX = mycholdiv( matH, vecB, cholTol=sqrt(eps), prm=[] )
 	endif
 	%
 	if ( mygetfield( prm, "useEig", false ) )
-		lambda = eig( matH );
-		minLambda = min(lambda);
-		maxAbsLambda = max(abs(lambda));
+		vecLambda = eig( matH );
+		minLambda = min(vecLambda);
+		maxAbsLambda = max(abs(vecLambda));
 		assert( minLambda < sqrt(eps)*maxAbsLambda ); % Really, minLambda should be negative.
 		matH += ( abs(minLambda) + epsHCoeff*maxAbsLambda) * eye(size(matH));
 	else

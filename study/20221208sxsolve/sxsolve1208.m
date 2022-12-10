@@ -122,23 +122,10 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		% Generate step.
 		if ( 0 == size(matX,2) )
 			vecDelta = -currentTRFactor * prm.gradStepCoeff * vecGBest;
+			% Among other possibilities.
 		else
-			matD = matX - vecXBest;
-			matV = utorthdrop( matD, prm.dropThresh );
-			matVTDWB = matV' * [ matD, zeros(sizeX,1) ];
-			matVTGWB = matV' * [ matG, vecGBest ];
-			rvecFWB = [ rvecF, fBest ];
-			[ fFit, vecGamma, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
-			%if ( sizeX == size(matV,2) )
-			%	matHFS = matV * matH * (matV');
-			%	resH = sqrt( ...
-			%	   sum(sum((matHFS-prm.matHSecret).^2)) ...
-			%	 / ( sum(sum(matHFS.^2)) + sum(sum(prm.matHSecret.^2)) ) )
-			%endif
-			vecDeltaNewton = matV * mycholdiv( matH, -currentTRFactor*vecGamma );
-			vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
-			vecDeltaGrad = -currentTRFactor * prm.gradStepCoeff * vecGradPerp;
-			vecDelta = vecDeltaNewton + vecDeltaGrad;
+			vecDelta = __getStep_crude( currentTRFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			%vecDelta = __getStep( currentTRFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 		endif
 		%
 		%
@@ -296,5 +283,104 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	assert( prm.btFactor < 1.0 );
 	%
 	fevalCount = 0;
+return;
+endfunction
+
+
+function [ vecDelta, datOut ] = __getStep_crude( currentTRFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
+	matD = matX - vecXBest;
+	matV = utorthdrop( matD, prm.dropThresh );
+	matVTDWB = matV' * [ matD, zeros(size(vecXBest)) ];
+	matVTGWB = matV' * [ matG, vecGBest ];
+	rvecFWB = [ rvecF, fBest ];
+	[ fFit, vecGamma, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
+	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
+	vecDeltaNewton = matV * mycholdiv( matH, -currentTRFactor*vecGamma );
+	vecDeltaGrad = -currentTRFactor * prm.gradStepCoeff * vecGradPerp;
+	vecDelta = vecDeltaNewton + vecDeltaGrad;
+	datOut = [];
+return;
+endfunction
+function [ vecDelta, datOut ] = __getStep( currentTRFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
+	% Generate fit.
+	matD = matX - vecXBest;
+	matV = utorthdrop( matD, prm.dropThresh );
+	matVTDWB = matV' * [ matD, zeros(size(vecXBest)) ];
+	matVTGWB = matV' * [ matG, vecGBest ];
+	rvecFWB = [ rvecF, fBest ];
+	[ fFit, vecGamma, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
+	
+	error( "Perhaps should do step without adding gradPerp first?" );
+	
+	
+	% HAXOR
+	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
+	vecDeltaNewton = matV * mycholdiv( matH, -currentTRFactor*vecGamma );
+	vecDeltaGrad = -currentTRFactor * prm.gradStepCoeff * vecGradPerp;
+	vecDelta = vecDeltaNewton + vecDeltaGrad;
+	%msg( __FILE__, __LINE__, "..." );
+	%matG
+	%vecG_model = matV * ( vecGamma + matH * (matV'*matD) )
+	if ( false && size(matV,2) >= size(matV,1)-1 )
+		msg( __FILE__, __LINE__, "..." );
+		matHFS = matV * matH * (matV');
+		resH = sqrt( ...
+		  sum(sum((matHFS-prm.matHSecret).^2)) ...
+		 / ( sum(sum(matHFS.^2)) + sum(sum(prm.matHSecret.^2)) ) )
+		matH_fullspace = matV * matH * (matV')
+		prm.matHSecret
+	endif
+	
+	%
+	%
+	% (Possibly) add one more vector to V: the gradient direction from the launch point.
+	% This version of the code (2022-12-09) assumes the launch point is always the best point,
+	%  as well as the "anchor" for the subspace basis.
+	% But, there's an additional assumption here: we *could* do some fit over our records,
+	%  but, instead, we'll simply the gradient calculated at this point.
+	vecT = vecGBest;
+	vecTPerp = vecT - ( matV * ( matV' * vecT ) );
+	if ( norm(vecTPerp) > prm.dropThresh * norm(vecT) )
+		matY = matVTDWB(:,1:end-1);
+		vecVNew = vecTPerp / norm(vecTPerp);
+		%
+		matV = [ matV, vecVNew ];
+		vecGamma = [ vecGamma; vecVNew'*vecGBest ];
+		vecGommo = matG'*vecVNew - vecGamma(end);
+		% matH(+) = [ matH, vecEta; vecEta, 0.0 ];
+		% matY' * vecEta = vecGommo
+		%  => vecEta = (matY*(matY')) \ matY * vecGommo.
+		% TODO: We could do this inexactly instead.
+		vecEta = mycholdiv( matY * (matY'), matY * vecGommo );
+		matH = [ matH, vecEta; vecEta', 0.0 ];
+		
+		%msg( __FILE__, __LINE__, "..." );
+		%vecG_model = matV * ( vecGamma + matH * (matV'*matD) )
+		if ( false && size(matV,2) >= size(matV,1)-1 )
+			msg( __FILE__, __LINE__, "..." );
+			matHFS = matV * matH * (matV');
+			resH = sqrt( ...
+			  sum(sum((matHFS-prm.matHSecret).^2)) ...
+			 / ( sum(sum(matHFS.^2)) + sum(sum(prm.matHSecret.^2)) ) )
+			matH_fullspace = matV * matH * (matV')
+			prm.matHSecret
+		endif
+	else
+		% Too small. Can't add it.
+	endif
+	return
+	%
+	% This code is crude.
+	vecDeltaNewton = matV * mycholdiv( matH, -currentTRFactor*vecGamma );
+	%vecDeltaGrad = -currentTRFactor * prm.gradStepCoeff * vecGradPerp;
+	%vecDelta = vecDeltaNewton + vecDeltaGrad;
+	
+	
+	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
+	vecDeltaNewton = matV * mycholdiv( matH, -currentTRFactor*vecGamma );
+	%vecDeltaGrad = -currentTRFactor * prm.gradStepCoeff * vecGradPerp;
+	%vecDelta = vecDeltaNewton + vecDeltaGrad;
+	datOut = [];
+	%
 return;
 endfunction
