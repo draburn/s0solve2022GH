@@ -354,9 +354,9 @@ function [ vecDelta, datOut ] = __getStep_simple( currentBTFactor, vecXBest, fBe
 	vecZCauchy = ( -(vecZSD'*vecGamma) / zthz) * vecZSD;
 	%
 	vecZNewton = mycholdiv( matH, -vecGamma );
+	[ norm(matB*vecZCauchy), trBeta, norm(matB*vecZNewton), (matB*vecZNewton)'*(matB*vecZCauchy) ]
 	assert( norm(matB*vecZNewton) >= norm(matB*vecZCauchy)*(1.0-100.0*eps) );
 	%
-	%[ norm( matB * vecZCauchy), trBeta, norm(matB*vecZNewton) ]
 	if ( trBeta <= norm(matB*vecZCauchy) )
 		%msg( __FILE__, __LINE__, "Taking sub-Cauchy step." );
 		vecZ = vecZCauchy * trBeta / norm(matB*vecZCauchy);

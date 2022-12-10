@@ -4,8 +4,8 @@ mydefs;
 setprngstates(0);
 sizeX = 5
 expVarCoeff = 0.0
-noiseDat = [ 0.0, 0.0, 0.0; 0.0, 0.0, 0.0 ]
-%noiseDat = [ 1.0e-2, 0.0, 0.0; 1.0e-4, 0.0, 0.0 ];
+%noiseDat = [ 0.0, 0.0, 0.0; 0.0, 0.0, 0.0 ]
+noiseDat = [ 1.0e-2, 0.0, 0.0; 1.0e-4, 0.0, 0.0 ];
 prm = [];
 %
 vecXSecret = randn(sizeX,1) .* exp(expVarCoeff*abs(randn(sizeX,1)));
