@@ -149,7 +149,7 @@ function [ vecFGL, solveDat ] = __solve_fullMat( funchRes, vecFGL0, prm )
 	%msg( __FILE__, __LINE__, sprintf("  sz = %d", sz ) );
 	%msg( __FILE__, __LINE__, sprintf("  cond() = %0.3e", cond(matM) ) )
 	%vecFGL = vecFGL0 - matM \ vecRes0;
-	vecFGL = vecFGL0 - mycholdiv( matM, vecRes0 );
+	vecFGL = vecFGL0 - mycholdiv( matM, vecRes0, true );
 	solveDat = [];
 return
 endfunction

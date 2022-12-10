@@ -311,8 +311,7 @@ function [ vecDelta, datOut ] = __getStep_crude( currentBTFactor, vecXBest, fBes
 	rvecFWB = [ rvecF, fBest ];
 	[ fFit, vecGamma, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
 	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
-	%vecDeltaNewton = matV * mycholdiv( matH, -currentBTFactor*vecGamma );
-	vecZ = mycholdiv( matH, -currentBTFactor*vecGamma );
+	vecZ = mycholdiv( matH, -currentBTFactor*vecGamma, true );
 	vecDeltaGrad = -currentBTFactor * prm.gradStepCoeff * vecGradPerp;
 	vecDelta = vecDeltaGrad + matV*vecZ;
 	if (0)
@@ -325,6 +324,7 @@ function [ vecDelta, datOut ] = __getStep_crude( currentBTFactor, vecXBest, fBes
 return;
 endfunction
 function [ vecDelta, datOut ] = __getStep_simple( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
+	msg( __FILE__, __LINE__, "**********************" );
 	datOut = [];
 	% Generate fit.
 	matD = matX - vecXBest;
@@ -353,7 +353,7 @@ function [ vecDelta, datOut ] = __getStep_simple( currentBTFactor, vecXBest, fBe
 	%%% THIS IS WRONG: vecZCauchy = (sumsq(vecZSD) / zthz) * vecZSD; <<< THAT IS WRONG.
 	vecZCauchy = ( -(vecZSD'*vecGamma) / zthz) * vecZSD;
 	%
-	vecZNewton = mycholdiv( matH, -vecGamma );
+	vecZNewton = mycholdiv( matH, -vecGamma, false );
 	[ norm(matB*vecZCauchy), trBeta, norm(matB*vecZNewton), (matB*vecZNewton)'*(matB*vecZCauchy) ]
 	assert( norm(matB*vecZNewton) >= norm(matB*vecZCauchy)*(1.0-100.0*eps) );
 	%
