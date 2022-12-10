@@ -36,6 +36,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 	iterCount = 0;
 	stepCount = 0;
 	currentTRFactor = 1.0;
+	stepTRFactor = 0.0;
 	vecXBestPrev = [];
 	fBestPrev = [];
 	vecGBestPrev = [];
@@ -43,7 +44,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 	% Init - Progress reporting.
 	if ( prm.progressReportInterval >= 0.0 )
 		msg( __FILE__, __LINE__, sprintf( ...
-		  "  %8s, %3s / %3s / %3s;  %8s, %8s;  %8s,  %8s;  %8s, %8s;  %s", ...
+		  "  %8s, %3s / %3s / %3s;  %8s, %8s;  %8s,  %8s;  %8s, %9s;  %s", ...
 		  "time", ...
 		  "stp", ...
 		  "szX", ...
@@ -53,15 +54,15 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		  "fBest", ...
 		  "fB fall", ...
 		  "|gBest|", ...
-		  "|gB|fall", ...
+		  "|gB| fall", ...
 		  "fevalCount" ) );
 		msg( __FILE__, __LINE__, sprintf( ...
-		  "  %8.2e, %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %8.2e;  %d", ...
+		  "  %8.2e, %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %9.2e;  %d", ...
 		  time()-startTime, ...
 		  stepCount, ...
 		  size(matX,2), ...
 		  iterCount, ...
-		  currentTRFactor, ...
+		  stepTRFactor, ...
 		  0.0, ... % norm(vecXBestPrev - vecXBest)
 		  fBest, ...
 		  0.0, ... % fBestPrev - fBest
@@ -124,7 +125,8 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 			vecDelta = -currentTRFactor * prm.gradStepCoeff * vecGBest;
 			% Among other possibilities.
 		else
-			vecDelta = __getStep_crude( currentTRFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			%vecDelta = __getStep_crude( currentTRFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			vecDelta = __getStep_simple( currentTRFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 			%vecDelta = __getStep( currentTRFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 		endif
 		%
@@ -145,6 +147,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		endif
 		if ( whollyRejectStep )
 			currentTRFactor *= prm.btFactor;
+			msg( __FILE__, __LINE__, "Wholly rejecting step!" );
 		else
 			if ( fTrial < fBest )
 				% Put new info in *front*, so it gets orthonormalized first.
@@ -157,6 +160,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 				vecXBest = vecXTrial;
 				fBest = fTrial;
 				vecGBest = vecGTrial;
+				stepTRFactor = currentTRFactor;
 				currentTRFactor = 1.0;
 				haveNewBest = true;
 				stepCount++;
@@ -195,12 +199,12 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		if ( haveNewBest && prm.progressReportInterval >= 0.0 )
 		if ( time() - progressReportedTime >= prm.progressReportInterval )
 			msg( __FILE__, __LINE__, sprintf( ...
-			  "  %8.2e, %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %8.2e;  %d", ...
+			  "  %8.2e, %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %9.2e;  %d", ...
 			  time()-startTime, ...
 			  stepCount, ...
 			  size(matX,2), ...
 			  iterCount, ...
-			  currentTRFactor, ...
+			  stepTRFactor, ...
 			  norm(vecXBestPrev - vecXBest), ...
 			  fBest, ...
 			  fBestPrev - fBest, ...
@@ -214,12 +218,12 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 	%
 	if ( prm.verbLev >= VERBLEV__MAIN )
 		msg( __FILE__, __LINE__, sprintf( ...
-		  "  %8.2e, %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %8.2e;  %d", ...
+		  "  %8.2e, %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %9.2e;  %d", ...
 		  time()-startTime, ...
 		  stepCount, ...
 		  size(matX,2), ...
 		  iterCount, ...
-		  currentTRFactor, ...
+		  stepTRFactor, ...
 		  norm(vecXBestPrev - vecXBest), ...
 		  fBest, ...
 		  fBestPrev - fBest, ...
@@ -239,7 +243,7 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	sizeX = size(vecXInit,1);
 	prm.verbLev = VERBLEV__DETAILED;
 	prm.valdLev = VALDLEV__UNLIMITED;
-	prm.progressReportInterval = 1.0;
+	prm.progressReportInterval = 0.0;
 	%
 	% Stopping criteria - pre-step.
 	prm.fTol = eps;
@@ -256,10 +260,13 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	prm.fFallRelTol = eps;
 	%
 	% Step generation params.
-	prm.smallFallTrgt = 0.1;
-	prm.gradStepCoeff = 0.1;
+	msg( __FILE__, __LINE__, "WARNING: These default parameters are overly large." );
+	prm.smallFallTrgt = 0.9;%0.1;
+	prm.gradStepCoeff = 10.0;%0.1;
 	prm.dropThresh = eps^0.7;
 	%prm.epsFNegativityCoeff = 0.01;
+	prm.epsB = eps^0.5;
+	prm.trDCoeff = 3.0;
 	%
 	% Step assessment and BT/dynamic TR params.
 	prm.horribleFCoeff = 2.0;
@@ -295,10 +302,75 @@ function [ vecDelta, datOut ] = __getStep_crude( currentTRFactor, vecXBest, fBes
 	rvecFWB = [ rvecF, fBest ];
 	[ fFit, vecGamma, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
 	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
-	vecDeltaNewton = matV * mycholdiv( matH, -currentTRFactor*vecGamma );
+	%vecDeltaNewton = matV * mycholdiv( matH, -currentTRFactor*vecGamma );
+	vecZ = mycholdiv( matH, -currentTRFactor*vecGamma );
 	vecDeltaGrad = -currentTRFactor * prm.gradStepCoeff * vecGradPerp;
-	vecDelta = vecDeltaNewton + vecDeltaGrad;
+	vecDelta = vecDeltaGrad + matV*vecZ;
+	if (0)
+		vecDScale = max( abs(matVTDWB), [], 2 );
+		vecB = 1.0 ./ ( vecDScale + prm.epsB * max(vecDScale) );
+		matB = diag(vecB);
+		[ norm(vecZ), norm(matB*vecZ), norm(vecDelta) ]
+	endif
 	datOut = [];
+return;
+endfunction
+function [ vecDelta, datOut ] = __getStep_simple( currentTRFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
+	datOut = [];
+	% Generate fit.
+	matD = matX - vecXBest;
+	matV = utorthdrop( matD, prm.dropThresh );
+	matVTDWB = matV' * [ matD, zeros(size(vecXBest)) ];
+	matVTGWB = matV' * [ matG, vecGBest ];
+	rvecFWB = [ rvecF, fBest ];
+	[ fFit, vecGamma, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
+	%
+	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
+	vecDeltaGradPerp = -currentTRFactor * prm.gradStepCoeff * vecGradPerp;
+	%
+	msg( __FILE__, __LINE__, "WARNING: Implemented version of scaled dog leg may be wrong." );
+	
+	%
+	% Set scaling / (TR/)boundary matrix.
+	trBeta = currentTRFactor * prm.trDCoeff;
+	vecDScale = max( abs(matVTDWB), [], 2 );
+	vecB = 1.0 ./ ( vecDScale + prm.epsB * max(vecDScale) );
+	matB = diag(vecB);
+	matBTBInv = diag(1.0./(vecB.^2));
+	% We'll require ||B*z|| <= trBeta.
+	%
+	% Dog-leg.
+	vecZSD = -( matBTBInv * vecGamma );
+	zthz = vecZSD' * matH * vecZSD;
+	assert( zthz > 0.0 ); % Non-positive-definite case not (yet) handled.
+	vecZCauchy = (sumsq(vecZSD) / zthz) * vecZSD;
+	vecZNewton = mycholdiv( matH, -vecGamma );
+	assert( norm(matB*vecZNewton) >= norm(matB*vecZCauchy)*(1.0-100.0*eps) );
+	%
+	%[ norm( matB * vecZCauchy), trBeta, norm(matB*vecZNewton) ]
+	if ( trBeta <= norm(matB*vecZCauchy) )
+		%msg( __FILE__, __LINE__, "Taking sub-Cauchy step." );
+		vecZ = vecZCauchy * trBeta / norm(matB*vecZCauchy);
+	elseif ( trBeta >= norm(matB*vecZNewton) )
+		%msg( __FILE__, __LINE__, "Taking full Newton step." );
+		vecZ = vecZNewton;
+	else
+		%msg( __FILE__, __LINE__, "Taking intermediate step." );
+		vecZLeg = vecZNewton - vecZCauchy;
+		% a*s^2 + b*s + c = 0
+		a = sumsq( matB * vecZLeg );
+		b = 2.0 * (matB * vecZCauchy)' * ( matB*vecZLeg);
+		c = sumsq( matB * vecZCauchy ) - trBeta^2;
+		discrim = (b^2) - (4.0*a*c);
+		assert( discrim >= 0.0 );
+		assert( a > 0.0 );
+		assert( c <= 0.0 );
+		s = (-b+sqrt(discrim))/(2.0*a);
+		vecZ = vecZCauchy + s*vecZLeg;
+	endif
+	%
+	vecDelta = vecDeltaGradPerp + matV * vecZ;
+	%[ norm(vecZ), norm(matB*vecZ), norm(vecDelta) ]
 return;
 endfunction
 function [ vecDelta, datOut ] = __getStep( currentTRFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
