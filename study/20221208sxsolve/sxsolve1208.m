@@ -35,8 +35,8 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 	matG = [];
 	iterCount = 0;
 	stepCount = 0;
-	currentTRFactor = 1.0;
-	stepTRFactor = 0.0;
+	currentBTFactor = 1.0;
+	stepBTFactor = 0.0;
 	vecXBestPrev = [];
 	fBestPrev = [];
 	vecGBestPrev = [];
@@ -49,7 +49,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		  "stp", ...
 		  "szX", ...
 		  "itr", ...
-		  "TRFactor", ...
+		  "BTFactor", ...
 		  "|deltaX|", ...
 		  "fBest", ...
 		  "fB fall", ...
@@ -62,7 +62,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		  stepCount, ...
 		  size(matX,2), ...
 		  iterCount, ...
-		  stepTRFactor, ...
+		  stepBTFactor, ...
 		  0.0, ... % norm(vecXBestPrev - vecXBest)
 		  fBest, ...
 		  0.0, ... % fBestPrev - fBest
@@ -122,12 +122,12 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		%
 		% Generate step.
 		if ( 0 == size(matX,2) )
-			vecDelta = -currentTRFactor * prm.gradStepCoeff * vecGBest;
+			vecDelta = -currentBTFactor * prm.gradStepCoeff * vecGBest;
 			% Among other possibilities.
 		else
-			%vecDelta = __getStep_crude( currentTRFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
-			vecDelta = __getStep_simple( currentTRFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
-			%vecDelta = __getStep( currentTRFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			%vecDelta = __getStep_crude( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			vecDelta = __getStep_simple( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			%vecDelta = __getStep( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 		endif
 		%
 		%
@@ -146,10 +146,15 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 			whollyRejectStep = true;
 		endif
 		if ( whollyRejectStep )
-			currentTRFactor *= prm.btFactor;
-			msg( __FILE__, __LINE__, "Wholly rejecting step!" );
+			currentBTFactor *= prm.btFactor;
+			%msg( __FILE__, __LINE__, "Wholly rejecting step!" );
 		else
 			if ( fTrial < fBest )
+				if (~isempty(matX))
+					matD_beforeStep = matX - vecXBest; % Only for progress.
+				else
+					matD_beforeStep = [];
+				endif
 				% Put new info in *front*, so it gets orthonormalized first.
 				vecXBestPrev = vecXBest;
 				fBestPrev = fBest;
@@ -160,8 +165,8 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 				vecXBest = vecXTrial;
 				fBest = fTrial;
 				vecGBest = vecGTrial;
-				stepTRFactor = currentTRFactor;
-				currentTRFactor = 1.0;
+				stepBTFactor = currentBTFactor;
+				currentBTFactor = 1.0;
 				haveNewBest = true;
 				stepCount++;
 			else
@@ -198,13 +203,18 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		% Report progress.
 		if ( haveNewBest && prm.progressReportInterval >= 0.0 )
 		if ( time() - progressReportedTime >= prm.progressReportInterval )
+			if (~isempty(matD_beforeStep))
+				stepBeta = sqrt(max( abs(vecDelta'*matD_beforeStep)./sum( matD_beforeStep.^2, 1 ) ));
+			else
+				stepBeta = 1.0;
+			endif
 			msg( __FILE__, __LINE__, sprintf( ...
 			  "  %8.2e, %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %9.2e;  %d", ...
 			  time()-startTime, ...
 			  stepCount, ...
 			  size(matX,2), ...
 			  iterCount, ...
-			  stepTRFactor, ...
+			  stepBTFactor, ...
 			  norm(vecXBestPrev - vecXBest), ...
 			  fBest, ...
 			  fBestPrev - fBest, ...
@@ -223,7 +233,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		  stepCount, ...
 		  size(matX,2), ...
 		  iterCount, ...
-		  stepTRFactor, ...
+		  stepBTFactor, ...
 		  norm(vecXBestPrev - vecXBest), ...
 		  fBest, ...
 		  fBestPrev - fBest, ...
@@ -293,7 +303,7 @@ return;
 endfunction
 
 
-function [ vecDelta, datOut ] = __getStep_crude( currentTRFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
+function [ vecDelta, datOut ] = __getStep_crude( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
 	matD = matX - vecXBest;
 	matV = utorthdrop( matD, prm.dropThresh );
 	matVTDWB = matV' * [ matD, zeros(size(vecXBest)) ];
@@ -301,9 +311,9 @@ function [ vecDelta, datOut ] = __getStep_crude( currentTRFactor, vecXBest, fBes
 	rvecFWB = [ rvecF, fBest ];
 	[ fFit, vecGamma, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
 	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
-	%vecDeltaNewton = matV * mycholdiv( matH, -currentTRFactor*vecGamma );
-	vecZ = mycholdiv( matH, -currentTRFactor*vecGamma );
-	vecDeltaGrad = -currentTRFactor * prm.gradStepCoeff * vecGradPerp;
+	%vecDeltaNewton = matV * mycholdiv( matH, -currentBTFactor*vecGamma );
+	vecZ = mycholdiv( matH, -currentBTFactor*vecGamma );
+	vecDeltaGrad = -currentBTFactor * prm.gradStepCoeff * vecGradPerp;
 	vecDelta = vecDeltaGrad + matV*vecZ;
 	if (0)
 		vecDScale = max( abs(matVTDWB), [], 2 );
@@ -314,7 +324,7 @@ function [ vecDelta, datOut ] = __getStep_crude( currentTRFactor, vecXBest, fBes
 	datOut = [];
 return;
 endfunction
-function [ vecDelta, datOut ] = __getStep_simple( currentTRFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
+function [ vecDelta, datOut ] = __getStep_simple( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
 	datOut = [];
 	% Generate fit.
 	matD = matX - vecXBest;
@@ -325,10 +335,10 @@ function [ vecDelta, datOut ] = __getStep_simple( currentTRFactor, vecXBest, fBe
 	[ fFit, vecGamma, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
 	%
 	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
-	vecDeltaGradPerp = -currentTRFactor * prm.gradStepCoeff * vecGradPerp;
+	vecDeltaGradPerp = -currentBTFactor * prm.gradStepCoeff * vecGradPerp;
 	%
 	% Set scaling / (TR/)boundary matrix.
-	trBeta = currentTRFactor * prm.trDCoeff;
+	trBeta = currentBTFactor * prm.trDCoeff;
 	vecDScale = max( abs(matVTDWB), [], 2 );
 	vecB = 1.0 ./ ( vecDScale + prm.epsB * max(vecDScale) );
 	matB = diag(vecB);
@@ -373,7 +383,7 @@ function [ vecDelta, datOut ] = __getStep_simple( currentTRFactor, vecXBest, fBe
 	%[ norm(vecZ), norm(matB*vecZ), norm(vecDelta) ]
 return;
 endfunction
-function [ vecDelta, datOut ] = __getStep( currentTRFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
+function [ vecDelta, datOut ] = __getStep( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
 	% Generate fit.
 	matD = matX - vecXBest;
 	matV = utorthdrop( matD, prm.dropThresh );
@@ -387,8 +397,8 @@ function [ vecDelta, datOut ] = __getStep( currentTRFactor, vecXBest, fBest, vec
 	
 	% HAXOR
 	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
-	vecDeltaNewton = matV * mycholdiv( matH, -currentTRFactor*vecGamma );
-	vecDeltaGrad = -currentTRFactor * prm.gradStepCoeff * vecGradPerp;
+	vecDeltaNewton = matV * mycholdiv( matH, -currentBTFactor*vecGamma );
+	vecDeltaGrad = -currentBTFactor * prm.gradStepCoeff * vecGradPerp;
 	vecDelta = vecDeltaNewton + vecDeltaGrad;
 	%msg( __FILE__, __LINE__, "..." );
 	%matG
@@ -443,14 +453,14 @@ function [ vecDelta, datOut ] = __getStep( currentTRFactor, vecXBest, fBest, vec
 	return
 	%
 	% This code is crude.
-	vecDeltaNewton = matV * mycholdiv( matH, -currentTRFactor*vecGamma );
-	%vecDeltaGrad = -currentTRFactor * prm.gradStepCoeff * vecGradPerp;
+	vecDeltaNewton = matV * mycholdiv( matH, -currentBTFactor*vecGamma );
+	%vecDeltaGrad = -currentBTFactor * prm.gradStepCoeff * vecGradPerp;
 	%vecDelta = vecDeltaNewton + vecDeltaGrad;
 	
 	
 	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
-	vecDeltaNewton = matV * mycholdiv( matH, -currentTRFactor*vecGamma );
-	%vecDeltaGrad = -currentTRFactor * prm.gradStepCoeff * vecGradPerp;
+	vecDeltaNewton = matV * mycholdiv( matH, -currentBTFactor*vecGamma );
+	%vecDeltaGrad = -currentBTFactor * prm.gradStepCoeff * vecGradPerp;
 	%vecDelta = vecDeltaNewton + vecDeltaGrad;
 	datOut = [];
 	%
