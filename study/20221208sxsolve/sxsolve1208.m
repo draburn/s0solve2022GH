@@ -260,9 +260,8 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	prm.fFallRelTol = eps;
 	%
 	% Step generation params.
-	msg( __FILE__, __LINE__, "WARNING: These default parameters are overly large." );
-	prm.smallFallTrgt = 0.9;%0.1;
-	prm.gradStepCoeff = 10.0;%0.1;
+	prm.smallFallTrgt = 0.01;
+	prm.gradStepCoeff = 0.01;
 	prm.dropThresh = eps^0.7;
 	%prm.epsFNegativityCoeff = 0.01;
 	prm.epsB = eps^0.5;
@@ -328,9 +327,6 @@ function [ vecDelta, datOut ] = __getStep_simple( currentTRFactor, vecXBest, fBe
 	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
 	vecDeltaGradPerp = -currentTRFactor * prm.gradStepCoeff * vecGradPerp;
 	%
-	msg( __FILE__, __LINE__, "WARNING: Implemented version of scaled dog leg may be wrong." );
-	
-	%
 	% Set scaling / (TR/)boundary matrix.
 	trBeta = currentTRFactor * prm.trDCoeff;
 	vecDScale = max( abs(matVTDWB), [], 2 );
@@ -343,7 +339,10 @@ function [ vecDelta, datOut ] = __getStep_simple( currentTRFactor, vecXBest, fBe
 	vecZSD = -( matBTBInv * vecGamma );
 	zthz = vecZSD' * matH * vecZSD;
 	assert( zthz > 0.0 ); % Non-positive-definite case not (yet) handled.
-	vecZCauchy = (sumsq(vecZSD) / zthz) * vecZSD;
+	%
+	%%% THIS IS WRONG: vecZCauchy = (sumsq(vecZSD) / zthz) * vecZSD; <<< THAT IS WRONG.
+	vecZCauchy = ( -(vecZSD'*vecGamma) / zthz) * vecZSD;
+	%
 	vecZNewton = mycholdiv( matH, -vecGamma );
 	assert( norm(matB*vecZNewton) >= norm(matB*vecZCauchy)*(1.0-100.0*eps) );
 	%
@@ -367,6 +366,7 @@ function [ vecDelta, datOut ] = __getStep_simple( currentTRFactor, vecXBest, fBe
 		assert( c <= 0.0 );
 		s = (-b+sqrt(discrim))/(2.0*a);
 		vecZ = vecZCauchy + s*vecZLeg;
+		assert( reldiff( norm(matB*vecZ) , trBeta ) < sqrt(sqrt(eps)) );
 	endif
 	%
 	vecDelta = vecDeltaGradPerp + matV * vecZ;
