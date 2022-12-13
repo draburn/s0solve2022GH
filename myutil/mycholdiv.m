@@ -1,4 +1,4 @@
-function vecX = mycholdiv( matA, vecB, forceSolution=false, prm=[] )
+function vecX = mycholdiv( matA, vecB, requireWellBehavedSolution=true, prm=[] )
 	sz = size(vecB,1);
 	assert( isrealarray(vecB,[sz,1]) );
 	b = norm(vecB);
@@ -35,8 +35,8 @@ function vecX = mycholdiv( matA, vecB, forceSolution=false, prm=[] )
 		endif
 		clear matR;
 		clear cholFlag;
+		msg( __FILE__, __LINE__, "Rejected 'clearly posititive-definite' solution." );
 	endif
-	msg( __FILE__, __LINE__, "Rejected 'clearly posititive-definite' solution." );
 	%
 	validateExtrapolation = mygetfield( prm, "validateExtrapolation", true );
 	epsExtrap = epsIntermed;
@@ -54,35 +54,28 @@ function vecX = mycholdiv( matA, vecB, forceSolution=false, prm=[] )
 				matR3 = chol( matA + 3.0*epsExtrap*aScl*eye(sz,sz) );
 				vecX3 = matR3 \ ( matR3' \ vecB );
 				vecXAlt = ( (1.5*vecX1) - (0.5*vecX3) );
-				if ( reldiff( vecX, vecXAlt ) > epsCasual )
-					if (forceSolution)
-						msg( __FILE__, __LINE__, "WARNING: positive-semi-definite extrapolation is inconsistent." );
-						msg( __FILE__, __LINE__, "  ( This may be because gradient is not in span of Hessian. )" );
-					else
-						msg( __FILE__, __LINE__, "ERROR: positive-semi-definite extrapolation is inconsistent." );
-						msg( __FILE__, __LINE__, "  ( This may be because gradient is not in span of Hessian. )" );
-						error("Positive-semi-definite extrapolation is inconsistent.");
-					endif
+				if ( reldiff( vecX, vecXAlt ) <= epsCasual )
+					msg( __FILE__, __LINE__, "Accepting validated 'extrapolated posititive-semi-definite' solution." );
+					return;
 				endif
+				msg( __FILE__, __LINE__, "WARNING: positive-semi-definite extrapolation is inconsistent." );
+				msg( __FILE__, __LINE__, "  ( This may be because gradient is not in span of Hessian. )" );
+			else
+				msg( __FILE__, __LINE__, "Accepting unvalidated 'extrapolated posititive-semi-definite' solution." );
+				return;
 			endif
-			msg( __FILE__, __LINE__, "Accepting 'extrapolated posititive-semi-definite' solution." );
-			return;
 		endif
 		clear matR1;
 		clear cholFlag;
+		msg( __FILE__, __LINE__, "Rejected 'extrapolated posititive-semi-definite' solution." );
 	endif
-	msg( __FILE__, __LINE__, "Rejected 'extrapolated posititive-semi-definite' solution." );
+	if (requireWellBehavedSolution)
+		error( "Failed to find a well-behaved solution." );
+	endif
 	%
 	% We're on to the "has (at least one) negative (eigenvalue)" case.
-	if (forceSolution)
-		msg( __FILE__, __LINE__, "WARNING: matA appears to have a negative eigenvalue." );
-	else
-		msg( __FILE__, __LINE__, "ERROR: matA appears to have a negative eigenvalue." );
-		error( "matA appears to have a negative eigenvalue." );
-	endif
-	%
-	vecPosDefDiagMin = sum(abs(matA),2) + epsStrict*aScl
-	; % Scalar autobroadcast.
+	msg( __FILE__, __LINE__, "Generating perturbed positive-definite solution." );
+	vecPosDefDiagMin = sum(abs(matA),2) + epsStrict*aScl; % Scalar autobroadcast.
 	vecADiag = diag(matA);
 	vecmaskModifyMe = (vecPosDefDiagMin>vecADiag);
 	vecADiagMod = vecADiag;
@@ -92,7 +85,6 @@ function vecX = mycholdiv( matA, vecB, forceSolution=false, prm=[] )
 	% vecAMod should now be strictly positive-definite, beyond an finite precision issues.
 	matR = chol( matAMod );
 	vecX = matR \ ( matR' \ vecB );
-	%vecX = matA \ vecB;
 	return;
 return;
 endfunction
