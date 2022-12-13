@@ -8,6 +8,7 @@ function vecX = mycholdiv( matA, vecB, requireWellBehavedSolution=true, prm=[] )
 	epsCasual = eps^0.2;
 	epsStrict = eps^0.8;
 	epsIntermed = sqrt( epsCasual * epsStrict );
+	cholTol = eps^0.4;
 	%
 	assert( isrealarray(matA,[sz,sz]) );
 	assert( issymmetric(matA,epsCasual) );
@@ -21,27 +22,26 @@ function vecX = mycholdiv( matA, vecB, requireWellBehavedSolution=true, prm=[] )
 	aDiagMin = min(diag(matA));
 	%
 	if ( aDiagMin > 0.0 )
-		msg( __FILE__, __LINE__, "Attempting 'clearly posititive-definite' solution." );
+		msg( __FILE__, __LINE__, "Attempting 'clearly posititive-definite' solution..." );
 		[ matR, cholFlag ] = chol( matA );
 		if ( 0 == cholFlag )
-		if ( min(diag(matR)) > epsCasual*sqrt(aScl) ) % Agressively distrust this solution.
-			vecX = matR \ ( matR' \ vecB );
-			%min(diag(matR))
-			%epsCasual*sqrt(aScl)
-			%assert( reldiff( matA * vecX, vecB ) < epsCasual );
-			msg( __FILE__, __LINE__, "Accepting 'clearly posititive-definite' solution." );
-			return;
-		endif
+			if ( min(diag(matR)) > cholTol*sqrt(aScl) )
+				vecX = matR \ ( matR' \ vecB );
+				msg( __FILE__, __LINE__, "Accepting 'clearly posititive-definite' solution." );
+				return;
+			endif
+			msg( __FILE__, __LINE__, "  Cholesky factorization was unreliable." );
+		else
+			msg( __FILE__, __LINE__, "  Cholesky factorization failed." );
 		endif
 		clear matR;
 		clear cholFlag;
-		msg( __FILE__, __LINE__, "Rejected 'clearly posititive-definite' solution." );
 	endif
 	%
 	validateExtrapolation = mygetfield( prm, "validateExtrapolation", true );
 	epsExtrap = epsIntermed;
 	if ( aDiagMin >= 0.0 )
-		msg( __FILE__, __LINE__, "Attempting 'extrapolated posititive-semi-definite' solution." );
+		msg( __FILE__, __LINE__, "Attempting 'extrapolated posititive-semi-definite' solution..." );
 		[ matR1, cholFlag ] = chol( matA + epsExtrap*aScl*eye(sz,sz) );
 		if ( 0 == cholFlag )
 			% Since above chol() did not fail, following chol() should never fail.
@@ -58,8 +58,7 @@ function vecX = mycholdiv( matA, vecB, requireWellBehavedSolution=true, prm=[] )
 					msg( __FILE__, __LINE__, "Accepting validated 'extrapolated posititive-semi-definite' solution." );
 					return;
 				endif
-				msg( __FILE__, __LINE__, "WARNING: positive-semi-definite extrapolation is inconsistent." );
-				msg( __FILE__, __LINE__, "  ( This may be because gradient is not in span of Hessian. )" );
+				msg( __FILE__, __LINE__, "  Extrapolation was inconsistent." );
 			else
 				msg( __FILE__, __LINE__, "Accepting unvalidated 'extrapolated posititive-semi-definite' solution." );
 				return;
@@ -67,7 +66,7 @@ function vecX = mycholdiv( matA, vecB, requireWellBehavedSolution=true, prm=[] )
 		endif
 		clear matR1;
 		clear cholFlag;
-		msg( __FILE__, __LINE__, "Rejected 'extrapolated posititive-semi-definite' solution." );
+		msg( __FILE__, __LINE__, "  Cholesky factorization failed." );
 	endif
 	if (requireWellBehavedSolution)
 		error( "Failed to find a well-behaved solution." );

@@ -3,7 +3,7 @@ mydefs;
 msg( __FILE__, __LINE__, "" );
 msg( __FILE__, __LINE__, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" );
 setprngstates(0);
-sizeX = 5;
+sizeX = 10;
 size1 = sizeX-1;
 size2 = 1;
 foo = randn(size1,sizeX); matA1 = foo'*foo; clear foo;
@@ -14,7 +14,24 @@ epsA = 1.0e-6;
 %
 %
 msg( __FILE__, __LINE__, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv");
-msg( __FILE__, __LINE__, "Performing positive-definite, test..." );
+msg( __FILE__, __LINE__, "Performing strongly positive-definite, test..." );
+matA = matA1 + 1.0*matA2;
+vecB = matA * vecX;
+vecXCalc = mycholdiv( matA, vecB, true );
+vecBCalc = matA * vecXCalc;
+xResults = [ norm(vecX), norm(vecXCalc), reldiff(vecX,vecXCalc) ]
+bResults = [ norm(vecB), norm(vecBCalc), reldiff(vecB,vecBCalc) ]
+deltaF = (vecXCalc'*matA*vecXCalc)/2.0 - vecXCalc'*vecB
+assert( reldiff(vecX,vecXCalc) < eps^0.3 );
+assert( reldiff(vecB,vecBCalc) < eps^0.3 );
+vecXCalcStrongPD = vecXCalc;
+deltaFStrongPD = deltaF;
+msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+msg( __FILE__, __LINE__, "" );
+%
+%
+msg( __FILE__, __LINE__, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv");
+msg( __FILE__, __LINE__, "Performing marginally positive-definite, test..." );
 matA = matA1 + epsA*matA2;
 vecB = matA * vecX;
 vecXCalc = mycholdiv( matA, vecB, true );
@@ -22,8 +39,10 @@ vecBCalc = matA * vecXCalc;
 xResults = [ norm(vecX), norm(vecXCalc), reldiff(vecX,vecXCalc) ]
 bResults = [ norm(vecB), norm(vecBCalc), reldiff(vecB,vecBCalc) ]
 deltaF = (vecXCalc'*matA*vecXCalc)/2.0 - vecXCalc'*vecB
-vecXCalcPD = vecXCalc;
-deltaFPD = deltaF;
+assert( reldiff(vecX,vecXCalc) < eps^0.3 );
+assert( reldiff(vecB,vecBCalc) < eps^0.3 );
+vecXCalcMarginalPD = vecXCalc;
+deltaFMarginalPD = deltaF;
 msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 msg( __FILE__, __LINE__, "" );
 %
@@ -37,6 +56,7 @@ vecBCalc = matA * vecXCalc;
 xResults = [ norm(vecX), norm(vecXCalc), reldiff(vecX,vecXCalc) ]
 bResults = [ norm(vecB), norm(vecBCalc), reldiff(vecB,vecBCalc) ]
 deltaF = (vecXCalc'*matA*vecXCalc)/2.0 - vecXCalc'*vecB
+assert( reldiff(vecB,vecBCalc) < eps^0.3 );
 vecXCalcPSD = vecXCalc;
 deltaFPSD = deltaF;
 msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
@@ -70,7 +90,7 @@ msg( __FILE__, __LINE__, "" );
 %
 %
 msg( __FILE__, __LINE__, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv");
-msg( __FILE__, __LINE__, "Performing 'has negative', test..." );
+msg( __FILE__, __LINE__, "Performing marginal 'has negative', test..." );
 matA = matA1 - epsA*matA2;
 vecB = matA * vecX;
 vecXCalc = mycholdiv( matA, vecB, false );
@@ -78,13 +98,28 @@ vecBCalc = matA * vecXCalc;
 xResults = [ norm(vecX), norm(vecXCalc), reldiff(vecX,vecXCalc) ]
 bResults = [ norm(vecB), norm(vecBCalc), reldiff(vecB,vecBCalc) ]
 deltaF = (vecXCalc'*matA*vecXCalc)/2.0 - vecXCalc'*vecB
-vecXCalcHN = vecXCalc;
-deltaFHN = deltaF;
+vecXCalcMarginalHN = vecXCalc;
+deltaFMarginalHN = deltaF;
 msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 msg( __FILE__, __LINE__, "" );
 %
-matXCompare = [ vecXCalcPD, vecXCalcPSD, vecXCalcHN ]
-rvecFCompare = [ deltaFPD, deltaFPSD, deltaFHN ]
+%
+msg( __FILE__, __LINE__, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv");
+msg( __FILE__, __LINE__, "Performing strongly 'has negative', test..." );
+matA = -( matA1 + matA2 );
+vecB = matA * vecX;
+vecXCalc = mycholdiv( matA, vecB, false );
+vecBCalc = matA * vecXCalc;
+xResults = [ norm(vecX), norm(vecXCalc), reldiff(vecX,vecXCalc) ]
+bResults = [ norm(vecB), norm(vecBCalc), reldiff(vecB,vecBCalc) ]
+deltaF = (vecXCalc'*matA*vecXCalc)/2.0 - vecXCalc'*vecB
+vecXCalcStrongHN = vecXCalc;
+deltaFStrongHN = deltaF;
+msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+msg( __FILE__, __LINE__, "" );
+%
+matXCompare = [ vecX, vecXCalcStrongPD, vecXCalcMarginalPD, vecXCalcPSD, vecXCalcMarginalHN, vecXCalcStrongHN ]
+rvecFCompare = [ deltaFStrongPD, deltaFMarginalPD, deltaFPSD, deltaFMarginalHN, deltaFStrongHN ]
 %
 msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" );
 msg( __FILE__, __LINE__, "" );
