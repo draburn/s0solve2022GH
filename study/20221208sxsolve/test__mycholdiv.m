@@ -2,8 +2,8 @@ clear;
 mydefs;
 msg( __FILE__, __LINE__, "" );
 msg( __FILE__, __LINE__, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" );
-setprngstates(0);
-sizeX = 10;
+setprngstates();
+sizeX = 20;
 size1 = sizeX-1;
 size2 = 1;
 foo = randn(size1,sizeX); matA1 = foo'*foo; clear foo;
@@ -25,6 +25,7 @@ deltaF = (vecXCalc'*matA*vecXCalc)/2.0 - vecXCalc'*vecB
 assert( reldiff(vecX,vecXCalc) < eps^0.3 );
 assert( reldiff(vecB,vecBCalc) < eps^0.3 );
 vecXCalcStrongPD = vecXCalc;
+vecResBStrongPD = vecBCalc - vecB;
 deltaFStrongPD = deltaF;
 msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 msg( __FILE__, __LINE__, "" );
@@ -42,13 +43,14 @@ deltaF = (vecXCalc'*matA*vecXCalc)/2.0 - vecXCalc'*vecB
 assert( reldiff(vecX,vecXCalc) < eps^0.3 );
 assert( reldiff(vecB,vecBCalc) < eps^0.3 );
 vecXCalcMarginalPD = vecXCalc;
+vecResBMarginalPD = vecBCalc - vecB;
 deltaFMarginalPD = deltaF;
 msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 msg( __FILE__, __LINE__, "" );
 %
 %
 msg( __FILE__, __LINE__, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv");
-msg( __FILE__, __LINE__, "Performing convergant positive-semi-definite, test..." );
+msg( __FILE__, __LINE__, "Performing convergent positive-semi-definite, test..." );
 matA = matA1 + 0.0*matA2;
 vecB = matA * vecX;
 vecXCalc = mycholdiv( matA, vecB, true );
@@ -58,13 +60,14 @@ bResults = [ norm(vecB), norm(vecBCalc), reldiff(vecB,vecBCalc) ]
 deltaF = (vecXCalc'*matA*vecXCalc)/2.0 - vecXCalc'*vecB
 assert( reldiff(vecB,vecBCalc) < eps^0.3 );
 vecXCalcPSD = vecXCalc;
+vecResBPSD = vecBCalc - vecB;
 deltaFPSD = deltaF;
 msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 msg( __FILE__, __LINE__, "" );
 %
 %
 msg( __FILE__, __LINE__, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv");
-msg( __FILE__, __LINE__, "Performing non-convergant positive-semi-definite without-validation, test..." );
+msg( __FILE__, __LINE__, "Performing non-convergent positive-semi-definite without-validation, test..." );
 matA = matA1 + 0.0*matA2;
 vecB = matA * vecX + 0.1*vecBMod;
 vecXCalc = mycholdiv( matA, vecB, false );
@@ -77,7 +80,7 @@ msg( __FILE__, __LINE__, "" );
 %
 %
 msg( __FILE__, __LINE__, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv");
-msg( __FILE__, __LINE__, "Performing non-convergant positive-semi-definite without-validation, test..." );
+msg( __FILE__, __LINE__, "Performing non-convergent positive-semi-definite without-validation, test..." );
 prm = [];
 prm.validateExtrapolation = false;
 vecXCalc = mycholdiv( matA, vecB, false, prm );
@@ -99,6 +102,7 @@ xResults = [ norm(vecX), norm(vecXCalc), reldiff(vecX,vecXCalc) ]
 bResults = [ norm(vecB), norm(vecBCalc), reldiff(vecB,vecBCalc) ]
 deltaF = (vecXCalc'*matA*vecXCalc)/2.0 - vecXCalc'*vecB
 vecXCalcMarginalHN = vecXCalc;
+vecResBMarginalHN = vecBCalc - vecB;
 deltaFMarginalHN = deltaF;
 msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 msg( __FILE__, __LINE__, "" );
@@ -114,11 +118,13 @@ xResults = [ norm(vecX), norm(vecXCalc), reldiff(vecX,vecXCalc) ]
 bResults = [ norm(vecB), norm(vecBCalc), reldiff(vecB,vecBCalc) ]
 deltaF = (vecXCalc'*matA*vecXCalc)/2.0 - vecXCalc'*vecB
 vecXCalcStrongHN = vecXCalc;
+vecResBStrongHN = vecBCalc - vecB;
 deltaFStrongHN = deltaF;
 msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 msg( __FILE__, __LINE__, "" );
 %
-matXCompare = [ vecX, vecXCalcStrongPD, vecXCalcMarginalPD, vecXCalcPSD, vecXCalcMarginalHN, vecXCalcStrongHN ]
+matResXCompare = [ vecXCalcStrongPD, vecXCalcMarginalPD, vecXCalcPSD, vecXCalcMarginalHN, vecXCalcStrongHN ] - vecX
+matResBCompare = [ vecResBStrongPD, vecResBMarginalPD, vecResBPSD, vecResBMarginalHN, vecResBStrongHN ]
 rvecFCompare = [ deltaFStrongPD, deltaFMarginalPD, deltaFPSD, deltaFMarginalHN, deltaFStrongHN ]
 %
 msg( __FILE__, __LINE__, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" );
