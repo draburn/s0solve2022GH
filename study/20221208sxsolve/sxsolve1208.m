@@ -311,7 +311,7 @@ function [ vecDelta, datOut ] = __getStep_crude( currentBTFactor, vecXBest, fBes
 	rvecFWB = [ rvecF, fBest ];
 	[ fFit, vecGamma, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
 	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
-	vecZ = mycholdiv( matH, -currentBTFactor*vecGamma, true );
+	vecZ = mycholdiv( matH, -currentBTFactor*vecGamma, false );
 	vecDeltaGrad = -currentBTFactor * prm.gradStepCoeff * vecGradPerp;
 	vecDelta = vecDeltaGrad + matV*vecZ;
 	if (0)

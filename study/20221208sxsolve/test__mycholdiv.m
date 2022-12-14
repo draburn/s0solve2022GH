@@ -2,7 +2,7 @@ clear;
 mydefs;
 msg( __FILE__, __LINE__, "" );
 msg( __FILE__, __LINE__, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" );
-setprngstates(71271808);
+setprngstates();
 sizeX = 20;
 size1 = sizeX-1;
 size2 = 1;

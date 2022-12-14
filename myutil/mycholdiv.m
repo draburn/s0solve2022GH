@@ -1,5 +1,5 @@
 function vecX = mycholdiv( matA, vecB, requireWellBehavedSolution=true, prm=[] )
-	debugMode = mygetfield( prm, "debugMode", true );
+	debugMode = mygetfield( prm, "debugMode", false );
 	sz = size(vecB,1);
 	if ( debugMode )
 		assert( isrealarray(vecB,[sz,1]) );
@@ -50,7 +50,7 @@ function vecX = mycholdiv( matA, vecB, requireWellBehavedSolution=true, prm=[] )
 			validateExtrapolation = mygetfield( prm, "validateExtrapolation", true );
 			if ( validateExtrapolation )
 				% We could pretty much skip this if 0.0 == b, but, meh.
-				extrapTol = mygetfield( prm, "extrapTol", 1.0e-2 );
+				extrapTol = mygetfield( prm, "extrapTol", 0.1 );
 				matR3 = chol( matA + 3.0*epsExtrap*aScl*eye(sz,sz) );
 				vecX3 = matR3 \ ( matR3' \ vecB );
 				vecXAlt = ( (1.5*vecX1) - (0.5*vecX3) );
@@ -60,10 +60,17 @@ function vecX = mycholdiv( matA, vecB, requireWellBehavedSolution=true, prm=[] )
 				else
 					msgif( debugMode,__FILE__, __LINE__, sprintf( "  Extrapolation was inconsistent ( %0.3e ).", reldiff( vecX, vecXAlt ) ) );
 				endif
+				clear matR3;
+				clear vecX3;
+				clear vecXAlt;
 			else
 				msgif( debugMode,__FILE__, __LINE__, "  Accepting unvalidated solution." );
 				return;
 			endif
+			clear matR2;
+			clear vecX1;
+			clear vecX2;
+			clear vecX;
 		else
 			msgif( debugMode,__FILE__, __LINE__, sprintf( "  Cholesky factorization failed ( %d ).", cholFlag ) );
 		endif
@@ -71,6 +78,15 @@ function vecX = mycholdiv( matA, vecB, requireWellBehavedSolution=true, prm=[] )
 		clear cholFlag;
 	endif
 	if (requireWellBehavedSolution)
+		%dump__matA = matA
+		%dump__vecB = vecB
+		%dump__aDiagMin = aDiagMin
+		%dump__aScl = aScl
+		%dump__matR1 = matR1
+		%dump__matR2 = matR2
+		%dump__matR3 = matR3
+		%dump__vecX_vecXAlt = [ vecX, vecXAlt ]
+		%dump__rd = reldiff( vecX, vecXAlt )
 		error( "Failed to find a well-behaved solution." );
 	endif
 	%
@@ -89,3 +105,57 @@ function vecX = mycholdiv( matA, vecB, requireWellBehavedSolution=true, prm=[] )
 	return;
 return;
 endfunction
+
+%!test
+%!	setprngstates();
+%!	sizeX = 2 + ceil(20*rand());
+%!	size1 = sizeX-1;
+%!	size2 = 1;
+%!	foo = randn(size1,sizeX); matA1 = foo'*foo; clear foo;
+%!	foo = randn(size2,sizeX); matA2 = foo'*foo; clear foo;
+%!	vecX = randn(sizeX,1);
+%!	vecBMod = randn(sizeX,1);
+%!	epsA = 1.0e-6;
+%!	%
+%!	msg( __FILE__, __LINE__, "Strongly positive-definite test..." );
+%!	matA = matA1 + 1.0*matA2;
+%!	vecB = matA * vecX;
+%!	vecXCalc = mycholdiv( matA, vecB, true );
+%!	vecBCalc = matA * vecX;
+%!	assert( reldiff(vecB,vecBCalc) < eps^0.3 );
+%!	assert( reldiff(vecX,vecXCalc) < eps^0.3 );
+%!	%
+%!	msg( __FILE__, __LINE__, "Weakly positive-definite test..." );
+%!	matA = matA1 + epsA*matA2;
+%!	vecB = matA * vecX;
+%!	vecXCalc = mycholdiv( matA, vecB, true );
+%!	vecBCalc = matA * vecX;
+%!	assert( reldiff(vecB,vecBCalc) < eps^0.3 );
+%!	assert( reldiff(vecX,vecXCalc) < eps^0.1 );
+%!	%
+%!	msg( __FILE__, __LINE__, "Convergent positive-semi-definite test..." );
+%!	matA = matA1 + 0.0*matA2;
+%!	vecB = matA * vecX;
+%!	vecXCalc = mycholdiv( matA, vecB, true );
+%!	vecBCalc = matA * vecX;
+%!	assert( reldiff(vecB,vecBCalc) < eps^0.3 );
+%!	%
+%!	msg( __FILE__, __LINE__, "Non-convergent positive-semi-definite test with and without validation..." );
+%!	matA = matA1 + 0.0*matA2;
+%!	vecB = matA * vecX + 0.1*vecBMod;
+%!	vecXCalc = mycholdiv( matA, vecB, false );
+%!	prm = [];
+%!	prm.validateExtrapolation = false;
+%!	vecXCalc = mycholdiv( matA, vecB, false, prm );
+%!	%
+%!	msg( __FILE__, __LINE__, "Marginal 'has negative' test..." );
+%!	matA = matA1 - epsA*matA2;
+%!	vecB = matA * vecX;
+%!	vecXCalc = mycholdiv( matA, vecB, false );
+%!	%
+%!	msg( __FILE__, __LINE__, "Strongly 'has negative' test..." );
+%!	matA = -( matA1 + matA2 );
+%!	vecB = matA * vecX;
+%!	vecXCalc = mycholdiv( matA, vecB, false );
+%!	%
+%!	msg( __FILE__, __LINE__, "Note: Testing of requireWellBehavedSolution has not been implemented." );
