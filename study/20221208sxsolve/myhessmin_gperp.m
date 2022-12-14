@@ -150,6 +150,7 @@ function [ vecX, datOut ] = __solve( f, vecG, matH, xMax, prm )
 	if ( norm(vecXWayPt)*(1.0+sqrt(eps)) >= norm(vecXNewton)*(1.0-sqrt(eps)) )
 		msg( __FILE__, __LINE__, "WARNING: norm(vecXWayPt) >= norm(vecXNewton)." );
 	endif
+	assert( norm(vecXCauchy)*(1.0-sqrt(eps)) <= norm(vecXNewton)*(1.0+sqrt(eps)) ); % Require this one.
 	%
 	if ( isempty(xMax) )
 		msgif( debugMode, __FILE__, __LINE__, "Using full Newton step because xMax is empty." );
@@ -158,26 +159,46 @@ function [ vecX, datOut ] = __solve( f, vecG, matH, xMax, prm )
 		msgif( debugMode, __FILE__, __LINE__, "Using full Newton step because it is closer than xMax." );
 		vecX = vecXNewton;
 	elseif ( xMax < norm(vecXCauchy) )
-		msgif( debugMode, __FILE__, __LINE__, "Using first leg." );
+		msgif( debugMode, __FILE__, __LINE__, "Using first leg (0 -> Cauchy)." );
 		vecX = vecXCauchy * xMax / norm(vecXCauchy);
-	elseif ( xMax < norm(vecXWayPt) )
-		msgif( debugMode, __FILE__, __LINE__, "Using second leg." );
-		vecXStart = vecXCauchy;
-		vecDXLeg = vecXWayPt - vecXCauchy;
-		% a*s^2 + b*s + c = 0
-		a = sumsq( vecDXLeg );
-		b = 2.0 * ( vecXStart' * vecDXLeg );
-		c = sumsq( vecXStart ) - xMax^2;
-		discrim = (b^2) - (4.0*a*c);
-		assert( discrim >= 0.0 );
-		assert( a > 0.0 );
-		assert( c <= 0.0 );
-		s = (-b+sqrt(discrim))/(2.0*a);
-		vecX = vecXStart + s*vecDXLeg;
+	elseif (  norm(vecXCauchy) < norm(vecXWayPt)  &&  norm(vecXWayPt) < norm(vecXNewton)  )
+		% This is my assumption for the typical case.
+		if ( xMax < norm(vecXWayPt) )
+			msgif( debugMode, __FILE__, __LINE__, "Using second leg (Cauchy -> way-point) ." );
+			vecXStart = vecXCauchy;
+			vecDXLeg = vecXWayPt - vecXCauchy;
+			% a*s^2 + b*s + c = 0
+			a = sumsq( vecDXLeg );
+			b = 2.0 * ( vecXStart' * vecDXLeg );
+			c = sumsq( vecXStart ) - xMax^2;
+			discrim = (b^2) - (4.0*a*c);
+			assert( discrim >= 0.0 );
+			assert( a > 0.0 );
+			assert( c <= 0.0 );
+			s = (-b+sqrt(discrim))/(2.0*a);
+			vecX = vecXStart + s*vecDXLeg;
+		else
+			msgif( debugMode, __FILE__, __LINE__, "Using third leg (way-point -> Newton)." );
+			vecXStart = vecXWayPt;
+			vecDXLeg = vecXNewton - vecXWayPt;
+			% a*s^2 + b*s + c = 0
+			a = sumsq( vecDXLeg );
+			b = 2.0 * ( vecXStart' * vecDXLeg );
+			c = sumsq( vecXStart ) - xMax^2;
+			discrim = (b^2) - (4.0*a*c);
+			assert( discrim >= 0.0 );
+			assert( a > 0.0 );
+			assert( c <= 0.0 );
+			s = (-b+sqrt(discrim))/(2.0*a);
+			vecX = vecXStart + s*vecDXLeg;
+		endif
 	else
-		msgif( debugMode, __FILE__, __LINE__, "Using third leg." );
-		vecXStart = vecXWayPt;
-		vecDXLeg = vecXNewton - vecXWayPt;
+		% The expected ordering does not hold.
+		% I'm not sure if this scenario should be possible.
+		% Ignore the way pt.
+		msgif( debugMode, __FILE__, __LINE__, "Using original leg (Cauchy -> Newton)." );
+		vecXStart = vecXCauchy;
+		vecDXLeg = vecXNewton - vecXCauchy;
 		% a*s^2 + b*s + c = 0
 		a = sumsq( vecDXLeg );
 		b = 2.0 * ( vecXStart' * vecDXLeg );
