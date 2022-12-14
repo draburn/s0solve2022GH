@@ -1,7 +1,8 @@
-function [ vecX, datOut ] = myhessmin( f, vecG, matH, matD=[], dMax=[], prm=[] )
+function [ vecX, datOut ] = myhessmin_gperp( f, vecG, matH, matD=[], dMax=[], prm=[] )
 	datOut = [];
 	sz = size(vecG,1);
 	if ( 1 )
+		assert( 2 <= sz );
 		assert( isrealscalar(f) );
 		assert( 0.0 < f );
 		assert( isrealarray(vecG,[sz,1]) );
@@ -112,41 +113,82 @@ function [ vecX, datOut ] = __solve( f, vecG, matH, xMax, prm )
 		vecXNewton = matR \ ( matR' \ (-vecG) );
 		msgif( debugMode,  __FILE__, __LINE__, "Accepted perturbation form." );
 		gthg = vecG'*matH*vecG;
-		clear matH;
 	endif
 	%
 	assert( gthg > 0.0 );
 	vecXCauchy = vecG * (-gSq/gthg);
-	vecDXLeg = vecXNewton - vecXCauchy;
-	assert( 0.0 < norm(vecXCauchy) );
-	assert( norm(vecXCauchy)*(1.0-sqrt(eps)) <= norm(vecXNewton)*(1.0+sqrt(eps)) );
-	assert( (vecDXLeg'*vecXCauchy) >= -sqrt(eps)*( sumsq(vecDXLeg) + sumsq(vecXCauchy) ) );
+	%
+	% Now we get to the "_gperp" aspect:
+	%  the last component is considered "special" compared to the rest of the components.
+	% In particular, the last component may be the local gradient direction perpendicular to the rest of the space,
+	%  the corresponding elements of the Hessian having a larger uncertainty and the last diagonal element
+	%  being just a guess.
+	% We need to make sure things behave well whether that guess is too large or too small.
+	% We consider two "steepest descent" directions:
+	%  one in the actual (scaled) gradient descent direction, which includes the perpendicular component,
+	%  and one which is fully in the rest of the space.
+	% I'll use "wayPt" to refer to the min in the basis { perpendicular gradient direction, steepest-descent in rest of space }.
+	matV = [ vecG(1:sz-1), zeros(sz-1,1); 0.0, vecG(sz) ];
+	assert( norm(matV(:,1)) > 0.0 );
+	matV(:,1) /= norm(matV(:,1));
+	assert( norm(matV(:,2)) > 0.0 );
+	matV(:,2) /= norm(matV(:,2));
+	% Vectors are already clearly orthogonal.
+	minivecG = matV'*vecG;
+	minimatH = matV'*matH*matV;
+	minimatR = chol(minimatH); % Validate pos-def.
+	minivecXN = minimatR \ ( minimatR' \ (-minivecG) );
+	vecXWayPt = matV * minivecXN;
+	% And, we have 3 segments: 0 -> Cauchy -> wayPt -> Newton.
+	% I'm not totally sure they are well ordered, but, let's check...
+	if ( 0.0 >= norm(vecXCauchy) )
+		msg( __FILE__, __LINE__, "WARNING: 0.0 >= norm(vecXCauchy)." );
+	endif
+	if ( norm(vecXCauchy)*(1.0+sqrt(eps)) >= norm(vecXWayPt)*(1.0-sqrt(eps)) )
+		msg( __FILE__, __LINE__, "WARNING: norm(vecXCauchy) >= norm(vecXWayPt)." );
+	endif
+	if ( norm(vecXWayPt)*(1.0+sqrt(eps)) >= norm(vecXNewton)*(1.0-sqrt(eps)) )
+		msg( __FILE__, __LINE__, "WARNING: norm(vecXWayPt) >= norm(vecXNewton)." );
+	endif
 	%
 	if ( isempty(xMax) )
+		msgif( debugMode, __FILE__, __LINE__, "Using full Newton step because xMax is empty." );
 		vecX = vecXNewton;
-		msgif( debugMode, __FILE__, __LINE__, "Accepted full Newton step because xMax is empty." );
-		return;
+	elseif ( xMax > norm(vecXNewton) )
+		msgif( debugMode, __FILE__, __LINE__, "Using full Newton step because it is closer than xMax." );
+		vecX = vecXNewton;
 	elseif ( xMax < norm(vecXCauchy) )
 		msgif( debugMode, __FILE__, __LINE__, "Using first leg." );
 		vecX = vecXCauchy * xMax / norm(vecXCauchy);
-		return;
-	elseif ( xMax > norm(vecXNewton) )
-		vecX = vecXNewton;
-		msgif( debugMode, __FILE__, __LINE__, "Accepted full Newton step because it is closer than xMax." );
-		return;
+	elseif ( xMax < norm(vecXWayPt) )
+		msgif( debugMode, __FILE__, __LINE__, "Using second leg." );
+		vecXStart = vecXCauchy;
+		vecDXLeg = vecXWayPt - vecXCauchy;
+		% a*s^2 + b*s + c = 0
+		a = sumsq( vecDXLeg );
+		b = 2.0 * ( vecXStart' * vecDXLeg );
+		c = sumsq( vecXStart ) - xMax^2;
+		discrim = (b^2) - (4.0*a*c);
+		assert( discrim >= 0.0 );
+		assert( a > 0.0 );
+		assert( c <= 0.0 );
+		s = (-b+sqrt(discrim))/(2.0*a);
+		vecX = vecXStart + s*vecDXLeg;
+	else
+		msgif( debugMode, __FILE__, __LINE__, "Using third leg." );
+		vecXStart = vecXWayPt;
+		vecDXLeg = vecXNewton - vecXWayPt;
+		% a*s^2 + b*s + c = 0
+		a = sumsq( vecDXLeg );
+		b = 2.0 * ( vecXStart' * vecDXLeg );
+		c = sumsq( vecXStart ) - xMax^2;
+		discrim = (b^2) - (4.0*a*c);
+		assert( discrim >= 0.0 );
+		assert( a > 0.0 );
+		assert( c <= 0.0 );
+		s = (-b+sqrt(discrim))/(2.0*a);
+		vecX = vecXStart + s*vecDXLeg;
 	endif
-	%
-	msgif( debugMode, __FILE__, __LINE__, "Using second leg." );
-	% a*s^2 + b*s + c = 0
-	a = sumsq( vecDXLeg );
-	b = 2.0 * ( vecXCauchy'*vecDXLeg);
-	c = sumsq( vecXCauchy ) - xMax^2;
-	discrim = (b^2) - (4.0*a*c);
-	assert( discrim >= 0.0 );
-	assert( a > 0.0 );
-	assert( c <= 0.0 );
-	s = (-b+sqrt(discrim))/(2.0*a);
-	vecX = vecXCauchy + s*vecDXLeg;
 return;
 endfunction
 

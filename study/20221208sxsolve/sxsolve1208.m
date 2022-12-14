@@ -131,7 +131,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 			%[ vecDelta, datOut_getStep ] = __getStep_crude( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 			%[ vecDelta, datOut_getStep ] = __getStep_simple( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 			[ vecDelta, datOut_getStep ] = __getStep_simple2( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
-			%vecDelta = __getStep( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			%[ vecDelta, datOut_getStep ] = __getStep( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 			sizeKMostRecent = datOut_getStep.sizeK;
 		endif
 		%
@@ -454,85 +454,67 @@ function [ vecDelta, datOut ] = __getStep_simple( currentBTFactor, vecXBest, fBe
 return;
 endfunction
 function [ vecDelta, datOut ] = __getStep( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
+	datOut = [];
+	%
 	% Generate fit.
+	sizeX = size(vecXBest,1);
 	matD = matX - vecXBest;
 	matV = utorthdrop( matD, prm.dropThresh );
+	sizeK = size(matV,2);
+	assert( reldiff(matV'*matV,eye(size(matV,2))) < sqrt(eps) );
+	assert( 1 <= sizeK );
+	assert( sizeK <= sizeX );
+	datOut.sizeK = sizeK;
 	matVTDWB = matV' * [ matD, zeros(size(vecXBest)) ];
 	matVTGWB = matV' * [ matG, vecGBest ];
 	rvecFWB = [ rvecF, fBest ];
 	[ fFit, vecGamma, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
-	
-	error( "Perhaps should do step without adding gradPerp first?" );
-	
-	
-	% HAXOR
-	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
-	vecDeltaNewton = matV * mycholdiv( matH, -currentBTFactor*vecGamma );
-	vecDeltaGrad = -currentBTFactor * prm.gradStepCoeff * vecGradPerp;
-	vecDelta = vecDeltaNewton + vecDeltaGrad;
-	%msg( __FILE__, __LINE__, "..." );
-	%matG
-	%vecG_model = matV * ( vecGamma + matH * (matV'*matD) )
-	if ( false && size(matV,2) >= size(matV,1)-1 )
-		msg( __FILE__, __LINE__, "..." );
-		matHFS = matV * matH * (matV');
-		resH = sqrt( ...
-		  sum(sum((matHFS-prm.matHSecret).^2)) ...
-		 / ( sum(sum(matHFS.^2)) + sum(sum(prm.matHSecret.^2)) ) )
-		matH_fullspace = matV * matH * (matV')
-		prm.matHSecret
-	endif
-	
 	%
+	vecDScale = max( abs(matVTDWB), [], 2 );
+	matB = diag( 1.0 ./ ( vecDScale + prm.epsB * max(vecDScale) ) );
+	bMax = currentBTFactor * prm.trDCoeff;
 	%
-	% (Possibly) add one more vector to V: the gradient direction from the launch point.
-	% This version of the code (2022-12-09) assumes the launch point is always the best point,
-	%  as well as the "anchor" for the subspace basis.
-	% But, there's an additional assumption here: we *could* do some fit over our records,
-	%  but, instead, we'll simply the gradient calculated at this point.
-	vecT = vecGBest;
-	vecTPerp = vecT - ( matV * ( matV' * vecT ) );
-	if ( norm(vecTPerp) > prm.dropThresh * norm(vecT) )
-		matY = matVTDWB(:,1:end-1);
-		vecVNew = vecTPerp / norm(vecTPerp);
+	% Examine part of gradient that is outside of our fit space.
+	vecGPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
+	if ( norm(vecGPerp) > prm.dropThresh * norm(vecGBest) )
+		% Grab some info before we modify anything.
+		h_rmsdiag = sqrt(sum(diag(matH).^2)/sizeK);
 		%
+		% Expand matV...
+		vecVNew = vecGPerp / norm(vecGPerp);
 		matV = [ matV, vecVNew ];
+		%
+		% Expand vecGamma...
 		vecGamma = [ vecGamma; vecVNew'*vecGBest ];
+		%
+		% Expand non-diagonal part of matH...
+		matY = matVTDWB(:,1:end-1);
 		vecGommo = matG'*vecVNew - vecGamma(end);
 		% matH(+) = [ matH, vecEta; vecEta, 0.0 ];
 		% matY' * vecEta = vecGommo
 		%  => vecEta = (matY*(matY')) \ matY * vecGommo.
-		% TODO: We could do this inexactly instead.
+		% We could do this inexactly instead.
 		vecEta = mycholdiv( matY * (matY'), matY * vecGommo );
 		matH = [ matH, vecEta; vecEta', 0.0 ];
-		
-		%msg( __FILE__, __LINE__, "..." );
-		%vecG_model = matV * ( vecGamma + matH * (matV'*matD) )
-		if ( false && size(matV,2) >= size(matV,1)-1 )
-			msg( __FILE__, __LINE__, "..." );
-			matHFS = matV * matH * (matV');
-			resH = sqrt( ...
-			  sum(sum((matHFS-prm.matHSecret).^2)) ...
-			 / ( sum(sum(matHFS.^2)) + sum(sum(prm.matHSecret.^2)) ) )
-			matH_fullspace = matV * matH * (matV')
-			prm.matHSecret
-		endif
+		%
+		% Set expanded diagonal of matH...
+		% We have no information about the last element of matH.
+		% But, we can at least take a few guesses...
+		h_eta = sum(abs(vecEta)); % Enough to make it pos-semi-def.
+		h_f = vecGPerp'*vecGPerp / (2.0*fBest); % Enough so that it doesn't go negative on its own.
+		matH(end,end) = max([ h_rmsdiag, h_eta, h_f ]);
+		%
+		% Expand trust region...
+		vecDScale = [ vecDScale; prm.gradStepCoeff / prm.trDCoeff ];
+		matB = diag( 1.0 ./ ( vecDScale + prm.epsB * max(vecDScale) ) );
+		bMax = currentBTFactor * prm.trDCoeff;
+		%
+		% And, go!
+		vecZ = myhessmin_gperp( max([fFit, fBest]), vecGamma, matH, matB, bMax );
+		vecDelta = matV * vecZ;
 	else
-		% Too small. Can't add it.
+		vecZ = myhessmin( max([fFit, fBest]), vecGamma, matH, matB, bMax );
+		vecDelta = matV * vecZ;
 	endif
-	return
-	%
-	% This code is crude.
-	vecDeltaNewton = matV * mycholdiv( matH, -currentBTFactor*vecGamma );
-	%vecDeltaGrad = -currentBTFactor * prm.gradStepCoeff * vecGradPerp;
-	%vecDelta = vecDeltaNewton + vecDeltaGrad;
-	
-	
-	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
-	vecDeltaNewton = matV * mycholdiv( matH, -currentBTFactor*vecGamma );
-	%vecDeltaGrad = -currentBTFactor * prm.gradStepCoeff * vecGradPerp;
-	%vecDelta = vecDeltaNewton + vecDeltaGrad;
-	datOut = [];
-	%
 return;
 endfunction
