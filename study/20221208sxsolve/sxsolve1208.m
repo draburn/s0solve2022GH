@@ -324,7 +324,7 @@ function [ vecDelta, datOut ] = __getStep_crude( currentBTFactor, vecXBest, fBes
 return;
 endfunction
 function [ vecDelta, datOut ] = __getStep_simple( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
-	msg( __FILE__, __LINE__, "**********************" );
+	%%%msg( __FILE__, __LINE__, "**********************" );
 	datOut = [];
 	% Generate fit.
 	matD = matX - vecXBest;
@@ -354,7 +354,7 @@ function [ vecDelta, datOut ] = __getStep_simple( currentBTFactor, vecXBest, fBe
 	vecZCauchy = ( -(vecZSD'*vecGamma) / zthz) * vecZSD;
 	%
 	vecZNewton = mycholdiv( matH, -vecGamma, false );
-	[ norm(matB*vecZCauchy), trBeta, norm(matB*vecZNewton), (matB*vecZNewton)'*(matB*vecZCauchy) ]
+	%%%[ norm(matB*vecZCauchy), trBeta, norm(matB*vecZNewton), (matB*vecZNewton)'*(matB*vecZCauchy) ]
 	assert( norm(matB*vecZNewton) >= norm(matB*vecZCauchy)*(1.0-100.0*eps) );
 	%
 	if ( trBeta <= norm(matB*vecZCauchy) )
