@@ -130,8 +130,8 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		else
 			%[ vecDelta, datOut_getStep ] = __getStep_crude( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 			%[ vecDelta, datOut_getStep ] = __getStep_simple( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
-			[ vecDelta, datOut_getStep ] = __getStep_simple2( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
-			%[ vecDelta, datOut_getStep ] = __getStep( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			%[ vecDelta, datOut_getStep ] = __getStep_simple2( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			[ vecDelta, datOut_getStep ] = __getStep( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 			sizeKMostRecent = datOut_getStep.sizeK;
 		endif
 		%
@@ -281,9 +281,11 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	prm.gradStepCoeff = 0.01;
 	%%%prm.dropThresh = eps^0.7; % Too strict!
 	prm.dropThresh = eps^0.5;
+	%%%prm.dropThresh = 1.0e-4;
 	%prm.epsFNegativityCoeff = 0.01;
 	prm.epsB = eps^0.5;
 	prm.trDCoeff = 3.0;
+	%%%prm.trDCoeff = 1e8;
 	%
 	% Step assessment and BT/dynamic TR params.
 	prm.horribleFCoeff = 2.0;
@@ -464,6 +466,16 @@ function [ vecDelta, datOut ] = __getStep( currentBTFactor, vecXBest, fBest, vec
 	assert( reldiff(matV'*matV,eye(size(matV,2))) < sqrt(eps) );
 	assert( 1 <= sizeK );
 	assert( sizeK <= sizeX );
+	if ( reldiff(matV'*matV,eye(size(matV,2))) > sqrt(eps) )
+		echo__matD = matD
+		echo__matV = matV
+		echo__rd = reldiff(matV'*matV,eye(size(matV,2)))
+		matV = utorthdrop_debug( matD, prm.dropThresh );
+		echo__matV = matV
+		echo__matVTV = matV'*matV
+		echo__rd = reldiff(matV'*matV,eye(size(matV,2)))
+		error( "HALT!" );
+	endif
 	datOut.sizeK = sizeK;
 	matVTDWB = matV' * [ matD, zeros(size(vecXBest)) ];
 	matVTGWB = matV' * [ matG, vecGBest ];
