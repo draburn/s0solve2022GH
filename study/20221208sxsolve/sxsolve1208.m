@@ -54,7 +54,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		  "fBest", ...
 		  "fB fall", ...
 		  "|gBest|", ...
-		  "|gB| fall", ...
+		  "|gB|fall", ...
 		  "fevalCount" ) );
 		msg( __FILE__, __LINE__, sprintf( ...
 		  "  %8.2e, %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %9.2e;  %d", ...
@@ -126,7 +126,8 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 			% Among other possibilities.
 		else
 			%vecDelta = __getStep_crude( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
-			vecDelta = __getStep_simple( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			%vecDelta = __getStep_simple( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			vecDelta = __getStep_simple2( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 			%vecDelta = __getStep( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 		endif
 		%
@@ -258,7 +259,10 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	% Stopping criteria - pre-step.
 	prm.fTol = eps;
 	prm.gTol = eps;
+	
 	prm.stepLimit = 999;
+	%%%prm.stepLimit = 2;
+	
 	prm.iterLimit = 999;
 	prm.fevalLimit = -1;
 	prm.timeLimit = 10.0;
@@ -321,6 +325,30 @@ function [ vecDelta, datOut ] = __getStep_crude( currentBTFactor, vecXBest, fBes
 		[ norm(vecZ), norm(matB*vecZ), norm(vecDelta) ]
 	endif
 	datOut = [];
+return;
+endfunction
+function [ vecDelta, datOut ] = __getStep_simple2( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
+	datOut = [];
+	%
+	% Generate fit.
+	matD = matX - vecXBest;
+	matV = utorthdrop( matD, prm.dropThresh );
+	matVTDWB = matV' * [ matD, zeros(size(vecXBest)) ];
+	matVTGWB = matV' * [ matG, vecGBest ];
+	rvecFWB = [ rvecF, fBest ];
+	[ fFit, vecGamma, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
+	%
+	%
+	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
+	vecDeltaGradPerp = -currentBTFactor * prm.gradStepCoeff * vecGradPerp;
+	%
+	%
+	vecDScale = max( abs(matVTDWB), [], 2 );
+	matB = diag( 1.0 ./ ( vecDScale + prm.epsB * max(vecDScale) ) );
+	bMax = currentBTFactor * prm.trDCoeff;
+	vecZInSpace = myhessmin( fFit, vecGamma, matH, matB, bMax );
+	%
+	vecDelta = vecDeltaGradPerp + matV * vecZInSpace;
 return;
 endfunction
 function [ vecDelta, datOut ] = __getStep_simple( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )

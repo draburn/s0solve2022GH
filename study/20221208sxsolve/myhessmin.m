@@ -30,6 +30,7 @@ endfunction
 function [ vecX, datOut ] = __solve( f, vecG, matH, xMax, prm )
 	datOut = [];
 	sz = size(vecG,1);
+	debugMode = mygetfield( prm, "debugMode", true );
 	%
 	fMin = mygetfield( prm, "fMin", [] );
 	if ( ~isempty(fMin) )
@@ -73,7 +74,7 @@ function [ vecX, datOut ] = __solve( f, vecG, matH, xMax, prm )
 		if ( 0 == cholFlag )
 		if ( min(diag(matR)) > cholTol*sqrt(hScl) )
 			vecXNewton = matR \ ( matR' \ (-vecG) );
-			msg( __FILE__, __LINE__, "Accepted pos-def form." );
+			msgif( debugMode, __FILE__, __LINE__, "Accepted pos-def form." );
 		endif
 		endif
 	endif
@@ -92,9 +93,9 @@ function [ vecX, datOut ] = __solve( f, vecG, matH, xMax, prm )
 			vecXNAlt = 2.0*vecXN1-vecXN2;
 			if ( reldiff(vecXNAlt,vecXNewton) > 0.1 )
 				vecXNewton = [];
-				msg( __FILE__, __LINE__, "Rejected extrapolation form." );
+				msgif( debugMode, __FILE__, __LINE__, "Rejected extrapolation form." );
 			else
-				msg( __FILE__, __LINE__, "Accepted extrapolation form." );
+				msgif( debugMode, __FILE__, __LINE__, "Accepted extrapolation form." );
 			endif
 		endif
 	endif
@@ -109,7 +110,7 @@ function [ vecX, datOut ] = __solve( f, vecG, matH, xMax, prm )
 		matH += diag( vecHDiagMod - vecHDiag );
 		matR = chol( matH );
 		vecXNewton = matR \ ( matR' \ (-vecG) );
-		msg( __FILE__, __LINE__, "Accepted perturbation form." );
+		msgif( debugMode,  __FILE__, __LINE__, "Accepted perturbation form." );
 		gthg = vecG'*matH*vecG;
 		clear matH;
 	endif
@@ -123,16 +124,19 @@ function [ vecX, datOut ] = __solve( f, vecG, matH, xMax, prm )
 	%
 	if ( isempty(xMax) )
 		vecX = vecXNewton;
+		msgif( debugMode, __FILE__, __LINE__, "Accepted full Newton step because xMax is empty." );
 		return;
 	elseif ( xMax < norm(vecXCauchy) )
+		msgif( debugMode, __FILE__, __LINE__, "Using first leg." );
 		vecX = vecXCauchy * xMax / norm(vecXCauchy);
 		return;
 	elseif ( xMax > norm(vecXNewton) )
 		vecX = vecXNewton;
+		msgif( debugMode, __FILE__, __LINE__, "Accepted full Newton step because it is closer than xMax." );
 		return;
 	endif
 	%
-	msg( __FILE__, __LINE__, "Using second leg." );
+	msgif( debugMode, __FILE__, __LINE__, "Using second leg." );
 	% a*s^2 + b*s + c = 0
 	a = sumsq( vecDXLeg );
 	b = 2.0 * ( vecXCauchy'*vecDXLeg);
