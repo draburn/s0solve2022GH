@@ -40,12 +40,14 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 	vecXBestPrev = [];
 	fBestPrev = [];
 	vecGBestPrev = [];
+	sizeKMostRecent = 0;
 	%
 	% Init - Progress reporting.
 	if ( prm.progressReportInterval >= 0.0 )
 		msg( __FILE__, __LINE__, sprintf( ...
-		  "  %8s, %3s / %3s / %3s;  %8s, %8s;  %8s,  %8s;  %8s, %9s;  %s", ...
+		  "  %8s, %3s / %3s / %3s / %3s;  %8s, %8s;  %8s,  %8s;  %8s, %9s;  %s", ...
 		  "time", ...
+		  "szk", ...
 		  "stp", ...
 		  "szX", ...
 		  "itr", ...
@@ -57,8 +59,9 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		  "|gB|fall", ...
 		  "fevalCount" ) );
 		msg( __FILE__, __LINE__, sprintf( ...
-		  "  %8.2e, %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %9.2e;  %d", ...
+		  "  %8.2e, %3d / %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %9.2e;  %d", ...
 		  time()-startTime, ...
+		  sizeKMostRecent, ...
 		  stepCount, ...
 		  size(matX,2), ...
 		  iterCount, ...
@@ -125,10 +128,11 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 			vecDelta = -currentBTFactor * prm.gradStepCoeff * vecGBest;
 			% Among other possibilities.
 		else
-			%vecDelta = __getStep_crude( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
-			%vecDelta = __getStep_simple( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
-			vecDelta = __getStep_simple2( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			%[ vecDelta, datOut_getStep ] = __getStep_crude( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			%[ vecDelta, datOut_getStep ] = __getStep_simple( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			[ vecDelta, datOut_getStep ] = __getStep_simple2( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 			%vecDelta = __getStep( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			sizeKMostRecent = datOut_getStep.sizeK;
 		endif
 		%
 		%
@@ -210,8 +214,9 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 				stepBeta = 1.0;
 			endif
 			msg( __FILE__, __LINE__, sprintf( ...
-			  "  %8.2e, %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %9.2e;  %d", ...
+			  "  %8.2e, %3d / %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %9.2e;  %d", ...
 			  time()-startTime, ...
+			  sizeKMostRecent, ...
 			  stepCount, ...
 			  size(matX,2), ...
 			  iterCount, ...
@@ -229,8 +234,9 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 	%
 	if ( prm.verbLev >= VERBLEV__MAIN )
 		msg( __FILE__, __LINE__, sprintf( ...
-		  "  %8.2e, %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %9.2e;  %d", ...
+		  "  %8.2e, %3d / %3d / %3d / %3d;  %8.2e, %8.2e;  %8.2e,  %8.2e;  %8.2e, %9.2e;  %d", ...
 		  time()-startTime, ...
+		  sizeKMostRecent, ...
 		  stepCount, ...
 		  size(matX,2), ...
 		  iterCount, ...
@@ -273,7 +279,8 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	% Step generation params.
 	prm.smallFallTrgt = 0.01;
 	prm.gradStepCoeff = 0.01;
-	prm.dropThresh = eps^0.7;
+	%%%prm.dropThresh = eps^0.7; % Too strict!
+	prm.dropThresh = eps^0.5;
 	%prm.epsFNegativityCoeff = 0.01;
 	prm.epsB = eps^0.5;
 	prm.trDCoeff = 3.0;
@@ -305,8 +312,10 @@ endfunction
 
 
 function [ vecDelta, datOut ] = __getStep_crude( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
+	datOut = [];
 	matD = matX - vecXBest;
 	matV = utorthdrop( matD, prm.dropThresh );
+	datOut.sizeK = size(matV,2);
 	matVTDWB = matV' * [ matD, zeros(size(vecXBest)) ];
 	matVTGWB = matV' * [ matG, vecGBest ];
 	rvecFWB = [ rvecF, fBest ];
@@ -321,7 +330,6 @@ function [ vecDelta, datOut ] = __getStep_crude( currentBTFactor, vecXBest, fBes
 		matB = diag(vecB);
 		[ norm(vecZ), norm(matB*vecZ), norm(vecDelta) ]
 	endif
-	datOut = [];
 return;
 endfunction
 function [ vecDelta, datOut ] = __getStep_simple2( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
@@ -330,6 +338,15 @@ function [ vecDelta, datOut ] = __getStep_simple2( currentBTFactor, vecXBest, fB
 	% Generate fit.
 	matD = matX - vecXBest;
 	matV = utorthdrop( matD, prm.dropThresh );
+	if ( reldiff(matV'*matV,eye(size(matV,2))) > sqrt(eps) )
+		matV = utorthdrop_debug( matD, prm.dropThresh );
+		echo__matD = matD
+		echo__matV = matV
+		echo__matVTV = matV'*matV
+		error( "HALT!" );
+	endif
+	assert( reldiff(matV'*matV,eye(size(matV,2))) < sqrt(eps) );
+	datOut.sizeK = size(matV,2);
 	matVTDWB = matV' * [ matD, zeros(size(vecXBest)) ];
 	matVTGWB = matV' * [ matG, vecGBest ];
 	rvecFWB = [ rvecF, fBest ];
@@ -364,6 +381,15 @@ function [ vecDelta, datOut ] = __getStep_simple( currentBTFactor, vecXBest, fBe
 	% Generate fit.
 	matD = matX - vecXBest;
 	matV = utorthdrop( matD, prm.dropThresh );
+	if ( reldiff(matV'*matV,eye(size(matV,2))) > sqrt(eps) )
+		matV = utorthdrop_debug( matD, prm.dropThresh );
+		echo__matD = matD
+		echo__matV = matV
+		echo__matVTV = matV'*matV
+		error( "HALT!" );
+	endif
+	assert( reldiff(matV'*matV,eye(size(matV,2))) < sqrt(eps) );
+	datOut.sizeK = size(matV,2);
 	matVTDWB = matV' * [ matD, zeros(size(vecXBest)) ];
 	matVTGWB = matV' * [ matG, vecGBest ];
 	rvecFWB = [ rvecF, fBest ];

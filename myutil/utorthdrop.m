@@ -2,6 +2,7 @@
 %   "ut" mean "upper-triangular".
 
 function [ matV, rvecDrop ] = utorthdrop( matV, dropThresh = 1.0e-4 )
+	sizeX = size(matV,1);
 	sizeV = size(matV,2);
 	rvecDrop = logical(zeros(1,sizeV));
 	matV ./= ( eps + sqrt(sum(matV.^2,1)) );
@@ -27,9 +28,17 @@ function [ matV, rvecDrop ] = utorthdrop( matV, dropThresh = 1.0e-4 )
 				matV(:,k) = 0.0;
 			else
 				matV(:,k) /= vNorm;
+				if ( sum(double(~rvecDrop(1:k))) == sizeX )
+					rvecDrop(k+1:end) = true;
+					matV(:,k+1:end) = 0.0;
+					break;
+					% This is not merely for short-circuiting;
+					% if dropThresh is too strict, this will keep us safe.
+				endif
 			endif
 		endif		
 	endfor
+	assert( sum(double(~rvecDrop)) <= sizeX );
 	matV = matV(:,~rvecDrop);
 return;
 end
