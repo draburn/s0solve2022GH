@@ -394,7 +394,7 @@ function [ vecDelta, datOut ] = __getStep_simple( currentBTFactor, vecXBest, fBe
 	%vecZNewton = mycholdiv( matH, -vecGamma, false, prm_mycholdiv );
 	%
 	%%%[ norm(matB*vecZCauchy), trBeta, norm(matB*vecZNewton), (matB*vecZNewton)'*(matB*vecZCauchy) ]
-	assert( norm(matB*vecZNewton) >= norm(matB*vecZCauchy)*(1.0-100.0*eps) );
+	%assert( norm(matB*vecZNewton) >= norm(matB*vecZCauchy)*(1.0-100.0*eps) ); % Not true if matH is perturbed to be pos-def.
 	%
 	if ( trBeta <= norm(matB*vecZCauchy) )
 		%msg( __FILE__, __LINE__, "Taking sub-Cauchy step." );
