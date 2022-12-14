@@ -1,5 +1,5 @@
 function vecX = mycholdiv( matA, vecB, requireWellBehavedSolution=true, prm=[] )
-	debugMode = mygetfield( prm, "debugMode", false );
+	debugMode = mygetfield( prm, "debugMode", true );
 	sz = size(vecB,1);
 	if ( debugMode )
 		assert( isrealarray(vecB,[sz,1]) );
@@ -23,21 +23,22 @@ function vecX = mycholdiv( matA, vecB, requireWellBehavedSolution=true, prm=[] )
 		msgif( debugMode, __FILE__, __LINE__, "Attempting 'clearly posititive-definite' solution..." );
 		[ matR, cholFlag ] = chol( matA );
 		if ( 0 == cholFlag )
-			if ( min(diag(matR)) > 1.0e-4*sqrt(aScl) ) % We'll be rather strict here.
+			cholTol = mygetfield( prm, "cholTol", 1.0e-4 );
+			if ( min(diag(matR)) > cholTol*sqrt(aScl) ) % We'll be rather strict here.
 				vecX = matR \ ( matR' \ vecB );
-				msgif( debugMode,__FILE__, __LINE__, "  Accepting 'clearly posititive-definite' solution." );
+				msgif( debugMode,__FILE__, __LINE__, sprintf( "  Accepting solution ( %0.3e vs %0.3e ).", min(diag(matR)), cholTol*sqrt(aScl) ) );
 				return;
 			endif
-			msgif( debugMode,__FILE__, __LINE__, "  Cholesky factorization was unreliable." );
+			msgif( debugMode,__FILE__, __LINE__, sprintf( "  Cholesky factorization was unreliable ( %0.3e vs %0.3e ).", min(diag(matR)), cholTol*sqrt(aScl) ) );
 		else
-			msgif( debugMode,__FILE__, __LINE__, "  Cholesky factorization failed." );
+			msgif( debugMode,__FILE__, __LINE__, sprintf( "  Cholesky factorization failed ( %d ).", cholFlag ) );
 		endif
 		clear matR;
 		clear cholFlag;
 	endif
 	%
-	epsExtrap = 1.0e-8;
 	if ( aDiagMin >= 0.0 )
+		epsExtrap = mygetfield( prm, "epsExtrap", 1.0e-12 );
 		msgif( debugMode,__FILE__, __LINE__, "Attempting 'extrapolated posititive-semi-definite' solution..." );
 		[ matR1, cholFlag ] = chol( matA + epsExtrap*aScl*eye(sz,sz) );
 		if ( 0 == cholFlag )
@@ -49,20 +50,22 @@ function vecX = mycholdiv( matA, vecB, requireWellBehavedSolution=true, prm=[] )
 			validateExtrapolation = mygetfield( prm, "validateExtrapolation", true );
 			if ( validateExtrapolation )
 				% We could pretty much skip this if 0.0 == b, but, meh.
+				extrapTol = mygetfield( prm, "extrapTol", 1.0e-2 );
 				matR3 = chol( matA + 3.0*epsExtrap*aScl*eye(sz,sz) );
 				vecX3 = matR3 \ ( matR3' \ vecB );
 				vecXAlt = ( (1.5*vecX1) - (0.5*vecX3) );
-				if ( reldiff( vecX, vecXAlt ) <= 1.0e-2 ) % We'll be very loose here.
-					msgif( debugMode,__FILE__, __LINE__, "  Accepting validated 'extrapolated posititive-semi-definite' solution." );
+				if ( reldiff( vecX, vecXAlt ) <= extrapTol ) % We'll be very loose here.
+					msgif( debugMode,__FILE__, __LINE__, sprintf( "  Accepting validated solution ( %0.3e ).", reldiff( vecX, vecXAlt ) ) );
 					return;
+				else
+					msgif( debugMode,__FILE__, __LINE__, sprintf( "  Extrapolation was inconsistent ( %0.3e ).", reldiff( vecX, vecXAlt ) ) );
 				endif
-				msgif( debugMode,__FILE__, __LINE__, "  Extrapolation was inconsistent." );
 			else
-				msgif( debugMode,__FILE__, __LINE__, "  Accepting unvalidated 'extrapolated posititive-semi-definite' solution." );
+				msgif( debugMode,__FILE__, __LINE__, "  Accepting unvalidated solution." );
 				return;
 			endif
 		else
-			msgif( debugMode,__FILE__, __LINE__, "  Cholesky factorization failed." );
+			msgif( debugMode,__FILE__, __LINE__, sprintf( "  Cholesky factorization failed ( %d ).", cholFlag ) );
 		endif
 		clear matR1;
 		clear cholFlag;
@@ -73,7 +76,8 @@ function vecX = mycholdiv( matA, vecB, requireWellBehavedSolution=true, prm=[] )
 	%
 	% We're on to the "has (at least one) negative (eigenvalue)" case.
 	msgif( debugMode,__FILE__, __LINE__, "Generating perturbed positive-definite solution." );
-	vecPosDefDiagMin = sum(abs(matA),2) - diag(abs(matA)) + 1.0e-8*sz*aScl; % Scalar autobroadcast.
+	epsPerturb = mygetfield( prm, "epsPerturb", 1.0e-8 );
+	vecPosDefDiagMin = sum(abs(matA),2) - diag(abs(matA)) + epsPerturb*sz*aScl; % Scalar autobroadcast.
 	vecADiag = diag(matA);
 	vecADiagMod = vecADiag;
 	vecADiagMod( vecADiag < vecPosDefDiagMin ) = vecPosDefDiagMin( vecADiag < vecPosDefDiagMin );
