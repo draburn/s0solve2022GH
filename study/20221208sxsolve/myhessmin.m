@@ -30,7 +30,7 @@ endfunction
 function [ vecX, datOut ] = __solve( f, vecG, matH, xMax, prm )
 	datOut = [];
 	sz = size(vecG,1);
-	debugMode = mygetfield( prm, "debugMode", true );
+	debugMode = mygetfield( prm, "debugMode", false );
 	%
 	fMin = mygetfield( prm, "fMin", [] );
 	if ( ~isempty(fMin) )

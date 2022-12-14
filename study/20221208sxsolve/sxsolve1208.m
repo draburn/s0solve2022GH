@@ -259,10 +259,7 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	% Stopping criteria - pre-step.
 	prm.fTol = eps;
 	prm.gTol = eps;
-	
 	prm.stepLimit = 999;
-	%%%prm.stepLimit = 2;
-	
 	prm.iterLimit = 999;
 	prm.fevalLimit = -1;
 	prm.timeLimit = 10.0;
@@ -346,9 +343,19 @@ function [ vecDelta, datOut ] = __getStep_simple2( currentBTFactor, vecXBest, fB
 	vecDScale = max( abs(matVTDWB), [], 2 );
 	matB = diag( 1.0 ./ ( vecDScale + prm.epsB * max(vecDScale) ) );
 	bMax = currentBTFactor * prm.trDCoeff;
-	vecZInSpace = myhessmin( fFit, vecGamma, matH, matB, bMax );
-	%
+	
+	
+	%%%vecZInSpace = myhessmin( fFit, vecGamma, matH, matB, bMax );
+	vecZInSpace = myhessmin( max([fFit, fBest]), vecGamma, matH, matB, bMax );
+	
+	
 	vecDelta = vecDeltaGradPerp + matV * vecZInSpace;
+	if (0)
+		msg( __FILE__, __LINE__, "Infodump..." );
+		[ norm(vecZInSpace), norm(matB*vecZInSpace), norm(vecDelta) ]
+		echo__matB = matB
+		echo__bMax = bMax
+	endif
 return;
 endfunction
 function [ vecDelta, datOut ] = __getStep_simple( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
@@ -382,6 +389,10 @@ function [ vecDelta, datOut ] = __getStep_simple( currentBTFactor, vecXBest, fBe
 	vecZCauchy = ( -(vecZSD'*vecGamma) / zthz) * vecZSD;
 	%
 	vecZNewton = mycholdiv( matH, -vecGamma, false );
+	%prm_mycholdiv = [];
+	%prm_mycholdiv.debugMode = true;
+	%vecZNewton = mycholdiv( matH, -vecGamma, false, prm_mycholdiv );
+	%
 	%%%[ norm(matB*vecZCauchy), trBeta, norm(matB*vecZNewton), (matB*vecZNewton)'*(matB*vecZCauchy) ]
 	assert( norm(matB*vecZNewton) >= norm(matB*vecZCauchy)*(1.0-100.0*eps) );
 	%
@@ -408,7 +419,12 @@ function [ vecDelta, datOut ] = __getStep_simple( currentBTFactor, vecXBest, fBe
 	endif
 	%
 	vecDelta = vecDeltaGradPerp + matV * vecZ;
-	%[ norm(vecZ), norm(matB*vecZ), norm(vecDelta) ]
+	if (0)
+		msg( __FILE__, __LINE__, "Infodump..." );
+		[ norm(vecZ), norm(matB*vecZ), norm(vecDelta) ]
+		echo__matB = matB
+		echo__trBeta = trBeta
+	endif
 return;
 endfunction
 function [ vecDelta, datOut ] = __getStep( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
