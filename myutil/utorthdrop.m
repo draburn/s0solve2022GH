@@ -1,5 +1,6 @@
 %  Function...
 %   "ut" mean "upper-triangular".
+% Note: This code is designed to be fast, not accurate.
 
 function [ matV, rvecDrop ] = utorthdrop( matV, dropThresh = 1.0e-4 )
 	sizeX = size(matV,1);
