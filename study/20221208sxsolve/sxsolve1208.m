@@ -274,8 +274,8 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	% Stopping criteria - pre-step.
 	prm.fTol = eps^0.5;
 	prm.gTol = eps^0.5;
-	prm.stepLimit = 999;
-	prm.iterLimit = 999;
+	prm.stepLimit = 100;
+	prm.iterLimit = 100;
 	prm.fevalLimit = -1;
 	prm.timeLimit = 10.0;
 	prm.stopSignalCheckInterval = 10.0;
@@ -831,7 +831,8 @@ function [ vecDelta, datOut ] = __getStep_bestNotFit( currentBTFactor, vecXBest,
 		strongestD = rvecDRemain(strongestPt);
 		%echo__rvecRemain = rvecDRemain
 		%echo__norm = dTol0 + dTol1 * rvecDInitial
-		%echo__merit = rvecDRemain ./  echo__norm
+		%echo__merit = rvecDRemain ./ (dTol0 + dTol1 * rvecDInitial)
+		%echo__rvecKeep = rvecKeep
 		%echo__strongestMerit = strongestMerit
 		%echo__strongetPt = strongestPt
 		if ( strongestMerit >  1.0 )

@@ -4,7 +4,7 @@ mydefs;
 %setprngstates(0);
 setprngstates(1);
 %setprngstates(22842624);
-sizeX = 20
+sizeX = 50
 expVarCoeff = 0.0
 noiseDat = [ 0.0, 0.0, 0.0; 0.0, 0.0, 0.0 ]
 %noiseDat = [ 1.0e-2, 0.0, 0.0; 1.0e-4, 0.0, 0.0 ];
