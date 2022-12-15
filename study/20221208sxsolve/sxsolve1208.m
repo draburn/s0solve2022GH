@@ -258,6 +258,12 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 		  fevalCount ) );
 		progressReportedTime = time();
 	endif
+	datOut.matX = matX;
+	datOut.matG = matG;
+	datOut.rvecF = rvecF;
+	datOut.vecXBest = vecXBest;
+	datOut.vecGBest = vecGBest;
+	datOut.fBest = fBest;
 return;	
 endfunction
 

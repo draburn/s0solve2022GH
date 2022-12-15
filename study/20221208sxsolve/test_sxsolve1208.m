@@ -2,9 +2,10 @@ clear;
 mydefs;
 %
 %setprngstates(0);
-setprngstates(1);
+%setprngstates(1);
 %setprngstates(22842624);
-sizeX = 50
+setprngstates(71281280);
+sizeX = 20
 expVarCoeff = 0.0
 noiseDat = [ 0.0, 0.0, 0.0; 0.0, 0.0, 0.0 ]
 %noiseDat = [ 1.0e-2, 0.0, 0.0; 1.0e-4, 0.0, 0.0 ];
@@ -39,4 +40,4 @@ prm.funch_vecGSecret = @(x)( matHSecret*(x-vecXSecret) );
 prm.funchFGSecret = funchFG;
 prm.matHSecret = matHSecret;
 %echo__prm = prm
-vecXCalc = sxsolve1208( funchFG, vecX0, prm );
+[ vecXCalc, retCode, datOut ] = sxsolve1208( funchFG, vecX0, prm );
