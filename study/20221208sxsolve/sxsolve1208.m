@@ -131,7 +131,8 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 			%[ vecDelta, datOut_getStep ] = __getStep_crude( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 			%[ vecDelta, datOut_getStep ] = __getStep_simple( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 			%[ vecDelta, datOut_getStep ] = __getStep_simple2( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
-			[ vecDelta, datOut_getStep ] = __getStep( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			%[ vecDelta, datOut_getStep ] = __getStep( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			[ vecDelta, datOut_getStep ] = __getStep_curateD_crude( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 			sizeKMostRecent = datOut_getStep.sizeK;
 		endif
 		%
@@ -527,6 +528,72 @@ function [ vecDelta, datOut ] = __getStep( currentBTFactor, vecXBest, fBest, vec
 	else
 		vecZ = myhessmin( max([fFit, fBest]), vecGamma, matH, matB, bMax );
 		vecDelta = matV * vecZ;
+	endif
+return;
+endfunction
+function [ vecDelta, datOut ] = __getStep_curateD_crude( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
+	datOut = [];
+	matD = matX - vecXBest;
+	%
+	% "Curate" matD...
+	rvecDInitial = sqrt(sum(matD.^2,1));
+	dTol0 = 1.0e-5;
+	dTol1 = 1.0e-2;
+	%
+	%echo__matD = matD
+	rvecKeep = logical(zeros(size(rvecF)));
+	[ strongestD, strongestPt ] = max( sqrt(sum(matD.^2,1)) );
+	assert( strongestD > 0.0 );
+	matV = matD(:,strongestPt) / strongestD;
+	rvecKeep(strongestPt) = true;
+	for n = 1 : min(size(matD))
+		%echo__n = n
+		%echo__matV = matV
+		%echo__rvecKeep = rvecKeep
+		matDPerp = matD;
+		matDPerp = matDPerp - (matV * ( matV'*matDPerp ));
+		matDPerp = matDPerp - (matV * ( matV'*matDPerp ));
+		rvecDRemain = sqrt(sum(matDPerp.^2,1));
+		[ strongestMerit, strongestPt ] = max( rvecDRemain./(dTol0 + (dTol1 * rvecDInitial)) );
+		strongestD = rvecDRemain(strongestPt);
+		%echo__rvecRemain = rvecDRemain
+		%echo__norm = dTol0 + dTol1 * rvecDInitial
+		%echo__merit = rvecDRemain ./  echo__norm
+		%echo__strongestMerit = strongestMerit
+		%echo__strongetPt = strongestPt
+		if ( strongestMerit >  1.0 )
+			assert( false == rvecKeep(strongestPt) );
+			rvecKeep(strongestPt) = true;
+			matV = [ matV, matDPerp(:,strongestPt)/strongestD ];
+			if ( size(matV,2) == min(size(matD)) )
+				break;
+			endif
+		else
+			break;
+		endif
+	endfor
+	%echo__rvecKeep = rvecKeep
+	%echo__matV = matV
+	%assert( max(size(matD)) < 6 );
+	%
+	matD = matD(:,rvecKeep);
+	rvecF = rvecF(:,rvecKeep);
+	matG = matG(:,rvecKeep);
+	%
+	datOut.sizeK = size(matV,2);
+	matVTDWB = matV' * [ matD, zeros(size(vecXBest)) ];
+	matVTGWB = matV' * [ matG, vecGBest ];
+	rvecFWB = [ rvecF, fBest ];
+	[ fFit, vecGamma, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
+	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
+	vecZ = mycholdiv( matH, -currentBTFactor*vecGamma, false );
+	vecDeltaGrad = -currentBTFactor * prm.gradStepCoeff * vecGradPerp;
+	vecDelta = vecDeltaGrad + matV*vecZ;
+	if (0)
+		vecDScale = max( abs(matVTDWB), [], 2 );
+		vecB = 1.0 ./ ( vecDScale + prm.epsB * max(vecDScale) );
+		matB = diag(vecB);
+		[ norm(vecZ), norm(matB*vecZ), norm(vecDelta) ]
 	endif
 return;
 endfunction
