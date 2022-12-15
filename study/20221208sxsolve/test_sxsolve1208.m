@@ -1,9 +1,9 @@
 clear;
 mydefs;
 %
-%setprngstates(0); % __getStep_simple is better.
-setprngstates(1); % __getStep_simple is better.
-%setprngstates(2); % __getStep_simple2 good, __getStep_simple balks.
+%setprngstates(0);
+setprngstates(1);
+%setprngstates(22842624);
 sizeX = 5
 expVarCoeff = 0.0
 noiseDat = [ 0.0, 0.0, 0.0; 0.0, 0.0, 0.0 ]

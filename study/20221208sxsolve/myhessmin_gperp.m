@@ -145,10 +145,10 @@ function [ vecX, datOut ] = __solve( f, vecG, matH, xMax, prm )
 		msg( __FILE__, __LINE__, "WARNING: 0.0 >= norm(vecXCauchy)." );
 	endif
 	if ( norm(vecXCauchy)*(1.0+sqrt(eps)) >= norm(vecXWayPt)*(1.0-sqrt(eps)) )
-		msg( __FILE__, __LINE__, "WARNING: norm(vecXCauchy) >= norm(vecXWayPt)." );
+		msgif( debugMode, __FILE__, __LINE__, "WARNING: norm(vecXCauchy) >= norm(vecXWayPt)." );
 	endif
 	if ( norm(vecXWayPt)*(1.0+sqrt(eps)) >= norm(vecXNewton)*(1.0-sqrt(eps)) )
-		msg( __FILE__, __LINE__, "WARNING: norm(vecXWayPt) >= norm(vecXNewton)." );
+		msgif( debugMode, __FILE__, __LINE__, "WARNING: norm(vecXWayPt) >= norm(vecXNewton)." );
 	endif
 	assert( norm(vecXCauchy)*(1.0-sqrt(eps)) <= norm(vecXNewton)*(1.0+sqrt(eps)) ); % Require this one.
 	%
