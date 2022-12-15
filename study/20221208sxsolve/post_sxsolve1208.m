@@ -1,4 +1,4 @@
-printf("\n\n\nvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv");
+printf("\n\n\nvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n");
 msg( __FILE__, __LINE__, "Hai!" );
 matX = [ datOut.vecXBest, datOut.matX ];
 matG = [ datOut.vecGBest, datOut.matG ];
