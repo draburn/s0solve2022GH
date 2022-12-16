@@ -136,7 +136,8 @@ function [ vecXBest, retCode, datOut ] = sxsolve1208( funchFG, vecXInit, prm=[] 
 			%[ vecDelta, datOut_getStep ] = __getStep_curateD( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 			%[ vecDelta, datOut_getStep ] = __getStep_fullSpaceFirst( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 			%[ vecDelta, datOut_getStep ] = __getStep_fullSpaceAlways( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
-			[ vecDelta, datOut_getStep ] = __getStep_bestNotFit( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			%[ vecDelta, datOut_getStep ] = __getStep_bestNotFit( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+			[ vecDelta, datOut_getStep ] = __getStep_simpleBest( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 			sizeKMostRecent = datOut_getStep.sizeK;
 		endif
 		%
@@ -283,7 +284,7 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	prm.stepLimit = 100;
 	prm.iterLimit = 100;
 	prm.fevalLimit = -1;
-	prm.timeLimit = 10.0;
+	prm.timeLimit = 30.0;
 	prm.stopSignalCheckInterval = 10.0;
 	%
 	% Stopping criteria - post-step.
@@ -921,5 +922,40 @@ function [ vecDelta, datOut ] = __getStep_bestNotFit( currentBTFactor, vecXBest,
 		vecZ = myhessmin( max([fFit, fBest]), vecGammaBest, matH, matB, bMax );
 		vecDelta = matV * vecZ;
 	endif
+return;
+endfunction
+function [ vecDelta, datOut ] = __getStep_simpleBest( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
+	datOut = [];
+	%
+	% Generate fit.
+	matD = matX - vecXBest;
+	matV = utorthdrop( matD, prm.dropThresh );
+	if ( reldiff(matV'*matV,eye(size(matV,2))) > sqrt(eps) )
+		matV = utorthdrop_debug( matD, prm.dropThresh );
+		echo__matD = matD
+		echo__matV = matV
+		echo__matVTV = matV'*matV
+		error( "HALT!" );
+	endif
+	assert( reldiff(matV'*matV,eye(size(matV,2))) < sqrt(eps) );
+	datOut.sizeK = size(matV,2);
+	matVTDWB = matV' * [ matD, zeros(size(vecXBest)) ];
+	matVTGWB = matV' * [ matG, vecGBest ];
+	rvecFWB = [ rvecF, fBest ];
+	[ fFit, vecGamma, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
+	%
+	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
+	vecDeltaGradPerp = -currentBTFactor * prm.gradStepCoeff * vecGradPerp;
+	%
+	%vecDScale = max( abs(matVTDWB), [], 2 );
+	%matB = diag( 1.0 ./ ( vecDScale + prm.epsB * max(vecDScale) ) );
+	%bMax = currentBTFactor * prm.trDCoeff;
+	%vecZInSpace = myhessmin( max([fFit, fBest]), matV'*vecGBest, matH, matB, bMax );
+	%
+	vecZNewton = mycholdiv( matH, -matV'*vecGBest, false );
+	bMax = currentBTFactor * norm(vecZNewton) * ( 1.0 + sqrt(eps) );
+	vecZInSpace = myhessmin( max([fFit, fBest]), matV'*vecGBest, matH, [], bMax );
+	%
+	vecDelta = vecDeltaGradPerp + matV * vecZInSpace;
 return;
 endfunction
