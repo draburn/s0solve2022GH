@@ -1,6 +1,7 @@
 function datOut = post_sxsolve1208b__calc( vecX, matV, f, vecG, matH, matB=[], prm=[] )
 	datOut = [];
-	datOut.lev = __calc_lev( vecX, matV, f, vecG, matH, matB, prm );
+	datOut.lev = __calc_lev( vecX, matV, f, vecG, matH, [], prm );
+	datOut.levScl = __calc_lev( vecX, matV, f, vecG, matH, matB, prm );
 return;
 endfunction
 function datOut = __calc_lev( vecX, matV, f, vecG, matH, matB, prm )
@@ -40,7 +41,7 @@ function datOut = __calc_lev( vecX, matV, f, vecG, matH, matB, prm )
 		datOut.rvecFModel = [ datOut.rvecFModel, fModel ];
 	endfor
 	%
-	datOut.matDelta = matV * datOut.matZ;
+	datOut.matDelta = matV * matBInv * datOut.matZ;
 	datOut.rvecDeltaNorm = sqrt(sum( datOut.matDelta.^2, 1 ));
 	datOut.rvecBDeltaNorm = sqrt(sum( (matB*datOut.matDelta).^2 , 1 ));
 	datOut.matX = vecX + datOut.matDelta;
