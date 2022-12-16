@@ -279,10 +279,10 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	prm.progressReportInterval = 0.0;
 	%
 	% Stopping criteria - pre-step.
-	prm.fTol = eps^0.5;
-	prm.gTol = eps^0.5;
+	prm.fTol = eps^0.8;
+	prm.gTol = eps^0.8;
 	prm.stepLimit = 100;
-	prm.iterLimit = 100;
+	prm.iterLimit = 40;
 	prm.fevalLimit = -1;
 	prm.timeLimit = 30.0;
 	prm.stopSignalCheckInterval = 10.0;

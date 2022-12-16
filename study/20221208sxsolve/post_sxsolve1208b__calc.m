@@ -6,7 +6,6 @@ return;
 endfunction
 function datOut = __calc_lev( vecX, matV, f, vecG, matH, matB, prm )
 	datOut = [];
-	sizeX = size(vecX,1);
 	if (isempty(matB))
 		matB = eye(size(matH));
 	endif
@@ -14,8 +13,8 @@ function datOut = __calc_lev( vecX, matV, f, vecG, matH, matB, prm )
 	%
 	vecGScl = matBInv * vecG;
 	matHScl = matBInv * matH  * matBInv;
-	clear vecG;
-	clear matH;
+	%clear vecG;
+	%clear matH;
 	hScl = sqrt(sum(sum(matHScl.^2)));
 	matI = eye(size(matHScl));
 	matHI = hScl*matI;
@@ -25,7 +24,7 @@ function datOut = __calc_lev( vecX, matV, f, vecG, matH, matB, prm )
 	rvecS_src = 1.0 - (1.0-rvecS_src.^1).^3;
 	%
 	datOut.rvecS = 0.0;
-	datOut.matZ = zeros(sizeX,1);
+	datOut.matZ = zeros(size(vecG));
 	datOut.rvecFModel = f;
 	%
 	for n = 2 : length(rvecS_src);
@@ -41,9 +40,10 @@ function datOut = __calc_lev( vecX, matV, f, vecG, matH, matB, prm )
 		datOut.rvecFModel = [ datOut.rvecFModel, fModel ];
 	endfor
 	%
+	datOut.rvecZNorm = sqrt(sum( datOut.matZ.^2, 1 ));
+	datOut.rvecBZNorm = sqrt(sum( (matB*datOut.matZ).^2, 1 ));
 	datOut.matDelta = matV * matBInv * datOut.matZ;
 	datOut.rvecDeltaNorm = sqrt(sum( datOut.matDelta.^2, 1 ));
-	datOut.rvecBDeltaNorm = sqrt(sum( (matB*datOut.matDelta).^2 , 1 ));
 	datOut.matX = vecX + datOut.matDelta;
 	[ datOut.rvecF, datOut.matG ] = prm.funchFG( datOut.matX );
 return;
