@@ -40,7 +40,11 @@ function [ vecDelta, datOut ] = hessmin1216( f0, vecG, matH, matB=[], bMax=[], p
 	vecB = (-1.0/h)*vecG;
 	matA = (matH/h) - matI;
 	%
-	[ sR, vecDeltaR, cR, vecDeltaPrimeR, cPrimeR ] = getFarPt( c0, vecB, matA, prm )
+	prm.cholTol = mygetfield( prm, "cholTol", sqrt(eps) );
+	prm.epsS = mygetfield( prm, "epsS", sqrt(eps) );
+	prm.extrap_rdTol = mygetfield( prm, "extrap_rdTol", 0.1 );
+	%
+	[ sR, vecDeltaR, cR, vecDeltaPrimeR, cPrimeR ] = getFarPt( c0, vecB, matA, prm );
 	vecDelta = matRB \ ( matRB' \ vecDeltaR );
 	return;
 	%
@@ -53,9 +57,15 @@ endfunction
 %  c0 = f0/h
 %  vecB = -vecG/h
 %  matA = matH/h - I
-function [ vecDelta, c, vecDeltaPrime, cPrime ] = calcDelta( s, c0, vecB, matA )
+function [ vecDelta, c, vecDeltaPrime, cPrime ] = calcDelta( s, c0, vecB, matA, prm )
 	[ matR, cholFlag ] = chol( eye(size(matA)) + s * matA );
 	if ( 0 ~= cholFlag )
+		vecDelta = [];
+		c = [];
+		vecDeltaPrime = [];
+		cPrime = [];
+		return;
+	elseif ( min(diag(matR)) < prm.cholTol*max(abs(diag(matR))) )
 		vecDelta = [];
 		c = [];
 		vecDeltaPrime = [];
@@ -81,50 +91,57 @@ function [ vecDelta, c, vecDeltaPrime, cPrime ] = calcDelta( s, c0, vecB, matA )
 	%deltaPrime = (vecMInv2B'*vecMInvB)/norm(vecMInvB);
 return;
 endfunction;
-function [ vecDelta, c, vecDeltaPrime, cPrime ] = calcDelta_withExtrap( s, c0, vecB, matA, epsS=sqrt(eps), rdTol=0.1 )
-	[ vecDelta1, c1, vecDeltaPrime1, cPrime1 ] = calcDelta( s-epsS, c0, vecB, matA );
+function [ vecDelta, c, vecDeltaPrime, cPrime ] = calcDelta_withExtrap( s, c0, vecB, matA, prm )
+	[ vecDelta1, c1, vecDeltaPrime1, cPrime1 ] = calcDelta( s-prm.epsS, c0, vecB, matA, prm );
 	if ( isempty(vecDelta1) )
 		vecDelta = [];
 		c = [];
 		vecDeltaPrime = [];
 		cPrime = [];
+		return;
 	endif
-	[ vecDelta2, c2, vecDeltaPrime2, cPrime2 ] = calcDelta( s-2.0*epsS, c0, vecB, matA );
+	[ vecDelta2, c2, vecDeltaPrime2, cPrime2 ] = calcDelta( s-2.0*prm.epsS, c0, vecB, matA, prm );
 	if ( isempty(vecDelta2) )
 		vecDelta = [];
 		c = [];
 		vecDeltaPrime = [];
 		cPrime = [];
+		return;
 	endif
 	vecDelta = 2.0*vecDelta1 - vecDelta2;
-	vecDeltaPrime = 2.0*vecDeltaPrime1 - vecDeltaPrime;
-	if ( reldiff(vecDelta,vecDelta1) > rdTol || reldiff(vecDeltaPrime,vecDeltaPrime1) > rdTol )
+	vecDeltaPrime = 2.0*vecDeltaPrime1 - vecDeltaPrime2;
+	[ vecDelta, vecDelta1, vecDelta2 ]
+	[ vecDeltaPrime, vecDeltaPrime1, vecDeltaPrime2 ]
+	reldiff(vecDelta,vecDelta1)
+	reldiff(vecDeltaPrime,vecDeltaPrime1)
+	if ( reldiff(vecDelta,vecDelta1) > prm.extrap_rdTol )
 		vecDelta = [];
 		c = [];
 		vecDeltaPrime = [];
 		cPrime = [];
+		return;
 	endif
 	vecIPADelta = ( eye(size(matA)) + matA ) * vecDelta;
 	c = c0 - (vecB'*vecDelta) + 0.5*(vecDelta'*vecIPADelta);
-	cPrime = -(vecB'*vecDeltaP) + (vecDeltaP'*vecIPADelta);
+	cPrime = -(vecB'*vecDeltaPrime) + (vecDeltaPrime'*vecIPADelta);
 return;
 endfunction;
 
 function [ s, vecDelta, c, vecDeltaPrime, cPrime ] = getFarPt( c0, vecB, matA, prm )
-	[ vecDelta, c, vecDeltaPrime, cPrime ] = calcDelta( 1.0, c0, vecB, matA );
+	[ vecDelta, c, vecDeltaPrime, cPrime ] = calcDelta( 1.0, c0, vecB, matA, prm );
 	if ( ~isempty(vecDelta) )
 		s = 1.0;
 		return;
 	endif
-	[ vecDelta, c, vecDeltaPrime, cPrime ] = calcDelta_withExtrap( 1.0, c0, vecB, matA )
+	[ vecDelta, c, vecDeltaPrime, cPrime ] = calcDelta_withExtrap( 1.0, c0, vecB, matA, prm );
 	if ( ~isempty(vecDelta) )
 		s = 1.0;
 		return;
 	endif
-	eigvecA = eig(matA);
+	eigvecA = eig(matA)
 	assert( min(eigvecA) < -0.999 );
-	s = min([ -1.0/min(eigvecA), 1.0-sqrt(eps) ]);
-	[ vecDelta, c, vecDeltaPrime, cPrime ] = calcDelta( s, c0, vecB, matA );
+	s = min([ -1.0/min(eigvecA), 1.0 ]) * ( 1.0 - prm.epsS );
+	[ vecDelta, c, vecDeltaPrime, cPrime ] = calcDelta( s, c0, vecB, matA, prm );
 	assert( ~isempty(vecDelta) );
 return;
 endfunction
