@@ -138,6 +138,11 @@ prm.fMinAllowed = fMinAllowed;
 vecXNewt = vecXIG - matHWB\vecGIG;
 vecDNewt = vecXNewt - vecXCrit;
 vecGNewt = matH*vecDNewt;
-afterVals = [ gwbhDat.muTot, min(eig(matHWB)), fIG, fCrit + vecDNewt'*vecGNewt/2.0 ]
+fNewt = fCrit + vecDNewt'*vecGNewt/2.0;
+vecEig = eig(matHWB);
+afterVals = [ gwbhDat.muTot, min(vecEig), fIG, fNewt ]
+assert( fIG > fNewt );
+assert( fNewt >= -sqrt(eps)*fIG );
+assert( min(vecEig) > eps*max(abs(vecEig)) )
 endfor %cid
 msg( __FILE__, __LINE__, "kthxbai" )
