@@ -8,11 +8,11 @@ sizeX = size(matX,1)
 numRecsWB = size(matX,2)
 cPrm = [];
 cPrm.funchFG = funchFG;
-msg( __FILE__, __LINE__, "Setting epsB..." );
-epsB = eps^0.5
+sxPrm = datOut.prm;
 %
 msg( __FILE__, __LINE__, "Starting from this point..." );
-bwdIndex = 27
+%%%bwdIndex = 27
+bwdIndex = 28
 matX = matX(:,end-bwdIndex:end);
 matG = matG(:,end-bwdIndex:end);
 rvecF = rvecF(end-bwdIndex:end);
@@ -32,7 +32,7 @@ hfPrm.epsHRegu = 0.0;
 matD = matX;
 [ fFit, vecGFit, matHFit ] = hessfit( matV'*matD, rvecF, matV'*matG, hfPrm );
 vecDScale = max( abs(matV'*matD), [], 2 );
-matB = diag( 1.0 ./ ( vecDScale + epsB * max(vecDScale) ) );
+matB = diag( 1.0 ./ ( vecDScale + sxPrm.epsB * max(vecDScale) ) );
 datOrthZero = post_sxsolve1208b__calc( vecXBest, matV, fBest, matV'*vecGBest, matHFit, matB, cPrm );
 %
 msg( __FILE__, __LINE__, "In orth() subspace..." );
@@ -43,7 +43,7 @@ hfPrm.epsHRegu = 0.0;
 matD = matX - vecXBest;
 [ fFit, vecGFit, matHFit ] = hessfit( matV'*matD, rvecF, matV'*matG, hfPrm );
 vecDScale = max( abs(matV'*matD), [], 2 );
-matB = diag( 1.0 ./ ( vecDScale + epsB * max(vecDScale) ) );
+matB = diag( 1.0 ./ ( vecDScale + sxPrm.epsB * max(vecDScale) ) );
 datOrth = post_sxsolve1208b__calc( vecXBest, matV, fBest, matV'*vecGBest, matHFit, matB, cPrm );
 
 %
@@ -55,8 +55,12 @@ hfPrm.epsHRegu = 0.0;
 matD = matX - vecXBest;
 [ fFit, vecGFit, matHFit ] = hessfit( matV'*matD, rvecF, matV'*matG, hfPrm );
 vecDScale = max( abs(matV'*matD), [], 2 );
-matB = diag( 1.0 ./ ( vecDScale + epsB * max(vecDScale) ) );
+matB = diag( 1.0 ./ ( vecDScale + sxPrm.epsB * max(vecDScale) ) );
 datUtorth = post_sxsolve1208b__calc( vecXBest, matV, fBest, matV'*vecGBest, matHFit, matB, cPrm );
+eigmin = min(eig(matHFit))
+vecZCompare = [ datUtorth.lev.matZ(:,end), myhessmin( max([fFit, fBest]), matV'*vecGBest, matHFit, [], sxPrm.trDCoeff*1e8 ) ]
+vecZCompareScl = [ datUtorth.levScl.matZ(:,end), myhessmin( max([fFit, fBest]), matV'*vecGBest, matHFit, matB, sxPrm.trDCoeff*1e8 ) ]
+msg( __FILE__, __LINE__, "DO THE vecZCompareScl VALUES DISAGREE? WHY?" );
 %
 msg( __FILE__, __LINE__, "In standard basis..." );
 hfPrm = [];
@@ -64,13 +68,13 @@ hfPrm.epsHRegu = 0.0;
 matD = matX - vecXBest;
 [ fFit, vecGFit, matHFit ] = hessfit( matX - vecXBest, rvecF, matG, hfPrm );
 vecDScale = max( abs(matD), [], 2 );
-matB = diag( 1.0 ./ ( vecDScale + epsB * max(vecDScale) ) );
+matB = diag( 1.0 ./ ( vecDScale + sxPrm.epsB * max(vecDScale) ) );
 datFullSpace = post_sxsolve1208b__calc( vecXBest, eye(sizeX,sizeX), fBest, vecGBest, matHFit, matB, cPrm );
 
 msg( __FILE__, __LINE__, "Using matHSecret..." );
 matD = matX - vecXBest;
 vecDScale = max( abs(matD), [], 2 );
-matB = diag( 1.0 ./ ( vecDScale + epsB * max(vecDScale) ) );
+matB = diag( 1.0 ./ ( vecDScale + sxPrm.epsB * max(vecDScale) ) );
 datHSecret = post_sxsolve1208b__calc( vecXBest, eye(sizeX,sizeX), fBest, vecGBest, matHSecret, matB, cPrm );
 
 %
