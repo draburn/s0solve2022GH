@@ -7,8 +7,20 @@ function [ x, datOut ] = myfzero1216( funchFC, x0, prm=[] )
 	if ( xL >= xR )
 		error( "Initial points are not properly ordered." );
 	endif
-	[ fL, cL, fpL, cpL ] = funchFC(xL);
-	[ fR, cR, fpR, cpR ] = funchFC(xR);
+	error( "Let's change funchFC to return a vector." );
+	if ( ~isempty(mygetfield( prm, "fL", []) )
+		fL = prm.fL;
+		cL = prm.cL;
+		fpL = prm.fpL;
+		cpL = prm.cpL;
+		fR = prm.fR;
+		cR = prm.cR;
+		fpR = prm.fpR;
+		cpR = prm.cpR;
+	else
+		[ fL, cL, fpL, cpL ] = funchFC(xL);
+		[ fR, cR, fpR, cpR ] = funchFC(xR);
+	endif
 	if ( fL * fR > 0.0 )
 		error( "Initial points do not bracket a zero." );
 	endif
