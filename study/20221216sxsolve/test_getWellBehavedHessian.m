@@ -120,10 +120,10 @@ endswitch
 vecDIG = vecXIG - vecXCrit;
 vecGIG = matH*vecDIG;
 if ( isempty(fCrit) )
-	error( "THIS (BRANCH) IS NOT (FULLY) FUNCTIONAL." );
+	%msg( __FILE__, __LINE__, "THIS (BRANCH) IS NOT (FULLY) FUNCTIONAL; expect exceptions." );
 	% Make it so that fIG > 0 but fCrit < 0.
-	foo = vecDIG'*vecGIG/2.0
-	fCrit = -0.5*foo
+	foo = vecDIG'*vecGIG/2.0;
+	fCrit = 1.0 - foo;
 endif
 fIG = fCrit + vecDIG'*vecGIG/2.0;
 %
