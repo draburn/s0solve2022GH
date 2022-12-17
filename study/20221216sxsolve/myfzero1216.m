@@ -1,4 +1,5 @@
 function [ x, datOut ] = myfzero1216( funchFC, x0, prm=[] )
+	msg( __FILE__, __LINE__, "WARNING: THIS CODE HAS BEEN ABANDONED. (However, it may still work.)" );
 	x = [];
 	datOut = [];
 	%
@@ -7,19 +8,21 @@ function [ x, datOut ] = myfzero1216( funchFC, x0, prm=[] )
 	if ( xL >= xR )
 		error( "Initial points are not properly ordered." );
 	endif
-	error( "Let's change funchFC to return a vector." );
-	if ( ~isempty(mygetfield( prm, "fL", []) )
+	if ( isempty(mygetfield( prm, "fL", []) ) )
+		[ fL, cL, fpL, cpL ] = funchFC(xL);
+	else
 		fL = prm.fL;
 		cL = prm.cL;
 		fpL = prm.fpL;
 		cpL = prm.cpL;
+	endif
+	if ( isempty(mygetfield( prm, "fR", []) ) )
+		[ fR, cR, fpR, cpR ] = funchFC(xR);
+	else
 		fR = prm.fR;
 		cR = prm.cR;
 		fpR = prm.fpR;
 		cpR = prm.cpR;
-	else
-		[ fL, cL, fpL, cpL ] = funchFC(xL);
-		[ fR, cR, fpR, cpR ] = funchFC(xR);
 	endif
 	if ( fL * fR > 0.0 )
 		error( "Initial points do not bracket a zero." );
@@ -54,7 +57,7 @@ function [ x, datOut ] = myfzero1216( funchFC, x0, prm=[] )
 	fTol = mygetfield( prm, "fTol", sqrt(eps)*sqrt(fL^2+fR^2) );
 	xTol = mygetfield( prm, "xTol", sqrt(eps)*sqrt( eps*(xL^2+xR^2) + (xR-xL)^2 ) );
 	cTol = mygetfield( prm, "cTol", sqrt(eps) );
-	stepLimitCoeff = mygetfield( prm, "stepLimitCoeff", 1.0 );
+	stepLimitCoeff = mygetfield( prm, "stepLimitCoeff", 0.7 );
 	iterLimit = mygetfield( prm, "iterLimit", 100 );
 	%
 	% First, we find the zero of f without worrying about the constraint.

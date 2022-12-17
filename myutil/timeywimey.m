@@ -86,7 +86,7 @@ for n = [ 200, 500, 1000 ]
 		%
 		t = time();
 		hInv = pinv(h);
-		msg( __FILE__, __LINE__, sprintf( "  %10.3f seconds for \"hInv = pinv(h)\".", 1000.0*(time()-t)) );
+		msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"hInv = pinv(h)\".", 1000.0*(time()-t)) );
 		%
 		t = time();
 		q = orth(j);
