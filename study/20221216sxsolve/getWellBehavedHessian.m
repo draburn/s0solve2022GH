@@ -52,6 +52,7 @@ function [ matHWB, datOut ] = getWellBehavedHessian( matH, prm=[] )
 	clear vecG0;
 	fMinAllowed = mygetfield( prm, "fMinAllowed", -0.1*f0 );
 	assert( isrealscalar(fMinAllowed) );
+	f0
 	assert( fMinAllowed < f0 );
 	%
 	% We need to find some mu such that f0 - 0.5*vecG'*inv(matHSPD+mu*matI)*vecG >= fMin.
@@ -65,12 +66,17 @@ function [ matHWB, datOut ] = getWellBehavedHessian( matH, prm=[] )
 		return;
 	endif
 	% This muHi is just speculative.
+	msg( __FILE__, __LINE__, "vvv" );
 	muHi = 100.0*(abs(f0)+abs(fMinAllowed))*max(max(abs(matHS)))/sumsq(vecGS);
+	muHi = 1E5
+	muBracket = [ 0.0, muHi ]
+	ffnBracket = [ funchFNewt(0.0), funchFNewt(muHi) ]
 	% fzero() does not utilize analytic derivatives, which are redaily available in this case.
 	%  d/ds (M^-1) = - M^-1 * (d/ds M) * M^-1.
 	muStayPositive = fzero( funchFNewt, [ 0.0, muHi ] );
 	datOut.muTot += muStayPositive;
 	matHWB = (( matHSPD + muStayPositive*matI ).*vecS).*(vecS');
+	msg( __FILE__, __LINE__, "^^^" );
 return;
 endfunction
 
