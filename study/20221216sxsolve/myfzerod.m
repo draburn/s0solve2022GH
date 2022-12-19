@@ -2,6 +2,7 @@ function [ xZero, datOut ] = myfzerod( funchF, xL, xR, prm=[] )
 	xZero = [];
 	datOut = [];
 	datOut.fevalCount = 0;
+	debugMode = mygetfield( prm, "debugMode", false );
 	assert( isrealscalar(xL) );
 	assert( isrealscalar(xR) );
 	if (isempty(mygetfield(prm,"fL",[])))
@@ -33,9 +34,11 @@ function [ xZero, datOut ] = myfzerod( funchF, xL, xR, prm=[] )
 	fAbsBestPrev = [];
 	xAbsSpanPrev = [];
 	for iterCount = 1 : iterLimit+1
-		%[ xL, xR, fL, fR, dfdxL, dfdxR ]
+		if ( debugMode )
+			[ xL, xR, fL, fR, dfdxL, dfdxR ]
+		endif
 		if ( min(abs([fR,fL])) < fTol )
-			%msg( __FILE__, __LINE__, "SUCCESS: fAbsBest < fTol." );
+			msgif( debugMode, __FILE__, __LINE__, "SUCCESS: fAbsBest < fTol." );
 			if ( abs(fL) < abs(fR) )
 				xZero = xL;
 			else
@@ -43,7 +46,7 @@ function [ xZero, datOut ] = myfzerod( funchF, xL, xR, prm=[] )
 			endif
 			break;
 		elseif ( abs(xR-xL) < xTol )
-			%msg( __FILE__, __LINE__, "QUALIFIED SUCCESS: xAbsSpan < xTol." );
+			msgif( debugMode, __FILE__, __LINE__, "QUALIFIED SUCCESS: xAbsSpan < xTol." );
 			if ( abs(fL) < abs(fR) )
 				xZero = xL;
 			else
@@ -51,47 +54,53 @@ function [ xZero, datOut ] = myfzerod( funchF, xL, xR, prm=[] )
 			endif
 			break;
 		elseif ( iterCount >= iterLimit )
-			%msg( __FILE__, __LINE__, "IMPOSED STOP: iterCount >= iterLimit." );
+			msgif( debugMode, __FILE__, __LINE__, "IMPOSED STOP: iterCount >= iterLimit." );
 			xZero = [];
 			break;
 		endif
 		xCandL = __getCand_quad( xL, fL, dfdxL, xR, fR );
 		xCandR = __getCand_quad( xR, fR, dfdxR, xL, fL );
-		%
 		haveHeadOnCollision = ( ~isempty(xCandL) && ~isempty(xCandR) && abs(xCandL-xCandR) < 0.01*abs(xR-xL) );
 		haveStall = ( ~isempty(fAbsBestPrev) && ~isempty(xAbsSpanPrev) && min(abs([fR,fL])) > 0.5 * fAbsBestPrev && abs(xR-xL) > 0.6 * xAbsSpanPrev );
+		if ( debugMode )
+			xCandL
+			xCandR
+		endif
+		%
 		if (haveHeadOnCollision)
 			% We'll take whichever candidate is closer to the midpoint.
 			if ( abs( xCandL - (xR+xL)/2.0 ) < abs( xCandR - (xR+xL)/2.0 ) )
-				%msg( __FILE__, __LINE__, "Head-on L" );
+				msgif( debugMode, __FILE__, __LINE__, "Head-on (L)" );
 				xNext = xCandL;
 			else
-				%msg( __FILE__, __LINE__, "Head-on R" );
+				msgif( debugMode, __FILE__, __LINE__, "Head-on (R)" );
 				xNext = xCandR;
 			endif
 		elseif (haveStall)
-			%msg( __FILE__, __LINE__, "Stall" );
+			msgif( debugMode, __FILE__, __LINE__, "Stall" );
 			xNext = ( xR + xL )/2.0; % Bisection.
 		elseif ( isempty(xCandL) && isempty(xCandR) )
-			%msg( __FILE__, __LINE__, "Secant" );
+			msgif( debugMode, __FILE__, __LINE__, "Secant" );
 			xNext = ( fR*xL - fL*xR ) / ( fR - fL ); % Secant.
 		elseif ( isempty(xCandL) )
-			%msg( __FILE__, __LINE__, "Only: R" );
+			msgif( debugMode, __FILE__, __LINE__, "Only: R" );
 			xNext = xCandR;
 		elseif ( isempty(xCandR) )
-			%msg( __FILE__, __LINE__, "Only: L" );
+			msgif( debugMode, __FILE__, __LINE__, "Only: L" );
 			xNext = xCandL;
 		% Below here, both exist, so take whicheve has a smaller |f|.
 		elseif ( abs(fL) < abs(fR) )
-			%msg( __FILE__, __LINE__, "Better: L" );
+			msgif( debugMode, __FILE__, __LINE__, "Better: L" );
 			xNext = xCandL;
 		else
-			%msg( __FILE__, __LINE__, "Better: R" );
+			msgif( debugMode, __FILE__, __LINE__, "Better: R" );
 			xNext = xCandR;
 		endif
 		%
 		[ fNext, dfdxNext ] = funchF(xNext);
 		datOut.fevalCount++;
+		assert( isrealscalar(fNext) );
+		assert( isrealscalar(dfdxNext) );
 		%
 		xAbsSpanPrev = abs( xR - xL );
 		fAbsBestPrev = min(abs([ fR, fL ]));
@@ -158,7 +167,19 @@ endfunction
 %!	dfdx = 4.0*(x.^3);
 %!endfunction
 
+%!function [ f, dfdx ] = diverexamp( x )
+%!	f = x ./ ( 1.0 + x.^2 );
+%!	dfdx = ( 1.0 - x.^2 ) ./ ( (1.0 + x.^2).^2 );
+%!endfunction
+
 %!test
 %!	clear;
 %!	[ xZero, datOut ] = myfzerod( @(x)( foo(x) ), 0.0, 2.0 )
+%!	abs(foo(xZero))
+
+%!test
+%!	clear;
+%!	prm = [];
+%!	%prm.debugMode = true;
+%!	[ xZero, datOut ] = myfzerod( @(x)( diverexamp(x) ), -2.0, 1000.0, prm )
 %!	abs(foo(xZero))
