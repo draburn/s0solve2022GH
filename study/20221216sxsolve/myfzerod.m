@@ -5,15 +5,24 @@ function [ xZero, datOut ] = myfzerod( funchF, xL, xR, prm=[] )
 	debugMode = mygetfield( prm, "debugMode", false );
 	assert( isrealscalar(xL) );
 	assert( isrealscalar(xR) );
+	getExtraDat = mygetfield( prm, "getExtraDat", false );
 	if (isempty(mygetfield(prm,"fL",[])))
-		[ fL, dfdxL ] = funchF(xL);
+		if (getExtraDat)
+			[ fL, dfdxL, extraDatL ] = funchF(xL);
+		else
+			[ fL, dfdxL ] = funchF(xL);
+		endif
 		datOut.fevalCount++;
 	else
 		fL = prm.fL;
 		dfdxL = prm.dfdxL;
 	endif
 	if (isempty(mygetfield(prm,"fR",[])))
-		[ fR, dfdxR ] = funchF(xR);
+		if (getExtraDat)
+			[ fR, dfdxR, extraDatR ] = funchF(xR);
+		else
+			[ fR, dfdxR ] = funchF(xR);
+		endif
 		datOut.fevalCount++;
 	else
 		fR = prm.fR;
@@ -101,7 +110,11 @@ function [ xZero, datOut ] = myfzerod( funchF, xL, xR, prm=[] )
 			xNext = xCandR;
 		endif
 		%
-		[ fNext, dfdxNext ] = funchF(xNext);
+		if (getExtraDat)
+			[ fNext, dfdxNext, extraDatNext ] = funchF(xNext);
+		else
+			[ fNext, dfdxNext ] = funchF(xNext);
+		endif
 		datOut.fevalCount++;
 		assert( isrealscalar(fNext) );
 		assert( isrealscalar(dfdxNext) );
@@ -112,10 +125,16 @@ function [ xZero, datOut ] = myfzerod( funchF, xL, xR, prm=[] )
 			xL = xNext;
 			fL = fNext;
 			dfdxL = dfdxNext;
+			if (getExtraDat)
+				extraDatL = extraDatNext;
+			endif
 		else
 			xR = xNext;
 			fR = fNext;
 			dfdxR = dfdxNext;
+			if (getExtraDat)
+				extraDatR = extraDatNext;
+			endif
 		endif
 	endfor
 	datOut.xL = xL;
@@ -124,6 +143,10 @@ function [ xZero, datOut ] = myfzerod( funchF, xL, xR, prm=[] )
 	datOut.fR = fR;
 	datOut.dfdxL = dfdxL;
 	datOut.dfdxR = dfdxR;
+	if (getExtraDat)
+		datOut.extraDatL = extraDatL;
+		datOut.extraDatR = extraDatR;
+	endif
 return;
 endfunction;
 
@@ -171,6 +194,12 @@ endfunction
 %!	dfdx = 4.0*(x.^3);
 %!endfunction
 
+%!function [ f, dfdx, extraDat ] = fooExtraDat( x )
+%!	f = x.^4 - 2.0;
+%!	dfdx = 4.0*(x.^3);
+%!	extraDat = (1:round(4*abs(x))).*( (1:round(7*abs(x)))' );
+%!endfunction
+
 %!function [ f, dfdx ] = diverexamp( x )
 %!	f = x ./ ( 1.0 + x.^2 );
 %!	dfdx = ( 1.0 - x.^2 ) ./ ( (1.0 + x.^2).^2 );
@@ -189,3 +218,10 @@ endfunction
 %!	[ xZero, datOut ] = myfzerod( @(x)( diverexamp(x) ), -2.0, 1000.0, prm )
 %!	abs(foo(xZero))
 %!	%[ xZero, fZero, INFO, OUTPUT ] = fzero( @(x)(diverexamp(x)), [-2.0, 1000.0] )
+
+%!test
+%!	clear;
+%!	prm = [];
+%!	prm.getExtraDat = true;
+%!	[ xZero, datOut ] = myfzerod( @(x)( fooExtraDat(x) ), 0.0, 2.0, prm )
+%!	abs(foo(xZero))
