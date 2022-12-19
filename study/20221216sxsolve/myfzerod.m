@@ -30,6 +30,9 @@ function [ xZero, datOut ] = myfzerod( funchF, xL, xR, prm=[] )
 	fTol = mygetfield( prm, "fTol", sqrt(eps)*sqrt( fL^2 + fR^2 ) );
 	xTol = mygetfield( prm, "xTol", sqrt(eps)*sqrt( eps*(xL^2+xR^2) + (xR-xL)^2 ) );
 	iterLimit = mygetfield( prm, "iterLimit", 100 );
+	headOnThresh = mygetfield( prm, "headOnThresh", 0.1 );
+	fStallThresh = mygetfield( prm, "fStallThresh", 0.5 );
+	xStallThresh = mygetfield( prm, "xStallThresh", 0.6 );
 	%
 	fAbsBestPrev = [];
 	xAbsSpanPrev = [];
@@ -60,8 +63,9 @@ function [ xZero, datOut ] = myfzerod( funchF, xL, xR, prm=[] )
 		endif
 		xCandL = __getCand_quad( xL, fL, dfdxL, xR, fR );
 		xCandR = __getCand_quad( xR, fR, dfdxR, xL, fL );
-		haveHeadOnCollision = ( ~isempty(xCandL) && ~isempty(xCandR) && abs(xCandL-xCandR) < 0.01*abs(xR-xL) );
-		haveStall = ( ~isempty(fAbsBestPrev) && ~isempty(xAbsSpanPrev) && min(abs([fR,fL])) > 0.5 * fAbsBestPrev && abs(xR-xL) > 0.6 * xAbsSpanPrev );
+		haveHeadOnCollision = ( ~isempty(xCandL) && ~isempty(xCandR) && abs(xCandL-xCandR) < headOnThresh*abs(xR-xL) );
+		haveStall = ( ~isempty(fAbsBestPrev) && ~isempty(xAbsSpanPrev) ...
+		  && min(abs([fR,fL])) > fStallThresh * fAbsBestPrev && abs(xR-xL) > xStallThresh * xAbsSpanPrev );
 		if ( debugMode )
 			xCandL
 			xCandR
