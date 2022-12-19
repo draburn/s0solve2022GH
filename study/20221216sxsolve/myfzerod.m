@@ -176,6 +176,7 @@ endfunction
 %!	clear;
 %!	[ xZero, datOut ] = myfzerod( @(x)( foo(x) ), 0.0, 2.0 )
 %!	abs(foo(xZero))
+%!	%[ xZero, fZero, INFO, OUTPUT ] = fzero( @(x)(foo(x)), [0.0, 2.0] )
 
 %!test
 %!	clear;
@@ -183,3 +184,4 @@ endfunction
 %!	%prm.debugMode = true;
 %!	[ xZero, datOut ] = myfzerod( @(x)( diverexamp(x) ), -2.0, 1000.0, prm )
 %!	abs(foo(xZero))
+%!	%[ xZero, fZero, INFO, OUTPUT ] = fzero( @(x)(diverexamp(x)), [-2.0, 1000.0] )
