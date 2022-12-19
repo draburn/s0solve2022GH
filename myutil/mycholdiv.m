@@ -1,4 +1,5 @@
 function vecX = mycholdiv( matA, vecB, requireWellBehavedSolution=true, prm=[] )
+	warning( "This code is deprecated; we should simply use eig() if the first chol() is no good." );
 	debugMode = mygetfield( prm, "debugMode", false );
 	sz = size(vecB,1);
 	if ( debugMode )
