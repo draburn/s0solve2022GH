@@ -98,6 +98,7 @@ function [ vecDelta, datOut ] = __solve( f0, vecG, matH, bMax, bTol, fMin, fTol,
 	gScl = norm(vecG);
 	hScl = sqrt(sum(sum(matH.^2)));
 	%
+	% Handle degenerate cases.
 	if ( ~isempty(bMax) )
 	if ( 0.0 == bMax )
 		msg( __FILE__, __LINE__, "WARNING: Max step size is zero." );
@@ -105,7 +106,6 @@ function [ vecDelta, datOut ] = __solve( f0, vecG, matH, bMax, bTol, fMin, fTol,
 		return;
 	endif
 	endif
-	%
 	if ( ~isempty(fMin) )
 	if ( f0 == fMin )
 		msg( __FILE__, __LINE__, "WARNING: Objective function minimum is initial value." );
@@ -115,7 +115,6 @@ function [ vecDelta, datOut ] = __solve( f0, vecG, matH, bMax, bTol, fMin, fTol,
 		return;
 	endif
 	endif
-	%
 	if ( 0.0 == gScl )
 		msg( __FILE__, __LINE__, "WARNING: Initial gradient is zero." );
 		vecDelta = zeros(sizeX,1);
@@ -145,11 +144,15 @@ function [ vecDelta, datOut ] = __solve( f0, vecG, matH, bMax, bTol, fMin, fTol,
 		endif
 	endif
 	%
-	% Do real work.
+	% Get eigenfactorization.
+	% Repeated Cholesky factorization might be better, particularly if the Hessian were positive-definite.
+	% Then again, maybe not.
+	% This approach has the benefit of being *decisive*, however.
 	[ matPsi, matLambda ] = eig( matH );
 	vecLambda = diag( matLambda );
 	vecPsiTNG = matPsi' * (-vecG);
 	%
+	% Itendify maximum (Newton) step size.
 	if ( min(vecLambda) < prm.epsEig * max(abs(vecLambda)) )
 		if ( min(vecLambda) < 0.0 )
 			muMin = abs(min(vecLambda)) + prm.epsEig * max(abs(vecLambda));
@@ -166,8 +169,17 @@ function [ vecDelta, datOut ] = __solve( f0, vecG, matH, bMax, bTol, fMin, fTol,
 	% Note, if both are satisfied, if sMax < 1.0, we could consider "extrapolation" to sMax = 1.0.
 	% We would only perform this if it looks like vecDelta is well-behaved as s -> 1.0.
 	% Actually, with the eigenfactorization, we could perturb just the least-positive eigenvalues...
-	% Maybe later?
+	% But, it's not clear the accuracy would even be much better.
 	%
+	% Backtrack, as needed, to ensure both constrants are satisfied.
+	% Note that fzero() may be suboptimal, but has the benefit of simplicity.
+	% Potential benefits of a custom zero-finder:
+	%  1. Use derivative information.
+	%  2. Intelligently bisect when main algorithm is stalling.
+	%  3. Consider both goal and constraint at the same time.
+	%  4. Store additional informaion (such as calculated vecDelta) to avoid need to re-calculate.
+	% See "AMUSING_myfzerod.m" for a decent code which hits points 1, 2, and 4.
+	% See "AMUSING_myfzero1216.m" for a not-so-great code which hits point 1 and 3 while attempting 2.
 	if ( ~bSatisfied )
 		msg( __FILE__, __LINE__, "TODO: Input bTol." );
 		bTrgt = bMax;
@@ -177,7 +189,6 @@ function [ vecDelta, datOut ] = __solve( f0, vecG, matH, bMax, bTol, fMin, fTol,
 		fSatisfied = isempty(fMin) || ( f >= fMin - fTol );
 		assert( bSatisfied );
 	endif
-	%
 	if ( ~fSatisfied )
 		msg( __FILE__, __LINE__, "TODO: Input fTol." );
 		fTrgt = fMin;
@@ -205,7 +216,6 @@ function [ vecDelta ] = __getDeltaOfS( s, hScl, matPsi, vecLambda, vecPsiTNG )
 	endif
 return;
 endfunction
-
 function [ vecDelta, b, f ] = __getDeltaBFOfS( s, hScl, f0, vecG, matH, matPsi, vecLambda, vecPsiTNG )
 	vecDelta = __getDeltaOfS( s, hScl, matPsi, vecLambda, vecPsiTNG );
 	b = norm(vecDelta);
