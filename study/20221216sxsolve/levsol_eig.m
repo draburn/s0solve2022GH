@@ -170,7 +170,7 @@ function [ vecDelta, datOut ] = __solve( f0, vecG, matH, bMax, bTol, fMin, fTol,
 	%
 	if ( ~bSatisfied )
 		msg( __FILE__, __LINE__, "TODO: Input bTol." );
-		bTrgt = bMax
+		bTrgt = bMax;
 		sMax = fzero( @(s) __getBResOfS( s, hScl, bTrgt, matPsi, vecLambda, vecPsiTNG ), [ 0.0, sMax ] );
 		[ vecDelta_trial, b, f ] = __getDeltaBFOfS( sMax, hScl, f0, vecG, matH, matPsi, vecLambda, vecPsiTNG );
 		bSatisfied = isempty(bMax) || ( b <= bMax + bTol );
