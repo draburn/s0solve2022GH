@@ -213,8 +213,8 @@ endfunction
 
 %!test
 %!	tic();
-%!	setprngstates(90466304);
-%!	%setprngstates();
+%!	%setprngstates(90466304); % CondH will be atypically high.
+%!	setprngstates();
 %!	gNoiseLevel = 0.0
 %!	fNoiseLevel = 0.0
 %!	expVarCoeff = 1.0
@@ -252,7 +252,7 @@ endfunction
 %!	condX = cond(matX)
 %!	
 %!	[ f_fit, vecG_fit, matH_fit, datOut ] = hessfit( matX, rvecF, matG, prm );
-%!	vecXNewton = -(matH_fit\vecG_fit);
+%!	vecXNewton = mycholdiv( matH_fit, -vecG_fit );
 %!	
 %!	vecG0_true = funchGSmooth(zeros(sizeX,1));
 %!	relresG = norm(vecG_fit-vecG0_true) / sqrt( sumsq(vecG_fit)  + sumsq(vecG0_true) )
