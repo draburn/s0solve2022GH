@@ -4,8 +4,9 @@ function [ vecX, matR ] = mycholdiv( matA, vecB, prm=[] )
 	sz = size(vecB,1);
 	assert( isrealarray(vecB,[sz,1]) );
 	assert( isrealarray(matA,[sz,sz]) );
-	assert( issymmetric(matA) );
-	debugMode = mygetfield( prm, "debugMode", false );
+	debugMode = mygetfield( prm, "debugMode", true );
+	symTol = mygetfield( prm, "symTol", sqrt(eps) );
+	issymmetric( matA, symTol );
 	%
 	epsChol = mygetfield( prm, "epsChol", sqrt(eps) );
 	[ matR, cholFlag ] = chol(matA);
