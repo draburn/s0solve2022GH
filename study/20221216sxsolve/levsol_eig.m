@@ -145,9 +145,10 @@ function [ vecDelta, datOut ] = __solve( f0, vecG, matH, bMax, bTol, fMin, fTol,
 	endif
 	%
 	% Get eigenfactorization.
-	% Repeated Cholesky factorization might be better, particularly if the Hessian were positive-definite.
-	% Then again, maybe not.
-	% This approach has the benefit of being *decisive*, however.
+	% This approach is simple, though it may be unaccetpable slow.
+	% Note that we can probably calculate just the eigenvalues more quickly,
+	%  and repeated Cholesky factorization would likely be faster still.
+	% But, KISSxPOITROME.
 	[ matPsi, matLambda ] = eig( matH );
 	vecLambda = diag( matLambda );
 	vecPsiTNG = matPsi' * (-vecG);
@@ -163,6 +164,7 @@ function [ vecDelta, datOut ] = __solve( f0, vecG, matH, bMax, bTol, fMin, fTol,
 	else
 		sMax = 1.0;
 	endif
+	%
 	[ vecDelta_trial, b, f ] = __getDeltaBFOfS( sMax, hScl, f0, vecG, matH, matPsi, vecLambda, vecPsiTNG );
 	bSatisfied = isempty(bMax) || ( b <= bMax + bTol );
 	fSatisfied = isempty(fMin) || ( f >= fMin - fTol );
