@@ -213,8 +213,8 @@ endfunction
 
 %!test
 %!	tic();
-%!	%setprngstates(55436400);
-%!	setprngstates();
+%!	setprngstates(90466304);
+%!	%setprngstates();
 %!	gNoiseLevel = 0.0
 %!	fNoiseLevel = 0.0
 %!	expVarCoeff = 1.0
