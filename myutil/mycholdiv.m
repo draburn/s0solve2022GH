@@ -4,7 +4,7 @@ function [ vecX, matR ] = mycholdiv( matA, vecB, prm=[] )
 	sz = size(vecB,1);
 	assert( isrealarray(vecB,[sz,1]) );
 	assert( isrealarray(matA,[sz,sz]) );
-	debugMode = mygetfield( prm, "debugMode", true );
+	debugMode = mygetfield( prm, "debugMode", false );
 	symTol = mygetfield( prm, "symTol", sqrt(eps) );
 	issymmetric( matA, symTol );
 	%
