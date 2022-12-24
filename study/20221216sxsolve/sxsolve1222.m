@@ -27,21 +27,28 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 	assert( isrealarray(vecGInit,[sizeX,1]) );
 	%
 	% Init - Solver.
+	vecXBestPrev = [];
+	fBestPrev = [];
+	vecGBestPrev = [];
 	vecXBest = vecXInit;
 	fBest = fInit;
 	vecGBest = vecGInit;
 	matX = [];
 	rvecF = [];
 	matG = [];
+	%
 	iterCount = 0;
+	trialCount_horrible = 0;
+	trialCount_bad = 0;
+	trialCount_good = 0;
+	%
+	
 	currentBTFactor = 1.0;
+	
+	
 	stepBTFactor = 0.0;
-	vecXBestPrev = [];
-	fBestPrev = [];
-	vecGBestPrev = [];
 	sizeKMostRecent = 0;
 	%
-	% Init - Progress reporting.
 	if ( prm.progressReportInterval >= 0.0 )
 		sxsolve1222__reportProg;
 		progressReportedTime = time();
@@ -112,6 +119,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 		if ( whollyRejectStep )
 			currentBTFactor *= prm.btFactor;
 			%msg( __FILE__, __LINE__, "Wholly rejecting step!" );
+			trialCount_horrible++;
 		else
 			if ( fTrial < fBest )
 				if (~isempty(matX))
@@ -132,11 +140,13 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 				stepBTFactor = currentBTFactor;
 				currentBTFactor = 1.0;
 				haveNewBest = true;
+				trialCount_good++;
 			else
 				% Put new info in *front*, so it gets orthonormalized first.
 				matX = [ vecXTrial, matX ];
 				rvecF = [ fTrial, rvecF ];
 				matG = [ vecGTrial, matG ];
+				trialCount_bad++;
 			endif
 		endif
 		%
@@ -187,7 +197,7 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	mydefs;
 	%
 	% Common stuff.
-	sizeX = size(vecXInit,1);
+	%sizeX = size(vecXInit,1);
 	prm.verbLev = VERBLEV__DETAILED;
 	prm.valdLev = VALDLEV__UNLIMITED;
 	prm.progressReportInterval = 0.1;
