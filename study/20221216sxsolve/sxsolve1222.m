@@ -43,8 +43,6 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 	prev_vecXBest = [];
 	prev_fBest = [];
 	prev_vecGBest = [];
-	prev_sizeK = 0;
-	prev_stepSizeCoeff = 0;
 	%
 	if ( prm.progressReportInterval >= 0.0 )
 		sxsolve1222__reportProg;
@@ -96,7 +94,9 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 		%
 		% Generate step.
 		gradStepCoeff = mygetfield( prm, "gradStepCoeff", 0.1 );
-		vecDelta = -stepSizeCoeff *gradStepCoeff * vecGBest;
+		vecDelta = -stepSizeCoeff * gradStepCoeff * vecGBest;
+		clear gradStepCoeff;
+		sizeK = 0;
 		%
 		%
 		% Try the step.
@@ -106,53 +106,39 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 		%
 		%
 		% For step assessment, might be nice to consider median values in records?
-		haveNewBest = false; % Unless...
-		whollyRejectStep = false; % Unless...
+		stepSizeCoeff_beforeUpdate = stepSizeCoeff;
 		if ( fTrial > prm.horribleCoeff * fBest )
-			whollyRejectStep = true;
-		endif
-		if ( whollyRejectStep )
-			stepSizeCoeff *= prm.btFactor;
-			%msg( __FILE__, __LINE__, "Wholly rejecting step!" );
 			trialCount_horrible++;
+			stepSizeCoeff *= prm.btFactor;
+		elseif ( fTrial >= fBest )
+			trialCount_bad++;
+			% Put new info in *front*, so it gets orthonormalized first.
+			matX = [ vecXTrial, matX ];
+			rvecF = [ fTrial, rvecF ];
+			matG = [ vecGTrial, matG ];
+			% Should we reset stepSizeCoeff?
 		else
-			if ( fTrial < fBest )
-				if (~isempty(matX))
-					matD_beforeStep = matX - vecXBest; % Only for progress.
-				else
-					matD_beforeStep = [];
-				endif
-				% Put new info in *front*, so it gets orthonormalized first.
-				prev_vecXBest = vecXBest;
-				prev_fBest = fBest;
-				prev_vecGBest = vecGBest;
-				matX = [ vecXBest, matX ];
-				rvecF = [ fBest, rvecF ];
-				matG = [ vecGBest, matG ];
-				vecXBest = vecXTrial;
-				fBest = fTrial;
-				vecGBest = vecGTrial;
-				prev_stepSizeCoeff = stepSizeCoeff;
-				stepSizeCoeff = 1.0;
-				haveNewBest = true;
-				trialCount_good++;
-			else
-				% Put new info in *front*, so it gets orthonormalized first.
-				matX = [ vecXTrial, matX ];
-				rvecF = [ fTrial, rvecF ];
-				matG = [ vecGTrial, matG ];
-				trialCount_bad++;
-			endif
+			trialCount_good++;
+			% Put new info in *front*, so it gets orthonormalized first.
+			prev_vecXBest = vecXBest;
+			prev_fBest = fBest;
+			prev_vecGBest = vecGBest;
+			matX = [ vecXBest, matX ];
+			rvecF = [ fBest, rvecF ];
+			matG = [ vecGBest, matG ];
+			vecXBest = vecXTrial;
+			fBest = fTrial;
+			vecGBest = vecGTrial;
+			stepSizeCoeff = 1.0;
 		endif
 		%
 		%
 		% Check post-iter stop crit.
 		if ( prm.deltaTol >= 0.0 && norm(vecDelta) <= prm.deltaTol )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: norm(vecDelta) <= prm.deltaTol." );
-				prev_stepSizeCoeff = stepSizeCoeff;
-				prev_vecXBest = vecXBest;
-				prev_fBest = fBest;
-				prev_vecGBest = vecGBest;
+			prev_vecXBest = vecXBest;
+			prev_fBest = fBest;
+			prev_vecGBest = vecGBest;
 			retCode = RETCODE__IMPOSED_STOP;
 			doMainLoop = false;
 			break;
@@ -160,16 +146,9 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 		%
 		%
 		% Report progress.
-		if ( haveNewBest && prm.progressReportInterval >= 0.0 )
-		if ( time() - progressReportedTime >= prm.progressReportInterval )
-			if (~isempty(matD_beforeStep))
-				stepBeta = sqrt(max( abs(vecDelta'*matD_beforeStep)./sum( matD_beforeStep.^2, 1 ) ));
-			else
-				stepBeta = 1.0;
-			endif
+		if ( prm.progressReportInterval >= 0.0 && time() - progressReportedTime >= prm.progressReportInterval )
 			sxsolve1222__reportProg;
 			progressReportedTime = time();
-		endif
 		endif
 	endwhile
 	%
@@ -204,12 +183,11 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	prm.timeLimit = 30.0;
 	prm.stopSignalCheckInterval = 10.0;
 	%
-	% Stopping criteria - post-step.
-	prm.deltaTol = eps^0.8;
-	%
-	% Step assessment and BT/dynamic TR params.
+	% General step generation param.
+	%%%prm.stepType = "grad";
 	prm.horribleCoeff = 2.0;
 	prm.btFactor = 0.1;
+	prm.deltaTol = eps^0.8;
 	%
 	prm = overwritefields( prm, prmIn );
 	%
