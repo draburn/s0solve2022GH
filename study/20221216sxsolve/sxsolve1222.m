@@ -27,27 +27,24 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 	assert( isrealarray(vecGInit,[sizeX,1]) );
 	%
 	% Init - Solver.
-	vecXBestPrev = [];
-	fBestPrev = [];
-	vecGBestPrev = [];
 	vecXBest = vecXInit;
 	fBest = fInit;
 	vecGBest = vecGInit;
 	matX = [];
 	rvecF = [];
 	matG = [];
-	%
 	iterCount = 0;
+	stepSizeCoeff = 1.0;
+	%
+	% Init - Extras.
 	trialCount_horrible = 0;
 	trialCount_bad = 0;
 	trialCount_good = 0;
-	%
-	
-	currentBTFactor = 1.0;
-	
-	
-	stepBTFactor = 0.0;
-	sizeKMostRecent = 0;
+	prev_vecXBest = [];
+	prev_fBest = [];
+	prev_vecGBest = [];
+	prev_sizeK = 0;
+	prev_stepSizeCoeff = 0;
 	%
 	if ( prm.progressReportInterval >= 0.0 )
 		sxsolve1222__reportProg;
@@ -99,7 +96,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 		%
 		% Generate step.
 		gradStepCoeff = mygetfield( prm, "gradStepCoeff", 0.1 );
-		vecDelta = -currentBTFactor *gradStepCoeff * vecGBest;
+		vecDelta = -stepSizeCoeff *gradStepCoeff * vecGBest;
 		%
 		%
 		% Try the step.
@@ -111,13 +108,11 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 		% For step assessment, might be nice to consider median values in records?
 		haveNewBest = false; % Unless...
 		whollyRejectStep = false; % Unless...
-		if ( fTrial > prm.horribleFCoeff * fBest )
-			whollyRejectStep = true;
-		elseif ( fTrial > fBest && norm(vecGTrial) > prm.horribleGCoeff * norm(vecGBest) )
+		if ( fTrial > prm.horribleCoeff * fBest )
 			whollyRejectStep = true;
 		endif
 		if ( whollyRejectStep )
-			currentBTFactor *= prm.btFactor;
+			stepSizeCoeff *= prm.btFactor;
 			%msg( __FILE__, __LINE__, "Wholly rejecting step!" );
 			trialCount_horrible++;
 		else
@@ -128,17 +123,17 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 					matD_beforeStep = [];
 				endif
 				% Put new info in *front*, so it gets orthonormalized first.
-				vecXBestPrev = vecXBest;
-				fBestPrev = fBest;
-				vecGBestPrev = vecGBest;
+				prev_vecXBest = vecXBest;
+				prev_fBest = fBest;
+				prev_vecGBest = vecGBest;
 				matX = [ vecXBest, matX ];
 				rvecF = [ fBest, rvecF ];
 				matG = [ vecGBest, matG ];
 				vecXBest = vecXTrial;
 				fBest = fTrial;
 				vecGBest = vecGTrial;
-				stepBTFactor = currentBTFactor;
-				currentBTFactor = 1.0;
+				prev_stepSizeCoeff = stepSizeCoeff;
+				stepSizeCoeff = 1.0;
 				haveNewBest = true;
 				trialCount_good++;
 			else
@@ -154,10 +149,10 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 		% Check post-iter stop crit.
 		if ( prm.deltaTol >= 0.0 && norm(vecDelta) <= prm.deltaTol )
 			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "IMPOSED STOP: norm(vecDelta) <= prm.deltaTol." );
-				stepBTFactor = currentBTFactor;
-				vecXBestPrev = vecXBest;
-				fBestPrev = fBest;
-				vecGBestPrev = vecGBest;
+				prev_stepSizeCoeff = stepSizeCoeff;
+				prev_vecXBest = vecXBest;
+				prev_fBest = fBest;
+				prev_vecGBest = vecGBest;
 			retCode = RETCODE__IMPOSED_STOP;
 			doMainLoop = false;
 			break;
@@ -197,7 +192,6 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	mydefs;
 	%
 	% Common stuff.
-	%sizeX = size(vecXInit,1);
 	prm.verbLev = VERBLEV__DETAILED;
 	prm.valdLev = VALDLEV__UNLIMITED;
 	prm.progressReportInterval = 0.1;
@@ -214,22 +208,17 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	prm.deltaTol = eps^0.8;
 	%
 	% Step assessment and BT/dynamic TR params.
-	prm.horribleFCoeff = 2.0;
-	prm.horribleGCoeff = 2.0;
+	prm.horribleCoeff = 2.0;
 	prm.btFactor = 0.1;
 	%
 	prm = overwritefields( prm, prmIn );
-	assert( prm.horribleGCoeff > 1.0 );
-	assert( prm.horribleFCoeff > 1.0 );
-	assert( prm.btFactor > 0.0 );
-	assert( prm.btFactor < 1.0 );
 	%
 	fevalCount = 0;
 return;
 endfunction
 
 
-function [ vecDelta, datOut ] = __getStep_crude( currentBTFactor, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
+function [ vecDelta, datOut ] = __getStep_crude( stepSizeCoeff, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
 	datOut = [];
 	matD = matX - vecXBest;
 	matV = utorthdrop( matD, prm.dropThresh );
@@ -239,8 +228,8 @@ function [ vecDelta, datOut ] = __getStep_crude( currentBTFactor, vecXBest, fBes
 	rvecFWB = [ rvecF, fBest ];
 	[ fFit, vecGamma, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
 	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
-	vecZ = mycholdiv( matH, -currentBTFactor*vecGamma, false );
-	vecDeltaGrad = -currentBTFactor * prm.gradStepCoeff * vecGradPerp;
+	vecZ = mycholdiv( matH, -stepSizeCoeff*vecGamma, false );
+	vecDeltaGrad = -stepSizeCoeff * prm.gradStepCoeff * vecGradPerp;
 	vecDelta = vecDeltaGrad + matV*vecZ;
 	datOut.sizeK = 0;
 	if (0)
