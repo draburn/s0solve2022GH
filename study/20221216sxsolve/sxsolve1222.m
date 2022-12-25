@@ -94,8 +94,11 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 		%
 		% Generate step.
 		%[ vecDelta, datOut ] = __getStep_grad( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
-		[ vecDelta, datOut ] = __getStep_crude( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+		[ vecDelta, datOut ] = __getStep_newtCheat( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 		sizeK = datOut.sizeK;
+		if ( isempty(trSize) )
+			trSize = norm(vecDelta);
+		endif
 		%
 		%
 		% Try the step.
@@ -176,7 +179,7 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	% Common stuff.
 	prm.verbLev = VERBLEV__DETAILED;
 	prm.valdLev = VALDLEV__UNLIMITED;
-	prm.progressReportInterval = 0.01;
+	prm.progressReportInterval = 0.0;
 	%
 	% Stopping criteria - pre-step.
 	prm.fTol = eps^0.8;
@@ -212,8 +215,31 @@ function [ vecDelta, datOut ] = __getStep_grad( trSize, vecXBest, fBest, vecGBes
 	datOut.sizeK = 0;
 return;
 endfunction
+function [ vecDelta, datOut ] = __getStep_newtCheat( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
+	datOut = [];
+	sizeX = size(vecXBest,1);
+	matV = eye(sizeX,sizeX);
+	matH = zeros(sizeX,sizeX);
+	epsFD = 1.0e-4;
+	for n=1:sizeX
+		xp = vecXBest + epsFD*matV(:,n);
+		xm = vecXBest - epsFD*matV(:,n);
+		[ fp, gp ] = prm.funchFGSecret( xp );
+		[ fm, gm ] = prm.funchFGSecret( xm );
+		matH(:,n) = (gp-gm)/(2.0*epsFD);
+	endfor
+	matH = ( matH' + matH ) / 2.0;
+	vecDelta = newtish_eig( matH, -vecGBest );
+	if ( ~isempty(trSize) && norm(vecDelta) > trSize )
+		vecDelta *= trSize / norm(vecDelta);
+	endif
+	datOut.sizeK = sizeX;
+return;
+endfunction
 function [ vecDelta, datOut ] = __getStep_crude( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
 	datOut = [];
+	sizeX = size(vecXBest,1);
+	error( "WIP..." );
 	%
 	if ( isempty(trSize) )
 		defaultFallTarget = 0.01;
@@ -237,6 +263,13 @@ function [ vecDelta, datOut ] = __getStep_crude( trSize, vecXBest, fBest, vecGBe
 		vecDelta_newtish *= trSize/norm(vecDelta_newtish);
 	endif
 	%
-	vecDelta = vecDelta_newtish + vecDelta_grad;
+	if ( sizeK < sizeX )
+		vecDelta = vecDelta_newtish + vecDelta_grad;
+	else
+		echo__matHSecret = prm.matHSecret
+		echo__matVHVT = matV * matH * (matV')
+		error( "HALT!" );
+		vecDelta = vecDelta_newtish;
+	endif
 	datOut.sizeK = sizeK;
 endfunction

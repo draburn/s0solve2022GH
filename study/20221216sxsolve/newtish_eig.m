@@ -13,7 +13,7 @@ function [ vecX, datOut ] = newtish_eig( matA, vecB, prm=[] )
 	%
 	[ matPsi, matLambda ] = eig( matA );
 	vecLambda = diag(matLambda);
-	epsLambdaMin = mygetfield( prm, "epsLambdaMin", 1e-4 );
+	epsLambdaMin = mygetfield( prm, "epsLambdaMin", 1.0e-4 );
 	lambdaMinImposed = epsLambdaMin * max(abs(vecLambda));
 	assert( 0.0 < lambdaMinImposed );
 	vecLambdaMod = vecLambda;
