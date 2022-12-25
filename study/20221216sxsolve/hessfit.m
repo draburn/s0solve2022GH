@@ -134,6 +134,8 @@ function [ vecFGL, solveDat ] = __solve_gmres( funchRes, vecFGL0, prm )
 return
 endfunction
 function [ vecFGL, solveDat ] = __solve_fullMat( funchRes, vecFGL0, prm )
+	vecFGL = [];
+	solveDat = [];
 	vecRes0 = funchRes(vecFGL0);
 	funchA = @(fgl)( funchRes(fgl+vecFGL0) - vecRes0 );
 	sz = length(vecRes0);
@@ -150,8 +152,20 @@ function [ vecFGL, solveDat ] = __solve_fullMat( funchRes, vecFGL0, prm )
 	%msg( __FILE__, __LINE__, sprintf("  cond() = %0.3e", cond(matM) ) )
 	%vecFGL = vecFGL0 - matM \ vecRes0;
 	%vecFGL = vecFGL0 - mycholdiv( matM, vecRes0 );
-	vecFGL = vecFGL0 - newtish_eig( matM, vecRes0 );
-	solveDat = [];
+	vecDelta = mycholdiv( matM, -vecRes0 );
+	if ( ~isempty(vecDelta) )
+		vecFGL = vecFGL0 + vecDelta;
+		return;
+	endif
+	prm = [];
+	prm.epsLambdaMin = sqrt(eps);
+	vecDelta = newtish_eig( matM, -vecRes0, prm );
+	if ( ~isempty(vecDelta) )
+		vecFGL = vecFGL0 + vecDelta;
+		return;
+	endif
+	vecDelta = newtish_eig( matM, -vecRes0 );
+	vecFGL = vecFGL0 + vecDelta;
 return
 endfunction
 function [ vecFGL, solveDat ] = __solve_sparseMat( funchRes, vecFGL0, prm )

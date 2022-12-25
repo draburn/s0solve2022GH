@@ -34,7 +34,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 	rvecF = [];
 	matG = [];
 	iterCount = 0;
-	trSize = [];
+	trSize = prm.initialTRSize; % Could be empty.
 	%
 	% Init - Extras.
 	trialCount_horrible = 0;
@@ -94,11 +94,9 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 		%
 		% Generate step.
 		%[ vecDelta, datOut ] = __getStep_grad( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
-		[ vecDelta, datOut ] = __getStep_newtCheat( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+		%[ vecDelta, datOut ] = __getStep_newtCheat( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+		[ vecDelta, datOut ] = __getStep_crude( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 		sizeK = datOut.sizeK;
-		if ( isempty(trSize) )
-			trSize = norm(vecDelta);
-		endif
 		%
 		%
 		% Try the step.
@@ -112,7 +110,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 		if ( fTrial > prm.horribleCoeff * fBest )
 			trialCount_horrible++;
 			haveNewBest = false;
-			trSize = min([ trSize, norm(vecDelta) ]) * prm.btFactor_horrible;
+			trSize = norm(vecDelta) * prm.btFactor_horrible;
 		elseif ( fTrial >= fBest )
 			trialCount_bad++;
 			% Put new info in *front*, so it gets orthonormalized first.
@@ -120,7 +118,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 			rvecF = [ fTrial, rvecF ];
 			matG = [ vecGTrial, matG ];
 			haveNewBest = false;
-			trSize = min([ trSize, norm(vecDelta) ]) * prm.btFactor_bad;
+			trSize = norm(vecDelta) * prm.btFactor_bad;
 		else
 			trialCount_good++;
 			% Put new info in *front*, so it gets orthonormalized first.
@@ -134,7 +132,9 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 			fBest = fTrial;
 			vecGBest = vecGTrial;
 			haveNewBest = true;
-			trSize = max([ trSize, norm(vecDelta)*prm.ftFactor_good ]);
+			if (~isempty(trSize))
+				trSize = max([ trSize, norm(vecDelta)*prm.ftFactor_good ]);
+			endif
 		endif
 		%
 		%
@@ -190,7 +190,8 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	prm.stopSignalCheckInterval = 10.0;
 	%
 	% General step generation param.
-	prm.defaultFFallTarget = 0.01;
+	prm.defaultFallTarget = 0.1;
+	prm.initialTRSize = [];
 	prm.horribleCoeff = 2.0;
 	prm.btFactor_horrible = 0.1;
 	prm.btFactor_bad = 0.5;
@@ -206,11 +207,9 @@ endfunction
 
 function [ vecDelta, datOut ] = __getStep_grad( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
 	datOut = [];
-	if ( isempty(trSize) )
-		defaultFallTarget = 0.01;
-		vecDelta = (-defaultFallTarget*fBest/sumsq(vecGBest)) * vecGBest;
-	else
-		vecDelta = (-trSize/norm(vecGBest)) * vecGBest;
+	vecDelta = (-prm.defaultFallTarget*fBest/sumsq(vecGBest)) * vecGBest;
+	if ( ~isempty(trSize) && norm(vecDelta) > trSize )
+		vecDelta *= trSize / norm(vecDelta);
 	endif
 	datOut.sizeK = 0;
 return;
@@ -237,39 +236,37 @@ function [ vecDelta, datOut ] = __getStep_newtCheat( trSize, vecXBest, fBest, ve
 return;
 endfunction
 function [ vecDelta, datOut ] = __getStep_crude( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
+	vecDelta = [];
 	datOut = [];
 	sizeX = size(vecXBest,1);
-	error( "WIP..." );
 	%
-	if ( isempty(trSize) )
-		defaultFallTarget = 0.01;
-		vecDelta = (-defaultFallTarget*fBest/sumsq(vecGBest)) * vecGBest;
-		datOut.sizeK = 0;
+	if ( 0 == size(matX,2) )
+		[ vecDelta, datOut ] = __getStep_grad( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 		return;
 	endif
-	vecDelta_grad = (-trSize/norm(vecGBest)) * vecGBest;
 	%
 	matD = matX - vecXBest;
 	[ matV, rvecDrop ] = utorthdrop( matD );
+	%
+	vecGammaBest = matV'*vecGBest;
+	vecGPerp = vecGBest - matV*vecGammaBest;
+	if ( norm(vecGPerp) > 0.5 * norm(vecGBest) )
+		[ vecDelta, datOut ] = __getStep_grad( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+		return;
+	endif
 	sizeK = size(matV,2);
 	%
+	vecGammaBest = matV'*vecGBest;
 	matVTDWB = [ matV'*matD(:,~rvecDrop), zeros(sizeK,1) ];
-	matVTGWB = matV'*[matG(:,~rvecDrop), vecGBest ];
+	matVTGWB = [ matV'*matG(:,~rvecDrop), vecGammaBest ];
 	rvecFWB = [ rvecF(~rvecDrop), fBest ];
-	[ fFit, vecGammaFit, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
-	vecGammaBest = matVTGWB(:,end);
-	vecDelta_newtish = matV * newtish_eig( matH, -vecGammaBest );
-	if ( norm(vecDelta_newtish) > trSize )
-		vecDelta_newtish *= trSize/norm(vecDelta_newtish);
-	endif
+	[ fFit, vecGammaFit, matHFit ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
+	vecDelta = matV * levsol_eig( fBest, vecGammaBest, matHFit, [], trSize );
 	%
-	if ( sizeK < sizeX )
-		vecDelta = vecDelta_newtish + vecDelta_grad;
-	else
-		echo__matHSecret = prm.matHSecret
-		echo__matVHVT = matV * matH * (matV')
-		error( "HALT!" );
-		vecDelta = vecDelta_newtish;
+	if ( sizeK >= sizeX )
+		%echo__matHSecret = prm.matHSecret
+		%echo__matVHVT = matV * matHFit * (matV')
+		%error( "HALT!" );
 	endif
 	datOut.sizeK = sizeK;
 endfunction
