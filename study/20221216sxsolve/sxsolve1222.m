@@ -93,7 +93,8 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 		%
 		%
 		% Generate step.
-		[ vecDelta, datOut ] = __getStep_grad( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+		%[ vecDelta, datOut ] = __getStep_grad( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+		[ vecDelta, datOut ] = __getStep_crude( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 		sizeK = datOut.sizeK;
 		%
 		%
@@ -202,9 +203,6 @@ endfunction
 
 function [ vecDelta, datOut ] = __getStep_grad( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
 	datOut = [];
-	%defaultGradCoeff = 0.1;
-	%vecDelta = -defaultGradCoeff*vecGBest;
-	%
 	if ( isempty(trSize) )
 		defaultFallTarget = 0.01;
 		vecDelta = (-defaultFallTarget*fBest/sumsq(vecGBest)) * vecGBest;
@@ -213,4 +211,32 @@ function [ vecDelta, datOut ] = __getStep_grad( trSize, vecXBest, fBest, vecGBes
 	endif
 	datOut.sizeK = 0;
 return;
+endfunction
+function [ vecDelta, datOut ] = __getStep_crude( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
+	datOut = [];
+	%
+	if ( isempty(trSize) )
+		defaultFallTarget = 0.01;
+		vecDelta = (-defaultFallTarget*fBest/sumsq(vecGBest)) * vecGBest;
+		datOut.sizeK = 0;
+		return;
+	endif
+	vecDelta_grad = (-trSize/norm(vecGBest)) * vecGBest;
+	%
+	matD = matX - vecXBest;
+	[ matV, rvecDrop ] = utorthdrop( matD );
+	sizeK = size(matV,2);
+	%
+	matVTDWB = [ matV'*matD(:,~rvecDrop), zeros(sizeK,1) ];
+	matVTGWB = matV'*[matG(:,~rvecDrop), vecGBest ];
+	rvecFWB = [ rvecF(~rvecDrop), fBest ];
+	[ fFit, vecGammaFit, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
+	vecGammaBest = matVTGWB(:,end);
+	vecDelta_newtish = matV * newtish_eig( matH, -vecGammaBest );
+	if ( norm(vecDelta_newtish) > trSize )
+		vecDelta_newtish *= trSize/norm(vecDelta_newtish);
+	endif
+	%
+	vecDelta = vecDelta_newtish + vecDelta_grad;
+	datOut.sizeK = sizeK;
 endfunction
