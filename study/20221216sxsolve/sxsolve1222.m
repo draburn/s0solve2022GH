@@ -34,7 +34,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 	rvecF = [];
 	matG = [];
 	iterCount = 0;
-	stepSizeCoeff = 1.0;
+	trSize = [];
 	%
 	% Init - Extras.
 	trialCount_horrible = 0;
@@ -93,10 +93,8 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 		%
 		%
 		% Generate step.
-		gradStepCoeff = mygetfield( prm, "gradStepCoeff", 0.1 );
-		vecDelta = -stepSizeCoeff * gradStepCoeff * vecGBest;
-		clear gradStepCoeff;
-		sizeK = 0;
+		[ vecDelta, datOut ] = __getStep_grad( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+		sizeK = datOut.sizeK;
 		%
 		%
 		% Try the step.
@@ -106,17 +104,19 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 		%
 		%
 		% For step assessment, might be nice to consider median values in records?
-		stepSizeCoeff_beforeUpdate = stepSizeCoeff;
+		trSize_beforeUpdate = trSize;
 		if ( fTrial > prm.horribleCoeff * fBest )
 			trialCount_horrible++;
-			stepSizeCoeff *= prm.btFactor;
+			haveNewBest = false;
+			trSize = min([ trSize, norm(vecDelta) ]) * prm.btFactor_horrible;
 		elseif ( fTrial >= fBest )
 			trialCount_bad++;
 			% Put new info in *front*, so it gets orthonormalized first.
 			matX = [ vecXTrial, matX ];
 			rvecF = [ fTrial, rvecF ];
 			matG = [ vecGTrial, matG ];
-			% Should we reset stepSizeCoeff?
+			haveNewBest = false;
+			trSize = min([ trSize, norm(vecDelta) ]) * prm.btFactor_bad;
 		else
 			trialCount_good++;
 			% Put new info in *front*, so it gets orthonormalized first.
@@ -129,7 +129,8 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 			vecXBest = vecXTrial;
 			fBest = fTrial;
 			vecGBest = vecGTrial;
-			stepSizeCoeff = 1.0;
+			haveNewBest = true;
+			trSize = max([ trSize, norm(vecDelta)*prm.ftFactor_good ]);
 		endif
 		%
 		%
@@ -146,10 +147,11 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 		%
 		%
 		% Report progress.
-		if ( prm.progressReportInterval >= 0.0 && time() - progressReportedTime >= prm.progressReportInterval )
+		if ( haveNewBest && prm.progressReportInterval >= 0.0 && time() - progressReportedTime >= prm.progressReportInterval )
 			sxsolve1222__reportProg;
 			progressReportedTime = time();
 		endif
+		clear haveNewBest;
 	endwhile
 	%
 	if ( prm.verbLev >= VERBLEV__MAIN )
@@ -173,7 +175,7 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	% Common stuff.
 	prm.verbLev = VERBLEV__DETAILED;
 	prm.valdLev = VALDLEV__UNLIMITED;
-	prm.progressReportInterval = 0.1;
+	prm.progressReportInterval = 0.01;
 	%
 	% Stopping criteria - pre-step.
 	prm.fTol = eps^0.8;
@@ -184,9 +186,11 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	prm.stopSignalCheckInterval = 10.0;
 	%
 	% General step generation param.
-	%%%prm.stepType = "grad";
+	prm.defaultFFallTarget = 0.01;
 	prm.horribleCoeff = 2.0;
-	prm.btFactor = 0.1;
+	prm.btFactor_horrible = 0.1;
+	prm.btFactor_bad = 0.5;
+	prm.ftFactor_good = 1.3;
 	prm.deltaTol = eps^0.8;
 	%
 	prm = overwritefields( prm, prmIn );
@@ -196,25 +200,17 @@ return;
 endfunction
 
 
-function [ vecDelta, datOut ] = __getStep_crude( stepSizeCoeff, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
+function [ vecDelta, datOut ] = __getStep_grad( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
 	datOut = [];
-	matD = matX - vecXBest;
-	matV = utorthdrop( matD, prm.dropThresh );
-	datOut.sizeK = size(matV,2);
-	matVTDWB = matV' * [ matD, zeros(size(vecXBest)) ];
-	matVTGWB = matV' * [ matG, vecGBest ];
-	rvecFWB = [ rvecF, fBest ];
-	[ fFit, vecGamma, matH ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
-	vecGradPerp = vecGBest - ( matV * ( matV' * vecGBest ) );
-	vecZ = mycholdiv( matH, -stepSizeCoeff*vecGamma, false );
-	vecDeltaGrad = -stepSizeCoeff * prm.gradStepCoeff * vecGradPerp;
-	vecDelta = vecDeltaGrad + matV*vecZ;
-	datOut.sizeK = 0;
-	if (0)
-		vecDScale = max( abs(matVTDWB), [], 2 );
-		vecB = 1.0 ./ ( vecDScale + prm.epsB * max(vecDScale) );
-		matB = diag(vecB);
-		[ norm(vecZ), norm(matB*vecZ), norm(vecDelta) ]
+	%defaultGradCoeff = 0.1;
+	%vecDelta = -defaultGradCoeff*vecGBest;
+	%
+	if ( isempty(trSize) )
+		defaultFallTarget = 0.01;
+		vecDelta = (-defaultFallTarget*fBest/sumsq(vecGBest)) * vecGBest;
+	else
+		vecDelta = (-trSize/norm(vecGBest)) * vecGBest;
 	endif
+	datOut.sizeK = 0;
 return;
 endfunction
