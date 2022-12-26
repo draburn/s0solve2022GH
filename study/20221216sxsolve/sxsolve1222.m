@@ -191,11 +191,12 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	prm.iterLimit = 1E4;
 	prm.fevalLimit = -1;
 	prm.timeLimit = 30.0;
-	prm.stopSignalCheckInterval = 10.0;
+	prm.stopSignalCheckInterval = 1.0;
 	%
 	% General step generation param.
 	prm.maxFallTarget = 0.1;
-	prm.initialTRSize = 1.0e-3;
+	%prm.initialTRSize = 1.0e-3;
+	prm.initialTRSize = [];
 	prm.horribleCoeff = 2.0;
 	prm.btFactor_horrible = 0.1;
 	prm.btFactor_bad = 0.5; % Could even be 1.0, assuming matX is used.

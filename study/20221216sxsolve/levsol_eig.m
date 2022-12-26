@@ -150,6 +150,7 @@ function [ vecDelta, datOut ] = __solve( f0, vecG, matH, bMax, bTol, fMin, fTol,
 	%  and repeated Cholesky factorization would likely be faster still.
 	% But, KISSxPOITROME.
 	[ matPsi, matLambda ] = eig( matH );
+	assert( isrealarray(matLambda,[sizeX,sizeX]) );
 	vecLambda = diag( matLambda );
 	vecPsiTNG = matPsi' * (-vecG);
 	%

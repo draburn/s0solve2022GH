@@ -147,6 +147,7 @@ function [ vecFGL, solveDat ] = __solve_fullMat( funchRes, vecFGL0, prm )
 		matM(:,n) = funchA(fgl);
 	endfor
 	clear fgl;
+	matM = (matM'+matM)/2.0;
 	%msg( __FILE__, __LINE__, "About our matrix..." );
 	%msg( __FILE__, __LINE__, sprintf("  sz = %d", sz ) );
 	%msg( __FILE__, __LINE__, sprintf("  cond() = %0.3e", cond(matM) ) )

@@ -8,10 +8,10 @@ function [ vecX, datOut ] = newtish_eig( matA, vecB, prm=[] )
 	assert( isrealarray(vecB,[sz,1]) );
 	assert( isrealarray(matA,[sz,sz]) );
 	debugMode = mygetfield( prm, "debugMode", false );
-	symTol = mygetfield( prm, "symTol", sqrt(eps) );
-	issymmetric( matA, symTol );
+	assert( issymmetric( matA ) );
 	%
 	[ matPsi, matLambda ] = eig( matA );
+	assert( isrealarray(matLambda,[sz,sz]) );
 	vecLambda = diag(matLambda);
 	epsLambdaMin = mygetfield( prm, "epsLambdaMin", 1.0e-4 );
 	lambdaMinImposed = epsLambdaMin * max(abs(vecLambda));
