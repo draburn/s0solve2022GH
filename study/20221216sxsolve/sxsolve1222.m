@@ -133,7 +133,11 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 			vecGBest = vecGTrial;
 			haveNewBest = true;
 			if (~isempty(trSize))
-				trSize = max([ trSize, norm(vecDelta)*prm.ftFactor_good ]);
+				if ( 0 == trialCount_bad && 0 == trialCount_horrible )
+					trSize = max([ trSize, norm(vecDelta)*prm.ftFactor_goodStart ]);
+				else
+					trSize = max([ trSize, norm(vecDelta)*prm.ftFactor_good ]);
+				endif
 			endif
 		endif
 		%
@@ -190,12 +194,13 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	prm.stopSignalCheckInterval = 10.0;
 	%
 	% General step generation param.
-	prm.defaultFallTarget = 0.1;
-	prm.initialTRSize = [];
+	prm.maxFallTarget = 0.1;
+	prm.initialTRSize = 1.0e-3;
 	prm.horribleCoeff = 2.0;
 	prm.btFactor_horrible = 0.1;
-	prm.btFactor_bad = 0.5;
-	prm.ftFactor_good = 1.3;
+	prm.btFactor_bad = 0.5; % Could even be 1.0, assuming matX is used.
+	prm.ftFactor_good = 1.5;
+	prm.ftFactor_goodStart = 10.0;
 	prm.deltaTol = eps^0.8;
 	%
 	prm = overwritefields( prm, prmIn );
@@ -207,7 +212,7 @@ endfunction
 
 function [ vecDelta, datOut ] = __getStep_grad( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
 	datOut = [];
-	vecDelta = (-prm.defaultFallTarget*fBest/sumsq(vecGBest)) * vecGBest;
+	vecDelta = (-prm.maxFallTarget*fBest/sumsq(vecGBest)) * vecGBest;
 	if ( ~isempty(trSize) && norm(vecDelta) > trSize )
 		vecDelta *= trSize / norm(vecDelta);
 	endif
@@ -247,6 +252,7 @@ function [ vecDelta, datOut ] = __getStep_crude( trSize, vecXBest, fBest, vecGBe
 	%
 	matD = matX - vecXBest;
 	[ matV, rvecDrop ] = utorthdrop( matD );
+	sizeK = size(matV,2);
 	%
 	vecGammaBest = matV'*vecGBest;
 	vecGPerp = vecGBest - matV*vecGammaBest;
@@ -254,19 +260,12 @@ function [ vecDelta, datOut ] = __getStep_crude( trSize, vecXBest, fBest, vecGBe
 		[ vecDelta, datOut ] = __getStep_grad( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 		return;
 	endif
-	sizeK = size(matV,2);
 	%
-	vecGammaBest = matV'*vecGBest;
 	matVTDWB = [ matV'*matD(:,~rvecDrop), zeros(sizeK,1) ];
 	matVTGWB = [ matV'*matG(:,~rvecDrop), vecGammaBest ];
 	rvecFWB = [ rvecF(~rvecDrop), fBest ];
 	[ fFit, vecGammaFit, matHFit ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
 	vecDelta = matV * levsol_eig( fBest, vecGammaBest, matHFit, [], trSize );
 	%
-	if ( sizeK >= sizeX )
-		%echo__matHSecret = prm.matHSecret
-		%echo__matVHVT = matV * matHFit * (matV')
-		%error( "HALT!" );
-	endif
 	datOut.sizeK = sizeK;
 endfunction

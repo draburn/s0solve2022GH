@@ -182,8 +182,12 @@ function [ vecDelta, datOut ] = __solve( f0, vecG, matH, bMax, bTol, fMin, fTol,
 	%  4. Store additional informaion (such as calculated vecDelta) to avoid need to re-calculate.
 	% See "AMUSING_myfzerod.m" for a decent code which hits points 1, 2, and 4.
 	% See "AMUSING_myfzero1216.m" for a not-so-great code which hits point 1 and 3 while attempting 2.
+	% 2022-12-25: NOTE: Have not verified that setting TolX works correctly.
 	if ( ~bSatisfied )
-		msg( __FILE__, __LINE__, "TODO: Input bTol." );
+		fzero_options = optimset();
+		if ( ~isempty(bTol) )
+			fzero_options = optimset( fzero_options, "TolX", bTol );
+		endif
 		bTrgt = bMax;
 		sMax = fzero( @(s) __getBResOfS( s, hScl, bTrgt, matPsi, vecLambda, vecPsiTNG ), [ 0.0, sMax ] );
 		[ vecDelta_trial, b, f ] = __getDeltaBFOfS( sMax, hScl, f0, vecG, matH, matPsi, vecLambda, vecPsiTNG );
@@ -192,7 +196,10 @@ function [ vecDelta, datOut ] = __solve( f0, vecG, matH, bMax, bTol, fMin, fTol,
 		assert( bSatisfied );
 	endif
 	if ( ~fSatisfied )
-		msg( __FILE__, __LINE__, "TODO: Input fTol." );
+		fzero_options = optimset();
+		if ( ~isempty(fTol) )
+			fzero_options = optimset( fzero_options, "TolX", fTol );
+		endif
 		fTrgt = fMin;
 		sMax = fzero( @(s) __getFResOfS( s, hScl, fTrgt, f0, vecG, matH, matPsi, vecLambda, vecPsiTNG ), [ 0.0, sMax ] );
 		[ vecDelta_trial, b, f ] = __getDeltaBFOfS( sMax, hScl, f0, vecG, matH, matPsi, vecLambda, vecPsiTNG );
