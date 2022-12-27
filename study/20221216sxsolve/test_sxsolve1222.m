@@ -10,11 +10,11 @@ expVarCoeff = 0.0
 noiseDat = [ 0.0, 0.0, 0.0; 0.0, 0.0, 0.0 ]
 %noiseDat = [ 1.0e-2, 0.0, 0.0; 1.0e-4, 0.0, 0.0 ];
 prm = [];
-prm.iterLimit = 200;
+prm.iterLimit = 500;
 %
 vecXSecret = randn(sizeX,1) .* exp(expVarCoeff*abs(randn(sizeX,1)));
 %fSecret = max([ exp(expVarCoeff*randn()), 0.0 ]);
-fSecret = 0.0;
+fSecret = 1.0;
 %matSF = diag(exp(expVarCoeff*randn(sizeX,1)));
 %matSX = diag(exp(expVarCoeff*randn(sizeX,1)));
 %matA = randn(sizeX,sizeX) .* exp(expVarCoeff*randn(sizeX,sizeX));

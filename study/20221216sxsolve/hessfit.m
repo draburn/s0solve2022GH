@@ -160,6 +160,17 @@ function [ vecFGL, solveDat ] = __solve_fullMat( funchRes, vecFGL0, prm )
 		vecFGL = vecFGL0 + vecDelta;
 		return;
 	endif
+	msg( __FILE__, __LINE__, "Infodump because mycholdiv failed..." );
+	[ matPsi, matLambda ] = eig(matM);
+	vecLambda = diag(matLambda);
+	eigRange_matM = [ min(vecLambda), max(vecLambda) ]
+	vecLambdaMod = vecLambda;
+	lambdaMinEnforced = eps * max(vecLambda);
+	vecLambdaMod( vecLambdaMod < eps*lambdaMinEnforced ) = lambdaMinEnforced;
+	vecDelta = matPsi * ( -(matPsi*vecRes0)./vecLambdaMod );
+	vecFGL = vecFGL0 + vecDelta;
+	return;
+	%
 	error( "mycholdiv failed." );
 	prm = [];
 	prm.epsLambdaMin = sqrt(eps);

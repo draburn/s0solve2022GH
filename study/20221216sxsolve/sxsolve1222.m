@@ -187,12 +187,12 @@ function [ prm, fevalCount ] = __init( funchFG, vecXInit, prmIn )
 	prm.progressReportInterval = 0.0;
 	%
 	% Stopping criteria - pre-step.
-	prm.fTol = eps^0.8;
-	prm.gTol = eps^0.8;
+	prm.fTol = eps^0.7;
+	prm.gTol = eps^0.4;
 	prm.iterLimit = 1E4;
 	prm.fevalLimit = -1;
 	prm.timeLimit = 30.0;
-	prm.stopSignalCheckInterval = 1.0;
+	prm.stopSignalCheckInterval = 3.0;
 	%
 	% General step generation param.
 	prm.maxFallTarget = 0.1;
