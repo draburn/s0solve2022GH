@@ -5,12 +5,12 @@ mydefs;
 %setprngstates(1);
 %setprngstates(22842624);
 setprngstates(71281280);
-sizeX = 20
+sizeX = 100
 expVarCoeff = 0.0
 noiseDat = [ 0.0, 0.0, 0.0; 0.0, 0.0, 0.0 ]
 %noiseDat = [ 1.0e-2, 0.0, 0.0; 1.0e-4, 0.0, 0.0 ];
 prm = [];
-prm.iterLimit = 50;
+prm.iterLimit = 200;
 %
 vecXSecret = randn(sizeX,1) .* exp(expVarCoeff*abs(randn(sizeX,1)));
 %fSecret = max([ exp(expVarCoeff*randn()), 0.0 ]);
@@ -42,3 +42,4 @@ prm.funchFGSecret = funchFG;
 prm.matHSecret = matHSecret;
 %echo__prm = prm
 [ vecXCalc, retCode, datOut ] = sxsolve1222( funchFG, vecX0, prm );
+assert( reldiff(vecXCalc,vecXSecret) < 0.01 );

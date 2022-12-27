@@ -57,7 +57,7 @@ function [ vecX, matR ] = mycholdiv( matA, vecB, prm=[] )
 	vecX2 = matR2 \ ( matR2' \ vecB );
 	vecX = (2.0*vecX1) - vecX2;
 	%
-	extrapTol = mygetfield( prm, "extrapTol", sqrt(sqrt(eps)) );
+	extrapTol = mygetfield( prm, "extrapTol", 0.5 );
 	rd = reldiff( vecX, vecX2 );
 	if ( rd > extrapTol )
 		if ( debugMode )

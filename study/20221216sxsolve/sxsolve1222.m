@@ -95,7 +95,8 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 		% Generate step.
 		%[ vecDelta, datOut ] = __getStep_grad( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 		%[ vecDelta, datOut ] = __getStep_newtCheat( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
-		[ vecDelta, datOut ] = __getStep_crude( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+		%[ vecDelta, datOut ] = __getStep_crude( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+		[ vecDelta, datOut ] = __getStep_crude_north( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 		sizeK = datOut.sizeK;
 		%
 		%
@@ -252,7 +253,7 @@ function [ vecDelta, datOut ] = __getStep_crude( trSize, vecXBest, fBest, vecGBe
 	endif
 	%
 	matD = matX - vecXBest;
-	[ matV, rvecDrop ] = utorthdrop( matD );
+	[ matV, rvecDrop ] = utorthdrop( matD, 0.1 );
 	sizeK = size(matV,2);
 	%
 	vecGammaBest = matV'*vecGBest;
@@ -265,8 +266,115 @@ function [ vecDelta, datOut ] = __getStep_crude( trSize, vecXBest, fBest, vecGBe
 	matVTDWB = [ matV'*matD(:,~rvecDrop), zeros(sizeK,1) ];
 	matVTGWB = [ matV'*matG(:,~rvecDrop), vecGammaBest ];
 	rvecFWB = [ rvecF(~rvecDrop), fBest ];
-	[ fFit, vecGammaFit, matHFit ] = hessfit( matVTDWB, rvecFWB, matVTGWB );
+	fitPrm = [];
+	fitPrm.epsHRegu = 0.0;
+	[ fFit, vecGammaFit, matHFit ] = hessfit( matVTDWB, rvecFWB, matVTGWB, fitPrm );
+	%
+	validateFit = true;
+	if ( validateFit )
+		%lambdaVec = eig(matHFit);
+		%eigRangeHFit = [ min(lambdaVec), max(lambdaVec) ]
+		matHTrue = prm.matHSecret;
+		rdF = reldiff(fFit,fBest);
+		rdG = reldiff(vecGammaFit,vecGammaBest);
+		rdH = reldiff(matHFit,matV'*matHTrue*matV);
+		if ( rdF >= 1.0e-4 || rdG >= 1.0e-4 || rdH >= 1.0e-4 )
+			%vecXBest
+			%matX
+			%matD
+			%vecGBest
+			%matG
+			matV
+			matVTDWB
+			log10(sum(matVTDWB.^2,1))
+			matVTGWB
+			log10(sum(matVTGWB.^2,1))
+			rvecFWB
+			fVals = [ fBest, fFit, fFit - fBest ]
+			vecGammaVals = [ vecGammaBest, vecGammaFit, vecGammaFit - vecGammaBest ]
+			matHFit
+			matVTHVTrue = matV'*matHTrue*matV
+			matHRes = matHFit - matVTHVTrue
+			rd = [ rdF, rdG, rdH ]
+		endif
+		assert( rdF < 1.0e-4 );
+		assert( rdG < 1.0e-4 );
+		assert( rdH < 1.0e-4 );
+	endif
 	vecDelta = matV * levsol_eig( fBest, vecGammaBest, matHFit, [], trSize );
 	%
 	datOut.sizeK = sizeK;
+return;
+endfunction
+function [ vecDelta, datOut ] = __getStep_crude_north( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm )
+	vecDelta = [];
+	datOut = [];
+	sizeX = size(vecXBest,1);
+	%
+	if ( 0 == size(matX,2) )
+		[ vecDelta, datOut ] = __getStep_grad( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+		return;
+	endif
+	matD_raw = matX - vecXBest;
+	matV_perpCheck = utorthdrop( matD_raw, 0.1 );
+	vecGPerp = vecGBest - matV_perpCheck*(matV_perpCheck'*vecGBest);
+	if ( norm(vecGPerp) > 0.1 * norm(vecGBest) )
+		[ vecDelta, datOut ] = __getStep_grad( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+		return;
+	endif
+	[ foo, rvecDrop ] = utorthdrop( matD_raw, sqrt(eps) );
+	%%%[ foo, rvecDrop ] = utorthdrop( matD_raw, 0.001 );
+	%%%rvecDrop = (1:size(matX,2))>sizeX;
+	matX = matX(:,~rvecDrop);
+	matG = matG(:,~rvecDrop);
+	rvecF = rvecF(~rvecDrop);
+	%
+	matD = matX - vecXBest;
+	sizeD = size(matD,2);
+	matE = [ eye(sizeD), zeros(sizeD,1) ];
+	vecGammaBest = matD'*vecGBest;
+	matDTGWB = matD'*[ matG, vecGBest ];
+	rvecFWB = [ rvecF, fBest ];
+	fitPrm = [];
+	fitPrm.epsHRegu = 0.0;
+	[ fFit, vecGammaFit, matHFit ] = hessfit( matE, rvecFWB, matDTGWB, fitPrm );
+	%
+	validateFit = true;
+	if ( validateFit )
+		%lambdaVec = eig(matHFit);
+		%eigRangeHFit = [ min(lambdaVec), max(lambdaVec) ]
+		matHTrue = prm.matHSecret;
+		rdF = reldiff(fFit,fBest);
+		rdG = reldiff(vecGammaFit,vecGammaBest);
+		rdH = reldiff(matHFit,matD'*matHTrue*matD);
+		if ( rdF >= 1.0e-4 || rdG >= 1.0e-4 || rdH >= 1.0e-4 )
+			fVals = [ fBest, fFit, fFit - fBest ]
+			vecGammaVals = [ vecGammaBest, vecGammaFit, vecGammaFit - vecGammaBest ]
+			matHFit
+			matVTHVTrue = matD'*matHTrue*matD
+			matHRes = matHFit - matVTHVTrue
+			rd = [ rdF, rdG, rdH ]
+		endif
+		assert( rdF < 1.0e-4 );
+		assert( rdG < 1.0e-4 );
+		assert( rdH < 1.0e-4 );
+	endif
+	%
+	%%%matB = diag(sum(matD.^2,1));
+	%vecDelta = matD * levsol_eig( fBest, vecGammaBest, matHFit, [], trSize );
+	levPrm = [];
+	levPrm.epsEig = eps;
+	%%%vecDelta =  matD * levsol_eig( fBest, vecGammaBest, matHFit, [], trSize, levPrm );
+	matB = diag(sum(matD.^2,1));
+	vecDelta =  matD * levsol_eig( fBest, vecGammaBest, matHFit, matB, trSize, levPrm );
+	%
+	%%%assert(isempty(trSize));
+	%%%vecDelta = matD * ( matHFit \ (-vecGammaBest) );
+	%
+	%assert(isempty(trSize));
+	%%matR = chol(matHFit);
+	%%vecDelta = matD * ( matR \ ( matR' \ (-vecGammaBest) ) );
+	%vecDelta = matD * newtish_eig( matHFit, -vecGammaBest );
+	%
+	datOut.sizeK = size(matD,2);
 endfunction

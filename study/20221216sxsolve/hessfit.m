@@ -45,7 +45,8 @@ function [ vecFGL0, precalcDat, hess2lambdaDat ] = __init( matX, rvecF, matG, pr
 	rvecG = sqrt(sum(matG.^2,1));
 	rvecW0 = 1.0./( abs(rvecF) + sqrt(eps)*max(abs(rvecF)) );
 	rvecW1 = 1.0./( abs(rvecG) + sqrt(eps)*max(abs(rvecG)) );
-	epsHRegu = (eps^0.8)*sum(rvecF.^2)/sum(sum(matG.^2));
+	%epsHRegu = (eps^0.8)*sum(rvecF.^2)/sum(sum(matG.^2));
+	epsHRegu = 0.0;
 	precalcDat.rvecW0 = mygetfield( prm, "rvecW0", rvecW0 );
 	precalcDat.rvecW1 = mygetfield( prm, "rvecW1", rvecW1 );
 	precalcDat.epsHRegu = mygetfield( prm, "epsHRegu", epsHRegu );
@@ -155,17 +156,21 @@ function [ vecFGL, solveDat ] = __solve_fullMat( funchRes, vecFGL0, prm )
 	%vecFGL = vecFGL0 - mycholdiv( matM, vecRes0 );
 	vecDelta = mycholdiv( matM, -vecRes0 );
 	if ( ~isempty(vecDelta) )
+		assert( reldiff(-vecRes0,matM*vecDelta) < 1.0e-2 );
 		vecFGL = vecFGL0 + vecDelta;
 		return;
 	endif
+	error( "mycholdiv failed." );
 	prm = [];
 	prm.epsLambdaMin = sqrt(eps);
 	vecDelta = newtish_eig( matM, -vecRes0, prm );
 	if ( ~isempty(vecDelta) )
+		assert( reldiff(-vecRes0,matM*vecDelta) < 1.0e-6 );
 		vecFGL = vecFGL0 + vecDelta;
 		return;
 	endif
 	vecDelta = newtish_eig( matM, -vecRes0 );
+	assert( reldiff(-vecRes0,matM*vecDelta) < 1.0e-6 );
 	vecFGL = vecFGL0 + vecDelta;
 return
 endfunction

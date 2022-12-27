@@ -9,6 +9,7 @@ function [ vecDelta, datOut ] = levsol_eig( f0, vecG, matH, matB=[], bMax=[], pr
 	% Apply scaling.
 	vecG_scaled = matRB \ ( matRB' \ vecG );
 	matH_scaled = ( (matRB\(matRB'\matH)) / matRB ) / (matRB');
+	matH_scaled = (matH_scaled'+matH_scaled)/2.0;
 	%
 	% Do main work.
 	[ vecDelta_scaled, solveDat ] = __solve( f0, vecG_scaled, matH_scaled, bMax, bTol, fMin, fTol, prm );
