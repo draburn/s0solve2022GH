@@ -155,7 +155,7 @@ function [ vecDelta, datOut ] = __solve( f0, vecG, matH, bMax, bTol, fMin, fTol,
 	vecLambda = diag( matLambda );
 	vecPsiTNG = matPsi' * (-vecG);
 	%
-	% Itendify maximum (Newton) step size.
+	% Identify maximum (Newton) step size.
 	if ( min(vecLambda) < prm.epsEig * max(abs(vecLambda)) )
 		if ( min(vecLambda) < 0.0 )
 			muMin = abs(min(vecLambda)) + prm.epsEig * max(abs(vecLambda));

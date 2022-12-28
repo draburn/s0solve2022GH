@@ -375,6 +375,7 @@ function [ vecDelta, datOut ] = __getStep_crude_north( trSize, vecXBest, fBest, 
 		return;
 	endif
 	[ foo, rvecDrop ] = utorthdrop( matD_raw, sqrt(eps) );
+	%norm(vecGBest-foo*(foo'*vecGBest))/norm(vecGBest)
 	%%%[ foo, rvecDrop ] = utorthdrop( matD_raw, 0.001 );
 	%%%rvecDrop = (1:size(matX,2))>sizeX;
 	matX = matX(:,~rvecDrop);
@@ -418,6 +419,31 @@ function [ vecDelta, datOut ] = __getStep_crude_north( trSize, vecXBest, fBest, 
 	vecZ = levsol_eig( fFit, vecGammaFit, matHFit, matB, trSize, levPrm );
 	vecDelta =  matD * vecZ;
 	%
+	doPlots = false;
+	%doPlots = (size(matX,2) >= size(matX,1))
+	if ( doPlots )
+		numVals = 1001;
+		hScl = sqrt(sum(sum(matHFit.^2))/size(matHFit,2));
+		bScl = sqrt(sum(sum(matB.^2))/size(matB,2));
+		sVals = 1.0 - (1.0 - linspace(0.0,1.0,numVals).^2 ).^2;
+		aVals = zeros(1,numVals) + prm.funchFGNoiselessSecret(vecXBest);
+		fVals = zeros(1,numVals) + fFit;
+		dVals = zeros(1,numVals);
+		for n = 2 : numVals
+			s = sVals(n);
+			mu = ((1.0/s) - 1.0)*hScl/bScl;
+			z = ( matHFit + mu*matB ) \ (-vecGammaFit);
+			fVals(n) = fFit + z'*vecGammaFit + (z'*matHFit*z)/2.0;
+			dVals(n) = norm( matD * z );
+			aVals(n) = prm.funchFGNoiselessSecret(vecXBest + matD*z);
+		endfor
+		plot( ...
+		  dVals, fVals, 'o-', ...
+		  dVals, aVals, 'x-' );
+		grid on;
+		error( "HALT" );
+	endif
+	%
 	compareFitToNoiseless = false;
 	if ( compareFitToNoiseless )
 		vecGTrue = prm.funch_vecGSecret( vecXBest );
@@ -430,9 +456,9 @@ function [ vecDelta, datOut ] = __getStep_crude_north( trSize, vecXBest, fBest, 
 		vecGammaBestHat = vecGammaBest / norm(vecGammaBest);
 		vecGammaFitHat = vecGammaFit / norm(vecGammaFit);
 		%
-		%gammma_trueXFit = vecGammaTrueHat'*vecGammaFitHat
-		%gammma_trueXBest = vecGammaTrueHat'*vecGammaBestHat
-		%gamma_fitXBest = vecGammaFitHat'*vecGammaBestHat
+		gammma_trueXFit = vecGammaTrueHat'*vecGammaFitHat
+		gammma_trueXBest = vecGammaTrueHat'*vecGammaBestHat
+		gamma_fitXBest = vecGammaFitHat'*vecGammaBestHat
 		%
 		[ fTrue, vecGTrue ] = prm.funchFGNoiselessSecret(vecXBest);
 		matHFSTrue = prm.matHSecret;
@@ -440,12 +466,12 @@ function [ vecDelta, datOut ] = __getStep_crude_north( trSize, vecXBest, fBest, 
 		compare_f = [ fBest, fFit, fTrue, fFit-fTrue ]
 		%
 		vecGammaTrue = matD'*vecGTrue;
-		compare_gamma = [ vecGammaBest, vecGammaFit, vecGammaTrue, vecGammaFit-vecGammaTrue ]
+		%compare_gamma = [ vecGammaBest, vecGammaFit, vecGammaTrue, vecGammaFit-vecGammaTrue ]
 		rdG = reldiff(vecGammaFit,vecGammaTrue)
 		%
-		matHFit
-		matHTrue = matD'*matHFSTrue*matD
-		matHRes = matHFit - matHTrue
+		%matHFit
+		matHTrue = matD'*matHFSTrue*matD;
+		%matHRes = matHFit - matHTrue
 		rdH = reldiff(matHFit,matHTrue)
 		%
 		stepSize = norm(vecDelta)

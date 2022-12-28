@@ -15,7 +15,7 @@ prm = [];
 %
 vecXSecret = randn(sizeX,1) .* exp(expVarCoeff*abs(randn(sizeX,1)));
 %fSecret = max([ exp(expVarCoeff*randn()), 0.0 ]);
-fSecret = 0.0;
+fSecret = 1.0;
 %matSF = diag(exp(expVarCoeff*randn(sizeX,1)));
 %matSX = diag(exp(expVarCoeff*randn(sizeX,1)));
 %matA = randn(sizeX,sizeX) .* exp(expVarCoeff*randn(sizeX,sizeX));
@@ -37,10 +37,13 @@ if (0)
 	matHFit
 	return;
 endif
-noiseLevelTrials = 10000;
-noiseLevel = sqrt(sumsq(funchFG(vecXSecret+zeros(sizeX,noiseLevelTrials)))/noiseLevelTrials)
-prm.fTol = 30.0*noiseLevel;
-prm.fevalLimit = 100;
+numNLS = 10000; % "Noise Level Samples"
+[ rvecFNLS, matGNLS ] = funchFG( vecXSecret + zeros(sizeX,numNLS) );
+fNoiseLevel = sqrt( sum( (rvecFNLS-fSecret).^2 ) / numNLS )
+gNoiseLevel = sqrt( sum(sum( matGNLS.^2, 1 )) / numNLS )
+prm.fTol = 30.0*fNoiseLevel;
+prm.gTol = 10.0*gNoiseLevel;
+prm.fevalLimit = 1000;
 %
 vecX0 = zeros(sizeX,1);
 prm.funch_vecGSecret = @(x)( matHSecret*(x-vecXSecret) );
@@ -50,3 +53,7 @@ prm.matHSecret = matHSecret;
 %echo__prm = prm
 [ vecXCalc, retCode, datOut ] = sxsolve1222( funchFG, vecX0, prm );
 assert( reldiff(vecXCalc,vecXSecret) < 0.01 );
+fTol = prm.fTol
+gTol = prm.gTol
+fNoiseLevel
+gNoiseLevel
