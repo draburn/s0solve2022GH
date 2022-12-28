@@ -5,16 +5,17 @@ mydefs;
 %setprngstates(1);
 %setprngstates(22842624);
 setprngstates(71281280);
-sizeX = 100
+sizeX = 50
 expVarCoeff = 0.0
-noiseDat = [ 0.0, 0.0, 0.0; 0.0, 0.0, 0.0 ]
+%noiseDat = [ 0.0, 0.0, 0.0; 0.0, 0.0, 0.0 ]
+noiseDat = [ 1.0e-6, 0.0, 0.0; 1.0e-8, 0.0, 0.0 ];
 %noiseDat = [ 1.0e-2, 0.0, 0.0; 1.0e-4, 0.0, 0.0 ];
 prm = [];
-prm.iterLimit = 500;
+%prm.iterLimit = 500;
 %
 vecXSecret = randn(sizeX,1) .* exp(expVarCoeff*abs(randn(sizeX,1)));
 %fSecret = max([ exp(expVarCoeff*randn()), 0.0 ]);
-fSecret = 1.0;
+fSecret = 0.0;
 %matSF = diag(exp(expVarCoeff*randn(sizeX,1)));
 %matSX = diag(exp(expVarCoeff*randn(sizeX,1)));
 %matA = randn(sizeX,sizeX) .* exp(expVarCoeff*randn(sizeX,sizeX));
@@ -35,10 +36,15 @@ if (0)
 	matHFit
 	return;
 endif
+noiseLevelTrials = 10000;
+noiseLevel = sqrt(sumsq(funchFG(vecXSecret+zeros(sizeX,noiseLevelTrials)))/noiseLevelTrials)
+prm.fTol = 100.0*noiseLevel;
+prm.fevalLimit = 100;
 %
 vecX0 = zeros(sizeX,1);
 prm.funch_vecGSecret = @(x)( matHSecret*(x-vecXSecret) );
 prm.funchFGSecret = funchFG;
+prm.funchFGNoiselessSecret = @(x) funcSimpleQuad( x, vecXSecret, fSecret, matHSecret, zeros(2,3) );
 prm.matHSecret = matHSecret;
 %echo__prm = prm
 [ vecXCalc, retCode, datOut ] = sxsolve1222( funchFG, vecX0, prm );
