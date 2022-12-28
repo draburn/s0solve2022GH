@@ -5,8 +5,10 @@ mydefs;
 %setprngstates(1);
 %setprngstates(22842624);
 %setprngstates(71281280);
-setprngstates(53119872); % Rather challenging?
-sizeX = 1000
+%%%setprngstates(53119872); % Rather challenging?
+%%%sizeX = 1000
+setprngstates();
+sizeX = 50
 expVarCoeff = 0.0
 %noiseDat = [ 0.0, 0.0, 0.0; 0.0, 0.0, 0.0 ]
 noiseDat = [ 1.0e-8, 0.0, 0.0; 0.0, 0.0, 0.0 ];
@@ -63,7 +65,6 @@ prm.funchFGNoiselessSecret = funchFG_noiseless;
 prm.matHSecret = matHSecret;
 %
 [ vecXFin, retCode, datOut ] = mysgdmom( funchFG, vecX0, prm );
-%
 [ fFin, vecGFin ] = funchFG_noiseless( vecXFin );
 xRes = norm(vecXFin-vecXSecret)
 xTol = prm.xTol
@@ -71,3 +72,21 @@ gRes = norm(vecGFin)
 gTol = prm.gTol
 fRes = fFin - fSecret
 fTol = prm.fTol
+%
+sxPrm = [];
+sxPrm.progressReportInterval = 1.0;
+sxPrm.fTol = prm.fTol;
+sxPrm.gTol = prm.gTol;
+sxPrm.deltaTol = prm.xTol;
+sxPrm.iterLimit = -1;
+sxPrm.fevalLimit = -1;
+sxPrm.timeLimit = 100.0;
+sxPrm.stopSignalCheckInterval = 3.0;
+[ vecXFin, retCode, datOut ] = sxsolve1222( funchFG, vecX0, sxPrm );
+[ fFin, vecGFin ] = funchFG_noiseless( vecXFin );
+xRes = norm(vecXFin-vecXSecret)
+xTol = sxPrm.deltaTol
+gRes = norm(vecGFin)
+gTol = sxPrm.gTol
+fRes = fFin - fSecret
+fTol = sxPrm.fTol
