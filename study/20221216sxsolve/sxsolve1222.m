@@ -57,7 +57,7 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 		%
 		% Check static stopping criteria.
 		if ( prm.fTol >= 0.0 && fBest <= prm.fTol )
-			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCESS: f0 < prm.fTol." );
+			msgif( prm.verbLev >= VERBLEV__MAIN, __FILE__, __LINE__, "SUCCESS: f < prm.fTol." );
 			retCode = RETCODE__SUCCESS;
 			doMainLoop = false;
 			break;
