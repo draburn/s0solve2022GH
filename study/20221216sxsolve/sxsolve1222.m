@@ -97,10 +97,12 @@ function [ vecXBest, retCode, datOut ] = sxsolve1222( funchFG, vecXInit, prm=[] 
 		%[ vecDelta, datOut ] = __getStep_newtCheat( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 		%[ vecDelta, datOut ] = __getStep_crude( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 		%[ vecDelta, datOut ] = __getStep_crude_north( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+		if (1)
 		if ( 0 == mod(iterCount,2) )
 			[ vecDelta, datOut ] = __getStep_grad( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
 		else
 			[ vecDelta, datOut ] = __getStep_crude_north( trSize, vecXBest, fBest, vecGBest, matX, rvecF, matG, prm );
+		endif
 		endif
 		sizeK = datOut.sizeK;
 		%

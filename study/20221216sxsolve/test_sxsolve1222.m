@@ -5,7 +5,7 @@ mydefs;
 %setprngstates(1);
 %setprngstates(22842624);
 setprngstates(71281280);
-sizeX = 50
+sizeX = 20
 expVarCoeff = 0.0
 %noiseDat = [ 0.0, 0.0, 0.0; 0.0, 0.0, 0.0 ]
 noiseDat = [ 1.0e-6, 0.0, 0.0; 1.0e-8, 0.0, 0.0 ];
@@ -25,6 +25,7 @@ matHSecret = full(diag(abs(randn(sizeX,1))));
 condHSecret = cond(matHSecret)
 %
 funchFG = @(x) funcSimpleQuad( x, vecXSecret, fSecret, matHSecret, noiseDat );
+funchFG_noiseless = @(x) funcSimpleQuad( x, vecXSecret, fSecret, matHSecret, zeros(2,3) );
 %
 if (0)
 	%matX = full(eye(sizeX,sizeX+1));
@@ -38,13 +39,13 @@ if (0)
 endif
 noiseLevelTrials = 10000;
 noiseLevel = sqrt(sumsq(funchFG(vecXSecret+zeros(sizeX,noiseLevelTrials)))/noiseLevelTrials)
-prm.fTol = 100.0*noiseLevel;
+prm.fTol = 30.0*noiseLevel;
 prm.fevalLimit = 100;
 %
 vecX0 = zeros(sizeX,1);
 prm.funch_vecGSecret = @(x)( matHSecret*(x-vecXSecret) );
 prm.funchFGSecret = funchFG;
-prm.funchFGNoiselessSecret = @(x) funcSimpleQuad( x, vecXSecret, fSecret, matHSecret, zeros(2,3) );
+prm.funchFGNoiselessSecret = funchFG_noiseless;
 prm.matHSecret = matHSecret;
 %echo__prm = prm
 [ vecXCalc, retCode, datOut ] = sxsolve1222( funchFG, vecX0, prm );
