@@ -144,6 +144,13 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 				vecPPerp = seed_vecP - matV*(matV'*seed_vecP);
 				%%%seed_vecP = vecPPerp - matV * (vecGammaAtZ * prm.learningRate / ( 1.0 - prm.momentumFactor ));
 				seed_vecP = vecPPerp;
+				%
+				if (0)
+					% Trial code for just pointint at Newton point. Didn't work.
+					vecPInPlane = vecXAnchor + matV*vecZ - seed_vecX; % Point to in-plane newon pt.
+					vecPInPlane *= norm(matV'*seed_vecP)/norm(vecPInPlane); % Scale per in-plane amount.
+					seed_vecP = vecPPerp + vecPInPlane;
+				endif
 			endif
 			%
 			if ( sizeK >= min([ 20, sizeX ]) )
