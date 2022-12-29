@@ -1,4 +1,8 @@
 function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
+	msg( __FILE__, __LINE__, "To-do:" );
+	msg( __FILE__, __LINE__, "  * Properly handle TR." );
+	msg( __FILE__, __LINE__, "  * Properly set seed_vecP on limited jump. (To what?)" );
+	msg( __FILE__, __LINE__, "  * Properly limit record size." );
 	% Init - Universal.
 	mydefs;
 	startTime = time();
@@ -109,7 +113,7 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 			[ matV, rvecDrop ] = utorthdrop( matD, sqrt(eps) );
 			sizeK = size( matV, 2 );
 			if ( sizeK >= 1 )
-				%rvecDrop
+				%
 				matVTDWC = matV' * [ matD(:,~rvecDrop), zeros(sizeX,1) ];
 				matVTGWC = matV' * [ matG(:,~rvecDrop), vecGAnchor ];
 				rvecFWC = [ rvecF(~rvecDrop), fAnchor ];
@@ -131,11 +135,21 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 				endif
 				%
 				trSize = sqrt(sum(sum(matD.^2)));
+				%trSize = 0.001*sqrt(max( sum(matD.^2,1) ));
+				%trSize = sqrt(max( sum(matD.^2,1) ));
 				levPrm = [];
 				vecZ = levsol_eig( fFit, vecGammaFit, matHFit, [], trSize, levPrm );
-				vecPInPlane = matV'*seed_vecP;
 				seed_vecX = vecXAnchor + matV*vecZ;
-				seed_vecP = seed_vecP - matV*vecPInPlane;
+				%%%vecGammaAtZ = vecGammaFit + matHFit * vecZ; % Will be zero for full Newton step.
+				vecPPerp = seed_vecP - matV*(matV'*seed_vecP);
+				%%%seed_vecP = vecPPerp - matV * (vecGammaAtZ * prm.learningRate / ( 1.0 - prm.momentumFactor ));
+				seed_vecP = vecPPerp;
+			endif
+			%
+			if ( sizeK >= min([ 20, sizeX ]) )
+				matX = matX( :, ~rvecDrop);
+				matG = matG( :, ~rvecDrop );
+				rvecF = rvecF( ~rvecDrop );
 			endif
 		endif
 		endif
