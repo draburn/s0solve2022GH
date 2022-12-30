@@ -102,8 +102,7 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 		%
 		%
 		% Generate step.
-		enableJumps = true;
-		if (enableJumps)
+		if (0)
 		sizeR = size(matX,2);
 		if ( sizeR >= 1 )
 			vecXAnchor = matX(:,1);
@@ -160,6 +159,9 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 			endif
 		endif
 		endif
+		%
+		stepSizeCoeff = 1.0;
+		[ seed_vecX, seed_vecP, jumpDat ] = __jump_basicCts( seed_vecX, seed_vecP, matX, rvecF, matG, stepSizeCoeff, prm );
 		%
 		[ sprout_vecX, sprout_vecP, sptDat ] = __evalSuperPt( funchFG, seed_vecX, seed_vecP, prm );
 		fevalCount += sptDat.fevalCount;
@@ -261,3 +263,145 @@ function [ vecX, vecP, datOut ] = __evalSuperPt( funchFG, vecX0, vecP0, prm )
 	datOut.fSPt = fAvg - 0.5*( xtgAvg - vecXAvg'*vecGAvg );
 return;
 endfunction
+
+
+function [ vecXNew, vecPNew, jumpDat ] = __jump_basicCts( vecXSeed, vecPSeed, matX, rvecF, matG, stepSizeCoeff, prm )
+	vecXNew = [];
+	vecPNew = [];
+	jumpDat = [];
+	jumpDat.sizeK = 0; % Unless overwritten.
+	%
+	if ( size(matX,2) <= 1 )
+		vecXNew = vecXSeed;
+		vecPNew = vecPSeed;
+		return;
+	endif
+	%
+	% Select anchor for subspace.
+	[ fAnchor, indexAnchor ] = min(rvecF);
+	vecXAnchor = matX(:,indexAnchor);
+	vecGAnchor = matG(:,indexAnchor);
+	%
+	% Generate subspace basis matrix.
+	basisDropThresh = mygetfield( prm, "basisDropThresh", 0.01 );
+	matD = matX - vecXAnchor;
+	matV = utorthdrop( matD, basisDropThresh );
+	jumpDat.sizeK = size(matV,2);
+	if ( size(matV,2) == 0 )
+		vecXNew = vecXSeed;
+		vecPNew = vecPSeed;
+		return;
+	endif
+	%
+	% Drop anything that's too far outside of subspace.
+	rvecDSq = sum( matD.^2, 1 );
+	matVTD = matV'*matD;
+	rvecVTDSq = sum( matVTD.^2, 1 );
+	fitDropThresh = mygetfield( prm, "fitDropThresh", 0.001 );
+	rvecUseForFit = ( rvecVTDSq >= (1.0-fitDropThresh) * rvecDSq );
+	rvecUseForFit(indexAnchor) = true;
+	matDForFit = matD(:,rvecUseForFit);
+	matGForFit = matG(:,rvecUseForFit);
+	rvecFForFit = rvecF(rvecUseForFit);
+	%
+	% Generate fit.
+	matVTDForFit = matV'*matDForFit;
+	matVTGForFit = matV'*matGForFit;
+	fitPrm = [];
+	fitPrm.epsHRegu = 0.0;
+	[ fFit, vecGammaFit, matHFit ] = hessfit( matVTDForFit, rvecFForFit, matVTGForFit, fitPrm );
+	%
+	if ( mygetfield( prm, "validateFit", false ) );
+		matVTHFSV = matV'*prm.matHSecret*matV;
+		rdF = reldiff( fFit, fAnchor );
+		rdG = reldiff( vecGammaFit, matV'*vecGAnchor );
+		rdH = reldiff( matHFit, matVTHFSV );
+		rdTol = 100.0*sqrt(eps);
+		if ( rdF > rdTol || rdG > rdTol || rdH > rdTol )
+			msg( __FILE__, __LINE__, "BEGIN INFODUMP..." );
+			compare_f = [ fFit, fAnchor, fFit-fAnchor ]
+			compare_g = [ vecGammaFit, matV'*vecGAnchor, vecGammaFit-matV'*vecGAnchor ]
+			matHFit
+			matVTHFSV
+			matHRes = matHFit - matVTHFSV
+			rdVals = [ rdF, rdG, rdH ]
+			msg( __FILE__, __LINE__, "END INFODUMP." );
+		endif
+		assert( rdF <= rdTol );
+		assert( rdG <= rdTol );
+		assert( rdH <= rdTol );
+	endif
+	%
+	% Decompose (pre-jump) "seed" x.
+	vecDSeed = vecXSeed - vecXAnchor;
+	vecYSeed = matV'*vecDSeed;
+	vecXPerp = vecDSeed - matV*vecYSeed;
+	assert( reldiff( vecXSeed, vecXAnchor + (matV*vecYSeed) + vecXPerp ) <= sqrt(eps) );
+	assert( norm(matV'*vecXPerp) <= sqrt(eps)*(norm(vecXAnchor)+norm(vecXSeed)) );
+	%
+	% These "seed" values are just estimates at the (subspace-projected) seed.
+	fSeed = fFit + vecYSeed'*vecGammaFit + (vecYSeed'*matHFit*vecYSeed)/2.0;
+	vecGammaSeed = vecGammaFit + matHFit*vecYSeed;
+	normGammaSeed = norm(vecGammaSeed);
+	%
+	% Decompose (pre-jump) "seed" momentum.
+	% Note that we actually do know how the full gradient varies throughout the subspace,
+	%  not just how "gamma" (the part of the gradient that's in the subspace) varies;
+	%  appropriate handling would essentially allow us to incorporate "vecPPerp" in to
+	%  "coeffPGamma" and "vecGammaPerp".
+	% Meh.
+	vecT = matV'*vecPSeed;
+	vecPPerp = vecPSeed - (matV*vecT);
+	if ( 0.0 < normGammaSeed )
+		coeffPGamma = (vecGammaSeed'*vecT) / (normGammaSeed^2);
+	else
+		coeffPGamma = 0.0;
+		msg( __FILE__, __LINE__, "WARNING: 0.0 >= normGammaSeed; this should never happen." );
+	endif
+	vecGammaPerp = vecT - coeffPGamma*vecGammaSeed;
+	assert( reldiff( matV*( coeffPGamma*vecGammaSeed + vecGammaPerp ) + vecPPerp, vecPSeed ) <= sqrt(eps) );
+	assert( norm(matV'*vecPPerp) <= sqrt(eps)*norm(vecPSeed) );
+	assert( abs(vecGammaPerp'*vecGammaSeed) <= sqrt(eps)*norm(vecPSeed) );
+	%
+	% Find point on Levenberg curve subject to trust region.
+	% 2022-12-29-1642: Current code is a placeholder which at least obeys "stepSizeCoeff" in some form.
+	matB = [];
+	bMax = [];
+	levPrm = [];
+	% Note: We want to start the curve from the (subspace-projected) "seed", not the anchor.
+	vecZFull = levsol_eig( fFit, vecGammaSeed, matHFit, matB, bMax, levPrm );
+	if ( stepSizeCoeff == 1.0 )
+		vecZ = vecZFull;
+	else
+		bMax = stepSizeCoeff*norm(vecZFull);
+		vecZ = levesol_eig( fFit, vecGammaSeed, matHFit, matB, bMax, levPrm );
+	endif
+	%
+	% Note that fNew and vecGammaNew are merely estimates.
+	vecYNew = vecYSeed + vecZ;
+	fNew = fFit + vecYNew'*vecGammaFit + (vecYNew'*matHFit*vecYNew)/2.0;
+	vecGammaNew = vecGammaFit + matHFit*vecYNew;
+	%
+	% We need to decide how to handle the changes to X and momentum that are outside of our subspace.
+	% A few reasonable requirements...
+	%  1. In the limit of the TR going to zero, the "jump" should leave us at the "seed".
+	%  2. In the limit of fNew being zero, we should hit that point exactly with zero momentum.
+	%  3. In the limit of taking the Newton step, the part of the gradient within the subspace should be zero.
+	if ( fNew < fSeed )
+		% 2022-12-29-1703: These values are not rigirously justified.
+		alphaXPerp = fNew / fSeed;
+		alphaPPerp = fNew / fSeed;
+	else
+		msg( __FILE__, __LINE__, "WARNING: fNew >= fSeed; this should never happen." );
+		alphaXPerp = 0.0;
+		alphaPPerp = 0.0;
+	endif
+	if ( 0.0 < normGammaSeed )
+		alphaGammaPerp = norm(vecGammaNew)/normGammaSeed;
+	else
+		coeffPGamma = 0.0;
+	endif
+	vecXNew = vecXAnchor + matV*vecYNew + vecXPerp*alphaXPerp;
+	vecPNew = matV * ( coeffPGamma*vecGammaNew + vecGammaPerp*alphaGammaPerp ) + vecPPerp*alphaPPerp;
+return;
+endfunction;
