@@ -1,13 +1,15 @@
 function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 	msg( __FILE__, __LINE__, "Need:" );
-	msg( __FILE__, __LINE__, "  * Properly handle TR, both matB and bMax." );
+	msg( __FILE__, __LINE__, "  ( Testing? Refactor? )" );
 	msg( __FILE__, __LINE__, "Want Eventually:" );
-	msg( __FILE__, __LINE__, "  * Properly curate record data (matX, matG), discarding to improve speed." );
 	msg( __FILE__, __LINE__, "  * Reduce repeated manipulation of record data (matX, matG)." );
 	msg( __FILE__, __LINE__, "Maybe Consider:" );
 	msg( __FILE__, __LINE__, "  * Implement two- and three-pass hessfit, possibly using non-orthogonal basis." );
 	msg( __FILE__, __LINE__, "  * Model variation of gradient outside V when jump." );
+	msg( __FILE__, __LINE__, "  * Find analytic justification for 'alpha' values when jump, for seed data outside subspace." );
 	msg( __FILE__, __LINE__, "  * Enable and test non-orthogonal basis matrix (matD except for drop) for hessfit; reduce FP issues?" );
+	msg( __FILE__, __LINE__, "  * Intelligently curate record data (matX, matG), balancing num fevals and own work." );
+	msg( __FILE__, __LINE__, "  * Further test TR." );
 	msg( __FILE__, __LINE__, "Potential Optimizations:" );
 	msg( __FILE__, __LINE__, "  * Improved 'momentum' via estimating gradient at 'sprout' point." );
 	msg( __FILE__, __LINE__, "  * Super-point data from just start & end of 'super-point/meander' instead of per-feval." );
@@ -46,6 +48,7 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 	matX = sptDat.vecXSPt;
 	matG = sptDat.vecGSPt;
 	rvecF = sptDat.fSPt;
+	rvecW = sptDat.wSPt;
 	iterCount = 1;
 	%
 	% Set other dat.
@@ -169,7 +172,25 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 		endif
 		%
 		stepSizeCoeff = 1.0;
-		[ seed_vecX, seed_vecP, jumpDat ] = __jump_basicCts( seed_vecX, seed_vecP, matX, rvecF, matG, stepSizeCoeff, prm );
+		[ seed_vecX, seed_vecP, jumpDat ] = __jump_basicCts( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, stepSizeCoeff, prm );
+		%
+		if (1)
+			if (~isempty(jumpDat.rvecUseForFit))
+				% 2022-12-29-1930: Crude curation criteria.
+				% Note that we could alternatively *combine* points.
+				matX = matX(:,jumpDat.rvecUseForFit);
+				matG = matG(:,jumpDat.rvecUseForFit);
+				rvecF = rvecF(jumpDat.rvecUseForFit);
+				rvecW = rvecW(jumpDat.rvecUseForFit);
+			endif
+			ledgerLimit = mygetfield( prm, "ledgerLimit", [] );
+			if ( ~isempty(ledgerLimit) && size(matX,2) > ledgerLimit )
+				matX = matX(:,1:ledgerLimit);
+				matG = matG(:,1:ledgerLimit);
+				rvecF = rvecF(1:ledgerLimit);
+				rvecW = rvecW(1:ledgerLimit);
+			endif
+		endif
 		%
 		[ sprout_vecX, sprout_vecP, sptDat ] = __evalSuperPt( funchFG, seed_vecX, seed_vecP, prm );
 		fevalCount += sptDat.fevalCount;
@@ -188,6 +209,7 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 		matX = [ sptDat.vecXSPt, matX ];
 		matG = [ sptDat.vecGSPt, matG ];
 		rvecF = [ sptDat.fSPt, rvecF ];
+		rvecW = [ sptDat.wSPt, rvecW];
 		prev_vecX = vecX;
 		prev_vecG = vecG;
 		prev_f = f;
@@ -269,15 +291,17 @@ function [ vecX, vecP, datOut ] = __evalSuperPt( funchFG, vecX0, vecP0, prm )
 	datOut.vecXSPt = vecXAvg;
 	datOut.vecGSPt = vecGAvg;
 	datOut.fSPt = fAvg - 0.5*( xtgAvg - vecXAvg'*vecGAvg );
+	datOut.wSPt = wSum;
 return;
 endfunction
 
 
-function [ vecXNew, vecPNew, jumpDat ] = __jump_basicCts( vecXSeed, vecPSeed, matX, rvecF, matG, stepSizeCoeff, prm )
+function [ vecXNew, vecPNew, jumpDat ] = __jump_basicCts( vecXSeed, vecPSeed, matX, matG, rvecF, rvecW, stepSizeCoeff, prm )
 	vecXNew = [];
 	vecPNew = [];
 	jumpDat = [];
 	jumpDat.sizeK = 0; % Unless overwritten.
+	jumpDat.rvecUseForFit = []; % Unless overwritten.
 	%
 	if ( size(matX,2) <= 1 )
 		vecXNew = vecXSeed;
@@ -309,9 +333,11 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_basicCts( vecXSeed, vecPSeed, ma
 	% basisDropThresh is threshold for dropping, but fitDropThresh is threshold for not dropping???
 	rvecUseForFit = ( rvecVTDSq >= (1.0-fitDropThresh) * rvecDSq );
 	rvecUseForFit(indexAnchor) = true;
+	jumpDat.rvecUseForFit = rvecUseForFit;
 	matDForFit = matD(:,rvecUseForFit);
 	matGForFit = matG(:,rvecUseForFit);
 	rvecFForFit = rvecF(rvecUseForFit);
+	rvecWForFit = rvecW(rvecUseForFit);
 	%
 	% Generate fit.
 	matVTDForFit = matV'*matDForFit;
@@ -373,20 +399,42 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_basicCts( vecXSeed, vecPSeed, ma
 	assert( abs(vecGammaPerp'*vecGammaSeed) <= sqrt(eps)*norm(vecPSeed) );
 	%
 	% Find point on Levenberg curve subject to trust region.
-	% 2022-12-29-1642: Current code is a placeholder which at least obeys "stepSizeCoeff" in some form.
-	matB = [];
-	bMax = [];
+	%
+	%% 2022-12-29-1642: Current code is a placeholder which at least obeys "stepSizeCoeff" in some form.
+	%matB = [];
+	%bMax = [];
+	%levPrm = [];
+	%% Note: We want to start the curve from the (subspace-projected) "seed", not the anchor.
+	%vecZFull = levsol_eig( fFit, vecGammaSeed, matHFit, matB, bMax, levPrm );
+	%if ( stepSizeCoeff == 1.0 )
+	%	vecZ = vecZFull;
+	%elseif ( stepSizeCoeff < 1.0 )
+	%	bMax = stepSizeCoeff*norm(vecZFull);
+	%	vecZ = levsol_eig( fFit, vecGammaSeed, matHFit, matB, bMax, levPrm );
+	%else
+	%	stepSizeCoeff
+	%	error( "stepSizeCoeff is inalid." );
+	%endif
+	%
+	% 2022-12-29-2054: Sensible code.
+	vecCap = max(abs(matVTDForFit),[],2);
+	vecCap += sqrt(eps)*max(vecCap);
+	assert( 0.0 < min(vecCap) );
+	matB = diag(1.0./vecCap);
+	trCoeff = mygetfield( prm, "trCoeff", 3.0 );
+	bMax = trCoeff * stepSizeCoeff;
 	levPrm = [];
-	% Note: We want to start the curve from the (subspace-projected) "seed", not the anchor.
-	vecZFull = levsol_eig( fFit, vecGammaSeed, matHFit, matB, bMax, levPrm );
-	if ( stepSizeCoeff == 1.0 )
-		vecZ = vecZFull;
-	elseif ( stepSizeCoeff < 1.0 )
-		bMax = stepSizeCoeff*norm(vecZFull);
-		vecZ = levsol_eig( fFit, vecGammaSeed, matHFit, matB, bMax, levPrm );
-	else
-		stepSizeCoeff
-		error( "stepSizeCoeff is inalid." );
+	vecZ = levsol_eig( fFit, vecGammaSeed, matHFit, matB, bMax, levPrm );
+	if ( mygetfield( prm, "debugMode", false ) )
+		vecDelta = matV*vecZ;
+		vecCapFS = max(abs(matDForFit),[],2);
+		vecCapFS += sqrt(eps)*max(vecCapFS);
+		if ( abs(vecZ)./vecCap > bMax*1.1 || abs(vecDelta)./vecCapFS > bMax*1.1 )
+			[ vecDelta, vecCapFS, abs(vecDelta)./vecCapFS ]
+			[ vecZ, vecCap, abs(vecZ)./vecCap ]
+			bMax
+		endif
+		assert( abs(vecZ)./vecCap <= bMax*1.1 || abs(vecDelta)./vecCapFS > bMax*1.1 )
 	endif
 	%
 	% Note that fNew and vecGammaNew are merely estimates.
@@ -404,13 +452,12 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_basicCts( vecXSeed, vecPSeed, ma
 		alphaF = fNew / fSeed;
 	else
 		msg( __FILE__, __LINE__, "WARNING: fNew >= fSeed; this should never happen." );
-		alphaF = 0.0;
+		alphaF = 1.0;
 	endif
-	if ( normGammaNew <= normGammaSeed )
+	if ( normGammaNew < normGammaSeed )
 		alphaG = normGammaNew / normGammaSeed;
 	else
-		msg( __FILE__, __LINE__, "WARNING: normGammaNew >= normGammaSeed; this should never happen." );
-		alphaG = 0.0;
+		alphaG = 1.0;
 	endif
 	% 2022-12-29-1740: These alpha are just reasonable guesses with some light testing.
 	alphaXPerp = alphaG;
