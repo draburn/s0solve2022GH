@@ -8,8 +8,8 @@ expVarCoeff = 0.0;
 %
 %vecXCrit = randn(sizeX,1);
 vecXCrit = randn(sizeX,1) .* exp(expVarCoeff*abs(randn(sizeX,1)));
-%fCrit = abs(randn());
-fCrit = 1.0;
+fCrit = abs( randn() * exp(expVarCoeff*abs(randn())) );
+%fCrit = 1.0;
 
 %matH0 = mtm( sprandn(sizeX,sizeX,densityFactor) );
 %matH0 = mtm( randn(sizeX,sizeX) )
@@ -71,10 +71,10 @@ prm.matHCrit = matH0 + matA0*(matA0');
 prm.learningRate = 0.1;
 prm.momentumFactor = 0.9;
 %
-%[ vecXFin, retCode, datOut ] = mysgdmom( funchFG, vecX0, prm );
+[ vecXFin, retCode, datOut ] = mysgdmom( funchFG, vecX0, prm );
 %prm.ledgerLimit = 10;
 %prm.numFevalPerSuperPt = 50;
-[ vecXFin, retCode, datOut ] = sgsolve( funchFG, vecX0, prm );
+%[ vecXFin, retCode, datOut ] = sgsolve( funchFG, vecX0, prm );
 [ fFin, vecGFin ] = funchFG_noiseless( vecXFin );
 xRes = norm(vecXFin-vecXCrit)
 xTol = prm.xTol

@@ -68,8 +68,8 @@ prm.matHSecret = matHSecret;
 prm.learningRate = 0.1;
 prm.momentumFactor = 0.9;
 %
-%[ vecXFin, retCode, datOut ] = mysgdmom( funchFG, vecX0, prm );
-[ vecXFin, retCode, datOut ] = sgsolve( funchFG, vecX0, prm );
+[ vecXFin, retCode, datOut ] = mysgdmom( funchFG, vecX0, prm );
+%[ vecXFin, retCode, datOut ] = sgsolve( funchFG, vecX0, prm );
 [ fFin, vecGFin ] = funchFG_noiseless( vecXFin );
 xRes = norm(vecXFin-vecXSecret)
 xTol = prm.xTol
