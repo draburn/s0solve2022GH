@@ -1,18 +1,18 @@
 function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 	msg( __FILE__, __LINE__, "Need:" );
-	msg( __FILE__, __LINE__, "  ( Testing? Refactor? )" );
-	msg( __FILE__, __LINE__, "Want Eventually:" );
-	msg( __FILE__, __LINE__, "  * Reduce repeated manipulation of record data (matX, matG)." );
+	msg( __FILE__, __LINE__, "  ( Testing? Timing? Refactor? )" );
+	msg( __FILE__, __LINE__, "Want:" );
+	msg( __FILE__, __LINE__, "  * Core: Reduce repeated manipulation of record data (matD, matV, matVT*)." );
 	msg( __FILE__, __LINE__, "Maybe Consider:" );
-	msg( __FILE__, __LINE__, "  * Implement two- and three-pass hessfit, possibly using non-orthogonal basis." );
-	msg( __FILE__, __LINE__, "  * Model variation of gradient outside V when jump." );
-	msg( __FILE__, __LINE__, "  * Find analytic justification for 'alpha' values when jump, for seed data outside subspace." );
-	msg( __FILE__, __LINE__, "  * Enable and test non-orthogonal basis matrix (matD except for drop) for hessfit; reduce FP issues?" );
-	msg( __FILE__, __LINE__, "  * Intelligently curate record data (matX, matG), balancing num fevals and own work." );
-	msg( __FILE__, __LINE__, "  * Further test TR." );
+	msg( __FILE__, __LINE__, "  * BT/TR: Good/bad check on fSPt, add explicit (approx) step size limit in addition to 'trFactor' (which is prop matD)." );
+	msg( __FILE__, __LINE__, "  * Refine hessfit: From ledger dat, two- or three-pass, allow nonorthog basis." );
+	msg( __FILE__, __LINE__, "  * Refine jump: Incl variation of (any/all) out-of-space components of gradient." );
+	msg( __FILE__, __LINE__, "  * Refine jump: Analyze 'alpha' (handling out-of-space quants)." );
+	msg( __FILE__, __LINE__, "  * Core: Curation record data (matX, matG; optim num fevals vs own work)." );
+	msg( __FILE__, __LINE__, "  * Test trFactor (which is prop matD)." );
 	msg( __FILE__, __LINE__, "Potential Optimizations:" );
-	msg( __FILE__, __LINE__, "  * Improved 'momentum' via estimating gradient at 'sprout' point." );
-	msg( __FILE__, __LINE__, "  * Super-point data from just start & end of 'super-point/meander' instead of per-feval." );
+	msg( __FILE__, __LINE__, "  * Meander/SPt: Improved 'momentum' (via estimating gradient at lead point?)." );
+	msg( __FILE__, __LINE__, "  * Meander/SPt: Grab data from just start & end (elim per-feval work?)." );
 	% Init - Universal.
 	mydefs;
 	startTime = time();
@@ -270,7 +270,8 @@ function [ vecX, vecP, datOut ] = __evalSuperPt( funchFG, vecX0, vecP0, prm )
 	xtgSum = 0.0;
 	fSum = 0.0;
 	wSum = 0.0;
-	for n=1:10
+	numFevalPerSuperPt = mygetfield( prm, "numFevalPerSuperPt", 10 );
+	for n=1:numFevalPerSuperPt
 		[ f, vecG ] = funchFG( vecX );
 		datOut.fevalCount++;
 		%
