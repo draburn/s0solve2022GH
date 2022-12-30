@@ -12,7 +12,7 @@ sizeX = 50
 expVarCoeff = 0.0
 %noiseDat = [ 0.0, 0.0, 0.0; 0.0, 0.0, 0.0 ]
 noiseDat = [ 1.0e-8, 0.0, 0.0; 0.0, 0.0, 0.0 ];
-%noiseDat = [ 1.0e-8, 0.0, 0.0; 1.0, 0.0, 0.0 ];
+%noiseDat = [ 1.0e-4, 0.0, 0.0; 0.0, 0.0, 0.0 ];
 %noiseDat = [ 1.0e-4, 1.0e-6, 1.0e-6/sizeX; 1.0e-6, 1.0e-8, 1.0e-8/sizeX ];
 prm = [];
 %prm.iterLimit = 500;
@@ -65,6 +65,8 @@ prm.funch_vecGSecret = @(x)( matHSecret*(x-vecXSecret) );
 prm.funchFGSecret = funchFG;
 prm.funchFGNoiselessSecret = funchFG_noiseless;
 prm.matHSecret = matHSecret;
+prm.learningRate = 0.1;
+prm.momentumFactor = 0.9;
 %
 %[ vecXFin, retCode, datOut ] = mysgdmom( funchFG, vecX0, prm );
 [ vecXFin, retCode, datOut ] = sgsolve( funchFG, vecX0, prm );
