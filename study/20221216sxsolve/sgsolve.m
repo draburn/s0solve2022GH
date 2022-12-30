@@ -1,8 +1,16 @@
 function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
-	msg( __FILE__, __LINE__, "To-do:" );
-	msg( __FILE__, __LINE__, "  * Properly handle TR." );
-	msg( __FILE__, __LINE__, "  * Properly set seed_vecP on limited jump. (To what?)" );
-	msg( __FILE__, __LINE__, "  * Properly limit record size." );
+	msg( __FILE__, __LINE__, "Need:" );
+	msg( __FILE__, __LINE__, "  * Properly handle TR, both matB and bMax." );
+	msg( __FILE__, __LINE__, "Want Eventually:" );
+	msg( __FILE__, __LINE__, "  * Properly curate record data (matX, matG), discarding to improve speed." );
+	msg( __FILE__, __LINE__, "  * Reduce repeated manipulation of record data (matX, matG)." );
+	msg( __FILE__, __LINE__, "Maybe Consider:" );
+	msg( __FILE__, __LINE__, "  * Implement two- and three-pass hessfit, possibly using non-orthogonal basis." );
+	msg( __FILE__, __LINE__, "  * Model variation of gradient outside V when jump." );
+	msg( __FILE__, __LINE__, "  * Enable and test non-orthogonal basis matrix (matD except for drop) for hessfit; reduce FP issues?" );
+	msg( __FILE__, __LINE__, "Potential Optimizations:" );
+	msg( __FILE__, __LINE__, "  * Improved 'momentum' via estimating gradient at 'sprout' point." );
+	msg( __FILE__, __LINE__, "  * Super-point data from just start & end of 'super-point/meander' instead of per-feval." );
 	% Init - Universal.
 	mydefs;
 	startTime = time();
@@ -298,6 +306,7 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_basicCts( vecXSeed, vecPSeed, ma
 	matVTD = matV'*matD;
 	rvecVTDSq = sum( matVTD.^2, 1 );
 	fitDropThresh = mygetfield( prm, "fitDropThresh", 0.001 );
+	% basisDropThresh is threshold for dropping, but fitDropThresh is threshold for not dropping???
 	rvecUseForFit = ( rvecVTDSq >= (1.0-fitDropThresh) * rvecDSq );
 	rvecUseForFit(indexAnchor) = true;
 	matDForFit = matD(:,rvecUseForFit);
@@ -372,35 +381,42 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_basicCts( vecXSeed, vecPSeed, ma
 	vecZFull = levsol_eig( fFit, vecGammaSeed, matHFit, matB, bMax, levPrm );
 	if ( stepSizeCoeff == 1.0 )
 		vecZ = vecZFull;
-	else
+	elseif ( stepSizeCoeff < 1.0 )
 		bMax = stepSizeCoeff*norm(vecZFull);
-		vecZ = levesol_eig( fFit, vecGammaSeed, matHFit, matB, bMax, levPrm );
+		vecZ = levsol_eig( fFit, vecGammaSeed, matHFit, matB, bMax, levPrm );
+	else
+		stepSizeCoeff
+		error( "stepSizeCoeff is inalid." );
 	endif
 	%
 	% Note that fNew and vecGammaNew are merely estimates.
 	vecYNew = vecYSeed + vecZ;
 	fNew = fFit + vecYNew'*vecGammaFit + (vecYNew'*matHFit*vecYNew)/2.0;
 	vecGammaNew = vecGammaFit + matHFit*vecYNew;
+	normGammaNew = norm(vecGammaNew);
 	%
 	% We need to decide how to handle the changes to X and momentum that are outside of our subspace.
 	% A few reasonable requirements...
 	%  1. In the limit of the TR going to zero, the "jump" should leave us at the "seed".
 	%  2. In the limit of fNew being zero, we should hit that point exactly with zero momentum.
 	%  3. In the limit of taking the Newton step, the part of the gradient within the subspace should be zero.
-	if ( fNew < fSeed )
-		% 2022-12-29-1703: These values are not rigirously justified.
-		alphaXPerp = fNew / fSeed;
-		alphaPPerp = fNew / fSeed;
+	if ( fNew <= fSeed )
+		alphaF = fNew / fSeed;
 	else
 		msg( __FILE__, __LINE__, "WARNING: fNew >= fSeed; this should never happen." );
-		alphaXPerp = 0.0;
-		alphaPPerp = 0.0;
+		alphaF = 0.0;
 	endif
-	if ( 0.0 < normGammaSeed )
-		alphaGammaPerp = norm(vecGammaNew)/normGammaSeed;
+	if ( normGammaNew <= normGammaSeed )
+		alphaG = normGammaNew / normGammaSeed;
 	else
-		coeffPGamma = 0.0;
+		msg( __FILE__, __LINE__, "WARNING: normGammaNew >= normGammaSeed; this should never happen." );
+		alphaG = 0.0;
 	endif
+	% 2022-12-29-1740: These alpha are just reasonable guesses with some light testing.
+	alphaXPerp = alphaG;
+	alphaPPerp = alphaF;
+	alphaGammaPerp = alphaG;
+	%
 	vecXNew = vecXAnchor + matV*vecYNew + vecXPerp*alphaXPerp;
 	vecPNew = matV * ( coeffPGamma*vecGammaNew + vecGammaPerp*alphaGammaPerp ) + vecPPerp*alphaPPerp;
 return;
