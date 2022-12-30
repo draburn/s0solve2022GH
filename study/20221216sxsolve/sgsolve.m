@@ -173,6 +173,8 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 		%
 		stepSizeCoeff = 1.0;
 		[ seed_vecX, seed_vecP, jumpDat ] = __jump_basicCts( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, stepSizeCoeff, prm );
+		assert( isrealarray(seed_vecX,[sizeX,1]) );
+		assert( isrealarray(seed_vecP,[sizeX,1]) );
 		%
 		if (1)
 			if (~isempty(jumpDat.rvecUseForFit))
@@ -270,9 +272,12 @@ function [ vecX, vecP, datOut ] = __evalSuperPt( funchFG, vecX0, vecP0, prm )
 	xtgSum = 0.0;
 	fSum = 0.0;
 	wSum = 0.0;
+	sizeX = size(vecX0,1);
 	numFevalPerSuperPt = mygetfield( prm, "numFevalPerSuperPt", 10 );
 	for n=1:numFevalPerSuperPt
 		[ f, vecG ] = funchFG( vecX );
+		assert( isrealscalar(f) );
+		assert( isrealarray(vecG,[sizeX,1]) );
 		datOut.fevalCount++;
 		%
 		vecXSum += vecX;

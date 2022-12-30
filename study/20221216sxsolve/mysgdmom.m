@@ -99,6 +99,8 @@ function [ vecX, retCode, datOut ] = mysgdmom( funchFG, init_vecX, prm=[] )
 		trial_vecX = vecX + vecDelta;
 		[ trial_f, trial_vecG ] = funchFG( trial_vecX );
 		fevalCount++;
+		assert( isrealscalar(trial_f) );
+		assert( isrealarray(trial_vecG,[sizeX,1]) );
 		%
 		% Move to the step.
 		prev_vecX = vecX;
