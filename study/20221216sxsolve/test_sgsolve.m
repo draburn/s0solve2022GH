@@ -1,3 +1,4 @@
+error( "This code is currently unsupported." );
 clear;
 mydefs;
 %
