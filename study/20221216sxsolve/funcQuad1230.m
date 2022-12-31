@@ -1,4 +1,4 @@
-function [ rvecF, matG ] = funcQuad1230( matX, vecXCrit, fCrit, matAS, matAW, prm=[] );
+function [ rvecF, matG ] = funcQuad1230( matX, vecXCrit, fCrit, matAS, matAW, noisePrm=zeros(3,2) );
 	sizeX = size(matX,1);
 	sizeS = size(matAS,1);
 	sizeW = size(matAW,1);
@@ -6,30 +6,30 @@ function [ rvecF, matG ] = funcQuad1230( matX, vecXCrit, fCrit, matAS, matAW, pr
 	%
 	assert( ~isempty(matAS) || ~isempty(matAW) )
 	%
-	prm.xVarC = mygetfield( prm, "xVarC", 0.0 );
-	prm.fVarC = mygetfield( prm, "fVarC", 0.0 );
-	prm.xVarS = mygetfield( prm, "xVarS", 1.0E-2 );
-	prm.fVarS = mygetfield( prm, "fVarS", 1.0E-2 );
-	prm.xVarW = mygetfield( prm, "xVarW", 1.0E-2 );
-	prm.fVarW = mygetfield( prm, "fVarW", 1.0E-2 );
+	xVarC = noisePrm(1,1);
+	fVarC = noisePrm(1,2);
+	xVarS = noisePrm(2,1);
+	fVarS = noisePrm(2,2);
+	xVarW = noisePrm(3,1);
+	fVarW = noisePrm(3,2);
 	%
-	matRXC = prm.xVarC*randn(sizeX,numPts);
+	matRXC = xVarC*randn(sizeX,numPts);
 	matD = matX - vecXCrit - matRXC;
 	if (~isempty(matAS))
-		matRXS = 1.0 + prm.xVarS*randn(sizeX,numPts);
-		matRFS = 1.0 + prm.fVarS*randn(sizeS,numPts);
+		matRXS = 1.0 + xVarS*randn(sizeX,numPts);
+		matRFS = 1.0 + fVarS*randn(sizeS,numPts);
 		matG = matRXS.*(  matAS' * ((matRFS.^2).*( matAS * (matRXS.*matD) )) );
 	endif
 	if (~isempty(matAW))
-		matRXW = 1.0 + prm.xVarW*randn(sizeX,numPts);
-		matRFW = 1.0 + prm.fVarW*randn(sizeW,numPts);
+		matRXW = 1.0 + xVarW*randn(sizeX,numPts);
+		matRFW = 1.0 + fVarW*randn(sizeW,numPts);
 		if (~isempty(matAS))
 			matG += matRXW.*(  matAW' * ((matRFW.^2).*( matAW * (matRXW.*matD) )) );
 		else
 			matG = matRXW.*(  matAW' * ((matRFW.^2).*( matAW * (matRXW.*matD) )) );
 		endif
 	endif
-	matRFC = prm.fVarC*randn(1,numPts);
+	matRFC = fVarC*randn(1,numPts);
 	rvecF = fCrit + (sum( matD.*matG, 1 )/2.0) + abs(matRFC);
 return;
 endfunction
@@ -48,9 +48,8 @@ endfunction
 %!	%
 %!	matX = [ randn(sizeX,numPts), vecXCrit ]
 %!	%
-%!	prm = [];
 %!	tic()
-%!	[ rvecF, matG ] = funcQuad1230( matX, vecXCrit, fCrit, matAS, matAW, prm )
+%!	[ rvecF, matG ] = funcQuad1230( matX, vecXCrit, fCrit, matAS, matAW )
 %!	toc();
 
 %!test
@@ -69,8 +68,7 @@ endfunction
 %!	matX = [ ones(sizeX,numPts), vecXCrit ];
 %!	msg( __FILE__, __LINE__, sprintf( "Generating parameters took %fs.", time()-startTime ) );
 %!	%
-%!	prm = [];
 %!	startTime = time();
-%!	[ rvecF, matG ] = funcQuad1230( matX, vecXCrit, fCrit, matAS, matAW, prm );
+%!	[ rvecF, matG ] = funcQuad1230( matX, vecXCrit, fCrit, matAS, matAW );
 %!	msg( __FILE__, __LINE__, sprintf( "Calculating %d point(s) took %fs.", size(matX,2), time()-startTime ) );
 %!	rvecF
