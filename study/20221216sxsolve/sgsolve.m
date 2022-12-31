@@ -4,12 +4,12 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 	msg( __FILE__, __LINE__, "Want:" );
 	msg( __FILE__, __LINE__, "  * Core: Reduce repeated manipulation of record data (matD, matV, matVT*)." );
 	msg( __FILE__, __LINE__, "Maybe Consider:" );
-	msg( __FILE__, __LINE__, "  * BT/TR: Good/bad check on fSPt, add explicit (approx) step size limit in addition to 'trFactor' (which is prop matD)." );
 	msg( __FILE__, __LINE__, "  * Refine hessfit: From ledger dat, two- or three-pass, allow nonorthog basis." );
 	msg( __FILE__, __LINE__, "  * Refine jump: Incl variation of (any/all) out-of-space components of gradient." );
 	msg( __FILE__, __LINE__, "  * Refine jump: Analyze 'alpha' (handling out-of-space quants)." );
 	msg( __FILE__, __LINE__, "  * Core: Curation record data (matX, matG; optim num fevals vs own work)." );
 	msg( __FILE__, __LINE__, "  * Test trFactor (which is prop matD)." );
+	msg( __FILE__, __LINE__, "  * BT/TR: Improve good/bad check on fSPt and dynamic step size limit in addition to 'trFactor' (which is prop matD)." );
 	msg( __FILE__, __LINE__, "Potential Optimizations:" );
 	msg( __FILE__, __LINE__, "  * Meander/SPt: Improved 'momentum' (via estimating gradient at lead point?)." );
 	msg( __FILE__, __LINE__, "  * Meander/SPt: Grab data from just start & end (elim per-feval work?)." );
@@ -50,6 +50,7 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 	rvecF = sptDat.fSPt;
 	rvecW = sptDat.wSPt;
 	iterCount = 1;
+	stepSizeCoeff = 1.0;
 	%
 	% Set other dat.
 	prev_vecX = [];
@@ -171,7 +172,6 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 		endif
 		endif
 		%
-		stepSizeCoeff = 1.0;
 		[ seed_vecX, seed_vecP, jumpDat ] = __jump_basicCts( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, stepSizeCoeff, prm );
 		assert( isrealarray(seed_vecX,[sizeX,1]) );
 		assert( isrealarray(seed_vecP,[sizeX,1]) );
@@ -218,6 +218,15 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 		vecX = sptDat.vecXSPt;
 		vecG = sptDat.vecGSPt;
 		f = sptDat.fSPt;
+		%
+		% Crude limit on step size.
+		% Note reducing stepSizeCoeff will not necessarily reduce the generated jump size,
+		%  but does have this effect loosely.
+		if ( f < prev_f && norm(vecG) < norm(prev_vecG) ) % Maybe consider model?
+			stepSizeCoeff *= 2.0;
+		elseif ( f > prev_f || norm(vecG) > norm(prev_vecG) )
+			stepSizeCoeff *= 0.1;
+		endif
 		%
 		% Report progress.
 		if ( prm.progressReportInterval >= 0.0 && time() - progressReportedTime >= prm.progressReportInterval )
