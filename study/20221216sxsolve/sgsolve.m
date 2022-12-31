@@ -1,13 +1,17 @@
 function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 	msg( __FILE__, __LINE__, "Need:" );
 	msg( __FILE__, __LINE__, "  ( Testing? Timing? Refactor? )" );
+	msg( __FILE__, __LINE__, "  * Meander/SPt: Reduce 'learningRate' if clearly overshooting." );
 	msg( __FILE__, __LINE__, "Want:" );
 	msg( __FILE__, __LINE__, "  * Core: Reduce repeated manipulation of record data (matD, matV, matVT*)." );
+	msg( __FILE__, __LINE__, "  * Output: Report ledger and subspace size." );
 	msg( __FILE__, __LINE__, "Maybe Consider:" );
+	msg( __FILE__, __LINE__, "  * Core: Only accept jump if implies sufficient reduction to ||g||?." );
 	msg( __FILE__, __LINE__, "  * Refine hessfit: From ledger dat, two- or three-pass, allow nonorthog basis." );
 	msg( __FILE__, __LINE__, "  * Refine jump: Incl variation of (any/all) out-of-space components of gradient." );
 	msg( __FILE__, __LINE__, "  * Refine jump: Analyze 'alpha' (handling out-of-space quants)." );
 	msg( __FILE__, __LINE__, "  * Core: Curation record data (matX, matG; optim num fevals vs own work)." );
+	msg( __FILE__, __LINE__, "      Consider: discard if contribution to reducing ||g|| is small." );
 	msg( __FILE__, __LINE__, "  * Test trFactor (which is prop matD)." );
 	msg( __FILE__, __LINE__, "  * BT/TR: Improve good/bad check on fSPt and dynamic step size limit in addition to 'trFactor' (which is prop matD)." );
 	msg( __FILE__, __LINE__, "Potential Optimizations:" );
@@ -56,6 +60,8 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 	prev_vecX = [];
 	prev_vecG = [];
 	prev_f = [];
+	init_g = sptDat.vecGSPt;
+	init_f = sptDat.fSPt;
 	vecX = sptDat.vecXSPt;
 	vecG = sptDat.vecGSPt;
 	f = sptDat.fSPt;
@@ -218,6 +224,7 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 		vecX = sptDat.vecXSPt;
 		vecG = sptDat.vecGSPt;
 		f = sptDat.fSPt;
+		assert( f < init_f / eps );
 		%
 		% Crude limit on step size.
 		% Note reducing stepSizeCoeff will not necessarily reduce the generated jump size,

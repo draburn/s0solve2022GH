@@ -7,7 +7,7 @@ if ( stopsignalpresent() )
 endif
 %
 setprngstates(0);
-sizeX = 50
+sizeX = 5
 sizeL = min([ sizeX, round(sqrt(sqrt(1E6*sizeX))) ])
 vecXCrit = randn(sizeX,1);
 %randn(sizeX,1); % Burn to match test_mysgdmom.
@@ -15,15 +15,15 @@ fCrit = 1.0;
 %cVals = [ 1.0, 1.0E-2, 0.0, 0.0 ]
 %cVals = [ 1.0, 1.0E-2, 1.0E-4, 1.0E-6 ]
 %cVals = [ 1.0, 1.0E-1, 1.0E-2, 1.0E-3 ]
-cVals = [ 0.0, 1.0, 1.0E-2, 1.0E-2 ]
+cVals = [ 0.0, 0.0, 0.0, 1.0 ]
 %noisePrm = [ 0.0, 0.0; 0.0, 0.0; 0.0, 0.0 ]
-noisePrm = [ 1.0E-12, 1.0E-2; 1.0e-4, 1.0e-4; 1.0e-4, 1.0e-4 ]
+noisePrm = [ 1.0E-12, 1.0E-2; 1.0e-4, 1.0e-4; 1.0e-4, 1.0e-4 ];
 %noisePrm = [ 1.0E-8, 0.0; 0.0, 0.0; 0.0, 0.0 ];
 %
 tic();
 msgnnl( __FILE__, __LINE__, "Generating function... " );
-matAS = cVals(1)*sparse(eye(sizeX,sizeX)) + cVals(2)*sparse(diag(randn(sizeX,1))) + cVals(3)*sprandn(sizeX,sizeX,sizeL*1.0/sizeX);
 matAW = cVals(4)*randn(sizeL,sizeX);
+matAS = cVals(1)*sparse(eye(sizeX,sizeX)) + cVals(2)*sparse(diag(randn(sizeX,1))) + cVals(3)*sprandn(sizeX,sizeX,sizeL*1.0/sizeX);
 funchFG = @(x) funcQuad1230( x, vecXCrit, fCrit, matAS, matAW, noisePrm );
 funchFG_noiseless = @(x) funcQuad1230( x, vecXCrit, fCrit, matAS, matAW, zeros(3,2) );
 vecX0 = zeros(sizeX,1);
@@ -44,7 +44,7 @@ prm = [];
 prm.funchFGCrit = funchFG;
 prm.funchFGNoiselessCrit = funchFG_noiseless;
 %prm.matHCrit = matH0 + matA0*(matA0');
-prm.learningRate = 0.1;
+prm.learningRate = 0.01;
 prm.momentumFactor = 0.9;
 %
 prm.xTol = eps^0.9 * ( norm(vecX0) + norm(vecXCrit) );
