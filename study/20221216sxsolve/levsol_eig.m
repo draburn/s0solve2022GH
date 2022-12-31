@@ -166,6 +166,7 @@ function [ vecDelta, datOut ] = __solve( f0, vecG, matH, bMax, bTol, fMin, fTol,
 	else
 		sMax = 1.0;
 	endif
+	sMax_original = sMax;
 	%
 	[ vecDelta_trial, b, f ] = __getDeltaBFOfS( sMax, hScl, f0, vecG, matH, matPsi, vecLambda, vecPsiTNG );
 	bSatisfied = isempty(bMax) || ( b <= bMax + bTol );
@@ -195,6 +196,49 @@ function [ vecDelta, datOut ] = __solve( f0, vecG, matH, bMax, bTol, fMin, fTol,
 		[ vecDelta_trial, b, f ] = __getDeltaBFOfS( sMax, hScl, f0, vecG, matH, matPsi, vecLambda, vecPsiTNG );
 		bSatisfied = isempty(bMax) || ( b <= bMax + bTol );
 		fSatisfied = isempty(fMin) || ( f >= fMin - fTol );
+		if (~bSatisfied)
+			msg( __FILE__, __LINE__, "WARNING: ~bSatisfied." );
+			msg( __FILE__, __LINE__, "  Begin infodump..." );
+			sMax_original
+			bMax
+			%
+			hScl
+			bTrgt
+			matPsi
+			vecLambda
+			vecPsiTNG
+			sMax
+			%
+			sMax
+			%
+			hScl
+			f0
+			vecG
+			matH
+			%matPsi
+			%vecLambda
+			%vecPsiTNG
+			%
+			vecDelta_trial
+			b
+			f
+			%
+			bMax
+			b
+			bTol
+			bSatisfied
+			%
+			fMin
+			f
+			fTol
+			fSatisfied
+			%
+			sMax
+			msg( __FILE__, __LINE__, "  If sMax is just a bit below unity, we may have him resolution limit in very ill-conditioned case." );
+			%
+			msg( __FILE__, __LINE__, "  End infodump." );
+			warning( "~bSatisfied" );
+		endif
 		assert( bSatisfied );
 	endif
 	if ( ~fSatisfied )

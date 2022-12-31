@@ -231,7 +231,7 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 		%  but does have this effect loosely.
 		if ( f < prev_f && norm(vecG) < norm(prev_vecG) ) % Maybe consider model?
 			stepSizeCoeff *= 2.0;
-		elseif ( f > prev_f || norm(vecG) > norm(prev_vecG) )
+		elseif ( f > 2.0*prev_f || norm(vecG) > norm(prev_vecG) )
 			stepSizeCoeff *= 0.1;
 		endif
 		%
@@ -445,6 +445,8 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_basicCts( vecXSeed, vecPSeed, ma
 	matB = diag(1.0./vecCap);
 	trCoeff = mygetfield( prm, "trCoeff", 3.0 );
 	bMax = trCoeff * stepSizeCoeff;
+	%msg( __FILE__, __LINE__, sprintf( "stepSizeCoeff = %0.3e", stepSizeCoeff ) );
+	%msg( __FILE__, __LINE__, sprintf( "bMax = %0.3e", bMax ) );
 	levPrm = [];
 	vecZ = levsol_eig( fFit, vecGammaSeed, matHFit, matB, bMax, levPrm );
 	if ( mygetfield( prm, "debugMode", false ) )
