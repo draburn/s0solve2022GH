@@ -220,9 +220,9 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 			[ sprout_vecX, sprout_vecP, sptDat ] = __evalSuperPt( funchFG, seed_vecX, seed_vecP, prm );
 			fevalCount += sptDat.fevalCount;
 			assert( sptDat.fSPt < init_f / eps );
-			msg( __FILE__, __LINE__, sprintf( "Instead: %g vs %g.", sptDat.fSPt, f ) );
+			%msg( __FILE__, __LINE__, sprintf( "Instead: %g vs %g.", sptDat.fSPt, f ) );
 		else
-			msg( __FILE__, __LINE__, sprintf( "Yays: %g < %g.", sptDat.fSPt, f ) );
+			%msg( __FILE__, __LINE__, sprintf( "Yays: %g < %g.", sptDat.fSPt, f ) );
 		endif
 		%
 		% Move to the step.
@@ -370,8 +370,8 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_basicCts( vecXSeed, vecPSeed, ma
 	matVTGForFit = matV'*matGForFit;
 	fitPrm = [];
 	fitPrm.epsHRegu = 0.0;
-	msg( __FILE__, __LINE__, sprintf( "rcond(mtm(matVTDForFit)) = %g", rcond(mtm(matVTDForFit)) ) );
-	msg( __FILE__, __LINE__, sprintf( "rcond(mtm(matVTDForFit')) = %g", rcond(mtm(matVTDForFit')) ) );
+	%msg( __FILE__, __LINE__, sprintf( "rcond(mtm(matVTDForFit)) = %g", rcond(mtm(matVTDForFit)) ) );
+	%msg( __FILE__, __LINE__, sprintf( "rcond(mtm(matVTDForFit')) = %g", rcond(mtm(matVTDForFit')) ) );
 	[ fFit, vecGammaFit, matHFit ] = hessfit( matVTDForFit, rvecFForFit, matVTGForFit, fitPrm );
 	if ( fFit < 0.0 )
 		warning( "fFit is negative." );
