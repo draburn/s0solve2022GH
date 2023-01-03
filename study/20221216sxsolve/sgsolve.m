@@ -180,8 +180,8 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 		endif
 		endif
 		%
-		[ trial_vecX, trial_vecP, jumpDat ] = __jump_basicCts( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, stepSizeCoeff, prm );
-		%[ trial_vecX, trial_vecP, jumpDat ] = __jump_simpleCts( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, simple_trSize, prm );
+		%[ trial_vecX, trial_vecP, jumpDat ] = __jump_basicCts( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, stepSizeCoeff, prm );
+		[ trial_vecX, trial_vecP, jumpDat ] = __jump_simple( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, simple_trSize, prm );
 		assert( isrealarray(trial_vecX,[sizeX,1]) );
 		assert( isrealarray(trial_vecP,[sizeX,1]) );
 		%
@@ -382,6 +382,24 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_basicCts( vecXSeed, vecPSeed, ma
 	if ( fFit < 0.0 )
 		warning( "fFit is negative." );
 	endif
+	
+	
+	doComparison = false;
+	if (doComparison)
+		[ fTrue, vecGTrue ] = prm.funchFG_noiseless( vecXAnchor );
+		vecGammaTrue = matV'*vecGTrue;
+		matHFit
+		matVTHFSV = matV'*prm.matHSecret*matV
+		matRes = matHFit - matVTHFSV
+		rdH = reldiff( matHFit, matVTHFSV )
+		vecGammaCompare = [ vecGammaFit, vecGammaTrue, vecGammaFit - vecGammaTrue ]
+		rdG = reldiff( vecGammaFit, vecGammaTrue )
+		fTrue
+		fFit
+		rdF = reldiff( fFit, fTrue )
+	endif
+	
+	
 	%
 	if ( mygetfield( prm, "validateFit", false ) );
 		matVTHFSV = matV'*prm.matHSecret*matV;
@@ -506,12 +524,13 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_basicCts( vecXSeed, vecPSeed, ma
 	%
 	vecXNew = vecXAnchor + matV*vecYNew + vecXPerp*alphaXPerp;
 	vecPNew = matV * ( coeffPGamma*vecGammaNew + vecGammaPerp*alphaGammaPerp ) + vecPPerp*alphaPPerp;
+	%vecPNew = 0*vecXNew; % Is this the way to go???
 return;
 endfunction;
 
 
 
-function [ vecXNew, vecPNew, jumpDat ] = __jump_simpleCts( vecXSeed, vecPSeed, matX, matG, rvecF, rvecW, trSize, prm )
+function [ vecXNew, vecPNew, jumpDat ] = __jump_simple( vecXSeed, vecPSeed, matX, matG, rvecF, rvecW, trSize, prm )
 	vecXNew = [];
 	vecPNew = [];
 	jumpDat = [];
@@ -532,7 +551,7 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_simpleCts( vecXSeed, vecPSeed, m
 	matDPreDrop = [ matX(:,1:indexAnchor-1), matX(:,indexAnchor+1:end) ] - vecXAnchor;
 	matGPreDrop = [ matG(:,1:indexAnchor-1), matG(:,indexAnchor+1:end) ];
 	rvecFPreDrop = [ rvecF(1:indexAnchor-1), rvecF(indexAnchor+1:end) ];
-	orthoDropThresh = mygetfield( prm, "orthoDropThresh", 0.1 );
+	orthoDropThresh = mygetfield( prm, "orthoDropThresh", 0.01 );
 	[ matV, rvecDrop ] = utorthdrop( matDPreDrop, orthoDropThresh );
 	%
 	matDSans = matDPreDrop(:,~rvecDrop);
@@ -544,7 +563,24 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_simpleCts( vecXSeed, vecPSeed, m
 	matA = (matDSans'*matGSans) - (matDSans'*vecGAnchor); % Autobroadcast.
 	matHFit = (matA'+matA)/2.0; % Simple. We could instead use "diagonal domination".
 	fFit = fAnchor;
-	vecGammaFit = rvecFSans' - fAnchor - diag(matHFit)/2.0;
+	%%%vecGammaFit = rvecFSans' - fAnchor - diag(matHFit)/2.0;
+	vecGammaFit = matDSans'*vecGAnchor;
+	
+	doComparison = false;
+	if (doComparison)
+		[ fTrue, vecGTrue ] = prm.funchFG_noiseless( vecXAnchor );
+		vecGammaTrue = matDSans'*vecGTrue;
+		matHFit
+		matVTHFSV = matDSans'*prm.matHSecret*matDSans
+		matRes = matHFit - matVTHFSV
+		rdH = reldiff( matHFit, matVTHFSV )
+		vecGammaCompare = [ vecGammaFit, vecGammaTrue, vecGammaFit - vecGammaTrue ]
+		rdG = reldiff( vecGammaFit, vecGammaTrue )
+		fTrue
+		fFit
+		rdF = reldiff( fFit, fTrue )
+	endif
+	
 	%
 	%
 	% We now have our (non-orthogonal) model...
@@ -552,8 +588,9 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_simpleCts( vecXSeed, vecPSeed, m
 	%   fModel = f0Fit + vecY'*vecGamma0Fit + (vecY'*matHFit*vecY)/2.0.
 	vecD = sum(matDSans.^2, 1);
 	%vecB = 1.0./( abs(vecD)+sqrt(eps)*max(abs(vecD)) );
-	matB = diag(vecD);
+	matB = diag(sqrt(vecD));
 	bMax = trSize;
+	%bMax = [];
 	levPrm = [];
 	%
 	vecXLaunch = vecXAnchor; % Projection of seed in to subspace may be better.
@@ -562,5 +599,6 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_simpleCts( vecXSeed, vecPSeed, m
 	vecY = levsol_eig( fLaunch, vecGammmaLaunch, matHFit, matB, bMax, levPrm );
 	vecXNew = vecXLaunch + matDSans * vecY;
 	vecPNew = vecPSeed - matV * ( matV' * vecPSeed ); % ... Or, something else?
+	%vecPNew = 0*vecXNew; % Is this the way to go???
 return;
 endfunction;

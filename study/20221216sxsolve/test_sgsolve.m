@@ -15,7 +15,9 @@ fCrit = 1.0;
 %cVals = [ 1.0, 1.0E-2, 0.0, 0.0 ]
 %cVals = [ 1.0, 1.0E-2, 1.0E-4, 1.0E-6 ]
 %cVals = [ 1.0, 1.0E-1, 1.0E-2, 1.0E-3 ]
+%cVals = [ 1.0E-1, 1.0E0, 1.0E-1, 1.0E-1 ]
 cVals = [ 0.0, 1.0, 1.0E-2, 1.0E-2 ]
+%noisePrm = [ 1.0E-6, 0.0; 0.0, 0.0; 0.0, 0.0 ]
 %noisePrm = [ 0.0, 0.0; 0.0, 0.0; 0.0, 0.0 ]
 noisePrm = [ 1.0E-12, 1.0E-2; 1.0e-4, 1.0e-4; 1.0e-4, 1.0e-4 ]
 %noisePrm = [ 1.0E-8, 0.0; 0.0, 0.0; 0.0, 0.0 ];
@@ -41,22 +43,30 @@ gNoiseLevel = sqrt( sum(sum( matGNLS.^2, 1 )) / numNLS )
 %
 prm = [];
 %prm.funch_vecGCrit = @(x)( matH0*(x-vecXCrit) + matA0*(matA0'*(x-vecXCrit)) );
-prm.funchFGCrit = funchFG;
-prm.funchFGNoiselessCrit = funchFG_noiseless;
+%prm.funchFGCrit = funchFG;
+%prm.funchFGNoiselessCrit = funchFG_noiseless;
 %prm.matHCrit = matH0 + matA0*(matA0');
+prm.matHSecret = full( matAW'*matAW + matAS'*matAS );
+prm.funchFG_noiseless = funchFG_noiseless;
 prm.learningRate = 0.1;
 prm.momentumFactor = 0.9;
 %
-prm.xTol = eps^0.9 * ( norm(vecX0) + norm(vecXCrit) );
-prm.gTol = 3.0*gNoiseLevel + eps^0.7 * norm(vecG0);
-prm.fTol = 3.0*fNoiseLevel + eps^0.7 * f0;
+if (0)
+	prm.xTol = eps^0.9 * ( norm(vecX0) + norm(vecXCrit) );
+	prm.gTol = 3.0*gNoiseLevel + eps^0.7 * norm(vecG0);
+	prm.fTol = 3.0*fNoiseLevel + eps^0.7 * f0;
+else
+	prm.xTol = eps^0.7 * ( norm(vecX0) + norm(vecXCrit) );
+	prm.gTol = 30.0*gNoiseLevel + eps^0.5 * norm(vecG0);
+	prm.fTol = 30.0*fNoiseLevel + eps^0.5 * f0;
+endif
 prm.timeLimit = -1;
 prm.iterLimit = -1;
 prm.progressReportInterval = 0.0;
 %
 %[ vecXFin, retCode, datOut ] = mysgdmom( funchFG, vecX0, prm );
-prm.ledgerLimit = 20;
-prm.numFevalPerSuperPt = 20;
+%prm.ledgerLimit = 20;
+%prm.numFevalPerSuperPt = 20;
 [ vecXFin, retCode, datOut ] = sgsolve( funchFG, vecX0, prm );
 if ( stopsignalpresent() )
 	msg( __FILE__, __LINE__, "Received stop signal." );
