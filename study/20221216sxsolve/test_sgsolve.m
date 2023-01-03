@@ -52,7 +52,7 @@ prm.gTol = 3.0*gNoiseLevel + eps^0.7 * norm(vecG0);
 prm.fTol = 3.0*fNoiseLevel + eps^0.7 * f0;
 prm.timeLimit = -1;
 prm.iterLimit = -1;
-%prm.progressReportInterval = 0.0;
+prm.progressReportInterval = 0.0;
 %
 %[ vecXFin, retCode, datOut ] = mysgdmom( funchFG, vecX0, prm );
 prm.ledgerLimit = 20;

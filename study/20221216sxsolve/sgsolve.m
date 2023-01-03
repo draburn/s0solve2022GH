@@ -2,6 +2,7 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 	msg( __FILE__, __LINE__, "Need:" );
 	msg( __FILE__, __LINE__, "  ( Testing? Timing? Refactor? )" );
 	msg( __FILE__, __LINE__, "  * Meander/SPt: Reduce 'learningRate' if clearly overshooting." );
+	msg( __FILE__, __LINE__, "  * Core: Fix 'best' vs 'latest'!" );
 	msg( __FILE__, __LINE__, "Want:" );
 	msg( __FILE__, __LINE__, "  * Core: Reduce repeated manipulation of record data (matD, matV, matVT*)." );
 	msg( __FILE__, __LINE__, "  * Output: Report ledger and subspace size." );
@@ -178,9 +179,9 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 		endif
 		endif
 		%
-		[ seed_vecX, seed_vecP, jumpDat ] = __jump_basicCts( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, stepSizeCoeff, prm );
-		assert( isrealarray(seed_vecX,[sizeX,1]) );
-		assert( isrealarray(seed_vecP,[sizeX,1]) );
+		[ trial_vecX, trial_vecP, jumpDat ] = __jump_basicCts( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, stepSizeCoeff, prm );
+		assert( isrealarray(trial_vecX,[sizeX,1]) );
+		assert( isrealarray(trial_vecP,[sizeX,1]) );
 		%
 		if (1)
 			if (~isempty(jumpDat.rvecUseForFit))
@@ -200,8 +201,9 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 			endif
 		endif
 		%
-		[ sprout_vecX, sprout_vecP, sptDat ] = __evalSuperPt( funchFG, seed_vecX, seed_vecP, prm );
+		[ sprout_vecX, sprout_vecP, sptDat ] = __evalSuperPt( funchFG, trial_vecX, trial_vecP, prm );
 		fevalCount += sptDat.fevalCount;
+		assert( sptDat.fSPt < init_f / eps );
 		%
 		doExactnessCheck = false;
 		if (doExactnessCheck)
@@ -209,6 +211,18 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 			looky_f = [ sptDat.fSPt, fCheck, sptDat.fSPt-fCheck ]
 			looky_vecG = [ sptDat.vecGSPt, vecGCheck, sptDat.vecGSPt-vecGCheck ]
 			error( "HALT!" );
+		endif
+		%
+		if ( sptDat.fSPt >= f )
+			% That didn't work so well.
+			% Ignore the result and just do another superPt.
+			msg( __FILE__, __LINE__, sprintf( "Ouch: %g >= %g.", sptDat.fSPt, f ) );
+			[ sprout_vecX, sprout_vecP, sptDat ] = __evalSuperPt( funchFG, seed_vecX, seed_vecP, prm );
+			fevalCount += sptDat.fevalCount;
+			assert( sptDat.fSPt < init_f / eps );
+			msg( __FILE__, __LINE__, sprintf( "Instead: %g vs %g.", sptDat.fSPt, f ) );
+		else
+			msg( __FILE__, __LINE__, sprintf( "Yays: %g < %g.", sptDat.fSPt, f ) );
 		endif
 		%
 		% Move to the step.
@@ -224,16 +238,6 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 		vecX = sptDat.vecXSPt;
 		vecG = sptDat.vecGSPt;
 		f = sptDat.fSPt;
-		assert( f < init_f / eps );
-		%
-		% Crude limit on step size.
-		% Note reducing stepSizeCoeff will not necessarily reduce the generated jump size,
-		%  but does have this effect loosely.
-		if ( f < prev_f && norm(vecG) < norm(prev_vecG) ) % Maybe consider model?
-			stepSizeCoeff *= 2.0;
-		elseif ( f > 2.0*prev_f || norm(vecG) > norm(prev_vecG) )
-			stepSizeCoeff *= 0.1;
-		endif
 		%
 		% Report progress.
 		if ( prm.progressReportInterval >= 0.0 && time() - progressReportedTime >= prm.progressReportInterval )
@@ -366,7 +370,12 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_basicCts( vecXSeed, vecPSeed, ma
 	matVTGForFit = matV'*matGForFit;
 	fitPrm = [];
 	fitPrm.epsHRegu = 0.0;
+	msg( __FILE__, __LINE__, sprintf( "rcond(mtm(matVTDForFit)) = %g", rcond(mtm(matVTDForFit)) ) );
+	msg( __FILE__, __LINE__, sprintf( "rcond(mtm(matVTDForFit')) = %g", rcond(mtm(matVTDForFit')) ) );
 	[ fFit, vecGammaFit, matHFit ] = hessfit( matVTDForFit, rvecFForFit, matVTGForFit, fitPrm );
+	if ( fFit < 0.0 )
+		warning( "fFit is negative." );
+	endif
 	%
 	if ( mygetfield( prm, "validateFit", false ) );
 		matVTHFSV = matV'*prm.matHSecret*matV;
@@ -448,6 +457,7 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_basicCts( vecXSeed, vecPSeed, ma
 	%msg( __FILE__, __LINE__, sprintf( "stepSizeCoeff = %0.3e", stepSizeCoeff ) );
 	%msg( __FILE__, __LINE__, sprintf( "bMax = %0.3e", bMax ) );
 	levPrm = [];
+	assert( fFit >= 0.0 );
 	vecZ = levsol_eig( fFit, vecGammaSeed, matHFit, matB, bMax, levPrm );
 	if ( mygetfield( prm, "debugMode", false ) )
 		vecDelta = matV*vecZ;

@@ -156,6 +156,17 @@ function [ vecFGL, solveDat ] = __solve_fullMat( funchRes, vecFGL0, prm )
 	%vecFGL = vecFGL0 - mycholdiv( matM, vecRes0 );
 	vecDelta = mycholdiv( matM, -vecRes0 );
 	if ( ~isempty(vecDelta) )
+		if ( reldiff(-vecRes0,matM*vecDelta) >= 1.0e-2 )
+			size(matM)
+			msg( __FILE__, __LINE__, "Begin infodump..." );
+			size(matM)
+			msg( __FILE__, __LINE__, sprintf( "rcond(matM) = %g", rcond(matM) ) );
+			matM
+			vec_res0_delta = [ vecRes0, vecDelta ]
+			eigVals = eig(matM)'
+			rd = reldiff(-vecRes0,matM*vecDelta)
+			msg( __FILE__, __LINE__, "End infodump." );
+		endif
 		assert( reldiff(-vecRes0,matM*vecDelta) < 1.0e-2 );
 		vecFGL = vecFGL0 + vecDelta;
 		return;
