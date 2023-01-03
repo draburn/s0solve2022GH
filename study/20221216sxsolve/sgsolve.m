@@ -56,6 +56,7 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 	rvecW = sptDat.wSPt;
 	iterCount = 1;
 	stepSizeCoeff = 1.0;
+	simple_trSize = [];
 	%
 	% Set other dat.
 	prev_vecX = [];
@@ -180,6 +181,7 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 		endif
 		%
 		[ trial_vecX, trial_vecP, jumpDat ] = __jump_basicCts( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, stepSizeCoeff, prm );
+		%[ trial_vecX, trial_vecP, jumpDat ] = __jump_simpleCts( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, simple_trSize, prm );
 		assert( isrealarray(trial_vecX,[sizeX,1]) );
 		assert( isrealarray(trial_vecP,[sizeX,1]) );
 		%
@@ -215,6 +217,7 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 		%
 		if ( sptDat.fSPt >= f )
 			% That didn't work so well.
+			simple_trSize = 0.1*norm( trial_vecX - seed_vecX );
 			% Ignore the result and just do another superPt.
 			msg( __FILE__, __LINE__, sprintf( "Ouch: %g >= %g.", sptDat.fSPt, f ) );
 			[ sprout_vecX, sprout_vecP, sptDat ] = __evalSuperPt( funchFG, seed_vecX, seed_vecP, prm );
@@ -222,6 +225,9 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 			assert( sptDat.fSPt < init_f / eps );
 			%msg( __FILE__, __LINE__, sprintf( "Instead: %g vs %g.", sptDat.fSPt, f ) );
 		else
+			if ( ~isempty(simple_trSize) )
+				simple_trSize = 2.0*norm( trial_vecX - seed_vecX );
+			endif
 			%msg( __FILE__, __LINE__, sprintf( "Yays: %g < %g.", sptDat.fSPt, f ) );
 		endif
 		%
@@ -500,5 +506,61 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_basicCts( vecXSeed, vecPSeed, ma
 	%
 	vecXNew = vecXAnchor + matV*vecYNew + vecXPerp*alphaXPerp;
 	vecPNew = matV * ( coeffPGamma*vecGammaNew + vecGammaPerp*alphaGammaPerp ) + vecPPerp*alphaPPerp;
+return;
+endfunction;
+
+
+
+function [ vecXNew, vecPNew, jumpDat ] = __jump_simpleCts( vecXSeed, vecPSeed, matX, matG, rvecF, rvecW, trSize, prm )
+	vecXNew = [];
+	vecPNew = [];
+	jumpDat = [];
+	jumpDat.sizeK = 0; % Unless overwritten.
+	jumpDat.rvecUseForFit = []; % Unless overwritten.
+	%
+	if ( size(matX,2) <= 1 )
+		vecXNew = vecXSeed;
+		vecPNew = vecPSeed;
+		return;
+	endif
+	%
+	% Select anchor for subspace.
+	[ fAnchor, indexAnchor ] = min(rvecF);
+	vecXAnchor = matX(:,indexAnchor);
+	vecGAnchor = matG(:,indexAnchor);
+	%
+	matDPreDrop = [ matX(:,1:indexAnchor-1), matX(:,indexAnchor+1:end) ] - vecXAnchor;
+	matGPreDrop = [ matG(:,1:indexAnchor-1), matG(:,indexAnchor+1:end) ];
+	rvecFPreDrop = [ rvecF(1:indexAnchor-1), rvecF(indexAnchor+1:end) ];
+	orthoDropThresh = mygetfield( prm, "orthoDropThresh", 0.1 );
+	[ matV, rvecDrop ] = utorthdrop( matDPreDrop, orthoDropThresh );
+	%
+	matDSans = matDPreDrop(:,~rvecDrop);
+	matGSans = matGPreDrop(:,~rvecDrop);
+	rvecFSans = rvecFPreDrop(~rvecDrop);
+	jumpDat.sizeK = size(matDSans,2);
+	% Now, we have our "sans (anchor)" and "anchor data".
+	%
+	matA = (matDSans'*matGSans) - (matDSans'*vecGAnchor); % Autobroadcast.
+	matHFit = (matA'+matA)/2.0; % Simple. We could instead use "diagonal domination".
+	fFit = fAnchor;
+	vecGammaFit = rvecFSans' - fAnchor - diag(matHFit)/2.0;
+	%
+	%
+	% We now have our (non-orthogonal) model...
+	%   vecX = vecXAnchor +  matDeltaSans * vecY
+	%   fModel = f0Fit + vecY'*vecGamma0Fit + (vecY'*matHFit*vecY)/2.0.
+	vecD = sum(matDSans.^2, 1);
+	%vecB = 1.0./( abs(vecD)+sqrt(eps)*max(abs(vecD)) );
+	matB = diag(vecD);
+	bMax = trSize;
+	levPrm = [];
+	%
+	vecXLaunch = vecXAnchor; % Projection of seed in to subspace may be better.
+	fLaunch = fFit;
+	vecGammmaLaunch = vecGammaFit;
+	vecY = levsol_eig( fLaunch, vecGammmaLaunch, matHFit, matB, bMax, levPrm );
+	vecXNew = vecXLaunch + matDSans * vecY;
+	vecPNew = vecPSeed - matV * ( matV' * vecPSeed ); % ... Or, something else?
 return;
 endfunction;

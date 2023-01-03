@@ -234,7 +234,7 @@ function [ vecDelta, datOut ] = __solve( f0, vecG, matH, bMax, bTol, fMin, fTol,
 			fSatisfied
 			%
 			sMax
-			msg( __FILE__, __LINE__, "  If sMax is just a bit below unity, we may have him resolution limit in very ill-conditioned case." );
+			msg( __FILE__, __LINE__, "  If sMax is just a bit below unity, we may have hit resolution limit in very ill-conditioned case." );
 			%
 			msg( __FILE__, __LINE__, "  End infodump." );
 			warning( "~bSatisfied" );
