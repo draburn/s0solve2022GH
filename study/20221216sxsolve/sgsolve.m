@@ -1051,16 +1051,15 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_january( vecXSeed, vecPSeed, mat
 	%
 	% y = V'*(x-x_anchor)
 	% gamma = V'*g
-	matY = matV'*matDSans;
+	matY = triu(matV'*matDSans);
 	vecGammaAnchor = matV'*vecGAnchor;
 	matGamma = matV'*matGSans;
 	%
 	% Generate fit.
-	matY_triu = triu(matY); % eig() would provide slightly more accurate results?
-	matA = (matY_triu') \ (( matGamma - vecGammaAnchor)');
-	matHFit = (matA'+matA)/2.0; % Alternatives are possible.
 	fFit = fAnchor;
 	vecGammaFit = vecGammaAnchor;
+	matA = (matY') \ (( matGamma - vecGammaAnchor)');
+	matHFit = (matA'+matA)/2.0; % Alternatives are possible.
 	
 	doComparison = false;
 	if (doComparison)
