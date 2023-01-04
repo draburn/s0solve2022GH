@@ -874,7 +874,7 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_simpleFitReduced( vecXSeed, vecP
 	matGamma = matV'*matGSans;
 	%
 	% Generate fit.
-	matY_triu = triu(matY); % eig() would provide slightly more accurate results?
+	matY_triu = triu(matY); % eig() on matY*(matY') could perhaps provide slightly more accurate results?
 	matA = (matY_triu') \ (( matGamma - vecGammaAnchor)');
 	matHFit = (matA'+matA)/2.0; % Alternatives are possible.
 	fFit = fAnchor;
@@ -1058,22 +1058,40 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_january( vecXSeed, vecPSeed, mat
 	% Generate fit.
 	fFit = fAnchor;
 	vecGammaFit = vecGammaAnchor;
-	matA = (matY') \ (( matGamma - vecGammaAnchor)');
-	matHFit = (matA'+matA)/2.0; % Alternatives are possible.
+	if (0)
+		matA = (matY') \ (( matGamma - vecGammaAnchor)');
+		matHFit = (matA'+matA)/2.0; % Alternatives are possible.
+	else
+		fitPrm = [];
+		%fitPrm.fitMethod = "simple symm alt";
+		fitPrm.fitMethod = "posdefy loop";
+		[ matHFit, fitDat ] = hessfit_simple_posdefy( matY, fFit, vecGammaFit, rvecFSans, matGamma, fitPrm );
+	endif
 	
-	doComparison = false;
+	doComparison = true;
 	if (doComparison)
 		[ fTrue, vecGTrue ] = prm.funchFG_noiseless( vecXAnchor );
 		vecGammaTrue = matV'*vecGTrue;
-		matHFit
-		matVTHFSV = matV'*prm.matHSecret*matV
-		matRes = matHFit - matVTHFSV
-		rdH = reldiff( matHFit, matVTHFSV )
-		vecGammaCompare = [ vecGammaFit, vecGammaTrue, vecGammaFit - vecGammaTrue ]
-		rdG = reldiff( vecGammaFit, vecGammaTrue )
-		fTrue
-		fFit
-		rdF = reldiff( fFit, fTrue )
+		matVTHFSV = matV'*prm.matHSecret*matV;
+		rdH = reldiff( matHFit, matVTHFSV );
+		rdG = reldiff( vecGammaFit, vecGammaTrue );
+		rdF = reldiff( fFit, fTrue );
+		%
+		dumpInfo = true;
+		if ( rdH > 0.1 )
+			dumpInfo = true;
+		endif
+		if (dumpInfo)
+			matHFit
+			matVTHFSV
+			matRes = matHFit - matVTHFSV
+			vecGammaCompare = [ vecGammaFit, vecGammaTrue, vecGammaFit - vecGammaTrue ]
+			fCompare = [ fFit, fTrue, fFit - fTrue ]
+			rdVals = [ rdF, rdG, rdH ]
+		endif
+		if ( rdH > 0.1 )
+			error( "*** THE BAD THING HAPPENED ***" );
+		endif
 	endif
 	
 	%
