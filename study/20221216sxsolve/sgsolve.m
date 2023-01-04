@@ -672,23 +672,36 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_simpleFitCts( vecXSeed, vecPSeed
 	matGamma = matV'*matGSans;
 	%
 	% Generate fit.
+	useTriuForFit = true;
+	if (~useTriuForFit)
 	useEigForFit = true;
 	if (~useEigForFit)
 	if ( rcond(matY*(matY')) < 100.0*eps )
 		%matY
-		rcond(mtm(matY'))
-		rcond(mtm(matY))
+		size(matY)
+		rc_mtm_yt = rcond(mtm(matY'))
+		rc_mtm_y = rcond(mtm(matY))
+		rd_triu = reldiff( matY, triu(matY))
+		rc_mtm_triu_y = rcond(mtm(triu(matY)))
+		rc_mtm_tril_yt = rcond(mtm(tril(matY')))
+		rc_diag_y = rcond(diag(diag(matY)))
+		rc_diag_mtm_y = rcond(diag(diag(mtm(matY))))
+		rc_diag_mtm_yt = rcond(diag(diag(mtm(matY'))))
 		%
 		matYPrevIsh = matY(1:end-1,1:end-1);
-		rcond(mtm(matYPrevIsh'))
-		rcond(mtm(matYPrevIsh))
+		rc_mtm_ypt = rcond(mtm(matYPrevIsh'))
+		rc_mtm_yp = rcond(mtm(matYPrevIsh))
 	endif
 	assert( rcond(matY'*matY) > 100.0*eps )
 	assert( rcond(matY*(matY')) > 100.0*eps )
-	%matA = ( matGamma - vecGammaAnchor ) * (matY') / ( matY*(matY') ); % Autobroadcast.
+	matA = ( matGamma - vecGammaAnchor ) * (matY') / ( matY*(matY') ); % Autobroadcast.
 	else
 	[ matPsi, matLambda ] = eig(matY*(matY'));
 	matA =  ( matGamma - vecGammaAnchor ) * (matY') * matPsi * inv(matLambda) * (matPsi');
+	endif
+	else
+	matY_triu = triu(matY);
+	matA = (matY_triu') \ (( matGamma - vecGammaAnchor)');
 	endif
 	matHFit = (matA'+matA)/2.0; % Alternatives are possible.
 	fFit = fAnchor;
