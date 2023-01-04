@@ -59,6 +59,14 @@ for n = [ 200, 500, 1000 ]
 	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"lambda = eig(h)\".", 1000.0*(time()-t)) );
 	%
 	t = time();
+	[ matPsi, matLambda ] = eig(h);
+	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"[ matPsi, matLambda ] = eig(h)\".", 1000.0*(time()-t)) );
+	%
+	t = time();
+	[ matPsi, matLambda ] = eig(triu(h));
+	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"[ matPsi, matLambda ] = eig(triu(h))\".", 1000.0*(time()-t)) );
+	%
+	t = time();
 	x = r \ ( r' \ h );
 	msg( __FILE__, __LINE__, sprintf( "  %10.3f ms for \"x = r \\ ( r' \\ h )\".", 1000.0*(time()-t)) );
 	%
