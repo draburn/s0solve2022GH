@@ -182,7 +182,8 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 		%
 		%[ trial_vecX, trial_vecP, jumpDat ] = __jump_basicCts( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, stepSizeCoeff, prm );
 		%[ trial_vecX, trial_vecP, jumpDat ] = __jump_simpleFitCts( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, stepSizeCoeff, prm );
-		[ trial_vecX, trial_vecP, jumpDat ] = __jump_simpleFitReduced( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, stepSizeCoeff, prm );
+		%[ trial_vecX, trial_vecP, jumpDat ] = __jump_simpleFitReduced( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, stepSizeCoeff, prm );
+		[ trial_vecX, trial_vecP, jumpDat ] = __jump_simple_redux( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, simple_trSize, prm );
 		%[ trial_vecX, trial_vecP, jumpDat ] = __jump_simple_ineffective( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, simple_trSize, prm );
 		assert( isrealarray(trial_vecX,[sizeX,1]) );
 		assert( isrealarray(trial_vecP,[sizeX,1]) );
@@ -932,5 +933,74 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_simpleFitReduced( vecXSeed, vecP
 	%  approach input "seed" values in the limit of step size -> 0.
 	vecXNew = vecXAnchor + matV*vecYNew;
 	vecPNew = vecPSeed * norm(vecGammaNew) / norm(vecGammaFit);
+return;
+endfunction;
+
+
+function [ vecXNew, vecPNew, jumpDat ] = __jump_simple_redux( vecXSeed, vecPSeed, matX, matG, rvecF, rvecW, stepSizeCoeff, prm )
+	% DRaburn 2023-01-23:
+	%  Another attempt at not using orthogonalization.
+	%  Does not yet work; try matching TR in __jump_simpleFitReduced exactly?
+	%  Maybe fit is less accurate because of non-ortho subspace???
+	vecPNew = [];
+	jumpDat = [];
+	jumpDat.sizeK = 0; % Unless overwritten.
+	jumpDat.rvecUseForFit = []; % Unless overwritten.
+	%
+	if ( size(matX,2) <= 1 )
+		vecXNew = vecXSeed;
+		vecPNew = vecPSeed;
+		return;
+	endif
+	%
+	% Select anchor for subspace.
+	[ fAnchor, indexAnchor ] = min(rvecF);
+	vecXAnchor = matX(:,indexAnchor);
+	vecGAnchor = matG(:,indexAnchor);
+	%
+	matD = matX - vecXAnchor;
+	orthoDropThresh = mygetfield( prm, "orthoDropThresh", 0.01 );
+	[ foo, rvecDrop ] = utorthdrop( matD, orthoDropThresh );
+	matDSans = matD(:,~rvecDrop);
+	matGSans = matG(:,~rvecDrop);
+	rvecFSans = rvecF(~rvecDrop);
+	jumpDat.sizeK = size(matDSans,2);
+	%
+	matA = (matDSans'*matGSans) - (matDSans'*vecGAnchor); % Autobroadcast.
+	matHFit = (matA'+matA)/2.0; % Simple. We could instead use "diagonal domination".
+	fFit = fAnchor;
+	vecGammaFit = matDSans'*vecGAnchor;
+	
+	doComparison = false;
+	if (doComparison)
+		[ fTrue, vecGTrue ] = prm.funchFG_noiseless( vecXAnchor );
+		vecGammaTrue = matDSans'*vecGTrue;
+		matHFit
+		matVTHFSV = matDSans'*prm.matHSecret*matDSans
+		matRes = matHFit - matVTHFSV
+		rdH = reldiff( matHFit, matVTHFSV )
+		vecGammaCompare = [ vecGammaFit, vecGammaTrue, vecGammaFit - vecGammaTrue ]
+		rdG = reldiff( vecGammaFit, vecGammaTrue )
+		fTrue
+		fFit
+		rdF = reldiff( fFit, fTrue )
+	endif
+	
+	%
+	matB = [];
+	trCoeff = mygetfield( prm, "trCoeff", 3.0 );
+	bMax = trCoeff * stepSizeCoeff;
+	levPrm = [];
+	%
+	vecYLaunch = zeros(size(vecGammaFit));
+	fLaunch = fFit;
+	vecGammaLaunch = vecGammaFit;
+	vecZ = levsol_eig( fLaunch, vecGammaLaunch, matHFit, matB, bMax, levPrm );
+	vecYNew = vecYLaunch + vecZ;
+	%
+	vecGammaNew = vecGammaFit + matHFit*vecYNew;
+	%
+	vecXNew = vecXAnchor + matDSans * vecYNew;
+	vecPNew = vecPSeed * norm( vecGammaNew ) / norm( vecGammaLaunch );
 return;
 endfunction;
