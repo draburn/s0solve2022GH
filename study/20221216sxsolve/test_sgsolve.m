@@ -61,7 +61,7 @@ else
 	prm.fTol = 30.0*fNoiseLevel + eps^0.5 * f0;
 endif
 prm.timeLimit = -1;
-prm.iterLimit = -1;
+prm.iterLimit = 300;
 prm.progressReportInterval = 0.0;
 %
 %[ vecXFin, retCode, datOut ] = mysgdmom( funchFG, vecX0, prm );

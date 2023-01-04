@@ -180,8 +180,8 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 		endif
 		endif
 		%
-		%[ trial_vecX, trial_vecP, jumpDat ] = __jump_basicCts( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, stepSizeCoeff, prm );
-		[ trial_vecX, trial_vecP, jumpDat ] = __jump_simple( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, simple_trSize, prm );
+		[ trial_vecX, trial_vecP, jumpDat ] = __jump_basicCts( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, stepSizeCoeff, prm );
+		%[ trial_vecX, trial_vecP, jumpDat ] = __jump_simple_ineffective( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, simple_trSize, prm );
 		assert( isrealarray(trial_vecX,[sizeX,1]) );
 		assert( isrealarray(trial_vecP,[sizeX,1]) );
 		%
@@ -216,6 +216,8 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 		endif
 		%
 		if ( sptDat.fSPt >= f )
+		%%%if ( norm(sptDat.vecGSPt) >= norm(vecG) )
+		%%%if (0)
 			% That didn't work so well.
 			simple_trSize = 0.1*norm( trial_vecX - seed_vecX );
 			% Ignore the result and just do another superPt.
@@ -530,7 +532,7 @@ endfunction;
 
 
 
-function [ vecXNew, vecPNew, jumpDat ] = __jump_simple( vecXSeed, vecPSeed, matX, matG, rvecF, rvecW, trSize, prm )
+function [ vecXNew, vecPNew, jumpDat ] = __jump_simple_ineffective( vecXSeed, vecPSeed, matX, matG, rvecF, rvecW, trSize, prm )
 	vecXNew = [];
 	vecPNew = [];
 	jumpDat = [];
@@ -589,16 +591,33 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_simple( vecXSeed, vecPSeed, matX
 	vecD = sum(matDSans.^2, 1);
 	%vecB = 1.0./( abs(vecD)+sqrt(eps)*max(abs(vecD)) );
 	matB = diag(sqrt(vecD));
+	%%%matB = symm(mtm(matDSans)^0.5);
 	bMax = trSize;
 	%bMax = [];
 	levPrm = [];
 	%
 	vecXLaunch = vecXAnchor; % Projection of seed in to subspace may be better.
 	fLaunch = fFit;
-	vecGammmaLaunch = vecGammaFit;
-	vecY = levsol_eig( fLaunch, vecGammmaLaunch, matHFit, matB, bMax, levPrm );
+	vecGammaLaunch = vecGammaFit;
+	vecY = levsol_eig( fLaunch, vecGammaLaunch, matHFit, matB, bMax, levPrm );
+	%
 	vecXNew = vecXLaunch + matDSans * vecY;
 	vecPNew = vecPSeed - matV * ( matV' * vecPSeed ); % ... Or, something else?
+	
+	msg( __FILE__, __LINE__, "This jump does not work well when there is noise." );
+	
+	return;
+	error( "END OF VALID CODE." );
+	vecGammaNew = vecGammaLaunch + matHFit*vecY;
+	%alphaG = norm(vecGammaNew)/norm(vecGammaLaunch);
+	%vecPNew = vecPSeed*alphaG;
+	%
+	alphaG = norm(vecGammaNew)/norm(vecGammaLaunch);
+	vecXPerp = NOTHING;
+	%
+	vecXNew = vecXLaunch + matDSans * vecY + vecXPerp*0
+	[ norm(vecXNew-vecXLaunch), norm(matB*vecY), trSize ]
+	vecPNew *= norm(vecGammaNew)/norm(vecGammaLaunch);
 	%vecPNew = 0*vecXNew; % Is this the way to go???
 return;
 endfunction;
