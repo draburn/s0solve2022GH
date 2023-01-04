@@ -183,8 +183,9 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 		%[ trial_vecX, trial_vecP, jumpDat ] = __jump_basicCts( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, stepSizeCoeff, prm );
 		%[ trial_vecX, trial_vecP, jumpDat ] = __jump_simpleFitCts( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, stepSizeCoeff, prm );
 		%[ trial_vecX, trial_vecP, jumpDat ] = __jump_simpleFitReduced( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, stepSizeCoeff, prm );
-		[ trial_vecX, trial_vecP, jumpDat ] = __jump_simple_redux( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, simple_trSize, prm );
+		%[ trial_vecX, trial_vecP, jumpDat ] = __jump_simple_redux( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, simple_trSize, prm );
 		%[ trial_vecX, trial_vecP, jumpDat ] = __jump_simple_ineffective( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, simple_trSize, prm );
+		[ trial_vecX, trial_vecP, jumpDat ] = __jump_january( seed_vecX, seed_vecP, matX, matG, rvecF, rvecW, stepSizeCoeff, prm );
 		assert( isrealarray(trial_vecX,[sizeX,1]) );
 		assert( isrealarray(trial_vecP,[sizeX,1]) );
 		%
@@ -539,7 +540,7 @@ endfunction;
 
 
 function [ vecXNew, vecPNew, jumpDat ] = __jump_simple_ineffective( vecXSeed, vecPSeed, matX, matG, rvecF, rvecW, trSize, prm )
-	% DRaburn 2023-01-23:
+	% DRaburn 2023-01-03:
 	%  Because of issues with hessfit, decided to try a simpler fit.
 	%  The fit itself works well, but this jump code doesn't.
 	%  Not sure why, but, abandoning.
@@ -938,7 +939,7 @@ endfunction;
 
 
 function [ vecXNew, vecPNew, jumpDat ] = __jump_simple_redux( vecXSeed, vecPSeed, matX, matG, rvecF, rvecW, stepSizeCoeff, prm )
-	% DRaburn 2023-01-23:
+	% DRaburn 2023-01-03:
 	%  Another attempt at not using orthogonalization.
 	%  Does not yet work; try matching TR in __jump_simpleFitReduced exactly?
 	%  Maybe fit is less accurate because of non-ortho subspace???
@@ -1002,5 +1003,118 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_simple_redux( vecXSeed, vecPSeed
 	%
 	vecXNew = vecXAnchor + matDSans * vecYNew;
 	vecPNew = vecPSeed * norm( vecGammaNew ) / norm( vecGammaLaunch );
+return;
+endfunction;
+
+
+
+function [ vecXNew, vecPNew, jumpDat ] = __jump_january( vecXSeed, vecPSeed, matX, matG, rvecF, rvecW, stepSizeCoeff, prm )
+	% DRaburn 2023-01-04:
+	%  About ready to be done with this solver.
+	%  But, let's try out a few things first.
+	%  Copied from __jump_simpleFitReduced.
+	vecXNew = [];
+	vecPNew = [];
+	jumpDat = [];
+	jumpDat.sizeK = 0; % Unless overwritten.
+	jumpDat.rvecUseForFit = []; % Unless overwritten.
+	%
+	if ( size(matX,2) <= 1 )
+		vecXNew = vecXSeed;
+		vecPNew = vecPSeed;
+		return;
+	endif
+	%
+	% Select anchor for subspace.
+	[ fAnchor, indexAnchor ] = min(rvecF);
+	vecXAnchor = matX(:,indexAnchor);
+	vecGAnchor = matG(:,indexAnchor);
+	
+	% Fit is changed from original __jump_basicCts().
+	%
+	% Generate subspace basis matrix and drop columns.
+	matD = matX - vecXAnchor; % Anchor column will necessarily be dropped.
+	%
+	% SKIP - Drop BC magnitude of columns of matD.
+	%
+	basisDropThresh = mygetfield( prm, "basisDropThresh", 0.01 );
+	[ matV, rvecDrop ] = utorthdrop( matD, basisDropThresh );
+	jumpDat.sizeK = size(matV,2);
+	if ( size(matV,2) == 0 )
+		vecXNew = vecXSeed;
+		vecPNew = vecPSeed;
+		return;
+	endif
+	matDSans = matD(:,~rvecDrop);
+	matGSans = matG(:,~rvecDrop);
+	rvecFSans = rvecF(~rvecDrop);
+	%
+	% y = V'*(x-x_anchor)
+	% gamma = V'*g
+	matY = matV'*matDSans;
+	vecGammaAnchor = matV'*vecGAnchor;
+	matGamma = matV'*matGSans;
+	%
+	% Generate fit.
+	matY_triu = triu(matY); % eig() would provide slightly more accurate results?
+	matA = (matY_triu') \ (( matGamma - vecGammaAnchor)');
+	matHFit = (matA'+matA)/2.0; % Alternatives are possible.
+	fFit = fAnchor;
+	vecGammaFit = vecGammaAnchor;
+	
+	doComparison = false;
+	if (doComparison)
+		[ fTrue, vecGTrue ] = prm.funchFG_noiseless( vecXAnchor );
+		vecGammaTrue = matV'*vecGTrue;
+		matHFit
+		matVTHFSV = matV'*prm.matHSecret*matV
+		matRes = matHFit - matVTHFSV
+		rdH = reldiff( matHFit, matVTHFSV )
+		vecGammaCompare = [ vecGammaFit, vecGammaTrue, vecGammaFit - vecGammaTrue ]
+		rdG = reldiff( vecGammaFit, vecGammaTrue )
+		fTrue
+		fFit
+		rdF = reldiff( fFit, fTrue )
+	endif
+	
+	%
+	% SKIP - Find nearest point to vecXSeed to use as launch.
+	%
+	%
+	% Find point on Levenberg curve subject to trust region.
+	%
+	vecYLaunch = zeros(size(vecGammaFit));
+	fLaunch = fFit;
+	vecGammaLaunch = vecGammaFit;
+	vecCap = max(abs(matY),[],2);
+	vecCap += sqrt(eps)*max(vecCap);
+	assert( 0.0 < min(vecCap) );
+	matB = diag(1.0./vecCap);
+	trCoeff = mygetfield( prm, "trCoeff", 3.0 );
+	bMax = trCoeff * stepSizeCoeff;
+	levPrm = [];
+	vecZ = levsol_eig( fLaunch, vecGammaLaunch, matHFit, matB, bMax, levPrm );
+	if ( mygetfield( prm, "debugMode", false ) )
+		vecDelta = matV*vecZ;
+		vecCapFS = max(abs(matDForFit),[],2);
+		vecCapFS += sqrt(eps)*max(vecCapFS);
+		if ( abs(vecZ)./vecCap > bMax*1.1 || abs(vecDelta)./vecCapFS > bMax*1.1 )
+			[ vecDelta, vecCapFS, abs(vecDelta)./vecCapFS ]
+			[ vecZ, vecCap, abs(vecZ)./vecCap ]
+			bMax
+		endif
+		assert( abs(vecZ)./vecCap <= bMax*1.1 || abs(vecDelta)./vecCapFS > bMax*1.1 )
+	endif
+	%
+	% Note that fNew and vecGammaNew are merely estimates.
+	vecYNew = vecYLaunch + vecZ;
+	fNew = fFit + vecYNew'*vecGammaFit + (vecYNew'*matHFit*vecYNew)/2.0;
+	vecGammaNew = vecGammaFit + matHFit*vecYNew;
+	%
+	% SKIP - Decomposition of vecXSeed and vecPSeed and analysis
+	%  to get improved vecXNew and vecPNew, as well as make output "new" values
+	%  approach input "seed" values in the limit of step size -> 0.
+	vecXNew = vecXAnchor + matV*vecYNew;
+	vecPNew = vecPSeed * norm(vecGammaNew) / norm(vecGammaFit);
 return;
 endfunction;
