@@ -223,7 +223,7 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 			% That didn't work so well.
 			simple_trSize = 0.1*norm( trial_vecX - seed_vecX );
 			% Ignore the result and just do another superPt.
-			msg( __FILE__, __LINE__, sprintf( "Ouch: %g >= %g.", sptDat.fSPt, f ) );
+			%msg( __FILE__, __LINE__, sprintf( "Ouch: %g >= %g.", sptDat.fSPt, f ) );
 			[ sprout_vecX, sprout_vecP, sptDat ] = __evalSuperPt( funchFG, seed_vecX, seed_vecP, prm );
 			fevalCount += sptDat.fevalCount;
 			assert( sptDat.fSPt < init_f / eps );
@@ -542,7 +542,7 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_simple_ineffective( vecXSeed, ve
 	%  Because of issues with hessfit, decided to try a simpler fit.
 	%  The fit itself works well, but this jump code doesn't.
 	%  Not sure why, but, abandoning.
-	msg( __FILE__, __LINE__, "This jump does not work well when there is noise." );
+	%msg( __FILE__, __LINE__, "This jump does not work well when there is noise." );
 	vecXNew = [];
 	vecPNew = [];
 	jumpDat = [];
@@ -823,8 +823,12 @@ endfunction;
 function [ vecXNew, vecPNew, jumpDat ] = __jump_simpleFitReduced( vecXSeed, vecPSeed, matX, matG, rvecF, rvecW, stepSizeCoeff, prm )
 	% DRaburn 2023-01-03:
 	%  This is per __jump_simpleFitCts but with stuff removed,
-	%  to try to figure out why __jump_simple_ineffective was ultimately ineffective,
-	%  and perhaps lead to elimination of the orthonormalization calculation.
+	%   to try to figure out why __jump_simple_ineffective was ultimately ineffective,
+	%   and perhaps lead to elimination of the orthonormalization calculation.
+	%  I've now trimmed it down to the presumed essentials (modulo the fact that stepSizeCoeff is wonky --
+	%   should probably have both a "matD-based" and "external/BT-based" TR )
+	%   and this still works.
+	%  Still using orthonorm here vs _ineffetive, but there are also differences in effective TR.
 	vecXNew = [];
 	vecPNew = [];
 	jumpDat = [];
@@ -846,23 +850,20 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_simpleFitReduced( vecXSeed, vecP
 	%
 	% Generate subspace basis matrix and drop columns.
 	matD = matX - vecXAnchor; % Anchor column will necessarily be dropped.
-	rvecDSq = sum( matD.^2, 1 );
-	rvecDropBCMagnitude = ( rvecDSq < sqrt(eps)*max(rvecDSq) ); % Does almost nothing?!
-	matDIntermed = matD(:,~rvecDropBCMagnitude);
-	matGIntermed = matG(:,~rvecDropBCMagnitude);
-	rvecFIntermed = rvecF(~rvecDropBCMagnitude);
+	%
+	% SKIP - Drop BC magnitude of columns of matD.
 	%
 	basisDropThresh = mygetfield( prm, "basisDropThresh", 0.01 );
-	[ matV, rvecDrop ] = utorthdrop( matDIntermed, basisDropThresh );
+	[ matV, rvecDrop ] = utorthdrop( matD, basisDropThresh );
 	jumpDat.sizeK = size(matV,2);
 	if ( size(matV,2) == 0 )
 		vecXNew = vecXSeed;
 		vecPNew = vecPSeed;
 		return;
 	endif
-	matDSans = matDIntermed(:,~rvecDrop);
-	matGSans = matGIntermed(:,~rvecDrop);
-	rvecFSans = rvecFIntermed(~rvecDrop);
+	matDSans = matD(:,~rvecDrop);
+	matGSans = matG(:,~rvecDrop);
+	rvecFSans = rvecF(~rvecDrop);
 	%
 	% y = V'*(x-x_anchor)
 	% gamma = V'*g
@@ -871,37 +872,8 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_simpleFitReduced( vecXSeed, vecP
 	matGamma = matV'*matGSans;
 	%
 	% Generate fit.
-	useTriuForFit = true;
-	if (~useTriuForFit)
-	useEigForFit = true;
-	if (~useEigForFit)
-	if ( rcond(matY*(matY')) < 100.0*eps )
-		%matY
-		size(matY)
-		rc_mtm_yt = rcond(mtm(matY'))
-		rc_mtm_y = rcond(mtm(matY))
-		rd_triu = reldiff( matY, triu(matY))
-		rc_mtm_triu_y = rcond(mtm(triu(matY)))
-		rc_mtm_tril_yt = rcond(mtm(tril(matY')))
-		rc_diag_y = rcond(diag(diag(matY)))
-		rc_diag_mtm_y = rcond(diag(diag(mtm(matY))))
-		rc_diag_mtm_yt = rcond(diag(diag(mtm(matY'))))
-		%
-		matYPrevIsh = matY(1:end-1,1:end-1);
-		rc_mtm_ypt = rcond(mtm(matYPrevIsh'))
-		rc_mtm_yp = rcond(mtm(matYPrevIsh))
-	endif
-	assert( rcond(matY'*matY) > 100.0*eps )
-	assert( rcond(matY*(matY')) > 100.0*eps )
-	matA = ( matGamma - vecGammaAnchor ) * (matY') / ( matY*(matY') ); % Autobroadcast.
-	else
-	[ matPsi, matLambda ] = eig(matY*(matY'));
-	matA =  ( matGamma - vecGammaAnchor ) * (matY') * matPsi * inv(matLambda) * (matPsi');
-	endif
-	else
-	matY_triu = triu(matY);
+	matY_triu = triu(matY); % eig() would provide slightly more accurate results?
 	matA = (matY_triu') \ (( matGamma - vecGammaAnchor)');
-	endif
 	matHFit = (matA'+matA)/2.0; % Alternatives are possible.
 	fFit = fAnchor;
 	vecGammaFit = vecGammaAnchor;
@@ -919,52 +891,25 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_simpleFitReduced( vecXSeed, vecP
 		fTrue
 		fFit
 		rdF = reldiff( fFit, fTrue )
-	endif	
-	
-	% Decompose (pre-jump) "seed" x.
-	vecDSeed = vecXSeed - vecXAnchor;
-	vecYSeed = matV'*vecDSeed;
-	vecXPerp = vecDSeed - matV*vecYSeed;
-	assert( reldiff( vecXSeed, vecXAnchor + (matV*vecYSeed) + vecXPerp ) <= sqrt(eps) );
-	assert( norm(matV'*vecXPerp) <= sqrt(eps)*(norm(vecXAnchor)+norm(vecXSeed)) );
-	%
-	% These "seed" values are just estimates at the (subspace-projected) seed.
-	fSeed = fFit + vecYSeed'*vecGammaFit + (vecYSeed'*matHFit*vecYSeed)/2.0;
-	vecGammaSeed = vecGammaFit + matHFit*vecYSeed;
-	normGammaSeed = norm(vecGammaSeed);
-	%
-	% Decompose (pre-jump) "seed" momentum.
-	% Note that we actually do know how the full gradient varies throughout the subspace,
-	%  not just how "gamma" (the part of the gradient that's in the subspace) varies;
-	%  appropriate handling would essentially allow us to incorporate "vecPPerp" in to
-	%  "coeffPGamma" and "vecGammaPerp".
-	% Meh.
-	vecT = matV'*vecPSeed;
-	vecPPerp = vecPSeed - (matV*vecT);
-	if ( 0.0 < normGammaSeed )
-		coeffPGamma = (vecGammaSeed'*vecT) / (normGammaSeed^2);
-	else
-		coeffPGamma = 0.0;
-		msg( __FILE__, __LINE__, "WARNING: 0.0 >= normGammaSeed; this should never happen." );
 	endif
-	vecGammaPerp = vecT - coeffPGamma*vecGammaSeed;
-	assert( reldiff( matV*( coeffPGamma*vecGammaSeed + vecGammaPerp ) + vecPPerp, vecPSeed ) <= sqrt(eps) );
-	assert( norm(matV'*vecPPerp) <= sqrt(eps)*norm(vecPSeed) );
-	assert( abs(vecGammaPerp'*vecGammaSeed) <= sqrt(eps)*norm(vecPSeed) );
+	
+	%
+	% SKIP - Find nearest point to vecXSeed to use as launch.
+	%
 	%
 	% Find point on Levenberg curve subject to trust region.
 	%
+	vecYLaunch = zeros(size(vecGammaFit));
+	fLaunch = fFit;
+	vecGammaLaunch = vecGammaFit;
 	vecCap = max(abs(matY),[],2);
 	vecCap += sqrt(eps)*max(vecCap);
 	assert( 0.0 < min(vecCap) );
 	matB = diag(1.0./vecCap);
 	trCoeff = mygetfield( prm, "trCoeff", 3.0 );
 	bMax = trCoeff * stepSizeCoeff;
-	%msg( __FILE__, __LINE__, sprintf( "stepSizeCoeff = %0.3e", stepSizeCoeff ) );
-	%msg( __FILE__, __LINE__, sprintf( "bMax = %0.3e", bMax ) );
 	levPrm = [];
-	assert( fFit >= 0.0 );
-	vecZ = levsol_eig( fFit, vecGammaSeed, matHFit, matB, bMax, levPrm );
+	vecZ = levsol_eig( fLaunch, vecGammaLaunch, matHFit, matB, bMax, levPrm );
 	if ( mygetfield( prm, "debugMode", false ) )
 		vecDelta = matV*vecZ;
 		vecCapFS = max(abs(matDForFit),[],2);
@@ -978,34 +923,14 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_simpleFitReduced( vecXSeed, vecP
 	endif
 	%
 	% Note that fNew and vecGammaNew are merely estimates.
-	vecYNew = vecYSeed + vecZ;
+	vecYNew = vecYLaunch + vecZ;
 	fNew = fFit + vecYNew'*vecGammaFit + (vecYNew'*matHFit*vecYNew)/2.0;
 	vecGammaNew = vecGammaFit + matHFit*vecYNew;
-	normGammaNew = norm(vecGammaNew);
 	%
-	% We need to decide how to handle the changes to X and momentum that are outside of our subspace.
-	% A few reasonable requirements...
-	%  1. In the limit of the TR going to zero, the "jump" should leave us at the "seed".
-	%  2. In the limit of fNew being zero, we should hit that point exactly with zero momentum.
-	%  3. In the limit of taking the Newton step, the part of the gradient within the subspace should be zero.
-	if ( fNew <= fSeed )
-		alphaF = fNew / fSeed;
-	else
-		msg( __FILE__, __LINE__, "WARNING: fNew >= fSeed; this should never happen." );
-		alphaF = 1.0;
-	endif
-	if ( normGammaNew < normGammaSeed )
-		alphaG = normGammaNew / normGammaSeed;
-	else
-		alphaG = 1.0;
-	endif
-	% 2022-12-29-1740: These alpha are just reasonable guesses with some light testing.
-	alphaXPerp = alphaG;
-	alphaPPerp = alphaF;
-	alphaGammaPerp = alphaG;
-	%
-	vecXNew = vecXAnchor + matV*vecYNew + vecXPerp*alphaXPerp;
-	vecPNew = matV * ( coeffPGamma*vecGammaNew + vecGammaPerp*alphaGammaPerp ) + vecPPerp*alphaPPerp;
-	%vecPNew = 0*vecXNew; % Is this the way to go???
+	% SKIP - Decomposition of vecXSeed and vecPSeed and analysis
+	%  to get improved vecXNew and vecPNew, as well as make output "new" values
+	%  approach input "seed" values in the limit of step size -> 0.
+	vecXNew = vecXAnchor + matV*vecYNew;
+	vecPNew = vecPSeed * norm(vecGammaNew) / norm(vecGammaFit);
 return;
 endfunction;
