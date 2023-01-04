@@ -672,22 +672,24 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_simpleFitCts( vecXSeed, vecPSeed
 	matGamma = matV'*matGSans;
 	%
 	% Generate fit.
-	if (0)
+	useEigForFit = true;
+	if (~useEigForFit)
 	if ( rcond(matY*(matY')) < 100.0*eps )
-		matY
-		matY*(matY')
-		eig(matY*(matY'))'
-		matY'*matY
-		eig(matY'*matY)'
+		%matY
+		rcond(mtm(matY'))
+		rcond(mtm(matY))
+		%
+		matYPrevIsh = matY(1:end-1,1:end-1);
+		rcond(mtm(matYPrevIsh'))
+		rcond(mtm(matYPrevIsh))
 	endif
-	chol( matY'*matY );
-	chol( matY*(matY') );
 	assert( rcond(matY'*matY) > 100.0*eps )
 	assert( rcond(matY*(matY')) > 100.0*eps )
-	endif
 	%matA = ( matGamma - vecGammaAnchor ) * (matY') / ( matY*(matY') ); % Autobroadcast.
+	else
 	[ matPsi, matLambda ] = eig(matY*(matY'));
 	matA =  ( matGamma - vecGammaAnchor ) * (matY') * matPsi * inv(matLambda) * (matPsi');
+	endif
 	matHFit = (matA'+matA)/2.0; % Alternatives are possible.
 	fFit = fAnchor;
 	vecGammaFit = vecGammaAnchor;
