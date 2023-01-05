@@ -1182,10 +1182,18 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_januarySeedy( vecXSeed, vecPSeed
 	matGamma = matV'*matGSans;
 	%
 	% Generate fit.
-	fFit = fAnchor;
-	vecGammaFit = vecGammaAnchor;
-	matA = (matY') \ (( matGamma - vecGammaAnchor)');
-	matHFit = (matA'+matA)/2.0;
+	useFancyFit = false;
+	if (useFancyFit)
+		fitPrm = [];
+		fitPrm.fMin = [];
+		fitPrm.fTol = [];
+		[ fFit, vecGammaFit, matHFit ] = hessfit( matV'*matD, rvecF, matV'*matG, fitPrm );
+	else
+		fFit = fAnchor;
+		vecGammaFit = vecGammaAnchor;
+		matA = (matY') \ (( matGamma - vecGammaAnchor)');
+		matHFit = (matA'+matA)/2.0;
+	endif
 	% DRaburn 2023-01-04:
 	% Alternatives approaches to matHFit are possible. See other versions of jump code.
 	% Omitting fit comparision.
