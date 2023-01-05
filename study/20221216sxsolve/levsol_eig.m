@@ -155,9 +155,24 @@ function [ vecDelta, datOut ] = __solve( f0, vecG, matH, bMax, bTol, fMin, fTol,
 	vecLambda = diag( matLambda );
 	vecPsiTNG = matPsi' * (-vecG);
 	%
+	%
+	
+	if ( mygetfield( prm, "nullifyNeigvals", true ) )
+		% DRaburn 2023-01-04:
+		%  Hacking this in, though see no reason for it to not work.
+		vecLambda( vecLambda<0.0) = 0.0;
+		matLambda = diag(vecLambda);
+	endif
+	
+	%
 	% Identify maximum (Newton) step size.
 	if ( min(vecLambda) < prm.epsEig * max(abs(vecLambda)) )
 		if ( min(vecLambda) < 0.0 )
+			if (0)
+				msg( __FILE__, __LINE__, "We have a negative eigenvalue!" );
+				[ min(vecLambda), max(vecLambda) ]
+				error( "HALT" )
+			endif
 			muMin = abs(min(vecLambda)) + prm.epsEig * max(abs(vecLambda));
 		else
 			muMin = prm.epsEig * max(abs(vecLambda));

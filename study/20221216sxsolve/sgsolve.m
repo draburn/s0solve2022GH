@@ -1,4 +1,7 @@
 function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
+	if (0)
+	% DRaburn 2023-01-04:
+	%  This list was last update... 2023-01-02, perhaps?
 	msg( __FILE__, __LINE__, "Need:" );
 	msg( __FILE__, __LINE__, "  ( Testing? Timing? Refactor? )" );
 	msg( __FILE__, __LINE__, "  * Meander/SPt: Reduce 'learningRate' if clearly overshooting." );
@@ -18,6 +21,7 @@ function [ vecX, retCode, datOut ] = sgsolve( funchFG, init_vecX, prm=[] )
 	msg( __FILE__, __LINE__, "Potential Optimizations:" );
 	msg( __FILE__, __LINE__, "  * Meander/SPt: Improved 'momentum' (via estimating gradient at lead point?)." );
 	msg( __FILE__, __LINE__, "  * Meander/SPt: Grab data from just start & end (elim per-feval work?)." );
+	endif
 	% Init - Universal.
 	mydefs;
 	startTime = time();
