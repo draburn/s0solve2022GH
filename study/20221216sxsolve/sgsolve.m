@@ -1182,7 +1182,7 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_januarySeedy( vecXSeed, vecPSeed
 	matGamma = matV'*matGSans;
 	%
 	% Generate fit.
-	useFancyFit = false;
+	useFancyFit = true;
 	if (useFancyFit)
 		fitPrm = [];
 		fitPrm.fMin = [];
@@ -1191,8 +1191,15 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_januarySeedy( vecXSeed, vecPSeed
 	else
 		fFit = fAnchor;
 		vecGammaFit = vecGammaAnchor;
-		matA = (matY') \ (( matGamma - vecGammaAnchor)');
-		matHFit = (matA'+matA)/2.0;
+		usePosedefyFit = false;
+		if ( usePosedefyFit )
+			fitPrm = [];
+			fitPrm.fitMethod = "posdefy loop";
+			matHFit = hessfit_simple_posdefy( matY, fFit, vecGammaFit, rvecFSans, matGamma, fitPrm );
+		else
+			matA = (matY') \ (( matGamma - vecGammaAnchor)');
+			matHFit = (matA'+matA)/2.0;
+		endif
 	endif
 	% DRaburn 2023-01-04:
 	% Alternatives approaches to matHFit are possible. See other versions of jump code.
@@ -1279,7 +1286,5 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_januarySeedy( vecXSeed, vecPSeed
 	%
 	vecXNew = vecXAnchor + matV*vecYNew + vecXPerp*alphaXPerp;
 	vecPNew = matV * ( coeffPGamma*vecGammaNew + vecGammaPerp*alphaGammaPerp ) + vecPPerp*alphaPPerp;
-	%vecPNew = 0*vecXNew; % Is this the way to go???
-	
 return;
 endfunction;
