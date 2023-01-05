@@ -14,15 +14,17 @@ function [ matH, datOut ] = hessfit_simple_posdefy( matY, f0, vecGamma0, rvecF, 
 	case { "symm w diag" }
 		%matH = (matA'+matA)/2.0 + (diag( vecADiag - diag(matA) ))/2.0;
 		error( "Not implemented." );
-	case { "", "posdefy loop" }
+	case { "posdefy loop" }
 		vecYTGamma0 = matY' * vecGamma0;
 		vecADiag = 2.0 * ( rvecF' - f0 - vecYTGamma0 );
 		matA = matY'*matGamma - vecYTGamma0; % Autobroadcast.
 		sz = size(matY,2);
 		matYTHY = zeros(sz,sz)+inf;
-		% Loops are slow in Octave, and eig should be unnecessary if matY is upper triangular. Perhaps optimize later.
+		% Loops are slow in Octave. Perhaps optimize later.
 		for n=1:sz
 			for m=1:n-1
+				% We could instead consider taking whichever data is more recent,
+				%  or from a more orthogonal source.
 				if ( matA(m,n)*matA(n,m) <= 0.0 )
 					matYTHY(n,m) = 0.0; % If it might be zero, make it zero.
 				elseif ( abs(matA(m,n)) < abs(matA(n,m)) )
@@ -35,8 +37,12 @@ function [ matH, datOut ] = hessfit_simple_posdefy( matY, f0, vecGamma0, rvecF, 
 			%matYTHY(n,n) = max([ matA(n,n), vecADiag(n) ]); % Take more positive value.
 			if ( matA(n,n) > vecADiag(n) )
 				matYTHY(n,n) = matA(n,n);
-			else
+			elseif ( 2.0*matY(n,n)^2 > sumsq(matY(n,:)) )
+				% If the diagonal element of matY is too small, this may be unreliable,
+				%  hence the "2.0".
 				matYTHY(n,n) = vecADiag(n);
+			else
+				matYTHY(n,n) = matA(n,n);
 			endif
 		endfor
 		matH = matY' \ matYTHY / matY;

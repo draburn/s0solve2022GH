@@ -1058,17 +1058,15 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_january( vecXSeed, vecPSeed, mat
 	% Generate fit.
 	fFit = fAnchor;
 	vecGammaFit = vecGammaAnchor;
-	if (0)
-		matA = (matY') \ (( matGamma - vecGammaAnchor)');
-		matHFit = (matA'+matA)/2.0; % Alternatives are possible.
-	else
-		fitPrm = [];
-		%fitPrm.fitMethod = "simple symm alt";
-		fitPrm.fitMethod = "posdefy loop";
-		[ matHFit, fitDat ] = hessfit_simple_posdefy( matY, fFit, vecGammaFit, rvecFSans, matGamma, fitPrm );
-	endif
+	matA = (matY') \ (( matGamma - vecGammaAnchor)');
+	matHFit = (matA'+matA)/2.0;
+	% DRaburn 2023-1-04:
+	% Alternatives approaches to matHFit are possible,
+	%  as, considering rvecF, we have two measures of every element of matHFit.
+	% However, my attempts did not work particularly well and added to the time.
+	% See hessfit_simple_posdefy.m, for example.
 	
-	doComparison = true;
+	doComparison = false;
 	if (doComparison)
 		[ fTrue, vecGTrue ] = prm.funchFG_noiseless( vecXAnchor );
 		vecGammaTrue = matV'*vecGTrue;
@@ -1078,9 +1076,6 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_january( vecXSeed, vecPSeed, mat
 		rdF = reldiff( fFit, fTrue );
 		%
 		dumpInfo = true;
-		if ( rdH > 0.1 )
-			dumpInfo = true;
-		endif
 		if (dumpInfo)
 			matHFit
 			matVTHFSV
