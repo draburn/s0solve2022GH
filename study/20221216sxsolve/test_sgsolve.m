@@ -12,14 +12,14 @@ sizeL = min([ sizeX, round(sqrt(sqrt(1E6*sizeX))) ])
 vecXCrit = randn(sizeX,1);
 %randn(sizeX,1); % Burn to match test_mysgdmom.
 fCrit = 1.0;
-%cVals = [ 1.0, 1.0E-2, 0.0, 0.0 ]
-%cVals = [ 1.0, 1.0E-2, 1.0E-4, 1.0E-6 ]
-%cVals = [ 1.0, 1.0E-1, 1.0E-2, 1.0E-3 ]
-%cVals = [ 1.0E-1, 1.0E0, 1.0E-1, 1.0E-1 ]
+%%%cVals = [ 1.0, 1.0E-2, 0.0, 0.0 ]
+%%%cVals = [ 1.0, 1.0E-2, 1.0E-4, 1.0E-6 ]
+%%%cVals = [ 1.0, 1.0E-1, 1.0E-2, 1.0E-3 ]
+%%%cVals = [ 1.0E-1, 1.0E0, 1.0E-1, 1.0E-1 ]
 cVals = [ 0.0, 1.0, 1.0E-2, 1.0E-2 ]
-%noisePrm = [ 0.0, 0.0; 0.0, 0.0; 0.0, 0.0 ]
-%noisePrm = [ 1.0E-12, 0.0; 1.0E-6, 1.0E-6; 1.0E-6, 1.0E-6 ]
-%%%noisePrm = [ 1.0E-12, 1.0E-2; 1.0e-4, 1.0e-4; 1.0e-4, 1.0e-4 ]
+%%%noisePrm = [ 0.0, 0.0; 0.0, 0.0; 0.0, 0.0 ]
+%%%noisePrm = [ 1.0E-12, 0.0; 1.0E-6, 1.0E-6; 1.0E-6, 1.0E-6 ]
+%noisePrm = [ 1.0E-12, 1.0E-2; 1.0e-4, 1.0e-4; 1.0e-4, 1.0e-4 ]
 noisePrm = [ 1.0E-12, 1.0E-2; 1.0e-2, 1.0e-2; 1.0e-2, 1.0e-2 ]
 %
 tic();
