@@ -1191,47 +1191,45 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_januarySeedy( vecXSeed, vecPSeed
 	% Omitting fit comparision.
 	%
 	
-	
-	error( "Following code is not fully integrated." );
-	% Decompose (pre-jump) "seed" x.
+	% Decompose (pre-jump) "seed" vecX.
 	vecDSeed = vecXSeed - vecXAnchor;
 	vecYSeed = matV'*vecDSeed;
 	vecXPerp = vecDSeed - matV*vecYSeed;
 	assert( reldiff( vecXSeed, vecXAnchor + (matV*vecYSeed) + vecXPerp ) <= sqrt(eps) );
 	assert( norm(matV'*vecXPerp) <= sqrt(eps)*(norm(vecXAnchor)+norm(vecXSeed)) );
 	%
-	% These "seed" values are just estimates at the (subspace-projected) seed.
+	% Note: The following "seed" values are *estimates* at the (subspace-projected) seed.
 	fSeed = fFit + vecYSeed'*vecGammaFit + (vecYSeed'*matHFit*vecYSeed)/2.0;
 	vecGammaSeed = vecGammaFit + matHFit*vecYSeed;
 	normGammaSeed = norm(vecGammaSeed);
+	if ( normGammaSeed <= 0.0 )
+		msg( __FILE__, __LINE__, "WARNING: norm(vecGammaSeed) <= 0.0; this is unexpected!!!" );
+	endif
 	%
 	% Decompose (pre-jump) "seed" momentum.
-	% Note that we actually do know how the full gradient varies throughout the subspace,
+	% Note that we actually *do* have information about how the full gradient varies throughout the subspace,
 	%  not just how "gamma" (the part of the gradient that's in the subspace) varies;
-	%  appropriate handling would essentially allow us to incorporate "vecPPerp" in to
-	%  "coeffPGamma" and "vecGammaPerp".
-	% Meh.
+	%  appropriate handling would essentially allow us to incorporate "vecPPerp" into "coeffPGamma" and "vecGammaPerp".
 	vecT = matV'*vecPSeed;
 	vecPPerp = vecPSeed - (matV*vecT);
-	if ( 0.0 < normGammaSeed )
+	assert( reldiff( vecPSeed, matV*vecT + vecPPerp ) <= sqrt(eps) );
+	% Further, we decompose the temporary vector...
+	if ( normGammaSeed > 0.0 )
 		coeffPGamma = (vecGammaSeed'*vecT) / (normGammaSeed^2);
 	else
 		coeffPGamma = 0.0;
-		msg( __FILE__, __LINE__, "WARNING: 0.0 >= normGammaSeed; this should never happen." );
 	endif
 	vecGammaPerp = vecT - coeffPGamma*vecGammaSeed;
-	assert( reldiff( matV*( coeffPGamma*vecGammaSeed + vecGammaPerp ) + vecPPerp, vecPSeed ) <= sqrt(eps) );
+	assert( reldiff( vecPSeed, matV*( coeffPGamma*vecGammaSeed + vecGammaPerp ) + vecPPerp ) <= sqrt(eps) );
 	assert( norm(matV'*vecPPerp) <= sqrt(eps)*norm(vecPSeed) );
 	assert( abs(vecGammaPerp'*vecGammaSeed) <= sqrt(eps)*norm(vecPSeed) );
-	%
-	error( "End non-integrated code." );
-	
 	
 	%
-	% Set up Levenber curve.
-	vecYLaunch = zeros(size(vecGammaFit));
-	fLaunch = fFit;
-	vecGammaLaunch = vecGammaFit;
+	% Set up Levenberg curve.
+	vecYLaunch = vecYSeed;
+	fLaunch = fFit + vecGammaFit'*vecYLaunch + (vecYLaunch'*matHFit*vecYLaunch)/2.0;
+	vecGammaLaunch = vecGammaFit + matHFit*vecYLaunch;
+	%
 	vecCap = max(abs(matY),[],2);
 	vecCap += sqrt(eps)*max(vecCap);
 	assert( 0.0 < min(vecCap) );
@@ -1248,14 +1246,13 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_januarySeedy( vecXSeed, vecPSeed
 	fNew = fFit + vecYNew'*vecGammaFit + (vecYNew'*matHFit*vecYNew)/2.0;
 	vecGammaNew = vecGammaFit + matHFit*vecYNew;
 	
-	
-	error( "Following code is not fully integrated." );
 	%
 	% We need to decide how to handle the changes to X and momentum that are outside of our subspace.
 	% A few reasonable requirements...
 	%  1. In the limit of the TR going to zero, the "jump" should leave us at the "seed".
 	%  2. In the limit of fNew being zero, we should hit that point exactly with zero momentum.
 	%  3. In the limit of taking the Newton step, the part of the gradient within the subspace should be zero.
+	normGammaNew = norm(vecGammaNew);
 	if ( fNew <= fSeed )
 		alphaF = fNew / fSeed;
 	else
@@ -1275,15 +1272,6 @@ function [ vecXNew, vecPNew, jumpDat ] = __jump_januarySeedy( vecXSeed, vecPSeed
 	vecXNew = vecXAnchor + matV*vecYNew + vecXPerp*alphaXPerp;
 	vecPNew = matV * ( coeffPGamma*vecGammaNew + vecGammaPerp*alphaGammaPerp ) + vecPPerp*alphaPPerp;
 	%vecPNew = 0*vecXNew; % Is this the way to go???
-	error( "End non-integrated code." );
 	
-	
-	return;
-	error( "Below code is... dis-integrated...?" );
-	%
-	% TO ADD: Make use of decomposition of seed data to improve "new" values
-	%  and yield continuity in the limit of step size -> 0.
-	vecXNew = vecXAnchor + matV*vecYNew;
-	vecPNew = vecPSeed * norm(vecGammaNew) / norm(vecGammaFit);
 return;
 endfunction;
