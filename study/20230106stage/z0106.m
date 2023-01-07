@@ -4,16 +4,17 @@
 clear;
 if ( stopsignalpresent() )
 	msg( __FILE__, __LINE__, "ERROR: Stop signal already present." );
-	retCode = RETCODE__IMPOSED_STOP;
 	return;
 endif
 setprngstates(0);
-sizeX = 1E5
-%secret_sizeL = min([ sizeX, round(sqrt(sqrt(1E6*sizeX))) ])
+sizeX = 1E2
 secret_sizeL = min([ sizeX, round(0.1*sqrt(sizeX)) ])
-%%%secret_cVals = [ 0.0, 1.0, 1.0E-2, 1.0E-2 ]
-secret_cVals = [ 1.0, 1.E-1, 1.0E-2, 1.0E-2 ]
-secret_noisePrm = [ 1.0E-12, 1.0E-2; 1.0e-2, 1.0e-2; 1.0e-2, 1.0e-2 ]
+%secret_sizeL = min([ sizeX, round(sqrt(sqrt(1E6*sizeX))) ])
+%secret_cVals = [ 1.0, 0.0, 0.0, 0.0 ] % Trivial.
+secret_cVals = [ 1.0, 1.0e-2, 1.0e-2, 1.0e-2 ] % Easy?
+%secret_cVals = [ 0.0, 1.0, 1.0e-2, 1.0e-2 ] % Moderate?
+%secret_noisePrm = [ 0.0, 0.0; 0.0, 0.0; 0.0, 0.0 ] % Trivial
+secret_noisePrm = [ 1.0e-12, 1.0e-2; 1.0e-2, 1.0e-2; 1.0e-2, 1.0e-2 ] % Moderate?
 %
 %
 tic();
@@ -43,8 +44,8 @@ gSqAvg = sum(sum(matGNLS.^2,1))/numNLS;
 gVar = sqrt(max([ gSqAvg - gAvg^2, 0.0 ]));
 toc();
 %
-msgnnl( __FILE__, __LINE__, "Initializing solver... " );
-tic();
+msg( __FILE__, __LINE__, "Starting solver... " );
+startTime = time();
 prm = [];
 prm.learningRate = 0.1;
 prm.momentumFactor = 0.9;
@@ -57,10 +58,12 @@ prm.iterLimit = -1;
 prm.timeLimit = 600.0;
 prm.stopSignalCheckInterval = 3.0;
 prm.progressReportInterval = 1.0;
+%prm.solverType = "qnj primordial";
+prm.solverType = "sgd";
+%
 vecX = vecX0;
 vecP = zeros(size(vecX));
 %
-startTime = time();
 iterCount = 0;
 fevalCount = 0;
 running_fevalCount = 0;
@@ -72,9 +75,7 @@ superPt_vecXPrev = vecX0; % Reasonable, but not entirely self-consistent.
 proglog_lastTime = time();
 stopsig_lastTime = time();
 doMainLoop = true;
-toc();
 %
-msg( __FILE__, __LINE__, "Starting main loop... " );
 while (doMainLoop)
 	%
 	[ f, vecG ] = funchFG( vecX );
@@ -147,6 +148,16 @@ while (doMainLoop)
 	 	proglog_lastTime = time();
 	endif
 	%
+	switch (tolower(prm.solverType))
+	case { "sgd" }
+		% Nothing to do.
+	case {"qnj primordial"}
+		error( "prm.solverType qnj primordial is not yet supported." );
+	otherwise
+		echo__prm_solverType = prm.solverType
+		error( "Invalid value of prm.solverType." );
+	endswitch
+	%
 	% Prepare for next iteration.
 	running_fevalCount = 0;
 	running_fTot = 0.0;
@@ -155,6 +166,7 @@ while (doMainLoop)
 	running_vecXTot = zeros(sizeX,1);
 	superPt_vecXPrev = superPt_vecX;
 endwhile
+vecXF = vecX;
 %
 msg( __FILE__, __LINE__, sprintf( "   %10.3e (/%0.3e), %5d (/%d), %8d (/%d):  %10.3e (/%0.3e),  %10.3e (/%0.3e),  %10.3e (/%0.3e)", ...
   time() - startTime, ...
@@ -170,4 +182,14 @@ msg( __FILE__, __LINE__, sprintf( "   %10.3e (/%0.3e), %5d (/%d), %8d (/%d):  %1
   norm(superPt_vecG), ...
   prm.gTol ) );
 %
-msg( __FILE__, __LINE__, sprintf( "norm( vecX - secret_vecXCrit ) = %0.3e", norm( vecX - secret_vecXCrit ) ) );
+msg( __FILE__, __LINE__, "Results... " );
+vecXC = secret_vecXCrit;
+[ fN0, vecGN0 ] = secret_funchFG_noiseless( vecX0 );
+[ fNF, vecGNF ] = secret_funchFG_noiseless( vecXF );
+[ fNC, vecGNC ] = secret_funchFG_noiseless( vecXC );
+msg( __FILE__, __LINE__, sprintf( " resX: %0.3e -> %0.3e (vs %0.3e)", norm( vecX0 - vecXC ), norm( vecXF - vecXC ), prm.xTol ) );
+msg( __FILE__, __LINE__, sprintf( " resF: %0.3e -> %0.3e (vs %0.3e)", fN0 - fNC, fNF - fNC, prm.fTol ) );
+msg( __FILE__, __LINE__, sprintf( " resG: %0.3e -> %0.3e (vs %0.3e)", norm( vecGN0 - vecGNC ), norm( vecGNF - vecGNC ), prm.gTol ) );
+msg( __FILE__, __LINE__, sprintf( " elapsed time: %0.3es (/%0.3es)", time() - startTime, prm.timeLimit ) );
+msg( __FILE__, __LINE__, sprintf( " fevals: %d (/%d)", fevalCount, prm.fevalLimit ) );
+msg( __FILE__, __LINE__, sprintf( " iterations: %d (/%d)", iterCount, prm.iterLimit ) );
