@@ -58,8 +58,9 @@ prm.iterLimit = -1;
 prm.timeLimit = 600.0;
 prm.stopSignalCheckInterval = 3.0;
 prm.progressReportInterval = 1.0;
-%prm.solverType = "qnj primordial";
-prm.solverType = "sgd";
+%prm.solverType = "sgd";
+prm.solverType = "qnj simple0106";
+prm.basisDropThresh = 0.1;
 %
 vecX = vecX0;
 vecP = zeros(size(vecX));
@@ -75,6 +76,12 @@ superPt_vecXPrev = vecX0; % Reasonable, but not entirely self-consistent.
 proglog_lastTime = time();
 stopsig_lastTime = time();
 doMainLoop = true;
+%
+% Extra data.
+record_matX = [];
+record_matG = [];
+record_rvecF = [];
+record_rvecW = [];
 %
 while (doMainLoop)
 	%
@@ -115,6 +122,7 @@ while (doMainLoop)
 	temp_xtgAvg = running_xtgTot / running_fevalCount;
 	temp_fAvg = running_fTot / running_fevalCount;
 	superPt_f = temp_fAvg - (( temp_xtgAvg - (superPt_vecX'*superPt_vecG) )/2.0);
+	superPt_w = running_fevalCount;
 	%
 	if ( norm( superPt_vecG ) <= prm.gTol )
 		msg( __FILE__, __LINE__, "SUCCESS: norm( superPt_vecG ) <= prm.gTol." );
@@ -151,8 +159,56 @@ while (doMainLoop)
 	switch (tolower(prm.solverType))
 	case { "sgd" }
 		% Nothing to do.
-	case {"qnj primordial"}
-		error( "prm.solverType qnj primordial is not yet supported." );
+	case {"qnj simple0106"}
+		error( "Not implemented." );
+		% Concept: baseline handles gradient anyway, so,
+		%  any small step in the Newton direction is likely to be good.
+		record_matX = [ superPt_vecX, record_matX ];
+		record_matG = [ superPt_vecG, record_matG ];
+		record_rvecF = [ superPt_f, record_rvecF ];
+		record_rvecW = [ superPt_w, record_rvecW ]; % Not used.
+		%
+		% Determine anchor and basis.
+		[ fAnchor, indexAnchor ] = min(record_rvecF);
+		vecXAnchor = record_matX(:,indexAnchor);
+		vecGAnchor = record_matG(:,indexAnchor);
+		matD = record_matX - vecXAnchor;
+		[ matV, rvecDrop ] = utorthdrop( matD, prm.basisDropThresh );
+		rvecDrop(indexAnchor) = false; % Never drop the anchor.
+		%
+		% Calculate intermediate subspace-related stuff that could probably be determined by utorthdrop().
+		matDSans = matD(:,~rvecDrop);
+		matGSans = maTG(:,~rvecDrop);
+		rvecFSans = rvecF(~rvecDrop);
+		matY = triu( matV'*matDSans );
+		%
+		% Generate fit.
+		%  There are tons of alternatives, but this is almost certainly the simplest sensible method.
+		fFit = fAnchor;
+		vecGammaFit = matV'*vecGAnchor;
+		matA = (matY') \ (( matGamma - vecGammaAnchor)');
+		matHFit = (matA'+matA)/2.0;
+		%
+		% Now, pick a new vecX base on the fit.
+		% Here, because 'simple', we do merely...
+		[ matR, cholFlag ] = chol( matHFit );
+		epsChol = mygetfield( prm, "epsChol", sqrt(eps) );
+		if ( 0 == cholFlag && min(diag(matR)) > epsChol*max(abs(diag(matR))) )
+			newtStepCoeff = mygetfield( prm, "newtStepCoeff", sqrt(prm.learningRate) );
+			vecDelta = -newtStepCoeff * ( matR \ ( matR' \ vecGammaFit ) );
+			matX += vecDelta;
+			% Don't bother to modify vecP.
+		else
+			% Do nothing.
+		endif
+		%
+		% Curate record;
+		%  this could be done later, depending on the curation algorithm.
+		record_matX = record_matX(:,~rvecDrop);
+		record_matG = record_matG(:,~rvecDrop);
+		record_rvecF = record_rvecF(~rvecDrop);
+		record_rvecW = record_rvecW(~rvecDrop); % Not used.
+		
 	otherwise
 		echo__prm_solverType = prm.solverType
 		error( "Invalid value of prm.solverType." );
