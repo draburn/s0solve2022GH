@@ -208,7 +208,6 @@ while (doMainLoop)
 		record_matG = record_matG(:,~rvecDrop);
 		record_rvecF = record_rvecF(~rvecDrop);
 		record_rvecW = record_rvecW(~rvecDrop); % Not used.
-		
 	otherwise
 		echo__prm_solverType = prm.solverType
 		error( "Invalid value of prm.solverType." );
