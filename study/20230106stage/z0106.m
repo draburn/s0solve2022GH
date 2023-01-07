@@ -57,13 +57,15 @@ prm.gTol = (eps^0.5)*gVar + 10.0*eps*gAvg;
 prm.fevalLimit = -1;
 prm.iterLimit = -1;
 prm.timeLimit = 600.0;
-prm.stopSignalCheckInterval = 3.0;
+prm.stopSignalCheckInterval = 1.0;
 prm.progressReportInterval = 1.0;
 %
-%prm.solverType = "sgd";
-prm.solverType = "qnj simple0106";
-%prm.basisDropThresh = 0.1;
-prm.basisDropThresh = sqrt(eps);
+prm.useQNJ = true;
+prm.qnj_basisDropThresh = sqrt(eps);
+prm.qnj_fitType = "simple0106";
+prm.qnj_stepType = "placeholder0106";
+prm.qnj_maxNumRecords = 50;
+prm.qnj_curationType = "none";
 
 %
 vecX = vecX0;
@@ -118,6 +120,9 @@ while (doMainLoop)
 		continue
 	endif
 	%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% SUPER-POINT ANALYSIS
+	%
 	% Okay, we have our latest superpoint.
 	iterCount++;
 	%
@@ -167,70 +172,99 @@ while (doMainLoop)
 	running_vecGTot = zeros(sizeX,1);
 	running_vecXTot = zeros(sizeX,1);
 	superPt_vecXPrev = superPt_vecX;
+	if ( ~prm.useQNJ )
+		continue;
+	endif
 	%
-	switch (tolower(prm.solverType))
-	case { "sgd" }
-		% Nothing to do.
-	case {"qnj simple0106"}
-		% Concept: baseline handles gradient anyway, so,
-		%  any small step in the Newton direction is likely to be good.
-		record_matX = [ superPt_vecX, record_matX ];
-		record_matG = [ superPt_vecG, record_matG ];
-		record_rvecF = [ superPt_f, record_rvecF ];
-		record_rvecW = [ superPt_w, record_rvecW ]; % Not used.
-		%
-		% Determine anchor and basis.
-		[ fAnchor, indexAnchor ] = min(record_rvecF);
-		vecXAnchor = record_matX(:,indexAnchor);
-		vecGAnchor = record_matG(:,indexAnchor);
-		matD = record_matX - vecXAnchor;
-		[ matV, rvecDrop ] = utorthdrop( matD, prm.basisDropThresh );
-		% DRaburn 2023-01-07: My orthogonalization code seems faster than Octave's default ortho()!
-		sizeK = size(matV,2);
-		if ( sizeK < 1 )
-			continue;
-		endif
-		rvecDrop(indexAnchor) = false; % Never drop the anchor.
-		%
-		% Calculate intermediate subspace-related stuff that could probably be determined by utorthdrop().
-		matDSans = matD(:,~rvecDrop);
-		matGSans = record_matG(:,~rvecDrop);
-		rvecFSans = record_rvecF(~rvecDrop);
-		matY = triu( matV'*matDSans ); % Could readily be returned by orthogonalization code.
-		matGamma = matV'*matGSans;
-		vecGammaAnchor = matV'*vecGAnchor;
-		%
-		% Generate fit.
+	%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% QUASI-NEWTON-JUMP ANALYSIS
+	%
+	% Add latest super point to record.
+	record_matX = [ superPt_vecX, record_matX ];
+	record_matG = [ superPt_vecG, record_matG ];
+	record_rvecF = [ superPt_f, record_rvecF ];
+	record_rvecW = [ superPt_w, record_rvecW ]; % Not used?
+	if ( size(record_matX,2) < 2 )
+		% Can't make a jump yet.
+		% Also, we won't drop any information.
+		continue;
+	endif
+	%
+	%
+	% Determine anchor and basis.
+	[ fAnchor, indexAnchor ] = min(record_rvecF);
+	vecXAnchor = record_matX(:,indexAnchor);
+	vecGAnchor = record_matG(:,indexAnchor);
+	matD = record_matX - vecXAnchor;
+	[ matV, rvecDrop ] = utorthdrop( matD, prm.qnj_basisDropThresh );
+	% DRaburn 2023-01-07: My orthogonalization code seems faster than Octave's default ortho()!
+	sizeK = size(matV,2);
+	rvecDrop(indexAnchor) = false; % Never drop the anchor.
+	%
+	%
+	% Calculate intermediate subspace-related stuff that could probably be determined by utorthdrop().
+	matDSans = matD(:,~rvecDrop);
+	matGSans = record_matG(:,~rvecDrop);
+	rvecFSans = record_rvecF(~rvecDrop);
+	matY = triu( matV'*matDSans ); % Could readily be returned by orthogonalization code.
+	matGamma = matV'*matGSans;
+	vecGammaAnchor = matV'*vecGAnchor;
+	%
+	%
+	% Generate fit.
+	switch ( tolower(prm.qnj_fitType) )
+	case { "simple0106" }
 		%  There are tons of alternatives, but this is almost certainly the simplest sensible method.
 		fFit = fAnchor;
 		vecGammaFit = matV'*vecGAnchor;
 		matA = (matY') \ (( matGamma - vecGammaAnchor)');
 		matHFit = (matA'+matA)/2.0;
-		%
-		% Now, pick a new vecX base on the fit.
-		% Here, because 'simple', we do merely...
+	otherwise
+		echo__prm_qnj_fitType = prm.qnj_fitType
+		error( "Invalid value of prm.qnj_fitType." );
+	endswitch
+	%
+	%
+	% Generate a step.
+	switch ( tolower(prm.qnj_stepType) )
+	case { "placeholder0106" }
+		% This is a crude placeholder. Should really make use of a trust region and launch from (projection) of vecX, not vecXAnchor.
 		[ matR, cholFlag ] = chol( matHFit );
 		epsChol = mygetfield( prm, "epsChol", sqrt(eps) );
 		if ( 0 == cholFlag && min(diag(matR)) > epsChol*max(abs(diag(matR))) )
-			%%%newtStepCoeff = mygetfield( prm, "newtStepCoeff", sqrt(prm.learningRate) );
-			newtStepCoeff = mygetfield( prm, "newtStepCoeff", 1.0 );
+			newtStepCoeff = 1.0;
 			vecDelta = matV * (matR\(  matR'  \  ((-newtStepCoeff)*vecGammaFit)  ));
 			vecX += vecDelta;
 			% Don't bother to modify vecP.
 		else
-			% Do nothing.
+			% Nothing to do.
 		endif
-		%
-		% Curate record;
-		%  this could be done later, depending on the curation algorithm.
+	otherwise
+		echo__prm_qnj_stepType = prm.qnj_stepType
+		error( "Invalid value of prm.qnj_stepType." );
+	endswitch
+	%
+	% Curate record.
+	switch ( tolower(prm.qnj_curationType) )
+	case { "none" }
+		% Nothing to do.
+	case { "simple0106" }
+		% Just keep whatever was used.
 		record_matX = record_matX(:,~rvecDrop);
 		record_matG = matGSans;
 		record_rvecF = rvecFSans;
 		record_rvecW = record_rvecW(~rvecDrop); % Not used.
 	otherwise
-		echo__prm_solverType = prm.solverType
-		error( "Invalid value of prm.solverType." );
+		echo__prm_qnj_curationType = prm.qnj_curationType
+		error( "Invalid value of prm.qnj_curationType." );
 	endswitch
+	if ( size(record_matX,2) > prm.qnj_maxNumRecords )
+		record_matX = record_matX(:,1:prm.qnj_maxNumRecords);
+		record_matG = record_matG(:,1:prm.qnj_maxNumRecords);
+		record_rvecF = record_rvecF(1:prm.qnj_maxNumRecords);
+		record_rvecW = record_rvecW(1:prm.qnj_maxNumRecords);
+	endif
 	%
 	assert( isrealarray(vecX,[sizeX,1]) );
 	assert( isrealarray(vecP,[sizeX,1]) );
