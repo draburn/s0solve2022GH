@@ -11,9 +11,9 @@ sizeX = 1E2
 secret_sizeL = min([ sizeX, round(0.1*sqrt(sizeX)) ])
 %secret_sizeL = min([ sizeX, round(sqrt(sqrt(1E6*sizeX))) ])
 %secret_cVals = [ 1.0, 0.0, 0.0, 0.0 ] % Trivial.
-secret_cVals = [ 1.0, 1.0e-2, 1.0e-2, 1.0e-2 ] % Easy?
-%secret_cVals = [ 0.0, 1.0, 1.0e-2, 1.0e-2 ] % Moderate?
-%secret_noisePrm = [ 0.0, 0.0; 0.0, 0.0; 0.0, 0.0 ] % Trivial
+%secret_cVals = [ 1.0, 1.0e-2, 1.0e-2, 1.0e-2 ] % Easy?
+secret_cVals = [ 0.0, 1.0, 1.0e-2, 1.0e-2 ] % Moderate?
+%secret_noisePrm = [ 0.0, 0.0; 0.0, 0.0; 0.0, 0.0 ] % Trivial (except tolerances may be unreasonable!)
 secret_noisePrm = [ 1.0e-12, 1.0e-2; 1.0e-2, 1.0e-2; 1.0e-2, 1.0e-2 ] % Moderate?
 %
 %
@@ -156,11 +156,18 @@ while (doMainLoop)
 	 	proglog_lastTime = time();
 	endif
 	%
+	% Prepare for next iteration.
+	running_fevalCount = 0;
+	running_fTot = 0.0;
+	running_xtgTot = 0.0;
+	running_vecGTot = zeros(sizeX,1);
+	running_vecXTot = zeros(sizeX,1);
+	superPt_vecXPrev = superPt_vecX;
+	%
 	switch (tolower(prm.solverType))
 	case { "sgd" }
 		% Nothing to do.
 	case {"qnj simple0106"}
-		error( "Not implemented." );
 		% Concept: baseline handles gradient anyway, so,
 		%  any small step in the Newton direction is likely to be good.
 		record_matX = [ superPt_vecX, record_matX ];
@@ -174,13 +181,20 @@ while (doMainLoop)
 		vecGAnchor = record_matG(:,indexAnchor);
 		matD = record_matX - vecXAnchor;
 		[ matV, rvecDrop ] = utorthdrop( matD, prm.basisDropThresh );
+		% DRaburn 2023-01-07: My orthogonalization code seems faster than Octave's default ortho()!
+		sizeK = size(matV,2);
+		if ( sizeK < 1 )
+			continue;
+		endif
 		rvecDrop(indexAnchor) = false; % Never drop the anchor.
 		%
 		% Calculate intermediate subspace-related stuff that could probably be determined by utorthdrop().
 		matDSans = matD(:,~rvecDrop);
-		matGSans = maTG(:,~rvecDrop);
-		rvecFSans = rvecF(~rvecDrop);
-		matY = triu( matV'*matDSans );
+		matGSans = record_matG(:,~rvecDrop);
+		rvecFSans = record_rvecF(~rvecDrop);
+		matY = triu( matV'*matDSans ); % Could readily be returned by orthogonalization code.
+		matGamma = matV'*matGSans;
+		vecGammaAnchor = matV'*vecGAnchor;
 		%
 		% Generate fit.
 		%  There are tons of alternatives, but this is almost certainly the simplest sensible method.
@@ -194,9 +208,10 @@ while (doMainLoop)
 		[ matR, cholFlag ] = chol( matHFit );
 		epsChol = mygetfield( prm, "epsChol", sqrt(eps) );
 		if ( 0 == cholFlag && min(diag(matR)) > epsChol*max(abs(diag(matR))) )
-			newtStepCoeff = mygetfield( prm, "newtStepCoeff", sqrt(prm.learningRate) );
-			vecDelta = -newtStepCoeff * ( matR \ ( matR' \ vecGammaFit ) );
-			matX += vecDelta;
+			%%%newtStepCoeff = mygetfield( prm, "newtStepCoeff", sqrt(prm.learningRate) );
+			newtStepCoeff = mygetfield( prm, "newtStepCoeff", 1.0e-4 );
+			vecDelta = matV * (matR\(  matR'  \  ((-newtStepCoeff)*vecGammaFit)  ));
+			vecX += vecDelta;
 			% Don't bother to modify vecP.
 		else
 			% Do nothing.
@@ -205,21 +220,13 @@ while (doMainLoop)
 		% Curate record;
 		%  this could be done later, depending on the curation algorithm.
 		record_matX = record_matX(:,~rvecDrop);
-		record_matG = record_matG(:,~rvecDrop);
-		record_rvecF = record_rvecF(~rvecDrop);
+		record_matG = matGSans;
+		record_rvecF = rvecFSans;
 		record_rvecW = record_rvecW(~rvecDrop); % Not used.
 	otherwise
 		echo__prm_solverType = prm.solverType
 		error( "Invalid value of prm.solverType." );
 	endswitch
-	%
-	% Prepare for next iteration.
-	running_fevalCount = 0;
-	running_fTot = 0.0;
-	running_xtgTot = 0.0;
-	running_vecGTot = zeros(sizeX,1);
-	running_vecXTot = zeros(sizeX,1);
-	superPt_vecXPrev = superPt_vecX;
 endwhile
 vecXF = vecX;
 %
