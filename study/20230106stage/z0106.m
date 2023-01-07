@@ -7,14 +7,15 @@ if ( stopsignalpresent() )
 	return;
 endif
 setprngstates(0);
-sizeX = 1E2
+sizeX = 1E1
 secret_sizeL = min([ sizeX, round(0.1*sqrt(sizeX)) ])
 %secret_sizeL = min([ sizeX, round(sqrt(sqrt(1E6*sizeX))) ])
 %secret_cVals = [ 1.0, 0.0, 0.0, 0.0 ] % Trivial.
 %secret_cVals = [ 1.0, 1.0e-2, 1.0e-2, 1.0e-2 ] % Easy?
 secret_cVals = [ 0.0, 1.0, 1.0e-2, 1.0e-2 ] % Moderate?
-%secret_noisePrm = [ 0.0, 0.0; 0.0, 0.0; 0.0, 0.0 ] % Trivial (except tolerances may be unreasonable!)
-secret_noisePrm = [ 1.0e-12, 1.0e-2; 1.0e-2, 1.0e-2; 1.0e-2, 1.0e-2 ] % Moderate?
+%secret_cVals = [ 0.0, 0.0, 1.0, 1.0 ] % Extra tricksy?
+secret_noisePrm = [ 0.0, 0.0; 0.0, 0.0; 0.0, 0.0 ] % Trivial (except tolerances may be unreasonable!)
+%secret_noisePrm = [ 1.0e-12, 1.0e-2; 1.0e-2, 1.0e-2; 1.0e-2, 1.0e-2 ] % Moderate?
 %
 %
 tic();
@@ -58,9 +59,12 @@ prm.iterLimit = -1;
 prm.timeLimit = 600.0;
 prm.stopSignalCheckInterval = 3.0;
 prm.progressReportInterval = 1.0;
+%
 %prm.solverType = "sgd";
 prm.solverType = "qnj simple0106";
-prm.basisDropThresh = 0.1;
+%prm.basisDropThresh = 0.1;
+prm.basisDropThresh = sqrt(eps);
+
 %
 vecX = vecX0;
 vecP = zeros(size(vecX));
@@ -209,7 +213,7 @@ while (doMainLoop)
 		epsChol = mygetfield( prm, "epsChol", sqrt(eps) );
 		if ( 0 == cholFlag && min(diag(matR)) > epsChol*max(abs(diag(matR))) )
 			%%%newtStepCoeff = mygetfield( prm, "newtStepCoeff", sqrt(prm.learningRate) );
-			newtStepCoeff = mygetfield( prm, "newtStepCoeff", 1.0e-4 );
+			newtStepCoeff = mygetfield( prm, "newtStepCoeff", 1.0 );
 			vecDelta = matV * (matR\(  matR'  \  ((-newtStepCoeff)*vecGammaFit)  ));
 			vecX += vecDelta;
 			% Don't bother to modify vecP.
@@ -227,6 +231,9 @@ while (doMainLoop)
 		echo__prm_solverType = prm.solverType
 		error( "Invalid value of prm.solverType." );
 	endswitch
+	%
+	assert( isrealarray(vecX,[sizeX,1]) );
+	assert( isrealarray(vecP,[sizeX,1]) );
 endwhile
 vecXF = vecX;
 %
