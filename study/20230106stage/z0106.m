@@ -7,9 +7,9 @@ if ( stopsignalpresent() )
 	return;
 endif
 setprngstates(0);
-sizeX = 1E1
-secret_sizeL = min([ sizeX, round(0.1*sqrt(sizeX)) ])
-%secret_sizeL = min([ sizeX, round(sqrt(sqrt(1E6*sizeX))) ])
+sizeX = 1E2
+secret_sizeL = min([ sizeX, round(0.1*sqrt(sizeX)) ]) % "Small".
+%secret_sizeL = min([ sizeX, round(sqrt(sqrt(1E6*sizeX))) ]) % "Large".
 %secret_cVals = [ 1.0, 0.0, 0.0, 0.0 ] % Trivial.
 %secret_cVals = [ 1.0, 1.0e-2, 1.0e-2, 1.0e-2 ] % Easy?
 secret_cVals = [ 0.0, 1.0, 1.0e-2, 1.0e-2 ] % Moderate?
@@ -50,6 +50,7 @@ startTime = time();
 prm = [];
 prm.learningRate = 0.1;
 prm.momentumFactor = 0.9;
+%
 prm.numFevalPerSuperPt = 100;
 prm.xTol = 10.0*eps*norm(vecX0) + 10.0*eps*fAvg/sqrt(gSqAvg);
 prm.fTol = (eps^0.5)*fVar + 10.0*eps*fAvg;
@@ -65,12 +66,9 @@ prm.qnj_basisDropThresh = sqrt(eps);
 prm.qnj_fitType = "simple0106";
 prm.qnj_stepType = "placeholder0106";
 prm.qnj_maxNumRecords = 50;
-prm.qnj_curationType = "none";
-
 %
 vecX = vecX0;
 vecP = zeros(size(vecX));
-%
 iterCount = 0;
 fevalCount = 0;
 running_fevalCount = 0;
@@ -78,17 +76,26 @@ running_fTot = 0.0;
 running_xtgTot = 0.0;
 running_vecGTot = zeros(sizeX,1);
 running_vecXTot = zeros(sizeX,1);
-superPt_vecXPrev = vecX0; % Reasonable, but not entirely self-consistent.
 proglog_lastTime = time();
 stopsig_lastTime = time();
-doMainLoop = true;
 %
-% Extra data.
+superPt_vecXPrev = [];
+superPt_vecGPrev = [];
+superPt_fPrev = [];
+superPt_wPrev = [];
+% These initial superPt values are reasonable, albeit not entirely self-consistent.
+superPt_vecX = vecX0;
+[ foo, tempIndex ] = max(sum(matGNLS.^2,1));
+superPt_vecG = matGNLS(:,tempIndex);
+superPt_f = max(rvecFNLS);
+superPt_w = prm.numFevalPerSuperPt;
+%
 record_matX = [];
 record_matG = [];
 record_rvecF = [];
 record_rvecW = [];
 %
+doMainLoop = true;
 while (doMainLoop)
 	%
 	[ f, vecG ] = funchFG( vecX );
@@ -124,6 +131,13 @@ while (doMainLoop)
 	% SUPER-POINT ANALYSIS
 	%
 	% Okay, we have our latest superpoint.
+	% Update "prev".
+	superPt_vecXPrev = superPt_vecX;
+	superPt_vecGPrev = superPt_vecG; % Not used?
+	superPt_fPrev = superPt_f;
+	superPt_wPrev = superPt_w; % Not Used?
+	%
+	% Calc new.
 	iterCount++;
 	%
 	superPt_vecX = running_vecXTot / running_fevalCount;
@@ -139,9 +153,11 @@ while (doMainLoop)
 	elseif ( superPt_f <= prm.fTol )
 		msg( __FILE__, __LINE__, "SUCCESS: superPt_f <= prm.fTol." );
 		break;
-	elseif ( norm( vecX - superPt_vecXPrev ) <= prm.xTol )
-		% Note: This is NOT based on the super point!
-		msg( __FILE__, __LINE__, "IMPOSED STOP: norm( vecX - prev_vecX ) <= prm.xTol." );
+	elseif ( superPt_fPrev - superPt_f <= prm.fTol )
+		msg( __FILE__, __LINE__, "SUCCESS: superPt_fPrev - superPt_f <= prm.fTol." );
+		break;
+	elseif ( norm( superPt_vecX - superPt_vecXPrev ) <= prm.xTol )
+		msg( __FILE__, __LINE__, "IMPOSED STOP: norm( superPt_vecX - superPt_vecXPrev ) <= prm.xTol." );
 		break;
 	elseif ( prm.iterLimit >= 0 && iterCount >= prm.iterLimit )
 		msg( __FILE__, __LINE__, "IMPOSED STOP: iterCount >= prm.iterLimit." );
@@ -149,16 +165,17 @@ while (doMainLoop)
 	endif
 	%
 	if ( time() > proglog_lastTime + prm.progressReportInterval )
-		msg( __FILE__, __LINE__, sprintf( "   %10.3e (/%0.3e), %5d (/%d), %8d (/%d):  %10.3e (/%0.3e),  %10.3e (/%0.3e),  %10.3e (/%0.3e)", ...
+		msg( __FILE__, __LINE__, sprintf( "   %10.3e (/%0.3e); %5d (/%d); %8d (/%d):  %10.3e (/%0.3e);  %10.3e, %10.3e (/%0.3e);  %10.3e (/%0.3e)", ...
 		  time() - startTime, ...
 		  prm.timeLimit, ...
 		  iterCount,
 		  prm.iterLimit, ...
 		  fevalCount, ...
 		  prm.fevalLimit, ...
-		  norm( vecX - superPt_vecXPrev ), ...
+		  norm( superPt_vecX - superPt_vecXPrev ), ...
 		  prm.xTol, ...
-		  temp_fAvg, ...
+		  superPt_f, ...
+		  superPt_fPrev - superPt_f, ...
 		  prm.fTol, ...
 		  norm(superPt_vecG), ...
 		  prm.gTol ) );
@@ -217,7 +234,7 @@ while (doMainLoop)
 	case { "simple0106" }
 		%  There are tons of alternatives, but this is almost certainly the simplest sensible method.
 		fFit = fAnchor;
-		vecGammaFit = matV'*vecGAnchor;
+		vecGammaFit = vecGammaAnchor;
 		matA = (matY') \ (( matGamma - vecGammaAnchor)');
 		matHFit = (matA'+matA)/2.0;
 	otherwise
@@ -226,7 +243,7 @@ while (doMainLoop)
 	endswitch
 	%
 	%
-	% Generate a step.
+	% Generate step.
 	switch ( tolower(prm.qnj_stepType) )
 	case { "placeholder0106" }
 		% This is a crude placeholder. Should really make use of a trust region and launch from (projection) of vecX, not vecXAnchor.
@@ -236,51 +253,37 @@ while (doMainLoop)
 			newtStepCoeff = 1.0;
 			vecDelta = matV * (matR\(  matR'  \  ((-newtStepCoeff)*vecGammaFit)  ));
 			vecX += vecDelta;
-			% Don't bother to modify vecP.
-		else
-			% Nothing to do.
 		endif
+		% Otherwise, do nothing.
 	otherwise
 		echo__prm_qnj_stepType = prm.qnj_stepType
 		error( "Invalid value of prm.qnj_stepType." );
 	endswitch
+	assert( isrealarray(vecX,[sizeX,1]) );
+	assert( isrealarray(vecP,[sizeX,1]) );
+	%
 	%
 	% Curate record.
-	switch ( tolower(prm.qnj_curationType) )
-	case { "none" }
-		% Nothing to do.
-	case { "simple0106" }
-		% Just keep whatever was used.
-		record_matX = record_matX(:,~rvecDrop);
-		record_matG = matGSans;
-		record_rvecF = rvecFSans;
-		record_rvecW = record_rvecW(~rvecDrop); % Not used.
-	otherwise
-		echo__prm_qnj_curationType = prm.qnj_curationType
-		error( "Invalid value of prm.qnj_curationType." );
-	endswitch
-	if ( size(record_matX,2) > prm.qnj_maxNumRecords )
+	if ( size(record_matX,2) >= prm.qnj_maxNumRecords )
 		record_matX = record_matX(:,1:prm.qnj_maxNumRecords);
 		record_matG = record_matG(:,1:prm.qnj_maxNumRecords);
 		record_rvecF = record_rvecF(1:prm.qnj_maxNumRecords);
 		record_rvecW = record_rvecW(1:prm.qnj_maxNumRecords);
 	endif
-	%
-	assert( isrealarray(vecX,[sizeX,1]) );
-	assert( isrealarray(vecP,[sizeX,1]) );
 endwhile
 vecXF = vecX;
 %
-msg( __FILE__, __LINE__, sprintf( "   %10.3e (/%0.3e), %5d (/%d), %8d (/%d):  %10.3e (/%0.3e),  %10.3e (/%0.3e),  %10.3e (/%0.3e)", ...
+msg( __FILE__, __LINE__, sprintf( "   %10.3e (/%0.3e); %5d (/%d); %8d (/%d):  %10.3e (/%0.3e);  %10.3e, %10.3e (/%0.3e);  %10.3e (/%0.3e)", ...
   time() - startTime, ...
   prm.timeLimit, ...
   iterCount,
   prm.iterLimit, ...
   fevalCount, ...
   prm.fevalLimit, ...
-  norm( vecX - superPt_vecXPrev ), ...
+  norm( superPt_vecX - superPt_vecXPrev ), ...
   prm.xTol, ...
-  temp_fAvg, ...
+  superPt_f, ...
+  superPt_fPrev - superPt_f, ...
   prm.fTol, ...
   norm(superPt_vecG), ...
   prm.gTol ) );
