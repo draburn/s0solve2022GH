@@ -246,13 +246,16 @@ while (doMainLoop)
 	% Generate step.
 	switch ( tolower(prm.qnj_stepType) )
 	case { "placeholder0106" }
-		% This is a crude placeholder. Should really make use of a trust region and launch from (projection) of vecX, not vecXAnchor.
+		% This is a simple placeholder:
+		%  no use of a trust region nor consideration that vecX is not superPt_vecX.
+		% Testing indicates that 20221216sxsolve/hessfit.m works better.
 		[ matR, cholFlag ] = chol( matHFit );
 		epsChol = mygetfield( prm, "epsChol", sqrt(eps) );
 		if ( 0 == cholFlag && min(diag(matR)) > epsChol*max(abs(diag(matR))) )
 			newtStepCoeff = 1.0;
 			vecDelta = matV * (matR\(  matR'  \  ((-newtStepCoeff)*vecGammaFit)  ));
 			vecX += vecDelta;
+			% We're not modifying the momentum.
 		endif
 		% Otherwise, do nothing.
 	otherwise
