@@ -64,7 +64,8 @@ prm.progressReportInterval = 1.0;
 prm.useQNJ = true;
 prm.qnj_basisDropThresh = sqrt(eps);
 prm.qnj_fitType = "simple0106";
-prm.qnj_stepType = "placeholder0106";
+%prm.qnj_stepType = "placeholder0106";
+prm.qnj_stepType = "basic0108";
 prm.qnj_maxNumRecords = 50;
 %
 vecX = vecX0;
@@ -258,6 +259,9 @@ while (doMainLoop)
 			% We're not modifying the momentum.
 		endif
 		% Otherwise, do nothing.
+	case { "basic0108" }
+		% We'll use record-based TR scaling and external code to find the proper point on the Levenber curve.
+		error( "Not implemented!" );
 	otherwise
 		echo__prm_qnj_stepType = prm.qnj_stepType
 		error( "Invalid value of prm.qnj_stepType." );
