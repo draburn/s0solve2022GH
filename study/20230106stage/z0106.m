@@ -7,14 +7,15 @@ if ( stopsignalpresent() )
 	return;
 endif
 setprngstates(0);
-sizeX = 1E2
+sizeX = 1E1
 secret_sizeL = min([ sizeX, round(0.1*sqrt(sizeX)) ]) % "Small".
 %secret_sizeL = min([ sizeX, round(sqrt(sqrt(1E6*sizeX))) ]) % "Large".
 %secret_cVals = [ 1.0, 0.0, 0.0, 0.0 ] % Trivial.
 %secret_cVals = [ 1.0, 1.0e-2, 1.0e-2, 1.0e-2 ] % Easy?
 secret_cVals = [ 0.0, 1.0, 1.0e-2, 1.0e-2 ] % Moderate?
 %secret_cVals = [ 0.0, 0.0, 1.0, 1.0 ] % Extra tricksy?
-secret_noisePrm = [ 0.0, 0.0; 0.0, 0.0; 0.0, 0.0 ] % Trivial (except tolerances may be unreasonable!)
+%secret_noisePrm = [ 0.0, 0.0; 0.0, 0.0; 0.0, 0.0 ] % Trivial (except tolerances may be unreasonable!)
+secret_noisePrm = [ 1.0e-12, 1.0e-2; 1.0e-4, 1.0e-4; 1.0e-4, 1.0e-4 ] % Easy?
 %secret_noisePrm = [ 1.0e-12, 1.0e-2; 1.0e-2, 1.0e-2; 1.0e-2, 1.0e-2 ] % Moderate?
 %
 %
@@ -56,7 +57,7 @@ prm.xTol = 10.0*eps*norm(vecX0) + 10.0*eps*fAvg/sqrt(gSqAvg);
 prm.fTol = (eps^0.5)*fVar + 10.0*eps*fAvg;
 prm.gTol = (eps^0.5)*gVar + 10.0*eps*gAvg;
 prm.fevalLimit = -1;
-prm.iterLimit = -1;
+prm.iterLimit = 200;
 prm.timeLimit = 600.0;
 prm.stopSignalCheckInterval = 1.0;
 prm.progressReportInterval = 1.0;
@@ -66,6 +67,7 @@ prm.qnj_basisDropThresh = sqrt(eps);
 prm.qnj_fitType = "simple0106";
 %prm.qnj_stepType = "placeholder0106";
 prm.qnj_stepType = "basic0108";
+prm.qnj_trCoeff = 3.0;
 prm.qnj_maxNumRecords = 50;
 %
 vecX = vecX0;
@@ -90,6 +92,7 @@ superPt_vecX = vecX0;
 superPt_vecG = matGNLS(:,tempIndex);
 superPt_f = max(rvecFNLS);
 superPt_w = prm.numFevalPerSuperPt;
+qnj_stepSizeAdjustment = 1.0;
 %
 record_matX = [];
 record_matG = [];
@@ -154,8 +157,8 @@ while (doMainLoop)
 	elseif ( superPt_f <= prm.fTol )
 		msg( __FILE__, __LINE__, "SUCCESS: superPt_f <= prm.fTol." );
 		break;
-	elseif ( superPt_fPrev - superPt_f <= prm.fTol )
-		msg( __FILE__, __LINE__, "SUCCESS: superPt_fPrev - superPt_f <= prm.fTol." );
+	elseif ( superPt_f < superPt_fPrev && superPt_fPrev - superPt_f <= prm.fTol )
+		msg( __FILE__, __LINE__, "IMPOSED STOP: superPt_f < superPt_fPrev && superPt_fPrev - superPt_f <= prm.fTol." );
 		break;
 	elseif ( norm( superPt_vecX - superPt_vecXPrev ) <= prm.xTol )
 		msg( __FILE__, __LINE__, "IMPOSED STOP: norm( superPt_vecX - superPt_vecXPrev ) <= prm.xTol." );
@@ -261,7 +264,33 @@ while (doMainLoop)
 		% Otherwise, do nothing.
 	case { "basic0108" }
 		% We'll use record-based TR scaling and external code to find the proper point on the Levenber curve.
-		error( "Not implemented!" );
+		if ( superPt_f >= superPt_fPrev && norm(superPt_vecG) >= norm(superPt_vecGPrev) )
+			qnj_stepSizeAdjustment *= 0.2
+			% Note that this doesn't necessarily force backtraking,
+			% since we're not considering the actual previous step size;
+			% but, this might be good enough.
+		elseif ( superPt_f < superPt_fPrev && norm(superPt_vecG) < norm(superPt_vecGPrev) )
+			qnj_stepSizeAdjustment *= 1.2
+			% Let's accelerate a bit.
+		endif
+		qnj_stepSizeAdjustment = cap( qnj_stepSizeAdjustment, sqrt(eps), 1.0 );
+		%
+		vecCap = max(abs(matY),[],2);
+		vecCap += sqrt(eps)*max(vecCap);
+		assert( 0.0 < min(vecCap) );
+		matB = diag(1.0./vecCap);
+		bMax = qnj_stepSizeAdjustment * prm.qnj_trCoeff;
+		%
+		% Note: we're largely ignoring the fact that vecX is not itself the superpoint,
+		%  and the momentum handling is crude.
+		levsolPrm = [];
+		vecZ = levsol0108( vecGammaAnchor, matHFit, matB, bMax, levsolPrm );
+		if (~isempty(vecZ))
+			assert(isreal(vecZ))
+			vecGammaNew = vecGammaAnchor + ( matHFit * vecZ );
+			vecX = vecXAnchor + ( matV * vecZ );
+			vecP *= norm(vecGammaNew)/norm(vecGammaAnchor);
+		endif
 	otherwise
 		echo__prm_qnj_stepType = prm.qnj_stepType
 		error( "Invalid value of prm.qnj_stepType." );

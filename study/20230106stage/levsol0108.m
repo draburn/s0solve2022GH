@@ -10,6 +10,7 @@ function vecX = levsol0108( vecG, matH, matB, bMax=[], prm=[] )
 	vecBInv = 1.0./vecB;
 	vecGScl = vecBInv .* vecG;
 	matHScl = vecBInv .* matH .* (vecBInv');
+	matHScl = (matHScl'+matHScl)/2.0;
 	vecXScl = __solve( vecGScl, matHScl, bMax, prm );
 	if ( isempty(vecXScl) )
 		vecX = [];
