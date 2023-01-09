@@ -64,9 +64,6 @@ prm.progressReportInterval = 1.0;
 %
 prm.useQNJ = true;
 prm.qnj_basisDropThresh = sqrt(eps);
-prm.qnj_fitType = "simple0106";
-%prm.qnj_stepType = "placeholder0106";
-prm.qnj_stepType = "basic0108";
 prm.qnj_trCoeff = 3.0;
 prm.qnj_maxNumRecords = 50;
 %
@@ -104,7 +101,10 @@ while (doMainLoop)
 	%
 	[ f, vecG ] = funchFG( vecX );
 	fevalCount++;
-	if ( prm.fevalLimit > 0 && fevalCount >= prm.fevalLimit )
+	if ( f > max(rvecFNLS)/eps )
+		msg( __FILE__, __LINE__, "IMPOSED STOP: f > max(rvecFNLS)/eps. This strongly indicates divergence." );
+		break;
+	elseif ( prm.fevalLimit > 0 && fevalCount >= prm.fevalLimit )
 		msg( __FILE__, __LINE__, "IMPOSED STOP: fevalCount >= prm.fevalLimit." );
 		break;
 	elseif ( prm.timeLimit >= 0.0 && time() - startTime >= prm.timeLimit )
@@ -234,67 +234,42 @@ while (doMainLoop)
 	%
 	%
 	% Generate fit.
-	switch ( tolower(prm.qnj_fitType) )
-	case { "simple0106" }
-		%  There are tons of alternatives, but this is almost certainly the simplest sensible method.
-		fFit = fAnchor;
-		vecGammaFit = vecGammaAnchor;
-		matA = (matY') \ (( matGamma - vecGammaAnchor)');
-		matHFit = (matA'+matA)/2.0;
-	otherwise
-		echo__prm_qnj_fitType = prm.qnj_fitType
-		error( "Invalid value of prm.qnj_fitType." );
-	endswitch
+	%  There are tons of alternatives, but this is almost certainly the simplest sensible method.
+	fFit = fAnchor;
+	vecGammaFit = vecGammaAnchor;
+	matA = (matY') \ (( matGamma - vecGammaAnchor)');
+	matHFit = (matA'+matA)/2.0;
 	%
 	%
 	% Generate step.
-	switch ( tolower(prm.qnj_stepType) )
-	case { "placeholder0106" }
-		% This is a simple placeholder:
-		%  no use of a trust region nor consideration that vecX is not superPt_vecX.
-		% Testing indicates that 20221216sxsolve/hessfit.m works better.
-		[ matR, cholFlag ] = chol( matHFit );
-		epsChol = mygetfield( prm, "epsChol", sqrt(eps) );
-		if ( 0 == cholFlag && min(diag(matR)) > epsChol*max(abs(diag(matR))) )
-			newtStepCoeff = 1.0;
-			vecDelta = matV * (matR\(  matR'  \  ((-newtStepCoeff)*vecGammaFit)  ));
-			vecX += vecDelta;
-			% We're not modifying the momentum.
-		endif
-		% Otherwise, do nothing.
-	case { "basic0108" }
-		% We'll use record-based TR scaling and external code to find the proper point on the Levenber curve.
-		if ( superPt_f >= superPt_fPrev && norm(superPt_vecG) >= norm(superPt_vecGPrev) )
-			qnj_stepSizeAdjustment *= 0.2
-			% Note that this doesn't necessarily force backtraking,
-			% since we're not considering the actual previous step size;
-			% but, this might be good enough.
-		elseif ( superPt_f < superPt_fPrev && norm(superPt_vecG) < norm(superPt_vecGPrev) )
-			qnj_stepSizeAdjustment *= 1.2
-			% Let's accelerate a bit.
-		endif
-		qnj_stepSizeAdjustment = cap( qnj_stepSizeAdjustment, sqrt(eps), 1.0 );
-		%
-		vecCap = max(abs(matY),[],2);
-		vecCap += sqrt(eps)*max(vecCap);
-		assert( 0.0 < min(vecCap) );
-		matB = diag(1.0./vecCap);
-		bMax = qnj_stepSizeAdjustment * prm.qnj_trCoeff;
-		%
-		% Note: we're largely ignoring the fact that vecX is not itself the superpoint,
-		%  and the momentum handling is crude.
-		levsolPrm = [];
-		vecZ = levsol0108( vecGammaAnchor, matHFit, matB, bMax, levsolPrm );
-		if (~isempty(vecZ))
-			assert(isreal(vecZ))
-			vecGammaNew = vecGammaAnchor + ( matHFit * vecZ );
-			vecX = vecXAnchor + ( matV * vecZ );
-			vecP *= norm(vecGammaNew)/norm(vecGammaAnchor);
-		endif
-	otherwise
-		echo__prm_qnj_stepType = prm.qnj_stepType
-		error( "Invalid value of prm.qnj_stepType." );
-	endswitch
+	% We'll use record-based TR scaling and external code to find the proper point on the Levenber curve.
+	if ( superPt_f >= superPt_fPrev && norm(superPt_vecG) >= norm(superPt_vecGPrev) )
+		qnj_stepSizeAdjustment *= 0.2;
+		% Note that this doesn't necessarily force backtraking,
+		% since we're not considering the actual previous step size;
+		% but, this might be good enough.
+	elseif ( superPt_f < superPt_fPrev && norm(superPt_vecG) < norm(superPt_vecGPrev) )
+		qnj_stepSizeAdjustment *= 1.2;
+		% Let's accelerate a bit.
+	endif
+	qnj_stepSizeAdjustment = cap( qnj_stepSizeAdjustment, sqrt(eps), 1.0 );
+	%
+	vecCap = max(abs(matY),[],2);
+	vecCap += sqrt(eps)*max(vecCap);
+	assert( 0.0 < min(vecCap) );
+	matB = diag(1.0./vecCap);
+	bMax = qnj_stepSizeAdjustment * prm.qnj_trCoeff;
+	%
+	% Note: we're largely ignoring the fact that vecX is not itself the superpoint,
+	%  and the momentum handling is crude.
+	levsolPrm = [];
+	vecZ = levsol0108( vecGammaAnchor, matHFit, matB, bMax, levsolPrm );
+	if (~isempty(vecZ))
+		assert(isreal(vecZ))
+		vecGammaNew = vecGammaAnchor + ( matHFit * vecZ );
+		vecX = vecXAnchor + ( matV * vecZ );
+		vecP *= norm(vecGammaNew)/norm(vecGammaAnchor);
+	endif
 	assert( isrealarray(vecX,[sizeX,1]) );
 	assert( isrealarray(vecP,[sizeX,1]) );
 	%
