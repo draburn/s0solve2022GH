@@ -1,3 +1,4 @@
+error( "This file has been abandoned." );
 % DRaburn 2023-01-06:
 %  This is a mock-up of the PyTorch NN code,
 %  to help design before implementing in Python.
