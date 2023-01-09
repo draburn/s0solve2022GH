@@ -14,8 +14,8 @@ secret_sizeL = min([ sizeX, round(0.1*sqrt(sizeX)) ]) % "Small".
 %secret_cVals = [ 1.0, 1.0e-2, 1.0e-2, 1.0e-2 ] % Easy?
 secret_cVals = [ 0.0, 1.0, 1.0e-2, 1.0e-2 ] % Moderate?
 %secret_cVals = [ 0.0, 0.0, 1.0, 1.0 ] % Extra tricksy?
-%secret_noisePrm = [ 0.0, 0.0; 0.0, 0.0; 0.0, 0.0 ] % Trivial (except tolerances may be unreasonable!)
-secret_noisePrm = [ 1.0e-12, 1.0e-2; 1.0e-4, 1.0e-4; 1.0e-4, 1.0e-4 ] % Easy?
+secret_noisePrm = [ 0.0, 0.0; 0.0, 0.0; 0.0, 0.0 ] % Trivial (except tolerances may be unreasonable!)
+%secret_noisePrm = [ 1.0e-12, 1.0e-2; 1.0e-4, 1.0e-4; 1.0e-4, 1.0e-4 ] % Easy?
 %secret_noisePrm = [ 1.0e-12, 1.0e-2; 1.0e-2, 1.0e-2; 1.0e-2, 1.0e-2 ] % Moderate?
 %
 %
@@ -56,6 +56,7 @@ prm.numFevalPerSuperPt = 100;
 prm.xTol = 10.0*eps*norm(vecX0) + 10.0*eps*fAvg/sqrt(gSqAvg);
 prm.fTol = (eps^0.5)*fVar + 10.0*eps*fAvg;
 prm.gTol = (eps^0.5)*gVar + 10.0*eps*gAvg;
+prm.fBail = max(rvecFNLS)/eps;
 prm.fevalLimit = -1;
 prm.iterLimit = 200;
 prm.timeLimit = 600.0;
@@ -101,8 +102,8 @@ while (doMainLoop)
 	%
 	[ f, vecG ] = funchFG( vecX );
 	fevalCount++;
-	if ( f > max(rvecFNLS)/eps )
-		msg( __FILE__, __LINE__, "IMPOSED STOP: f > max(rvecFNLS)/eps. This strongly indicates divergence." );
+	if ( f > prm.fBail )
+		msg( __FILE__, __LINE__, "IMPOSED STOP: f > prm.fBail. This strongly indicates divergence." );
 		break;
 	elseif ( prm.fevalLimit > 0 && fevalCount >= prm.fevalLimit )
 		msg( __FILE__, __LINE__, "IMPOSED STOP: fevalCount >= prm.fevalLimit." );
@@ -262,13 +263,16 @@ while (doMainLoop)
 	%
 	% Note: we're largely ignoring the fact that vecX is not itself the superpoint,
 	%  and the momentum handling is crude.
+	vecYLaunch = zeros(size(vecGammaFit));
+	vecGammaLaunch = vecGammaFit + ( matHFit * vecYLaunch );
 	levsolPrm = [];
-	vecZ = levsol0108( vecGammaAnchor, matHFit, matB, bMax, levsolPrm );
+	vecZ = levsol0108( vecGammaLaunch, matHFit, matB, bMax, levsolPrm );
 	if (~isempty(vecZ))
 		assert(isreal(vecZ))
-		vecGammaNew = vecGammaAnchor + ( matHFit * vecZ );
-		vecX = vecXAnchor + ( matV * vecZ );
-		vecP *= norm(vecGammaNew)/norm(vecGammaAnchor);
+		vecYNew = vecYLaunch + vecZ;
+		vecGammaNew = vecGammaLaunch + ( matHFit * vecZ );
+		vecX = vecXAnchor + ( matV * vecYNew );
+		vecP *= norm(vecGammaNew)/norm(vecGammaLaunch);
 	endif
 	assert( isrealarray(vecX,[sizeX,1]) );
 	assert( isrealarray(vecP,[sizeX,1]) );

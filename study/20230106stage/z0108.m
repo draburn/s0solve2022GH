@@ -14,8 +14,8 @@ secret_sizeL = min([ sizeX, round(0.1*sqrt(sizeX)) ]) % "Small".
 %secret_cVals = [ 1.0, 1.0e-2, 1.0e-2, 1.0e-2 ] % Easy?
 secret_cVals = [ 0.0, 1.0, 1.0e-2, 1.0e-2 ] % Moderate?
 %secret_cVals = [ 0.0, 0.0, 1.0, 1.0 ] % Extra tricksy?
-%secret_noisePrm = [ 0.0, 0.0; 0.0, 0.0; 0.0, 0.0 ] % Trivial (except tolerances may be unreasonable!)
-secret_noisePrm = [ 1.0e-12, 1.0e-2; 1.0e-4, 1.0e-4; 1.0e-4, 1.0e-4 ] % Easy?
+secret_noisePrm = [ 0.0, 0.0; 0.0, 0.0; 0.0, 0.0 ] % Trivial (except tolerances may be unreasonable!)
+%secret_noisePrm = [ 1.0e-12, 1.0e-2; 1.0e-4, 1.0e-4; 1.0e-4, 1.0e-4 ] % Easy?
 %secret_noisePrm = [ 1.0e-12, 1.0e-2; 1.0e-2, 1.0e-2; 1.0e-2, 1.0e-2 ] % Moderate?
 %
 %
@@ -56,6 +56,7 @@ prm.numFevalPerSuperPt = 100;
 prm.xTol = 10.0*eps*norm(vecX0) + 10.0*eps*fAvg/sqrt(gSqAvg);
 prm.fTol = (eps^0.5)*fVar + 10.0*eps*fAvg;
 prm.gTol = (eps^0.5)*gVar + 10.0*eps*gAvg;
+prm.fBail = max(rvecFNLS)/eps;
 prm.fevalLimit = -1;
 prm.iterLimit = 200;
 prm.timeLimit = 600.0;
@@ -89,10 +90,6 @@ superPt_vecX = vecX0;
 superPt_vecG = matGNLS(:,tempIndex);
 superPt_f = max(rvecFNLS);
 superPt_w = prm.numFevalPerSuperPt;
-superPt_vecXBest = superPt_vecX;
-superPt_vecGBest = superPt_vecG;
-superPt_fBest = superPt_f;
-superPt_wBest = superPt_w;
 qnj_stepSizeAdjustment = 1.0;
 %
 record_matX = [];
@@ -105,8 +102,8 @@ while (doMainLoop)
 	%
 	[ f, vecG ] = funchFG( vecX );
 	fevalCount++;
-	if ( f > max(rvecFNLS)/eps )
-		msg( __FILE__, __LINE__, "IMPOSED STOP: f > max(rvecFNLS)/eps. This strongly indicates divergence." );
+	if ( f > prm.fBail )
+		msg( __FILE__, __LINE__, "IMPOSED STOP: f > prm.fBail. This strongly indicates divergence." );
 		break;
 	elseif ( prm.fevalLimit > 0 && fevalCount >= prm.fevalLimit )
 		msg( __FILE__, __LINE__, "IMPOSED STOP: fevalCount >= prm.fevalLimit." );
@@ -153,14 +150,7 @@ while (doMainLoop)
 	temp_xtgAvg = running_xtgTot / running_fevalCount;
 	temp_fAvg = running_fTot / running_fevalCount;
 	superPt_f = temp_fAvg - (( temp_xtgAvg - (superPt_vecX'*superPt_vecG) )/2.0);
-	superPt_w = running_fevalCount;'
-	%
-	if ( superPt_f < superPt_fBest )
-		superPt_vecXBest = superPt_vecX;
-		superPt_vecGBest = superPt_vecG;
-		superPt_fBest = superPt_f;
-		superPt_wBest = superPt_w;
-	endif
+	superPt_w = running_fevalCount;
 	%
 	if ( norm( superPt_vecG ) <= prm.gTol )
 		msg( __FILE__, __LINE__, "SUCCESS: norm( superPt_vecG ) <= prm.gTol." );
@@ -273,13 +263,16 @@ while (doMainLoop)
 	%
 	% Note: we're largely ignoring the fact that vecX is not itself the superpoint,
 	%  and the momentum handling is crude.
+	vecYLaunch = zeros(size(vecGammaFit));
+	vecGammaLaunch = vecGammaFit + ( matHFit * vecYLaunch );
 	levsolPrm = [];
-	vecZ = levsol0108( vecGammaAnchor, matHFit, matB, bMax, levsolPrm );
+	vecZ = levsol0108( vecGammaLaunch, matHFit, matB, bMax, levsolPrm );
 	if (~isempty(vecZ))
 		assert(isreal(vecZ))
-		vecGammaNew = vecGammaAnchor + ( matHFit * vecZ );
-		vecX = vecXAnchor + ( matV * vecZ );
-		vecP *= norm(vecGammaNew)/norm(vecGammaAnchor);
+		vecYNew = vecYLaunch + vecZ;
+		vecGammaNew = vecGammaLaunch + ( matHFit * vecZ );
+		vecX = vecXAnchor + ( matV * vecYNew );
+		vecP *= norm(vecGammaNew)/norm(vecGammaLaunch);
 	endif
 	assert( isrealarray(vecX,[sizeX,1]) );
 	assert( isrealarray(vecP,[sizeX,1]) );
