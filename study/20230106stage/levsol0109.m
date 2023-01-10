@@ -58,14 +58,14 @@ endfunction
 
 function vecX = __findVecX( vecGamma, vecLambdaC, matPsi, vecBInv, xSclMax, xMax, f0, vecLambdaF, prm );
 	s1 = 1.0;
-	f1 = __fOfS( s1, vecGamma, vecLambdaC, matPsi, f0, vecLambdaF );
+	f1 = __fOfS( s1, vecGamma, vecLambdaC, f0, vecLambdaF );
 	if ( f1 < -0.1*f0 )
 		% This constraint is typically the last important;
 		% but, we only want to trigger it if f is *sufficiently* negative,
 		% with "sufficiently" not depending on any other criteria.
 		%msgnnl( __FILE__, __LINE__, "Reducing s1 from " );
 		%printf( "%g to ", s1 );
-		s1 = __fzeroWrapper( @(s) __fOfS( s, vecGamma, vecLambdaC, matPsi, f0, vecLambdaF ), [ 0.0, s1 ], prm );
+		s1 = __fzeroWrapper( @(s) __fOfS( s, vecGamma, vecLambdaC, f0, vecLambdaF ), [ 0.0, s1 ], prm );
 		%printf( "%g.\n", s1 );
 		%f1 = __fOfS( s1, vecGamma, vecLambdaC, matPsi, f0, vecLambdaF )
 	endif
@@ -175,7 +175,7 @@ function xNorm = __xNormOfS( s, vecGamma, vecLambda, vecBInv, matPsi );
 return;
 endfunction
 
-function f = __fOfS( s, vecGamma, vecLambdaC, matPsi, f0, vecLambdaF );
+function f = __fOfS( s, vecGamma, vecLambdaC, f0, vecLambdaF );
 	if ( 0.0 == s )
 		f = f0;
 	else
