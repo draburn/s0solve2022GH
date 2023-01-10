@@ -164,7 +164,8 @@ function xSclNorm = __xSclNormOfS( s, vecGamma, vecLambda )
 	if ( 0.0 == s )
 		xSclNorm = 0.0;
 	else
-		mu = max(vecLambda) * ( (1.0/s) - 1.0 );
+		%mu = max(vecLambda) * ( (1.0/s) - 1.0 );
+		mu = sqrt(mean(vecLambda.^2)) * ( (1.0/s) - 1.0 );
 		xSclNorm = sqrt(sumsq( vecGamma ./ ( vecLambda + mu ) ));
 	endif
 return;
@@ -179,7 +180,8 @@ function f = __fOfS( s, vecGamma, vecLambdaC, f0, vecLambdaF );
 	if ( 0.0 == s )
 		f = f0;
 	else
-		mu = max(vecLambdaC) * ( (1.0/s) - 1.0 );
+		%mu = max(vecLambdaC) * ( (1.0/s) - 1.0 );
+		mu = sqrt(mean(vecLambdaC.^2)) * ( (1.0/s) - 1.0 );
 		vecLCPMI = vecLambdaC + mu;
 		vecGLInv = vecGamma./vecLCPMI;
 		f = f0 - sum(vecGamma.*vecGLInv) + sum(vecGLInv.*vecLambdaF.*vecGLInv)/2.0;
@@ -191,7 +193,8 @@ function vecX = __vecXOfS( s, vecGamma, vecLambda, vecBInv, matPsi );
 	if ( 0.0 == s )
 		vecX = zeros(size(vecBInv));
 	else
-		mu = max(vecLambda) * ( (1.0/s) - 1.0 );
+		%mu = max(vecLambda) * ( (1.0/s) - 1.0 );
+		mu = sqrt(mean(vecLambda.^2)) * ( (1.0/s) - 1.0 );
 		vecX = vecBInv .* ( matPsi * ( vecGamma ./ ( vecLambda + mu ) ) );
 	endif
 return;
