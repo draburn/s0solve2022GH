@@ -2,7 +2,6 @@
 % Uses "lambdaFloor" for positive-defness and fMin.
 % Allows for constrants on both ||B*x|| and ||x||.
 % ... It would probably feel more natural to specify D for curve and some set of Bs for boundaries.
-% 2023-01-09-1910: Thinkin' want lambdaFloor to prevent f from going negative under unmodified lambda.
 
 function vecX = levsol0109( f0, vecG, matH, matB=[], bMax=[], xMax=[], prm=[] )
 	% Validate input.
@@ -43,13 +42,16 @@ function vecX = levsol0109( f0, vecG, matH, matB=[], bMax=[], xMax=[], prm=[] )
 	clear matHScl;
 	%
 	vecLambdaMod = __findLambdaMod( f0, vecGamma, vecLambdaScl, prm );
-	if (0)
+	if (1)
 		msg( __FILE__, __LINE__, "Infodump..." );
 		matHMod = diag(1.0./vecBInv) * matPsi * diag(vecLambdaMod) * (matPsi') * diag(1.0./vecBInv)
 		[ vecLambdaScl, vecLambdaMod ]
+		fCrit_modmod = f0 - sum( (vecLambdaMod-(vecLambdaScl/2.0)) .* ((vecGamma./vecLambdaMod).^2)  )
 		fCrit = f0 - (sum( (vecGamma.^2)./vecLambdaMod )/2.0)
+		vecX = [];
+		return
 	endif
-	clear vecLamdbaScl;
+	clear vecLambdaScl;
 	vecX = __findVecX( vecGamma, vecLambdaMod, matPsi, vecBInv, bMax, xMax, prm );
 return;
 endfunction
@@ -80,7 +82,7 @@ function vecLambdaMod = __findLambdaMod( f0, vecGamma, vecLambda, prm );
 	vecLambdaMod = vecLambda; % But, may be modified.
 	% Do we even need to modify lambda?
 	if ( min(vecLambda) > 0.0 )
-		fCrit = f0 - (( (vecGamma.^2)./vecLambda )/2.0);
+		fCrit = f0 - (sum( (vecGamma.^2)./vecLambdaMod )/2.0);
 		if ( fCrit > -0.1*f0 )
 			return;
 		endif
@@ -133,6 +135,9 @@ function fCrit = __fCritOfLambdaFloor( lambdaFloor, f0, vecGamma, vecLambda )
 	assert( lambdaFloor > 0.0 );
 	vecLambda( vecLambda < lambdaFloor) = lambdaFloor;
 	fCrit = f0 - (sum( (vecGamma.^2)./vecLambda )/2.0);
+	%%%vecLambdaMod = vecLambda;
+	%%%vecLambdaMod( vecLambda < lambdaFloor) = lambdaFloor;
+	%%%fCrit = f0 - sum( (vecLambdaMod-(vecLambda/2.0)) .* ((vecGamma./vecLambdaMod).^2)  );
 return;
 endfunction
 

@@ -1,11 +1,11 @@
 	clear;
 	setprngstates(0);
 	sizeX = 5;
-	matH = mtm(randn(sizeX,sizeX));
-	%%%matH = mtm(randn(sizeX-2,sizeX)) - mtm(randn(2,sizeX));
+	%%%matH = mtm(randn(sizeX,sizeX));
+	matH = mtm(randn(sizeX-2,sizeX)) - mtm(randn(2,sizeX));
 	%%%matA = randn(sizeX,sizeX);
 	%%%matH = (matA'+matA)/2.0
-	fCrit = abs(randn());
+	fCrit = abs(randn())+1E1;
 	vecXCrit = randn(sizeX,1)
 	matB = diag(abs(randn(sizeX,1)));
 	%
