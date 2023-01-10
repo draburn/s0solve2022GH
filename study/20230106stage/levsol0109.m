@@ -2,6 +2,7 @@
 % Uses "lambdaFloor" for positive-defness and fMin.
 % Allows for constrants on both ||B*x|| and ||x||.
 % ... It would probably feel more natural to specify D for curve and some set of Bs for boundaries.
+% Also, for simplicity, should REALLY just do everything in terms of delta(mu).
 
 function vecX = levsol0109( f0, vecG, matH, matB=[], bMax=[], xMax=[], prm=[] )
 	% Validate input.
@@ -42,7 +43,7 @@ function vecX = levsol0109( f0, vecG, matH, matB=[], bMax=[], xMax=[], prm=[] )
 	clear matHScl;
 	%
 	vecLambdaMod = __findLambdaMod( f0, vecGamma, vecLambdaScl, prm );
-	if (1)
+	if (0)
 		msg( __FILE__, __LINE__, "Infodump..." );
 		matHMod = diag(1.0./vecBInv) * matPsi * diag(vecLambdaMod) * (matPsi') * diag(1.0./vecBInv)
 		[ vecLambdaScl, vecLambdaMod ]
@@ -51,30 +52,48 @@ function vecX = levsol0109( f0, vecG, matH, matB=[], bMax=[], xMax=[], prm=[] )
 		vecX = [];
 		return
 	endif
-	clear vecLambdaScl;
-	vecX = __findVecX( vecGamma, vecLambdaMod, matPsi, vecBInv, bMax, xMax, prm );
+	vecX = __findVecX( vecGamma, vecLambdaMod, matPsi, vecBInv, bMax, xMax, f0, vecLambdaScl, prm );
 return;
 endfunction
 
-function vecX = __findVecX( vecGamma, vecLambda, matPsi, vecBInv, xSclMax, xMax, prm );
+function vecX = __findVecX( vecGamma, vecLambdaC, matPsi, vecBInv, xSclMax, xMax, f0, vecLambdaF, prm );
 	s1 = 1.0;
+	f1 = __fOfS( s1, vecGamma, vecLambdaC, matPsi, f0, vecLambdaF );
+	if ( f1 < -0.1*f0 )
+		% This constraint is typically the last important;
+		% but, we only want to trigger it if f is *sufficiently* negative,
+		% with "sufficiently" not depending on any other criteria.
+		%msgnnl( __FILE__, __LINE__, "Reducing s1 from " );
+		%printf( "%g to ", s1 );
+		s1 = __fzeroWrapper( @(s) __fOfS( s, vecGamma, vecLambdaC, matPsi, f0, vecLambdaF ), [ 0.0, s1 ], prm );
+		%printf( "%g.\n", s1 );
+		%f1 = __fOfS( s1, vecGamma, vecLambdaC, matPsi, f0, vecLambdaF )
+	endif
+	clear f1;
 	if ( ~isempty(xSclMax) )
-		xSclNorm1 = __xSclNormOfS( s1, vecGamma, vecLambda );
+		xSclNorm1 = __xSclNormOfS( s1, vecGamma, vecLambdaC );
 		if ( xSclNorm1 > xSclMax )
 			%s1 = fzero( @(s) __xSclNormOfS( s, vecGamma, vecLambda ) - xSclMax, [ 0.0, s1 ] );
-			s1 = __fzeroWrapper( @(s) __xSclNormOfS( s, vecGamma, vecLambda ) - xSclMax, [ 0.0, s1 ], prm );
+			%msgnnl( __FILE__, __LINE__, "Reducing s1 from " );
+			%printf( "%g to ", s1 );
+			s1 = __fzeroWrapper( @(s) __xSclNormOfS( s, vecGamma, vecLambdaC ) - xSclMax, [ 0.0, s1 ], prm );
+			%printf( "%g.\n", s1 );
+			%xSclNorm1 = __xSclNormOfS( s1, vecGamma, vecLambdaC )
 		endif
 		clear xSclNorm1;
 	endif
 	if ( ~isempty(xMax) )
-		xNorm1 = __xNormOfS( s1, vecGamma, vecLambda, vecBInv, matPsi );
+		xNorm1 = __xNormOfS( s1, vecGamma, vecLambdaC, vecBInv, matPsi );
 		if ( xNorm1 > xMax )
+			%msgnnl( __FILE__, __LINE__, "Reducing s1 from " );
+			%printf( "%g to ", s1 );
 			%s1 = fzero( @(s) __xNormOfS( s, vecGamma, vecLambda, vecBInv, matPsi ) - xMax, [ 0.0, s1 ] );
-			s1 = __fzeroWrapper( @(s) __xNormOfS( s, vecGamma, vecLambda, vecBInv, matPsi ) - xMax, [ 0.0, s1 ], prm );
+			s1 = __fzeroWrapper( @(s) __xNormOfS( s, vecGamma, vecLambdaC, vecBInv, matPsi ) - xMax, [ 0.0, s1 ], prm );
+			%printf( "%g.\n", s1 );
 		endif
 		clear xNorm1;
 	endif
-	vecX = __vecXOfS( s1, vecGamma, vecLambda, vecBInv, matPsi );
+	vecX = __vecXOfS( s1, vecGamma, vecLambdaC, vecBInv, matPsi );
 return;
 endfunction
 
@@ -153,6 +172,18 @@ endfunction
 
 function xNorm = __xNormOfS( s, vecGamma, vecLambda, vecBInv, matPsi );
 	xNorm = sqrt(sumsq( __vecXOfS( s, vecGamma, vecLambda, vecBInv, matPsi ) ));
+return;
+endfunction
+
+function f = __fOfS( s, vecGamma, vecLambdaC, matPsi, f0, vecLambdaF );
+	if ( 0.0 == s )
+		f = f0;
+	else
+		mu = max(vecLambdaC) * ( (1.0/s) - 1.0 );
+		vecLCPMI = vecLambdaC + mu;
+		vecGLInv = vecGamma./vecLCPMI;
+		f = f0 - sum(vecGamma.*vecGLInv) + sum(vecGLInv.*vecLambdaF.*vecGLInv)/2.0;
+	endif
 return;
 endfunction
 
