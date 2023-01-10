@@ -2,6 +2,9 @@
 	setprngstates(0);
 	sizeX = 5;
 	matH = mtm(randn(sizeX,sizeX));
+	%%%matH = mtm(randn(sizeX-2,sizeX)) - mtm(randn(2,sizeX));
+	%%%matA = randn(sizeX,sizeX);
+	%%%matH = (matA'+matA)/2.0
 	fCrit = abs(randn());
 	vecXCrit = randn(sizeX,1)
 	matB = diag(abs(randn(sizeX,1)));
@@ -64,5 +67,11 @@
 	vecDelta = levsol0109( f0, vecG, matH, matB, bMax, xMax );
 	b = norm(matB*vecDelta)
 	x = norm(vecDelta)
+	%
+	msg( __FILE__, __LINE__, "vvvvv" );
+	matH(:,:) = 0.0;
+	vecDelta = levsol0109( f0, vecG, matH, matB, bMax, xMax );
+	msg( __FILE__, __LINE__, "^^^^^" );
+	vecDelta
 	%
 	msg( __FILE__, __LINE__, "Please check the above results for reasonableness." );

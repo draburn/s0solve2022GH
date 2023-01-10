@@ -1,6 +1,8 @@
 % function vecX = levsol0109( f0, vecG, matH, matB=[], bMax=[], xMax=[], prm=[] )
 % Uses "lambdaFloor" for positive-defness and fMin.
 % Allows for constrants on both ||B*x|| and ||x||.
+% ... It would probably feel more natural to specify D for curve and some set of Bs for boundaries.
+% 2023-01-09-1910: Thinkin' want lambdaFloor to prevent f from going negative under unmodified lambda.
 
 function vecX = levsol0109( f0, vecG, matH, matB=[], bMax=[], xMax=[], prm=[] )
 	% Validate input.
@@ -11,7 +13,7 @@ function vecX = levsol0109( f0, vecG, matH, matB=[], bMax=[], xMax=[], prm=[] )
 	assert( norm(vecG) > 0.0 );
 	assert( isrealarray(matH,[sz,sz]) );
 	assert( issymmetric(matH) );
-	assert( sum(sum(abs(matH))) > 0.0 );
+	%assert( sum(sum(abs(matH))) > 0.0 );
 	if ( isempty(matB) )
 		vecB = ones(sz,1);
 	else
@@ -41,24 +43,32 @@ function vecX = levsol0109( f0, vecG, matH, matB=[], bMax=[], xMax=[], prm=[] )
 	clear matHScl;
 	%
 	vecLambdaMod = __findLambdaMod( f0, vecGamma, vecLambdaScl, prm );
+	if (0)
+		msg( __FILE__, __LINE__, "Infodump..." );
+		matHMod = diag(1.0./vecBInv) * matPsi * diag(vecLambdaMod) * (matPsi') * diag(1.0./vecBInv)
+		[ vecLambdaScl, vecLambdaMod ]
+		fCrit = f0 - (sum( (vecGamma.^2)./vecLambdaMod )/2.0)
+	endif
 	clear vecLamdbaScl;
-	vecX = __findVecX( vecGamma, vecLambdaMod, matPsi, vecBInv, bMax, xMax );
+	vecX = __findVecX( vecGamma, vecLambdaMod, matPsi, vecBInv, bMax, xMax, prm );
 return;
 endfunction
 
-function vecX = __findVecX( vecGamma, vecLambda, matPsi, vecBInv, xSclMax, xMax );
+function vecX = __findVecX( vecGamma, vecLambda, matPsi, vecBInv, xSclMax, xMax, prm );
 	s1 = 1.0;
 	if ( ~isempty(xSclMax) )
 		xSclNorm1 = __xSclNormOfS( s1, vecGamma, vecLambda );
 		if ( xSclNorm1 > xSclMax )
-			s1 = fzero( @(s) __xSclNormOfS( s, vecGamma, vecLambda ) - xSclMax, [ 0.0, s1 ] );
+			%s1 = fzero( @(s) __xSclNormOfS( s, vecGamma, vecLambda ) - xSclMax, [ 0.0, s1 ] );
+			s1 = __fzeroWrapper( @(s) __xSclNormOfS( s, vecGamma, vecLambda ) - xSclMax, [ 0.0, s1 ], prm );
 		endif
 		clear xSclNorm1;
 	endif
 	if ( ~isempty(xMax) )
 		xNorm1 = __xNormOfS( s1, vecGamma, vecLambda, vecBInv, matPsi );
 		if ( xNorm1 > xMax )
-			s1 = fzero( @(s) __xNormOfS( s, vecGamma, vecLambda, vecBInv, matPsi ) - xMax, [ 0.0, s1 ] );
+			%s1 = fzero( @(s) __xNormOfS( s, vecGamma, vecLambda, vecBInv, matPsi ) - xMax, [ 0.0, s1 ] );
+			s1 = __fzeroWrapper( @(s) __xNormOfS( s, vecGamma, vecLambda, vecBInv, matPsi ) - xMax, [ 0.0, s1 ], prm );
 		endif
 		clear xNorm1;
 	endif
@@ -77,31 +87,52 @@ function vecLambdaMod = __findLambdaMod( f0, vecGamma, vecLambda, prm );
 	endif
 	%
 	% Let's get some bounds.
-	lambdaHi = 2.0 * sumsq(vecGamma) / f0;
+	% This hi bound should handle the case H = zero, FWIW.
+	lambdaHi = sumsq(vecGamma) / ( 2.0 * f0 );
 	if ( lambdaHi > max(vecLambda) )
 		vecLambdaMod(:) = lambdaHi;
-		assert( abs(f0 - (( (vecGamma.^2)./vecLambdaMod )/2.0)) < sqrt(eps)*f0 );
+		fCrit = f0 - (sum( (vecGamma.^2)./vecLambdaMod )/2.0);
+		assert( abs(fCrit) < sqrt(eps)*f0 );
 		return;
 	endif
+	% This lo bound may push fCrit positive,
+	%  but is about as safely as we can go while making H positive definite,
+	%  which is good, because then we don't have to consider a positive-semi-definite case.
 	lambdaLo = sqrt(eps) * max(abs(vecLambda));
 	assert( lambdaLo > 0.0 );
 	if ( __fCritOfLambdaFloor( lambdaLo, f0, vecGamma, vecLambda ) >= 0.0 )
 		vecLambdaMod( vecLambda < lambdaLo ) = lambdaLo;
-		assert( abs(f0 - (( (vecGamma.^2)./vecLambdaMod )/2.0)) < sqrt(eps)*f0 );
+		fCrit = f0 - (sum( (vecGamma.^2)./vecLambdaMod )/2.0);
+		assert( fCrit > -sqrt(eps)*f0 );
 		return;
 	endif
 	%
 	% Let's do a 1D solve.
-	lambdaFloor = fzero( @(lamf) __fCritOfLambdaFloor(lamf,f0,vecGamma,vecLamba), [ lambdaLo, lambdaHi ] );
+	%lambdaFloor = fzero( @(lamf) __fCritOfLambdaFloor(lamf,f0,vecGamma,vecLambda), [ lambdaLo, lambdaHi ] );
+	lambdaFloor = __fzeroWrapper( @(lamf) __fCritOfLambdaFloor(lamf,f0,vecGamma,vecLambda), [ lambdaLo, lambdaHi ], prm );
 	vecLambdaMod( vecLambda < lambdaFloor ) = lambdaFloor;
-	assert( abs(f0 - (( (vecGamma.^2)./vecLambdaMod )/2.0)) < sqrt(eps)*f0 );
+	fCrit = f0 - (sum( (vecGamma.^2)./vecLambdaMod )/2.0);
+	assert( abs(fCrit) < sqrt(eps)*f0 );
+return;
+endfunction
+
+function x = __fzeroWrapper( funchF, xVals, prm=[] )
+	% Built-in fzero sometimes returns worse of two bounds...
+	[ fzero_x, fzero_fval, fzero_info, fzero_output ] = fzero( funchF, xVals );
+	xOut = fzero_output.bracketx;
+	fOut = fzero_output.brackety;
+	if ( abs(fOut(2)-fOut(1)) > sqrt(eps)*(abs(fOut(2))+abs(fOut(1))) )
+		x = ( xOut(1)*fOut(2) - xOut(2)*fOut(1) ) / ( fOut(2) - fOut(1) );
+	else
+		x = fzero_x;
+	endif
 return;
 endfunction
 
 function fCrit = __fCritOfLambdaFloor( lambdaFloor, f0, vecGamma, vecLambda )
 	assert( lambdaFloor > 0.0 );
 	vecLambda( vecLambda < lambdaFloor) = lambdaFloor;
-	fCrit = f0 - (( (vecGamma.^2)./vecLambda )/2.0);
+	fCrit = f0 - (sum( (vecGamma.^2)./vecLambda )/2.0);
 return;
 endfunction
 
