@@ -46,6 +46,10 @@ function __validateInput( f0, vecG, matH, vecS, sMax, dMax, prm )
 		assert( isrealscalar(dMax) );
 		assert( dMax >= 0.0 );
 	endif
+	%
+	if ( isfield(prm,"fModMin") )
+		msg( __FILE__, __LINE__, "WARNING: prm has field 'fModMin'; did you mean 'fMinRegu'?" );
+	endif
 return;
 endfunction
 
@@ -73,7 +77,8 @@ function vecLambdaMod = __findVecLambdaMod( f0, vecGamma, vecLambdaOrig, prm )
 		vecLambdaMod = vecLambdaOrig;
 		vecLambdaMod( vecLambdaOrig < lambdaLo ) = lambdaLo;
 		return;
-	endif	
+	endif
+	assert( fMinRegu < f0 );
 	%
 	lambdaFloor = fzerowrap( @(lamf) __fModCritOfLambdaFloor( lamf, f0, vecGamma, vecLambdaOrig ) - fMinRegu, [ lambdaLo, lambdaHi ] );
 	vecLambdaMod = vecLambdaOrig;
@@ -97,6 +102,7 @@ function vecDelta = __findVecDelta( f0, vecGamma, vecLambdaCurve, vecLambdaFunc,
 	endif
 	fMin = mygetfield( prm, "fMin", 0.0 );
 	if ( ~isempty(fMin) )
+	assert( fMin < f0 );
 	if ( __fOfP( p1, f0, vecGamma, vecLambdaCurve, vecLambdaFunc ) < fMin )
 		p1 = fzerowrap( @(p) __fOfP( p, f0, vecGamma, vecLambdaCurve, vecLambdaFunc ), [ 0.0, p1 ] );
 	endif

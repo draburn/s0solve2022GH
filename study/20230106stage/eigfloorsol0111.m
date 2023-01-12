@@ -1,11 +1,6 @@
-%function [ vecDelta, datOut ] = levsol0111( f0, vecG, matH, vecS=[], sMax=[], dMax=[], prm=[] )
-%
-% DRaburn 2023-01-11
-%  This version includes fMin and fMinRegu.
-
-function [ vecDelta, datOut ] = levsol0111( f0, vecG, matH, vecS=[], sMax=[], dMax=[], prm=[] )
+function [ vecDelta, datOut ] = eigfloorsol0111( f0, vecG, matH, vecS=[], sMax=[], dMax=[], prm=[] )
 	datOut = [];
-	__validateInput( f0, vecG, matH, vecS, sMax, dMax, prm );
+	[ fMin, fModMin ] = __init( f0, vecG, matH, vecS, sMax, dMax, prm );
 	%
 	if ( isempty(vecS) )
 		vecGScl = vecG;
@@ -15,17 +10,25 @@ function [ vecDelta, datOut ] = levsol0111( f0, vecG, matH, vecS=[], sMax=[], dM
 		matHScl = symm( (matH ./ vecS) ./ (vecS') ); % Autobroadcast.
 	endif
 	%
-	[ matPsi, matLambdaOrig ] = eig( matHScl );
-	vecLambdaOrig = diag( matLambdaOrig );
+	[ matPsi, matLambda ] = eig( matHScl );
+	vecLambda = diag( matLambda );
 	vecGamma = matPsi' * (-vecGScl);
+	assert( norm(vecGamma) > 0.0 );
 	%
-	vecLambdaMod = __findVecLambdaMod( f0, vecGamma, vecLambdaOrig, prm );
-	vecDelta = __findVecDelta( f0, vecGamma, vecLambdaMod, vecLambdaOrig, matPsi, vecS, sMax, dMax, prm );
+	mu0 = max([ min(vecLambda), sqrt(eps)*max(vecLambda) ]);
+	% mu0 is both a scaling and the minimum allowed values of mu.
+	% The eps situation could be replaced for better positive semi-definite handling.
+	if ( mu0 > 0.0 )
+		vecDelta = __findVecDelta( f0, vecGamma, vecLambda, matPsi, vecS, mu0, sMax, dMax, fMin, fModMin, prm );
+	else
+		% All eigevalues are non-positive; H is negative-semi-definite.
+		vecDelta = __findVecDeltaNSD( f0, vecGamma, vecLambda, matPsi, vecS, sMax, dMax, fMin, fModMin, prm );
+	endif
 return;
 endfunction
 
 
-function __validateInput( f0, vecG, matH, vecS, sMax, dMax, prm )
+function [ fMin, fModMin ] = __init( f0, vecG, matH, vecS, sMax, dMax, prm )
 	assert( 7 == nargin );
 	sz = size(vecG,1);
 	assert( isrealscalar(f0) );
@@ -34,110 +37,162 @@ function __validateInput( f0, vecG, matH, vecS, sMax, dMax, prm )
 	assert( norm(vecG) > 0.0 );
 	assert( isrealarray(matH,[sz,sz]) );
 	assert( issymmetric(matH) );
-	if (~isempty(vecS))
+	if ( ~isempty(vecS) )
 		assert( isrealarray(vecS,[sz,1]) );
 		assert( min(vecS) > 0.0 );
 	endif
-	if (~isempty(sMax))
+	if ( ~isempty(sMax) )
 		assert( isrealscalar(sMax) );
 		assert( sMax >= 0.0 );
 	endif
-	if (~isempty(dMax))
+	if ( ~isempty(dMax) )
 		assert( isrealscalar(dMax) );
 		assert( dMax >= 0.0 );
 	endif
-return;
-endfunction
-
-
-function vecLambdaMod = __findVecLambdaMod( f0, vecGamma, vecLambdaOrig, prm )
-	assert( 4 == nargin );
-	fMinRegu = mygetfield( prm, "fMinRegu", 0.0 );
-	if ( min(vecLambdaOrig) > 0.0 )
-	if ( isempty(fMinRegu) || __fModCritOfLambdaFloor( 0.0, f0, vecGamma, vecLambdaOrig ) >= fMinRegu ) % Short-circuit.
-		vecLambdaMod = vecLambdaOrig;
-		return;
-	endif
-	endif
-	%
-	lambdaHi = sumsq(vecGamma) / ( 2.0 * f0 );
-	if ( lambdaHi > max(vecLambdaOrig) )
-		vecLambdaMod = vecLambdaOrig;
-		vecLambdaMod(:) = lambdaHi;
-		return;
-	endif
-	%
-	lambdaLo = sqrt(eps) * max(abs(vecLambdaOrig));
-	assert( lambdaLo > 0.0 );
-	if ( isempty(fMinRegu) || __fModCritOfLambdaFloor( lambdaLo, f0, vecGamma, vecLambdaOrig ) >= fMinRegu ) % Short-circuit.
-		vecLambdaMod = vecLambdaOrig;
-		vecLambdaMod( vecLambdaOrig < lambdaLo ) = lambdaLo;
-		return;
-	endif	
-	%
-	lambdaFloor = fzerowrap( @(lamf) __fModCritOfLambdaFloor( lamf, f0, vecGamma, vecLambdaOrig ) - fMinRegu, [ lambdaLo, lambdaHi ] );
-	vecLambdaMod = vecLambdaOrig;
-	vecLambdaMod( vecLambdaOrig < lambdaFloor ) = lambdaFloor;
-return;
-endfunction
-
-
-function vecDelta = __findVecDelta( f0, vecGamma, vecLambdaCurve, vecLambdaFunc, matPsi, vecS, sMax, dMax, prm )
-	assert( 9 == nargin );
-	p1 = 1.0;
-	if ( ~isempty( sMax ) )
-	if ( norm(__vecPhiOfP( p1, vecGamma, vecLambdaCurve )) > sMax )
-		p1 = fzerowrap( @(p) (norm(__vecPhiOfP( p, vecGamma, vecLambdaCurve )) - sMax), [ 0.0, p1 ] );
-	endif
-	endif
-	if ( ~isempty(dMax) )
-	if ( norm(__vecDeltaOfP( p1, vecGamma, vecLambdaCurve, vecLambdaFunc, matPsi, vecS )) > dMax )
-		p1 = fzerowrap( @(p) (norm(__vecDeltaOfP( p, vecGamma, vecLambdaCurve, vecLambdaFunc, matPsi, vecS )) - dMax), [ 0.0, p1 ] );
-	endif
-	endif
 	fMin = mygetfield( prm, "fMin", 0.0 );
 	if ( ~isempty(fMin) )
-	if ( __fOfP( p1, f0, vecGamma, vecLambdaCurve, vecLambdaFunc ) < fMin )
-		p1 = fzerowrap( @(p) __fOfP( p, f0, vecGamma, vecLambdaCurve, vecLambdaFunc ), [ 0.0, p1 ] );
+		assert( isrealscalar(fMin) );
+		assert( fMin < f0 );
 	endif
+	fModMin = mygetfield( prm, "fModMin", 0.0 );
+	if ( ~isempty(fModMin) )
+		assert( isrealscalar(fModMin) );
+		assert( fModMin < f0 );
 	endif
-	vecDelta = __vecDeltaOfP( p1, vecGamma, vecLambdaCurve, vecLambdaFunc, matPsi, vecS );
-return
+	%
+	if ( isfield(prm,"fMinRegu") )
+		msg( __FILE__, __LINE__, "WARNING: prm has field 'fMinRegu'; did you mean 'fModMin'?" );
+	endif
+return;
 endfunction
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function vecPhi = __vecPhiOfP( p, vecGamma, vecLambdaCurve )
+function vecDelta = __findVecDeltaNSD( f0, vecGamma, vecLambda, matPsi, vecS, sMax, dMax, fMin, fModMin, prm )
+	assert( 10 == nargin );
+	mu = [];
+	if ( ~isempty(sMax) )
+		% vecPhi = vecGamma / mu.
+		mu = min([ mu, norm(vecGamma)/sMax ]);
+	endif
+	if ( ~isempty(dMax) )
+		% vecDelta = ( matPsi * vecGamma ) / mu.
+		mu = min([ mu, norm((matPsi*vecGamma)./vecS)/dMax ]);
+	endif
+	if ( ~isempty(fMin) )
+		% muCrit = ( vecGamma' * matLambda * vecGamma ) / ( vecGamma' * vecGamma ) <= 0.0 b/c NSD.
+		% f = f0 - ( vecGamma' * vecGamma ) / mu + ( vecGamma' * matLambda * vecGamma ) / ( 2.0 * mu^2 ).
+		discrim = ( vecGamma' * vecGamma )^2 - (2.0 * ( vecGamma' * ( vecGamma .* vecLambda ) ) * ( f0 - fMin ));
+		assert( discrim >= 0.0 );
+		mu = min([ mu, ( (vecGamma'*vecGamma) - sqrt(discrim) ) / ( 2.0 * ( f0 - fMin ) ) ]);
+	endif
+	if ( ~isempty(fModMin) )
+		% fMod = f0 - sumsq(vecGamma) / ( 2.0 * mu ).
+		mu = min([ mu, sumsq(vecGamma) / ( 2.0 * ( f0 - fModMin ) ) ]);
+	endif
+	if ( isempty(mu) )
+		msg( __FILE__, __LINE__, "ALGORITHM BREAKDOWN: No constraints and Hessian matrix has no positive eigenvectors;" );
+		msg( __FILE__, __LINE__, "  There is no solution." );
+		vecDelta = [];
+		return;
+	endif
+	vecDelta = __vecDeltaOfMu( mu, vecGamma, vecLambda, matPsi, vecS );
+return;
+endfunction
+
+
+function vecDelta = __findVecDelta( f0, vecGamma, vecLambda, matPsi, vecS, mu0, sMax, dMax, fMin, fModMin, prm );
+	assert( 11 == nargin );
+	p1 = 1.0;
+	if ( ~isempty(sMax) )
+	if ( norm(__vecPhiOfP( p1, mu0, vecGamma, vecLambda)) > sMax )
+		p1 = fzerowrap( @(p)norm(__vecPhiOfP( p, mu0, vecGamma, vecLambda)) - sMax, [ 0.0, p1 ] );
+	endif
+	endif
+	if ( ~isempty(dMax) )
+	if ( norm(__vecDeltaOfP( p1, mu0, vecGamma, vecLambda, matPsi, vecS )) > dMax )
+		p1 = fzerowrap( @(p)norm(__vecDeltaOfP( p, mu0, vecGamma, vecLambda, matPsi, vecS )) - dMax, [ 0.0, p1 ] );
+	endif
+	endif
+	if ( ~isempty(fMin) )
+	if ( __fOfP( p1, mu0, f0, vecGamma, vecLambda ) < fMin )
+		p1 = fzerowrap( @(p)__fOfP( p, mu0, f0, vecGamma, vecLambda ) - fMin, [ 0.0, p1 ] );
+	endif
+	endif
+	if ( ~isempty(fModMin) )
+	if ( __fModOfP( p1, mu0, f0, vecGamma, vecLambda ) < fModMin )
+		p1 = fzerowrap( @(p)__fModOfP( p, mu0, f0, vecGamma, vecLambda ) - fModMin, [ 0.0, p1 ] );
+	endif
+	endif
+	vecDelta = __vecDeltaOfP( p1, mu0, vecGamma, vecLambda, matPsi, vecS );
+return;
+endfunction
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function vecPhi =__vecPhiOfMu( mu, vecGamma, vecLambda )
 	assert( 3 == nargin );
+	vecLambdaMod = vecLambda;
+	vecLambdaMod( vecLambda < mu ) = mu;
+	vecPhi = vecGamma ./ vecLambdaMod;
+return;
+endfunction
+function vecDelta =__vecDeltaOfMu( mu, vecGamma, vecLambda, matPsi, vecS )
+	assert( 5 == nargin );
+	vecPhi = __vecPhiOfMu( mu, vecGamma, vecLambda );
+	vecDelta = ( matPsi * vecPhi ) ./ vecS;
+return;
+endfunction
+function f = __fOfMu( mu, f0, vecGamma, vecLambda )
+	assert( 4 == nargin );
+	vecPhi = __vecPhiOfMu( mu, vecGamma, vecLambda );
+	f = f0 - ( vecPhi' * vecGamma ) + (( vecPhi' * ( vecPhi./vecLambda ) )/2.0);
+return;
+endfunction
+function fMod = __fModOfMu( mu, f0, vecGamma, vecLambda )
+	assert( 4 == nargin );
+	vecLambdaMod = vecLambda;
+	vecLambdaMod( vecLambda < mu ) = mu;
+	vecPhi = vecGamma ./ vecLambdaMod;
+	fMod = f0 - ( vecPhi' * vecGamma ) + (( vecPhi' * ( vecPhi./vecLambdaMod ) )/2.0);
+return;
+endfunction
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function vecPhi =__vecPhiOfP( p, mu0, vecGamma, vecLambda )
+	assert( 4 == nargin );
 	if ( 0.0 == p )
 		vecPhi = zeros(size(vecGamma));
 	else
-		assert( min(vecLambdaCurve) > 0.0 );
-		mu = mean(vecLambdaCurve) * ( (1.0/p) - 1.0 );
-		vecPhi = vecGamma ./ ( vecLambdaCurve + mu );
-		% Alterlative scaling of mu might make things easier for 1D solver.
+		vecPhi = __vecPhiOfMu( mu0/p, vecGamma, vecLambda );
 	endif
 return;
 endfunction
-
-function f = __fOfP( p, f0, vecGamma, vecLambdaCurve, vecLambdaFunc )
-	assert( 5 == nargin );
-	vecPhi = __vecPhiOfP( p, vecGamma, vecLambdaCurve );
-	f = f0 - ( vecGamma' * vecPhi ) + (( vecPhi' * (vecPhi.*vecLambdaFunc) )/2.0);
-return;
-endfunction
-
-function vecDelta = __vecDeltaOfP( p, vecGamma, vecLambdaCurve, vecLambdaFunc, matPsi, vecS )
+function vecDelta =__vecDeltaOfP( p, mu0, vecGamma, vecLambda, matPsi, vecS )
 	assert( 6 == nargin );
-	vecDelta = ( matPsi * __vecPhiOfP( p, vecGamma, vecLambdaCurve ) ) ./ vecS;
+	if ( 0.0 == p )
+		vecDelta = zeros(size(vecGamma));
+	else
+		vecDelta = __vecDeltaOfMu( mu0/p, vecGamma, vecLambda, matPsi, vecS );
+	endif
 return;
 endfunction
-
-function fModCrit = __fModCritOfLambdaFloor( lambdaFloor, f0, vecGamma, vecLambdaOrig )
-	assert( 4 == nargin );
-	vecLambdaMod = vecLambdaOrig;
-	vecLambdaMod( vecLambdaOrig < lambdaFloor ) = lambdaFloor;
-	fModCrit = __fOfP( 1.0, f0, vecGamma, vecLambdaMod, vecLambdaMod );
-	% Note: We use Mod in place of Orig in the calculation of f because we want "f *MOD* Crit".
+function f = __fOfP( p, mu0, f0, vecGamma, vecLambda )
+	assert( 5 == nargin );
+	if ( 0.0 == p )
+		f = f0;
+	else
+		f = __fOfMu( mu0/p, f0, vecGamma, vecLambda );
+	endif
+return;
+endfunction
+function fMod = __fModOfP( p, mu0, f0, vecGamma, vecLambda )
+	assert( 5 == nargin );
+	if ( 0.0 == p )
+		fMod = f0;
+	else
+		fMod = __fModOfMu( mu0/p, f0, vecGamma, vecLambda );
+	endif
 return;
 endfunction
