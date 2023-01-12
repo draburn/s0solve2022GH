@@ -1,4 +1,4 @@
-% function [ vecDelta, datOut ] = levsol0110( f0, vecG, matH, vecS=[], prm=[] )
+% function [ vecDelta, datOut ] = levsol0110( f0, vecG, matH, vecS=[], sMax=[], dMax=[], prm=[] )
 %
 % Going with simplicity, here.
 
@@ -80,11 +80,15 @@ endfunction
 
 function vecDelta = __findVecDelta( f0, vecGamma, vecLambdaCurve, vecLambdaFunc, matPsi, vecS, sMax, dMax, prm )
 	p1 = 1.0;
+	if ( ~isempty(sMax) )
 	if ( norm(__vecPhiOfP( p1, vecGamma, vecLambdaCurve )) > sMax )
 		p1 = fzerowrap( @(p) (norm(__vecPhiOfP( p, vecGamma, vecLambdaCurve )) - sMax), [ 0.0, p1 ] );
 	endif
+	endif
+	if ( ~isempty(dMax) )
 	if ( norm(__vecDeltaOfP( p1, vecGamma, vecLambdaCurve, vecLambdaFunc, matPsi, vecS )) > dMax )
 		p1 = fzerowrap( @(p) (norm(__vecDeltaOfP( p, vecGamma, vecLambdaCurve, vecLambdaFunc, matPsi, vecS )) - dMax), [ 0.0, p1 ] );
+	endif
 	endif
 	if ( __fOfP( 1.0, f0, vecGamma, vecLambdaCurve, vecLambdaFunc ) < -0.01 * f0 ...
 	  && __fOfP( p1, f0, vecGamma, vecLambdaCurve, vecLambdaFunc ) < 0.0 )
