@@ -1,3 +1,7 @@
+% function [ vecDelta, datOut ] = eigfloorsol0111( f0, vecG, matH, vecS=[], sMax=[], dMax=[], prm=[] )
+%
+% DRaburn 2023-01-11
+
 function [ vecDelta, datOut ] = eigfloorsol0111( f0, vecG, matH, vecS=[], sMax=[], dMax=[], prm=[] )
 	datOut = [];
 	[ fMin, fModMin ] = __init( f0, vecG, matH, vecS, sMax, dMax, prm );
