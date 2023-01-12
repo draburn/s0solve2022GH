@@ -19,7 +19,7 @@ function [ vecDelta, datOut ] = eigfloorsol0111( f0, vecG, matH, vecS=[], sMax=[
 	% mu0 is both a scaling and the minimum allowed values of mu.
 	% The eps situation could be replaced for better positive semi-definite handling.
 	if ( mu0 > 0.0 )
-		vecDelta = __findVecDelta( f0, vecGamma, vecLambda, matPsi, vecS, mu0, sMax, dMax, fMin, fModMin, prm );
+		vecDelta = __findVecDeltaPD( f0, vecGamma, vecLambda, matPsi, vecS, mu0, sMax, dMax, fMin, fModMin, prm );
 	else
 		% All eigevalues are non-positive; H is negative-semi-definite.
 		vecDelta = __findVecDeltaNSD( f0, vecGamma, vecLambda, matPsi, vecS, sMax, dMax, fMin, fModMin, prm );
@@ -73,26 +73,26 @@ function vecDelta = __findVecDeltaNSD( f0, vecGamma, vecLambda, matPsi, vecS, sM
 	mu = [];
 	if ( ~isempty(sMax) )
 		% vecPhi = vecGamma / mu.
-		mu = min([ mu, norm(vecGamma)/sMax ]);
+		mu = max([ mu, norm(vecGamma)/sMax ]);
 	endif
 	if ( ~isempty(dMax) )
 		% vecDelta = ( matPsi * vecGamma ) / mu.
-		mu = min([ mu, norm((matPsi*vecGamma)./vecS)/dMax ]);
+		mu = max([ mu, norm((matPsi*vecGamma)./vecS)/dMax ]);
 	endif
 	if ( ~isempty(fMin) )
 		% muCrit = ( vecGamma' * matLambda * vecGamma ) / ( vecGamma' * vecGamma ) <= 0.0 b/c NSD.
 		% f = f0 - ( vecGamma' * vecGamma ) / mu + ( vecGamma' * matLambda * vecGamma ) / ( 2.0 * mu^2 ).
 		discrim = ( vecGamma' * vecGamma )^2 - (2.0 * ( vecGamma' * ( vecGamma .* vecLambda ) ) * ( f0 - fMin ));
 		assert( discrim >= 0.0 );
-		mu = min([ mu, ( (vecGamma'*vecGamma) - sqrt(discrim) ) / ( 2.0 * ( f0 - fMin ) ) ]);
+		mu = max([ mu, ( (vecGamma'*vecGamma) + sqrt(discrim) ) / ( 2.0 * ( f0 - fMin ) ) ]);
 	endif
 	if ( ~isempty(fModMin) )
 		% fMod = f0 - sumsq(vecGamma) / ( 2.0 * mu ).
-		mu = min([ mu, sumsq(vecGamma) / ( 2.0 * ( f0 - fModMin ) ) ]);
+		mu = max([ mu, sumsq(vecGamma) / ( 2.0 * ( f0 - fModMin ) ) ]);
 	endif
 	if ( isempty(mu) )
-		msg( __FILE__, __LINE__, "ALGORITHM BREAKDOWN: No constraints and Hessian matrix has no positive eigenvectors;" );
-		msg( __FILE__, __LINE__, "  There is no solution." );
+		msg( __FILE__, __LINE__, "ERROR: No solution:" );
+		msg( __FILE__, __LINE__, "  the Hessian is negative semi-definite and there are no constraints." );
 		vecDelta = [];
 		return;
 	endif
@@ -101,7 +101,7 @@ return;
 endfunction
 
 
-function vecDelta = __findVecDelta( f0, vecGamma, vecLambda, matPsi, vecS, mu0, sMax, dMax, fMin, fModMin, prm );
+function vecDelta = __findVecDeltaPD( f0, vecGamma, vecLambda, matPsi, vecS, mu0, sMax, dMax, fMin, fModMin, prm );
 	assert( 11 == nargin );
 	p1 = 1.0;
 	if ( ~isempty(sMax) )
@@ -146,7 +146,7 @@ endfunction
 function f = __fOfMu( mu, f0, vecGamma, vecLambda )
 	assert( 4 == nargin );
 	vecPhi = __vecPhiOfMu( mu, vecGamma, vecLambda );
-	f = f0 - ( vecPhi' * vecGamma ) + (( vecPhi' * ( vecPhi./vecLambda ) )/2.0);
+	f = f0 - ( vecPhi' * vecGamma ) + (( vecPhi' * ( vecPhi.*vecLambda ) )/2.0);
 return;
 endfunction
 function fMod = __fModOfMu( mu, f0, vecGamma, vecLambda )
@@ -154,7 +154,7 @@ function fMod = __fModOfMu( mu, f0, vecGamma, vecLambda )
 	vecLambdaMod = vecLambda;
 	vecLambdaMod( vecLambda < mu ) = mu;
 	vecPhi = vecGamma ./ vecLambdaMod;
-	fMod = f0 - ( vecPhi' * vecGamma ) + (( vecPhi' * ( vecPhi./vecLambdaMod ) )/2.0);
+	fMod = f0 - ( vecPhi' * vecGamma ) + (( vecPhi' * ( vecPhi.*vecLambdaMod ) )/2.0);
 return;
 endfunction
 

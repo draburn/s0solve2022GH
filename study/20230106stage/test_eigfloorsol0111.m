@@ -1,8 +1,8 @@
 	clear;
 	setprngstates(0);
 	sizeX = 5;
-	%matH = -mtm(randn(sizeX,sizeX));
-	matH = mtm(randn(sizeX-2,sizeX)) - mtm(randn(2,sizeX));
+	matH = -mtm(randn(sizeX,sizeX));
+	%matH = mtm(randn(sizeX-2,sizeX)) - mtm(randn(2,sizeX));
 	%%%matA = randn(sizeX,sizeX);
 	%%%matH = (matA'+matA)/2.0
 	fCrit = abs(randn())+1E1
@@ -20,7 +20,11 @@
 	vecG = funchG(vecX0);
 	%bInf = norm(vecS.*(vecXCrit-vecX0))
 	%
-	vecDeltaN = eigfloorsol0111( f0, vecG, matH, vecS );
+	prm = [];
+	prm.fMin = [];
+	prm.fModMin = [];
+	vecDeltaN = eigfloorsol0111( f0, vecG, matH, vecS, [], [], prm );
+	%vecDeltaN = eigfloorsol0111( f0, vecG, matH, vecS );
 	fN = funchF( vecX0 + vecDeltaN )
 	vecGN = funchG( vecX0 + vecDeltaN )
 	f0OC = f0 - fCrit
