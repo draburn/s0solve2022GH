@@ -57,7 +57,7 @@ endfunction
 
 function vecLambdaMod = __findVecLambdaMod( f0, vecGamma, vecLambdaOrig, prm )
 	assert( 4 == nargin );
-	fMinRegu = mygetfield( prm, "fMinRegu", 0.0 );
+	fMinRegu = mygetfield( prm, "fMinRegu", -1.0E-4*f0 );
 	if ( min(vecLambdaOrig) > 0.0 )
 	if ( isempty(fMinRegu) || __fModCritOfLambdaFloor( 0.0, f0, vecGamma, vecLambdaOrig ) >= fMinRegu ) % Short-circuit.
 		vecLambdaMod = vecLambdaOrig;
@@ -101,7 +101,7 @@ function vecDelta = __findVecDelta( f0, vecGamma, vecLambdaCurve, vecLambdaFunc,
 		p1 = fzerowrap( @(p) (norm(__vecDeltaOfP( p, vecGamma, vecLambdaCurve, vecLambdaFunc, matPsi, vecS )) - dMax), [ 0.0, p1 ] );
 	endif
 	endif
-	fMin = mygetfield( prm, "fMin", 0.0 );
+	fMin = mygetfield( prm, "fMin", -1.0E-4*f0 );
 	if ( ~isempty(fMin) )
 	assert( fMin < f0 );
 	if ( __fOfP( p1, f0, vecGamma, vecLambdaCurve, vecLambdaFunc ) < fMin )

@@ -64,12 +64,12 @@ function [ fMin, fModMin ] = __init( f0, vecG, matH, vecS, sMax, dMax, prm )
 		assert( isrealscalar(dMax) );
 		assert( dMax >= 0.0 );
 	endif
-	fMin = mygetfield( prm, "fMin", 0.0 );
+	fMin = mygetfield( prm, "fMin", -1.0E-4*f0 );
 	if ( ~isempty(fMin) )
 		assert( isrealscalar(fMin) );
 		assert( fMin < f0 );
 	endif
-	fModMin = mygetfield( prm, "fModMin", 0.0 );
+	fModMin = mygetfield( prm, "fModMin", -1.0E-4*f0 );
 	if ( ~isempty(fModMin) )
 		assert( isrealscalar(fModMin) );
 		assert( fModMin < f0 );
@@ -105,12 +105,7 @@ function vecDelta = __findVecDeltaNSD( f0, vecGamma, vecLambda, matPsi, vecS, sM
 		% fMod = f0 - sumsq(vecGamma) / ( 2.0 * mu ).
 		mu = max([ mu, sumsq(vecGamma) / ( 2.0 * ( f0 - fModMin ) ) ]);
 	endif
-	if ( isempty(mu) )
-		msg( __FILE__, __LINE__, "ERROR: No solution:" );
-		msg( __FILE__, __LINE__, "  the Hessian is negative semi-definite and there are no constraints." );
-		vecDelta = [];
-		return;
-	endif
+	assert( ~isempty(mu) );
 	vecDelta = __vecDeltaOfMu( mu, vecGamma, vecLambda, matPsi, vecS );
 return;
 endfunction
