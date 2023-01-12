@@ -5,6 +5,7 @@ function [ vecDelta, datOut ] = eigfloorsol0111( f0, vecG, matH, vecS=[], sMax=[
 	if ( isempty(vecS) )
 		vecGScl = vecG;
 		matHScl = matH;
+		vecS = ones(size(vecG));
 	else
 		vecGScl = vecG ./ vecS;
 		matHScl = symm( (matH ./ vecS) ./ (vecS') ); % Autobroadcast.
@@ -15,14 +16,24 @@ function [ vecDelta, datOut ] = eigfloorsol0111( f0, vecG, matH, vecS=[], sMax=[
 	vecGamma = matPsi' * (-vecGScl);
 	assert( norm(vecGamma) > 0.0 );
 	%
-	mu0 = max([ min(vecLambda), sqrt(eps)*max(vecLambda) ]);
-	% mu0 is both a scaling and the minimum allowed values of mu.
-	% The eps situation could be replaced for better positive semi-definite handling.
-	if ( mu0 > 0.0 )
+	if ( min(vecLambda) > 0.0 )
+		mu0 = min(vecLambda);
 		vecDelta = __findVecDeltaPD( f0, vecGamma, vecLambda, matPsi, vecS, mu0, sMax, dMax, fMin, fModMin, prm );
 	else
-		% All eigevalues are non-positive; H is negative-semi-definite.
-		vecDelta = __findVecDeltaNSD( f0, vecGamma, vecLambda, matPsi, vecS, sMax, dMax, fMin, fModMin, prm );
+		if ( isempty(sMax) && isempty(dMax) && isempty(fMin) && isempty(fModMin) )
+			msg( __FILE__, __LINE__, "ERROR: matH is not posdef and there are no constraitns." );
+			msg( __FILE__, __LINE__, "  There is no (supported) solution in this case." );
+			msg( __FILE__, __LINE__, "  Note that 'perfectly balanced' solutions are not currently supported." );
+			vecDelta = [];
+			return;
+		endif
+		if ( max(vecLambda) <= 0.0 )
+			vecDelta = __findVecDeltaNSD( f0, vecGamma, vecLambda, matPsi, vecS, sMax, dMax, fMin, fModMin, prm );
+		else
+			% This case is hackish, but should typically be fine.
+			mu0 = sqrt(eps) * max(abs(vecLambda));
+			vecDelta = __findVecDeltaPD( f0, vecGamma, vecLambda, matPsi, vecS, mu0, sMax, dMax, fMin, fModMin, prm );
+		endif
 	endif
 return;
 endfunction

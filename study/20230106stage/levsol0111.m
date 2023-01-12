@@ -10,6 +10,7 @@ function [ vecDelta, datOut ] = levsol0111( f0, vecG, matH, vecS=[], sMax=[], dM
 	if ( isempty(vecS) )
 		vecGScl = vecG;
 		matHScl = matH;
+		vecS = ones(size(vecG));
 	else
 		vecGScl = vecG ./ vecS;
 		matHScl = symm( (matH ./ vecS) ./ (vecS') ); % Autobroadcast.
