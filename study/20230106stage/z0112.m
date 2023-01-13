@@ -12,6 +12,8 @@ vecP = zeros(sizeX,1);
 vecXSeed = vecX;
 vecPSeed = vecP;
 %
+best_vecX = vecX0;
+%
 iterCount = 0;
 fevalCount = 0;
 startTime = time();
@@ -79,6 +81,8 @@ while ( 1 )
 	running_vecGTot = zeros(sizeX,1);
 	running_vecXTot = zeros(sizeX,1);
 	%
+	best_vecX = superPt_vecX; % This is a big assumption, but not entirely unreasonable.
+	%
 	if ( norm( superPt_vecG ) <= prm.gTol )
 		msg( __FILE__, __LINE__, "SUCCESS: norm( superPt_vecG ) <= prm.gTol." );
 		break;
@@ -106,6 +110,6 @@ while ( 1 )
 	vecX = vecXSeed;
 	vecP = vecPSeed;
 endwhile
-vecXF = vecX; % This may not be entirely correct. Needs thinking.
+vecXF = best_vecX;
 z__proglog0112;
 z__fin0112;
