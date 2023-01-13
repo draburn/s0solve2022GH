@@ -27,7 +27,9 @@ running_xtgTot = 0.0;
 running_vecGTot = zeros(sizeX,1);
 running_vecXTot = zeros(sizeX,1);
 running_fSqTot = 0.0
+running_xtgSqTot = 0.0;
 running_vecGSqTot = zeros(sizeX,1);
+running_vecXSqTot = zeros(sizeX,1);
 %
 while ( 1 )
 	%
@@ -51,13 +53,16 @@ while ( 1 )
 		stopsig_lastTime = time();
 	endif
 	%
+	xtg = vecX'*vecG;
 	running_fevalCount++;
 	running_fTot += f;
-	running_xtgTot += vecX'*vecG;
+	running_xtgTot += xtg;
 	running_vecGTot += vecG;
 	running_vecXTot += vecX;
 	running_fSqTot += f^2;
-	running_vecGSqTot += (vecG.^2);
+	running_xtgSqTot += xtg^2;
+	running_vecGSqTot += vecG.^2;
+	running_vecXSqTot += vecX.^2;
 	%
 	vecP = ( prm.momentumFactor * vecP ) - ( prm.learningRate * vecG );
 	vecX += vecP;
@@ -79,12 +84,16 @@ while ( 1 )
 	superPt_fAvg = running_fTot / running_fevalCount;
 	superPt_f = superPt_fAvg - (( superPt_xtgAvg - (superPt_vecX'*superPt_vecG) )/2.0);
 	superPt_w = running_fevalCount;
+	superPt_vecXSqVar = (running_vecXSqTot / running_fevalCount) - (superPt_vecX.^2);
 	superPt_vecGSqVar = (running_vecGSqTot / running_fevalCount) - (superPt_vecG.^2);
+	superPt_xtgSqVar = (running_xtgSqTot / running_fevalCount) - (superPt_xtgAvg^2);
 	superPt_fSqVar = (running_fSqTot / running_fevalCount) - (superPt_fAvg^2);
 	%
 	msg( __FILE__, __LINE__, " Yo! This deserves more consideration..." );
-	msg( __FILE__, __LINE__, sprintf( "  f = %0.3e, %0.3e +/- %0.3e", superPt_f, superPt_fAvg, sqrt(superPt_fSqVar) ) );
+	msg( __FILE__, __LINE__, sprintf( "  f = %0.3e +/- %0.3e (vs %0.3e)", superPt_fAvg, sqrt(superPt_fSqVar), superPt_f ) );
+	msg( __FILE__, __LINE__, sprintf( "  x = %0.3e +/- %0.3e", norm(superPt_vecX), sqrt(sum(superPt_vecXSqVar)) ) );
 	msg( __FILE__, __LINE__, sprintf( "  g = %0.3e +/- %0.3e", norm(superPt_vecG), sqrt(sum(superPt_vecGSqVar)) ) );
+	msg( __FILE__, __LINE__, sprintf( "  xtg = %0.3e +/- %0.3e", norm(superPt_xtgAvg), sqrt(sum(superPt_xtgSqVar)) ) );
 	%
 	running_fevalCount = 0;
 	running_fTot = 0.0;
@@ -92,7 +101,9 @@ while ( 1 )
 	running_vecGTot = zeros(sizeX,1);
 	running_vecXTot = zeros(sizeX,1);
 	running_fSqTot = 0.0;
+	running_xtgSqTot = 0.0;
 	running_vecGSqTot = zeros(sizeX,1);
+	running_vecXSqTot = zeros(sizeX,1);
 	%
 	best_vecX = superPt_vecX; % This is a big assumption, but not entirely unreasonable.
 	%
