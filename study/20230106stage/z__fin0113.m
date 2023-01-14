@@ -1,0 +1,11 @@
+msg( __FILE__, __LINE__, "*** RESULTS ***" );
+vecXC = initDat.vecXCrit;
+[ fN0, vecGN0 ] = initDat.funchFG_noiseless( vecX0 );
+[ fNF, vecGNF ] = initDat.funchFG_noiseless( vecXF );
+[ fNC, vecGNC ] = initDat.funchFG_noiseless( vecXC );
+msg( __FILE__, __LINE__, sprintf( " resX: %0.3e -> %0.3e (vs %0.3e)", norm( vecX0 - vecXC ), norm( vecXF - vecXC ), prm.xTol ) );
+msg( __FILE__, __LINE__, sprintf( " resF: %0.3e -> %0.3e (vs %0.3e) with fCrit = %0.3e", fN0 - fNC, fNF - fNC, prm.fTol, fNC ) );
+msg( __FILE__, __LINE__, sprintf( " resG: %0.3e -> %0.3e (vs %0.3e)", norm( vecGN0 - vecGNC ), norm( vecGNF - vecGNC ), prm.gTol ) );
+msg( __FILE__, __LINE__, sprintf( " elapsed time: %0.3es (/%0.3es)", time() - startTime, prm.timeLimit ) );
+msg( __FILE__, __LINE__, sprintf( " fevals: %d (/%d)", fevalCount, prm.fevalLimit ) );
+msg( __FILE__, __LINE__, sprintf( " iterations: %d (/%d)", iterCount, prm.iterLimit ) );

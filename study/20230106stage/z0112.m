@@ -127,6 +127,10 @@ while ( 1 )
 	vecPSeed = vecPHarvest;
 	vecX = vecXSeed;
 	vecP = vecPSeed;
+	%
+	if ( prm.useQNJ )
+		error( "QNJ not supported in this code." );
+	endif
 endwhile
 vecXF = best_vecX;
 z__proglog0112;

@@ -88,9 +88,17 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0112( initPrm=[] )
 	solverPrm.iterLimit = 20000;
 	solverPrm.timeLimit = 600.0;
 	solverPrm.stopSignalCheckInterval = 1.0;
-	solverPrm.progressReportInterval = 1.0;
+	solverPrm.progressReportInterval = 0.0;
 	%
 	solverPrm.maxNumRecords = 50;
 	solverPrm.useQNJ = false;
+	%
+	solverPrm.qnj_basisDropThresh = sqrt(eps);
+	solverPrm.qnj_sMaxLo = [];
+	solverPrm.qnj_sMaxInit = 3.0;
+	solverPrm.qnj_sMaxHi = 10.0;
+	solverPrm.qnj_dMaxLo = 10.0 * solverPrm.xTol;
+	solverPrm.qnj_dMaxInit = [];
+	solverPrm.qnj_dMaxHi = [];
 return;
 endfunction
