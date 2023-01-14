@@ -231,10 +231,10 @@ while ( 1 )
 	if ( ~isempty(qnj_vecDelta) )
 		if ( newIsBest )
 			if ( ~isempty(qnj_sMax) )
-				qnj_sMax = 1.2 * qnj_s;
+				qnj_sMax = max([ 1.2 * qnj_s, qnj_sMax ]);
 			endif
 			if ( ~isempty(qnj_dMax) )
-				qnj_dMax = 1.2 * norm(qnj_vecDelta);
+				qnj_dMax = max([ 1.2 * norm(qnj_vecDelta), qnj_dMax ]);
 			endif
 		else
 			qnj_sMax = 0.2 * qnj_s;
