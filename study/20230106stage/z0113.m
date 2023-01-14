@@ -43,10 +43,13 @@ record_matG = [];
 record_rvecF = [];
 record_rvecW = [];
 record_indexToDrop = [];
-record_matV = [];
+matV = []; % Unused without QNJ, but reference by proglog.
 if (prm.useQNJ)
+	% A few things we need to track between invocations.
 	qnj_sMax = prm.qnj_sMaxInit;
 	qnj_dMax = prm.qnj_dMaxInit;
+	qnj_vecDelta = []; % Vec delta should be measured from HARVEST, not superPt.
+	qnj_s = [];
 endif
 %
 while ( 1 )
@@ -130,7 +133,8 @@ while ( 1 )
 	elseif ( superPt_f < minf_f  )
 		newIsBest = true;
 		newIsMinf = true;
-	elseif ( (superPt_f <= minf_f + 2.0*superPt_fVar + 2.0*minf_fVar) && (norm(superPt_vecG) < norm(best_vecG)) )
+	elseif ( (superPt_f <= minf_f + prm.bestFVarCoeffA*superPt_fVar + prm.bestFVarCoeffB*minf_fVar) ...
+	  && (norm(superPt_vecG) < norm(best_vecG)) )
 		newIsBest = true;
 	endif
 	if ( newIsBest )
@@ -171,7 +175,7 @@ while ( 1 )
 	endif
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% PREPARE FOR NEXT ITER
+	% PREPARE FOR NEXT ITER (ESP. NON-QNJ)
 	%
 	if ( size(record_matX,2) < prm.maxNumRecords )
 		record_matX = [ superPt_vecX, record_matX ];
@@ -189,21 +193,84 @@ while ( 1 )
 		rvecF = [ superPt_f, rvecF(1:record_indexToDrop-1,record_indexToDrop+1:end) ];
 		rvecW = [ superPt_w, rvecW(1:record_indexToDrop-1,record_indexToDrop+1:end) ];
 	endif
+	%
+	% These results are likely to be modified by QNJ, if used.
+	vecXSeed = vecXHarvest; % store, for reference.
+	vecPSeed = vecPHarvest;
+	vecX = vecXSeed; % what actually gets used as the seed.
+	vecP = vecPSeed;
+	%
 	if ( ~prm.useQNJ )
-		%
-		vecXSeed = vecXHarvest;
-		vecPSeed = vecPHarvest;
-		vecX = vecXSeed;
-		vecP = vecPSeed;
 		continue;
 	endif
 	%
-	error( "QNJ not yet supported." );
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% DO QNJ WORK
 	%
-	qnj_matV = [];
+	% Generate basis.
+	% 2023-01-13: I know of no better way to do this, quality-wise.
+	vecXAnchor = best_vecX;
+	vecGAnchor = best_vecG;
+	fAnchor = best_f;
+	matD = record_matX - vecXAnchor;
+	[ matV, rvecBasisDrop ] = utorthdrop( matD, prm.qnj_basisDropThresh );
+	if ( size(matV,2) < 1 )
+		continue;
+	endif
+	matY = triu( matV' * matD(:,~rvecBasisDrop) );
+	matGamma = matV' * record_matG(:,~rvecBasisDrop);
+	vecGammaAnchor = matV' * vecGAnchor;
+	%
+	% Generate fit.
+	% 2023-01-13: This is a bit simplistic but reasonable.
+	fFit = fAnchor;
+	vecGammaFit = vecGammaAnchor;
+	matA = (matY') \ (( matGamma - vecGammaAnchor )');
+	matHFit = (matA'+matA)/2.0;
+	%
+	% Update trust region.
+	% 2023-01-13: This deserves testing.
+	if ( ~isempty(qnj_vecDelta) )
+		if ( newIsBest )
+			if ( ~isempty(qnj_sMax) )
+				qnj_sMax = 1.2 * qnj_s;
+			endif
+			if ( ~isempty(qnj_dMax) )
+				qnj_dMax = 1.2 * norm(qnj_vecDelta);
+			endif
+		else
+			qnj_sMax = 0.2 * qnj_s;
+			qnj_dMax = 0.2 * norm(qnj_vecDelta);
+		endif
+	endif
+	qnj_sMax = mycap( qnj_sMax, prm.qnj_sMaxLo, prm.qnj_sMaxHi );
+	qnj_dMax = mycap( qnj_dMax, prm.qnj_dMaxLo, prm.qnj_dMaxHi );
+	vecCap = max(abs(matY),[],2);
+	vecCap += sqrt(eps)*max(vecCap);
+	assert( 0.0 < min(vecCap) );
+	vecS = 1.0 ./ vecCap;
+	%
+	% Calculate the next guess.
+	% 2023-01-13: This is placeholder; compare to study/20221216sxsolve/sgsolve.m.
+	vecYLaunch = zeros(size(vecGammaFit));
+	fLaunch = fFit + vecYLaunch'*vecGammaFit + (vecYLaunch'*matHFit*vecYLaunch)/2.0;
+	vecGammaLaunch = vecGammaFit + ( matHFit * vecYLaunch );
+	stepPrm = [];
+	vecZ = levsol0111( fLaunch, vecGammaLaunch, matHFit, vecS, qnj_sMax, qnj_dMax, stepPrm );
+	assert( ~isempty(vecZ) );
+	vecYNew = vecYLaunch + vecZ;
+	vecGammaNew = vecGammaLaunch + ( matHFit * vecZ );
+	gammaRatio = norm(vecGammaNew) / norm(vecGammaLaunch);
+	qnj_vecDelta = matV * vecYNew;
+	qnj_s = norm( vecS .* vecZ );
+	vecXSeed = vecX + qnj_vecDelta;
+	vecPSeed = vecPHarvest * gammaRatio;
+	%
+	% Decide which record to drop... or merge???
+	% 2023-01-13: This is crude.
 	record_indexToDrop = [];
-	vecXSeed = vecXHarvest;
-	vecPSeed = vecPHarvest;
+	%
+	% And, we are outt'a here!
 	vecX = vecXSeed;
 	vecP = vecPSeed;
 endwhile

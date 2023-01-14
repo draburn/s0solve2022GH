@@ -10,6 +10,7 @@
 %    cLo: Low value cap.
 %    cHi: High value cap.
 function aryOut = cap( aryIn, cLo, cHi )
+	warning( "This function is deprecated. Did you mean mycap()?" );
 	assert( isrealarray(aryIn) );
 	assert( isrealscalar(cLo) );
 	assert( isrealscalar(cHi) );
