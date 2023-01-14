@@ -254,7 +254,8 @@ while ( 1 )
 	fLaunch = fFit + vecYLaunch'*vecGammaFit + (vecYLaunch'*matHFit*vecYLaunch)/2.0;
 	vecGammaLaunch = vecGammaFit + ( matHFit * vecYLaunch );
 	stepPrm = [];
-	vecZ = levsol0111( fLaunch, vecGammaLaunch, matHFit, vecS, qnj_sMax, qnj_dMax, stepPrm );
+	%vecZ = levsol0111( fLaunch, vecGammaLaunch, matHFit, vecS, qnj_sMax, qnj_dMax, stepPrm );
+	vecZ = eigfloorsol0111( fLaunch, vecGammaLaunch, matHFit, vecS, qnj_sMax, qnj_dMax, stepPrm );
 	assert( ~isempty(vecZ) );
 	vecYNew = vecYLaunch + vecZ;
 	vecGammaNew = vecGammaLaunch + ( matHFit * vecZ );
