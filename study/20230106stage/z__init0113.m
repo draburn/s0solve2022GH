@@ -1,8 +1,8 @@
-function [ funchFG, vecX0, solverPrm, datOut ] = z__init0112( initPrm=[] )
+function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	datOut = [];
 	datOut.prngstates = setprngstates(0);
 	%
-	sizeX = 1E2
+	sizeX = 1E1
 	datOut.sizeX = sizeX;
 	%
 	switch ( 0 )
@@ -15,23 +15,27 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0112( initPrm=[] )
 	endswitch
 	datOut.sizeL = sizeL;
 	%
-	switch ( 20 )
+	switch ( 30 )
 	case 0
 		cVals = [ 1.0, 0.0, 0.0, 0.0 ]
 	case 10
 		cVals = [ 1.0, 1.0E-2, 1.0E-4, 1.0E-4 ]
 	case 20
 		cVals = [ 0.0, 1.0, 1.0E-4, 1.0E-4 ]
+	case 30
+		cVals = [ 0.0, 1.0, 1.0E-2, 1.0E-2 ]
 	otherwise
 		error( "Invalid case." );
 	endswitch
 	datOut.cVals = cVals;
 	%
-	switch ( 10 )
+	switch ( 20 )
 	case 0
 		noisePrm = [ 0.0, 0.0; 0.0, 0.0; 0.0, 0.0 ]
 	case 10
 		noisePrm = [ 1.0E-10, 1.0E-4; 1.0E-6, 1.0E-6; 1.0E-6, 1.0E-6 ]
+	case 20
+		noisePrm = [ 1.0E-10, 1.0E-4; 1.0E-3, 1.0E-3; 1.0E-3, 1.0E-3 ]
 	otherwise
 		error( "Invalid case." );
 	endswitch
@@ -90,12 +94,14 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0112( initPrm=[] )
 	solverPrm.iterLimit = 20000;
 	solverPrm.timeLimit = 600.0;
 	solverPrm.stopSignalCheckInterval = 1.0;
+	solverPrm.progressReportInterval = 1.0; % Unless...
 	solverPrm.progressReportInterval = 0.0;
 	%
 	solverPrm.bestFVarCoeffA = 2.0;
 	solverPrm.bestFVarCoeffB = 2.0;
 	%
 	solverPrm.maxNumRecords = 100;
+	solverPrm.useQNJ = false; % Unless...
 	solverPrm.useQNJ = true;
 	%
 	solverPrm.qnj_basisDropThresh = sqrt(eps);
