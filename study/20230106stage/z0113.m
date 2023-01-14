@@ -38,19 +38,17 @@ running_xtgSqTot = 0.0;
 running_vecGSqTot = zeros(sizeX,1);
 running_vecXSqTot = zeros(sizeX,1);
 %
+% Only really used by QNJ
 record_matX = [];
 record_matG = [];
 record_rvecF = [];
 record_rvecW = [];
-record_indexToDrop = [];
-matV = []; % Unused without QNJ, but reference by proglog.
-if (prm.useQNJ)
-	% A few things we need to track between invocations.
-	qnj_sMax = prm.qnj_sMaxInit;
-	qnj_dMax = prm.qnj_dMaxInit;
-	qnj_vecDelta = []; % Vec delta should be measured from HARVEST, not superPt.
-	qnj_s = [];
-endif
+record_indexToDrop = []; % Mis-named?
+qnj_matV = [];
+qnj_sMax = prm.qnj_sMaxInit;
+qnj_dMax = prm.qnj_dMaxInit;
+qnj_s = [];
+qnj_vecDelta = [];
 %
 while ( 1 )
 	%
@@ -94,12 +92,12 @@ while ( 1 )
 	if ( running_fevalCount < prm.numFevalPerSuperPt )
 		continue
 	endif
-	vecXHarvest = vecX;
-	vecPHarvest = vecP;
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% SUPER-POINT ANALYSIS
 	%
+	vecXHarvest = vecX;
+	vecPHarvest = vecP;
 	iterCount++;
 	%
 	superPt_vecX = running_vecXTot / running_fevalCount;
@@ -195,10 +193,10 @@ while ( 1 )
 	endif
 	%
 	% These results are likely to be modified by QNJ, if used.
-	vecXSeed = vecXHarvest; % store, for reference.
-	vecPSeed = vecPHarvest;
-	vecX = vecXSeed; % what actually gets used as the seed.
-	vecP = vecPSeed;
+	vecX = vecXHarvest; % what actually gets used as the seed.
+	vecP = vecPHarvest;
+	vecXSeed = vecX; % store, for reference.
+	vecPSeed = vecP;
 	%
 	if ( ~prm.useQNJ )
 		continue;
@@ -213,13 +211,13 @@ while ( 1 )
 	vecGAnchor = best_vecG;
 	fAnchor = best_f;
 	matD = record_matX - vecXAnchor;
-	[ matV, rvecBasisDrop ] = utorthdrop( matD, prm.qnj_basisDropThresh );
-	if ( size(matV,2) < 1 )
+	[ qnj_matV, rvecBasisDrop ] = utorthdrop( matD, prm.qnj_basisDropThresh );
+	if ( size(qnj_matV,2) < 1 )
 		continue;
 	endif
-	matY = triu( matV' * matD(:,~rvecBasisDrop) );
-	matGamma = matV' * record_matG(:,~rvecBasisDrop);
-	vecGammaAnchor = matV' * vecGAnchor;
+	matY = triu( qnj_matV' * matD(:,~rvecBasisDrop) );
+	matGamma = qnj_matV' * record_matG(:,~rvecBasisDrop);
+	vecGammaAnchor = qnj_matV' * vecGAnchor;
 	%
 	% Generate fit.
 	% 2023-01-13: This is a bit simplistic but reasonable.
@@ -261,18 +259,20 @@ while ( 1 )
 	vecYNew = vecYLaunch + vecZ;
 	vecGammaNew = vecGammaLaunch + ( matHFit * vecZ );
 	gammaRatio = norm(vecGammaNew) / norm(vecGammaLaunch);
-	qnj_vecDelta = matV * vecYNew;
+	%qnj_vecDelta = (qnj_matV * vecYNew) + vecXAnchor - vecX; HORRID
+	%qnj_vecDelta = (qnj_matV * vecYNew) + (1.0-gammaRatio)*( vecXAnchor - vecX ); BAD
+	qnj_vecDelta = (qnj_matV * vecYNew); % GOOD. Why????
 	qnj_s = norm( vecS .* vecZ );
-	vecXSeed = vecX + qnj_vecDelta;
-	vecPSeed = vecPHarvest * gammaRatio;
+	vecX += qnj_vecDelta;
+	vecP -= (1.0-gammaRatio)*vecP;
 	%
 	% Decide which record to drop... or merge???
 	% 2023-01-13: This is crude.
 	record_indexToDrop = [];
 	%
 	% And, we are outt'a here!
-	vecX = vecXSeed;
-	vecP = vecPSeed;
+	vecXSeed = vecX;
+	vecPSeed = vecP;
 endwhile
 vecXF = best_vecX;
 z__proglog0113;
