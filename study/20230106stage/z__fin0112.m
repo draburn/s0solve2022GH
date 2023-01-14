@@ -1,4 +1,4 @@
-msg( __FILE__, __LINE__, "*** RESULTS... " );
+msg( __FILE__, __LINE__, "*** RESULTS ***" );
 vecXC = initDat.vecXCrit;
 [ fN0, vecGN0 ] = initDat.funchFG_noiseless( vecX0 );
 [ fNF, vecGNF ] = initDat.funchFG_noiseless( vecXF );

@@ -39,7 +39,7 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0112( initPrm=[] )
 	msgnnl( __FILE__, __LINE__, "Generating function..." );
 	tic();
 	vecXCrit = randn(sizeX,1);
-	fCrit = 10.0; % Easy to identify.
+	fCrit = 0.0;
 	matAS = ...
 	   cVals(1)*sparse(eye(sizeX,sizeX)) ...
 	 + cVals(2)*sparse(diag(randn(sizeX,1))) ...
@@ -79,7 +79,7 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0112( initPrm=[] )
 	solverPrm.learningRate = 0.1;
 	solverPrm.momentumFactor = 0.9;
 	%
-	solverPrm.numFevalPerSuperPt = 3*numStudyPts;
+	solverPrm.numFevalPerSuperPt = numStudyPts;
 	solverPrm.xTol = (eps^0.6)*norm(vecX0) + (eps^0.8)*fAvg/(norm(vecGAvg)+gVar);
 	solverPrm.fTol = (eps^0.4)*fVar + (eps^0.6)*fAvg;
 	solverPrm.gTol = (eps^0.4)*gVar + (eps^0.6)*norm(vecGAvg);
