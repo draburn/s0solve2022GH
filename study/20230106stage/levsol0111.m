@@ -22,6 +22,23 @@ function [ vecDelta, datOut ] = levsol0111( f0, vecG, matH, vecS=[], sMax=[], dM
 	%
 	vecLambdaMod = __findVecLambdaMod( f0, vecGamma, vecLambdaOrig, prm );
 	vecDelta = __findVecDelta( f0, vecGamma, vecLambdaMod, vecLambdaOrig, matPsi, vecS, sMax, dMax, prm );
+	%
+	matHMod = symm( diag(vecS) * matPsi * diag(vecLambdaMod) * (matPsi') * (diag(vecS)') );
+	datOut.fOrigPred = f0 + vecDelta'*vecG + (vecDelta'*matH*vecDelta)/2.0;
+	datOut.fModPred = f0 + vecDelta'*vecG + (vecDelta'*matHMod*vecDelta)/2.0;
+	datOut.vecGOrigPred = vecG + matH * vecDelta;
+	datOut.vecGModPred = vecG + matHMod * vecDelta;
+	datOut.matHMod = matHMod;
+	%
+	if ( 0 )
+	if ( reldiff( ...
+	  __vecDeltaOfP(1.0-sqrt(eps),vecGamma,vecLambdaMod,vecLambdaOrig,matPsi,vecS), ...
+	  __vecDeltaOfP(1.0,          vecGamma,vecLambdaMod,vecLambdaOrig,matPsi,vecS) ) > 0.1 )
+		__vecDeltaOfP(1.0-sqrt(eps),vecGamma,vecLambdaMod,vecLambdaOrig,matPsi,vecS)
+		__vecDeltaOfP(1.0,          vecGamma,vecLambdaMod,vecLambdaOrig,matPsi,vecS)
+		assert( "Dependence on p is bad!" );
+	endif
+	endif
 return;
 endfunction
 
@@ -120,7 +137,7 @@ function vecPhi = __vecPhiOfP( p, vecGamma, vecLambdaCurve )
 		vecPhi = zeros(size(vecGamma));
 	else
 		assert( min(vecLambdaCurve) > 0.0 );
-		mu = mean(vecLambdaCurve) * ( (1.0/p) - 1.0 );
+		mu = min(vecLambdaCurve) * ( (1.0/p) - 1.0 );
 		vecPhi = vecGamma ./ ( vecLambdaCurve + mu );
 		% Alterlative scaling of mu might make things easier for 1D solver.
 	endif

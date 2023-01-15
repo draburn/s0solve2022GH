@@ -248,18 +248,20 @@ while ( 1 )
 	assert( 0.0 < min(vecCap) );
 	vecS = 1.0 ./ vecCap;
 	%
+	%
 	% Calculate the next guess.
 	% 2023-01-13: This is placeholder; compare to study/20221216sxsolve/sgsolve.m.
 	vecYLaunch = zeros(size(vecGammaFit));
 	fLaunch = fFit + vecYLaunch'*vecGammaFit + (vecYLaunch'*matHFit*vecYLaunch)/2.0;
 	vecGammaLaunch = vecGammaFit + ( matHFit * vecYLaunch );
 	stepPrm = [];
-	vecZ = levsol0111( fLaunch, vecGammaLaunch, matHFit, vecS, qnj_sMax, qnj_dMax, stepPrm );
+	[ vecZ, stepDat ] = levsol0111( fLaunch, vecGammaLaunch, matHFit, vecS, qnj_sMax, qnj_dMax, stepPrm );
 	%vecZ = eigfloorsol0111( fLaunch, vecGammaLaunch, matHFit, vecS, qnj_sMax, qnj_dMax, stepPrm );
 	assert( ~isempty(vecZ) );
 	vecYNew = vecYLaunch + vecZ;
-	vecGammaNew = vecGammaLaunch + ( matHFit * vecZ );
-	gammaRatio = norm(vecGammaNew) / norm(vecGammaLaunch);
+	vecGammaNew = stepDat.vecGModPred;
+	gammaRatio = norm(vecS.\vecGammaNew) / norm(vecS.\vecGammaLaunch); % Need scaling to be monotonic.
+	assert( gammaRatio <= 1.0 );
 	%qnj_vecDelta = (qnj_matV * vecYNew) + vecXAnchor - vecX; HORRID
 	%qnj_vecDelta = (qnj_matV * vecYNew) + (1.0-gammaRatio)*( vecXAnchor - vecX ); BAD
 	qnj_vecDelta = (qnj_matV * vecYNew); % GOOD. Why????
