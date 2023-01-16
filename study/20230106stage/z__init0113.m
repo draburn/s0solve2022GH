@@ -114,12 +114,14 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	%
 	solverPrm.qnj_basisDropThresh = 0.1; % Fixed 2023-01-15. sqrt(eps);
 	solverPrm.qnj_sMaxInit = 3.0;
+	solverPrm.qnj_sMax_limitOnGood = true; % Fix 2023-01-15. Formerly called 'pre-limit'.
 	solverPrm.qnj_sMaxBT = 0.1;
 	solverPrm.qnj_sMaxFT = 2.0;
 	%solverPrm.qnj_sMaxLo = 1.0E-7;
 	solverPrm.qnj_sMaxLo = [];
 	solverPrm.qnj_sMaxHi = 10.0;
 	solverPrm.qnj_dMaxInit = [];
+	solverPrm.qnj_dMax_limitOnGood = true; % Fix 2023-01-15. Formerly called 'pre-limit'.
 	solverPrm.qnj_dMaxBT = 0.1;
 	solverPrm.qnj_dMaxFT = 2.0;
 	solverPrm.qnj_dMaxLo = 10.0 * solverPrm.xTol;
