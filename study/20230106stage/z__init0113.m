@@ -2,7 +2,7 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	datOut = [];
 	datOut.prngstates = setprngstates(0);
 	%
-	sizeX = 1E1
+	sizeX = 1E2
 	datOut.sizeX = sizeX;
 	%
 	switch ( 0 )
@@ -59,6 +59,13 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	funchFG_noiseless = @(x) funcQuad1230( x, vecXCrit, fCrit, matAS, matAW, zeros(3,2) );
 	datOut.funchFG_noiseless = funchFG_noiseless;
 	vecX0 = zeros(sizeX,1);
+	
+	if (0)
+		matH = full( matAS'*matAS + matAW'*matAW );
+		eig(matH)'
+		error( "HALT!" );
+	endif
+	
 	%
 	%
 	numStudyPts = 100
@@ -100,19 +107,21 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	solverPrm.bestFVarCoeffA = 2.0;
 	solverPrm.bestFVarCoeffB = 2.0;
 	%
-	solverPrm.maxNumRecords = 100;
+	solverPrm.maxNumRecords = 20; % Unless...
+	%solverPrm.maxNumRecords = 100;
 	solverPrm.useQNJ = false; % Unless...
 	solverPrm.useQNJ = true;
 	%
-	solverPrm.qnj_basisDropThresh = sqrt(eps);
+	solverPrm.qnj_basisDropThresh = 0.1; % Fixed 2023-01-15. sqrt(eps);
 	solverPrm.qnj_sMaxInit = 3.0;
-	solverPrm.qnj_sMaxBT = 0.2;
-	solverPrm.qnj_sMaxFT = 1.2;
+	solverPrm.qnj_sMaxBT = 0.1;
+	solverPrm.qnj_sMaxFT = 2.0;
+	%solverPrm.qnj_sMaxLo = 1.0E-7;
 	solverPrm.qnj_sMaxLo = [];
 	solverPrm.qnj_sMaxHi = 10.0;
 	solverPrm.qnj_dMaxInit = [];
-	solverPrm.qnj_dMaxBT = 0.2;
-	solverPrm.qnj_dMaxFT = 1.2;
+	solverPrm.qnj_dMaxBT = 0.1;
+	solverPrm.qnj_dMaxFT = 2.0;
 	solverPrm.qnj_dMaxLo = 10.0 * solverPrm.xTol;
 	solverPrm.qnj_dMaxHi = [];
 return;

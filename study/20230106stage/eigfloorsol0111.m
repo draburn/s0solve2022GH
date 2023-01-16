@@ -22,23 +22,53 @@ function [ vecDelta, datOut ] = eigfloorsol0111( f0, vecG, matH, vecS=[], sMax=[
 	%
 	if ( min(vecLambda) > 0.0 )
 		mu0 = min(vecLambda);
-		vecDelta = __findVecDeltaPD( f0, vecGamma, vecLambda, matPsi, vecS, mu0, sMax, dMax, fMin, fModMin, prm );
+		[ vecDelta, mu ] = __findVecDeltaPD( f0, vecGamma, vecLambda, matPsi, vecS, mu0, sMax, dMax, fMin, fModMin, prm );
 	else
 		if ( isempty(sMax) && isempty(dMax) && isempty(fMin) && isempty(fModMin) )
 			msg( __FILE__, __LINE__, "ERROR: matH is not posdef and there are no constraitns." );
 			msg( __FILE__, __LINE__, "  There is no (supported) solution in this case." );
 			msg( __FILE__, __LINE__, "  Note that 'perfectly balanced' solutions are not currently supported." );
 			vecDelta = [];
+			mu = [];
 			return;
 		endif
 		if ( max(vecLambda) <= 0.0 )
-			vecDelta = __findVecDeltaNSD( f0, vecGamma, vecLambda, matPsi, vecS, sMax, dMax, fMin, fModMin, prm );
+			[ vecDelta, mu ] = __findVecDeltaNSD( f0, vecGamma, vecLambda, matPsi, vecS, sMax, dMax, fMin, fModMin, prm );
 		else
 			% This case is hackish, but should typically be fine.
 			mu0 = sqrt(eps) * max(abs(vecLambda));
-			vecDelta = __findVecDeltaPD( f0, vecGamma, vecLambda, matPsi, vecS, mu0, sMax, dMax, fMin, fModMin, prm );
+			[ vecDelta, mu ] = __findVecDeltaPD( f0, vecGamma, vecLambda, matPsi, vecS, mu0, sMax, dMax, fMin, fModMin, prm );
 		endif
 	endif
+	%
+	vecLambdaMod = vecLambda;
+	vecLambdaMod( vecLambdaMod < mu ) = mu;
+	matHMod = symm( diag(vecS) * matPsi * diag(vecLambdaMod) * (matPsi') * (diag(vecS)') );
+	datOut.fOrigPred = f0 + vecDelta'*vecG + (vecDelta'*matH*vecDelta)/2.0;
+	datOut.fModPred = f0 + vecDelta'*vecG + (vecDelta'*matHMod*vecDelta)/2.0;
+	datOut.vecGOrigPred = vecG + matH * vecDelta;
+	datOut.vecGModPred = vecG + matHMod * vecDelta;
+	datOut.matHMod = matHMod;
+	
+	if (0)
+		msg( __FILE__, __LINE__, "BEGIN INFODUMP..." );
+		vecLambda'
+		mu
+		d = norm(vecDelta)
+		s = norm(vecS.*vecDelta)
+		f0
+		fOrigPred = f0 + vecDelta'*vecG + (vecDelta'*matH*vecDelta)/2.0
+		fModPred = f0 + vecDelta'*vecG + (vecDelta'*matHMod*vecDelta)/2.0
+		g0 = norm( vecG )
+		gOrigPred = norm( vecG + matH * vecDelta )
+		gModPred = norm( vecG + matHMod * vecDelta )
+		gos0 = norm( vecG./vecS )
+		gosOrigPred = norm( (vecG + matH * vecDelta)./vecS )
+		gosModPred = norm( (vecG + matHMod * vecDelta)./vecS )
+		%assert( min(vecLambda) > 0.0 )
+		msg( __FILE__, __LINE__, "END INFODUMP." );
+	endif
+	
 return;
 endfunction
 
@@ -83,7 +113,7 @@ endfunction
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function vecDelta = __findVecDeltaNSD( f0, vecGamma, vecLambda, matPsi, vecS, sMax, dMax, fMin, fModMin, prm )
+function [ vecDelta, mu ] = __findVecDeltaNSD( f0, vecGamma, vecLambda, matPsi, vecS, sMax, dMax, fMin, fModMin, prm )
 	assert( 10 == nargin );
 	mu = [];
 	if ( ~isempty(sMax) )
@@ -111,7 +141,7 @@ return;
 endfunction
 
 
-function vecDelta = __findVecDeltaPD( f0, vecGamma, vecLambda, matPsi, vecS, mu0, sMax, dMax, fMin, fModMin, prm );
+function [ vecDelta, mu ] = __findVecDeltaPD( f0, vecGamma, vecLambda, matPsi, vecS, mu0, sMax, dMax, fMin, fModMin, prm );
 	assert( 11 == nargin );
 	p1 = 1.0;
 	if ( ~isempty(sMax) )
@@ -135,6 +165,7 @@ function vecDelta = __findVecDeltaPD( f0, vecGamma, vecLambda, matPsi, vecS, mu0
 	endif
 	endif
 	vecDelta = __vecDeltaOfP( p1, mu0, vecGamma, vecLambda, matPsi, vecS );
+	mu = mu0/p1;
 return;
 endfunction
 

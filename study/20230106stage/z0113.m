@@ -21,9 +21,11 @@ minf_vecG = [];
 minf_f = [];
 minf_fVar = [];
 %
+startTime = time();
+badCount = 0;
 iterCount = 0;
 fevalCount = 0;
-startTime = time();
+badCount = 0;
 %
 proglog_lastTime = time();
 proglog_stopTime = time();
@@ -33,7 +35,7 @@ running_fTot = 0.0;
 running_xtgTot = 0.0;
 running_vecGTot = zeros(sizeX,1);
 running_vecXTot = zeros(sizeX,1);
-running_fSqTot = 0.0
+running_fSqTot = 0.0;
 running_xtgSqTot = 0.0;
 running_vecGSqTot = zeros(sizeX,1);
 running_vecXSqTot = zeros(sizeX,1);
@@ -140,6 +142,8 @@ while ( 1 )
 		best_vecG = superPt_vecG;
 		best_f = superPt_f;
 		best_fVar = superPt_fVar;
+	else
+		badCount++;
 	endif
 	if ( newIsMinf )
 		minf_vecX = superPt_vecX;
@@ -230,15 +234,18 @@ while ( 1 )
 	% 2023-01-13: This deserves testing.
 	if ( ~isempty(qnj_vecDelta) )
 		if ( newIsBest )
-			if ( ~isempty(qnj_sMax) )
-				qnj_sMax = max([ 1.2 * qnj_s, qnj_sMax ]);
-			endif
-			if ( ~isempty(qnj_dMax) )
-				qnj_dMax = max([ 1.2 * norm(qnj_vecDelta), qnj_dMax ]);
-			endif
+			%if ( ~isempty(qnj_sMax) )
+			%	qnj_sMax = max([ prm.qnj_sMaxFT * qnj_s, qnj_sMax ]);
+			%endif
+			%if ( ~isempty(qnj_dMax) )
+			%	qnj_dMax = max([ prm.qnj_dMaxFT * norm(qnj_vecDelta), qnj_dMax ]);
+			%endif
+			% 2023-01-15: Find it's best to 'pre-limit' step size.
+			qnj_sMax = prm.qnj_sMaxFT * qnj_s;
+			qnj_dMax = prm.qnj_dMaxFT * norm(qnj_vecDelta);
 		else
-			qnj_sMax = 0.2 * qnj_s;
-			qnj_dMax = 0.2 * norm(qnj_vecDelta);
+			qnj_sMax = prm.qnj_sMaxBT * qnj_s;
+			qnj_dMax = prm.qnj_dMaxBT * norm(qnj_vecDelta);
 		endif
 	endif
 	qnj_sMax = mycap( qnj_sMax, prm.qnj_sMaxLo, prm.qnj_sMaxHi );
@@ -247,6 +254,7 @@ while ( 1 )
 	vecCap += sqrt(eps)*max(vecCap);
 	assert( 0.0 < min(vecCap) );
 	vecS = 1.0 ./ vecCap;
+	% 2023-01-15: We could also consider a limit on fMin and fModMin.
 	%
 	%
 	% Calculate the next guess.
@@ -256,7 +264,7 @@ while ( 1 )
 	vecGammaLaunch = vecGammaFit + ( matHFit * vecYLaunch );
 	stepPrm = [];
 	[ vecZ, stepDat ] = levsol0111( fLaunch, vecGammaLaunch, matHFit, vecS, qnj_sMax, qnj_dMax, stepPrm );
-	%vecZ = eigfloorsol0111( fLaunch, vecGammaLaunch, matHFit, vecS, qnj_sMax, qnj_dMax, stepPrm );
+	%[ vecZ, stepDat ] = eigfloorsol0111( fLaunch, vecGammaLaunch, matHFit, vecS, qnj_sMax, qnj_dMax, stepPrm );
 	assert( ~isempty(vecZ) );
 	vecYNew = vecYLaunch + vecZ;
 	vecGammaNew = stepDat.vecGModPred;
