@@ -16,13 +16,14 @@ best_vecX = vecX0;
 best_vecG = [];
 best_f = [];
 best_fVar = [];
+best_vecXHarvest = [];
+best_vecPHarvest = [];
 minf_vecX = vecX0;
 minf_vecG = [];
 minf_f = [];
 minf_fVar = [];
 %
 startTime = time();
-badCount = 0;
 iterCount = 0;
 fevalCount = 0;
 badCount = 0;
@@ -142,6 +143,8 @@ while ( 1 )
 		best_vecG = superPt_vecG;
 		best_f = superPt_f;
 		best_fVar = superPt_fVar;
+		best_vecXHarvest = vecXHarvest;
+		best_vecPHarvest = vecPHarvest;
 	else
 		badCount++;
 	endif
@@ -201,6 +204,7 @@ while ( 1 )
 	vecP = vecPHarvest;
 	vecXSeed = vecX; % store, for reference.
 	vecPSeed = vecP;
+	qnj_matV = [];
 	%
 	if ( ~prm.useQNJ )
 		continue;
@@ -209,6 +213,16 @@ while ( 1 )
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% DO QNJ WORK
 	%
+	% Or, maybe not?
+	if ( prm.qnj_forceGradAfterBad && ~newIsBest && ~isempty(best_vecXHarvest) && ~isempty(best_vecPHarvest) )
+		vecX = best_vecXHarvest;
+		vecP = best_vecPHarvest;
+		vecXSeed = vecX; % store, for reference.
+		vecPSeed = vecP;
+		continue;
+		% I suppose this means that, if the grad steps continue to be bad, we'll never attempt QNJ. Fine.
+	endif
+			
 	% Generate basis.
 	% 2023-01-13: I know of no better way to do this, quality-wise.
 	vecXAnchor = best_vecX;

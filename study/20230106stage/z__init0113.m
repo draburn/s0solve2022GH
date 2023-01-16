@@ -2,10 +2,10 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	datOut = [];
 	datOut.prngstates = setprngstates(0);
 	%
-	sizeX = 1E2
+	sizeX = 1E1
 	datOut.sizeX = sizeX;
 	%
-	switch ( 0 )
+	switch ( 10 )
 	case 0
 		sizeL = 1
 	case 10
@@ -24,18 +24,22 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 		cVals = [ 0.0, 1.0, 1.0E-4, 1.0E-4 ]
 	case 30
 		cVals = [ 0.0, 1.0, 1.0E-2, 1.0E-2 ]
+	case 40
+		cVals = [ 0.0, 1.0, 1.0, 1.0 ]
 	otherwise
 		error( "Invalid case." );
 	endswitch
 	datOut.cVals = cVals;
 	%
-	switch ( 20 )
+	switch ( 30 )
 	case 0
 		noisePrm = [ 0.0, 0.0; 0.0, 0.0; 0.0, 0.0 ]
 	case 10
 		noisePrm = [ 1.0E-10, 1.0E-4; 1.0E-6, 1.0E-6; 1.0E-6, 1.0E-6 ]
 	case 20
 		noisePrm = [ 1.0E-10, 1.0E-4; 1.0E-3, 1.0E-3; 1.0E-3, 1.0E-3 ]
+	case 30
+		noisePrm = [ 1.0E-8, 1.0E-4; 1.0E-1, 1.0E-1; 1.0E-1, 1.0E-1 ]
 	otherwise
 		error( "Invalid case." );
 	endswitch
@@ -89,7 +93,8 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	%
 	solverPrm = [];
 	%
-	solverPrm.learningRate = 0.1;
+	solverPrm.learningRate = 0.1; % Unless...
+	solverPrm.learningRate = 0.01; % Overwrite?
 	solverPrm.momentumFactor = 0.9;
 	%
 	solverPrm.numFevalPerSuperPt = numStudyPts;
@@ -102,17 +107,18 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	solverPrm.timeLimit = 600.0;
 	solverPrm.stopSignalCheckInterval = 1.0;
 	solverPrm.progressReportInterval = 1.0; % Unless...
-	solverPrm.progressReportInterval = 0.0;
+	%solverPrm.progressReportInterval = 0.0; % Overwrite?
 	%
 	solverPrm.bestFVarCoeffA = 2.0;
 	solverPrm.bestFVarCoeffB = 2.0;
 	%
 	solverPrm.maxNumRecords = 20; % Unless...
-	%solverPrm.maxNumRecords = 100;
+	%solverPrm.maxNumRecords = sizeX;  % Overwrite?
 	solverPrm.useQNJ = false; % Unless...
-	solverPrm.useQNJ = true;
+	solverPrm.useQNJ = true; % Overwrite?
 	%
-	solverPrm.qnj_basisDropThresh = 0.1; % Fixed 2023-01-15. sqrt(eps);
+	solverPrm.qnj_basisDropThresh = sqrt(eps); % Risky! So, consier...
+	solverPrm.qnj_basisDropThresh = 0.1; % Overwrite?
 	solverPrm.qnj_sMaxInit = 3.0;
 	solverPrm.qnj_sMax_limitOnGood = true; % Fix 2023-01-15. Formerly called 'pre-limit'.
 	solverPrm.qnj_sMaxBT = 0.1;
@@ -126,5 +132,7 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	solverPrm.qnj_dMaxFT = 2.0;
 	solverPrm.qnj_dMaxLo = 10.0 * solverPrm.xTol;
 	solverPrm.qnj_dMaxHi = [];
+	%
+	solverPrm.qnj_forceGradAfterBad = true;
 return;
 endfunction
