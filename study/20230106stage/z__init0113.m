@@ -112,7 +112,7 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	solverPrm.useQNJ = false; % Unless...
 	solverPrm.useQNJ = true;
 	%
-	solverPrm.qnj_basisDropThresh = sqrt(eps);
+	solverPrm.qnj_basisDropThresh = 0.1; % Fixed 2023-01-15. sqrt(eps);
 	solverPrm.qnj_sMaxInit = 3.0;
 	solverPrm.qnj_sMaxBT = 0.1;
 	solverPrm.qnj_sMaxFT = 2.0;

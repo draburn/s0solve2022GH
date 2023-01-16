@@ -234,12 +234,15 @@ while ( 1 )
 	% 2023-01-13: This deserves testing.
 	if ( ~isempty(qnj_vecDelta) )
 		if ( newIsBest )
-			if ( ~isempty(qnj_sMax) )
-				qnj_sMax = max([ prm.qnj_sMaxFT * qnj_s, qnj_sMax ]);
-			endif
-			if ( ~isempty(qnj_dMax) )
-				qnj_dMax = max([ prm.qnj_dMaxFT * norm(qnj_vecDelta), qnj_dMax ]);
-			endif
+			%if ( ~isempty(qnj_sMax) )
+			%	qnj_sMax = max([ prm.qnj_sMaxFT * qnj_s, qnj_sMax ]);
+			%endif
+			%if ( ~isempty(qnj_dMax) )
+			%	qnj_dMax = max([ prm.qnj_dMaxFT * norm(qnj_vecDelta), qnj_dMax ]);
+			%endif
+			% 2023-01-15: Find it's best to 'pre-limit' step size.
+			qnj_sMax = prm.qnj_sMaxFT * qnj_s;
+			qnj_dMax = prm.qnj_dMaxFT * norm(qnj_vecDelta);
 		else
 			qnj_sMax = prm.qnj_sMaxBT * qnj_s;
 			qnj_dMax = prm.qnj_dMaxBT * norm(qnj_vecDelta);
