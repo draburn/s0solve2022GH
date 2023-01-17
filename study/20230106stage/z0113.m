@@ -300,7 +300,7 @@ while ( 1 )
 		assert( reldiff( vecPLaunch, (qnj_matV*( (coeffPG*vecGammaLaunch) + vecGammaPerp )) + vecPPerp ) <= sqrt(eps) );
 		assert( norm(qnj_matV'*vecPPerp) <= sqrt(eps)*(norm(vecPLaunch)+norm(vecGammaPerp)+abs(coeffPG)*norm(vecGammaLaunch)) );
 		if ( coeffPG > 0.0 )
-			msg( __FILE__, __LINE__, sprintf( "WARNING: Momentum was going uphill (%0.3E)", coeffPG ) );
+			%msg( __FILE__, __LINE__, sprintf( "WARNING: Momentum was going uphill (%0.3E)", coeffPG ) );
 			coeffPG = 0.0;
 		endif
 		%

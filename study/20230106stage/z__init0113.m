@@ -2,8 +2,8 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	datOut = [];
 	datOut.prngstates = setprngstates(0);
 	%
-	sizeX = 1E1
-	%sizeX = 3E1
+	%sizeX = 1E1
+	sizeX = 3E1
 	datOut.sizeX = sizeX;
 	%
 	switch ( 10 )
@@ -73,8 +73,8 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	
 	%
 	%
-	%numStudyPts = 1000
-	numStudyPts = 100
+	numStudyPts = 1000
+	%numStudyPts = 100
 	msgnnl( __FILE__, __LINE__, "Studying function... " );
 	tic();
 	[ rvecFStudy, matGStudy ] = funchFG( vecX0 + zeros(sizeX,numStudyPts) );
