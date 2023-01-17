@@ -3,6 +3,7 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	datOut.prngstates = setprngstates(0);
 	%
 	sizeX = 1E1
+	%sizeX = 3E1
 	datOut.sizeX = sizeX;
 	%
 	switch ( 10 )
@@ -72,6 +73,7 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	
 	%
 	%
+	%numStudyPts = 1000
 	numStudyPts = 100
 	msgnnl( __FILE__, __LINE__, "Studying function... " );
 	tic();
@@ -102,8 +104,8 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	solverPrm.fTol = (eps^0.4)*fVar + (eps^0.6)*fAvg;
 	solverPrm.gTol = (eps^0.4)*gVar + (eps^0.6)*norm(vecGAvg);
 	solverPrm.fBail = max(rvecFStudy)/eps;
-	solverPrm.fevalLimit = -1;
-	solverPrm.iterLimit = 20000;
+	solverPrm.fevalLimit = 100000;
+	solverPrm.iterLimit = 1000;
 	solverPrm.timeLimit = 600.0;
 	solverPrm.stopSignalCheckInterval = 1.0;
 	solverPrm.progressReportInterval = 1.0; % Unless...
@@ -134,5 +136,6 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	solverPrm.qnj_dMaxHi = [];
 	%
 	solverPrm.qnj_forceGradAfterBad = true;
+	solverPrm.qnj_useCtsFromHarvest = true;
 return;
 endfunction

@@ -274,6 +274,54 @@ while ( 1 )
 	%
 	%
 	% Calculate the next guess.
+	if (prm.qnj_useCtsFromHarvest)
+		% Decompose vecXLaunch.
+		vecXLaunch = best_vecXHarvest;
+		vecDLaunch = vecXLaunch - vecXAnchor;
+		vecYLaunch = qnj_matV' * vecDLaunch;
+		vecXPerp = vecDLaunch - ( qnj_matV * vecYLaunch );
+		assert( reldiff( vecXLaunch, vecXAnchor + (qnj_matV*vecYLaunch) + vecXPerp ) <= sqrt(eps) );
+		assert( norm(qnj_matV'*vecXPerp) <= sqrt(eps)*(norm(vecXAnchor)+norm(vecXLaunch)) );
+		%
+		% Calculate fLaunch and vecGammaLaunch as close as possible to vecXLaunch.
+		% We need matHMod.
+		% Calling levsol is computationally wasteful, but POITROME.
+		[ aux_vecZNewton, aux_stepDat ] = levsol0111( fFit, vecGammaFit, matHFit, vecS );
+		fLaunch = fFit + (vecYLaunch'*vecGammaFit) + ((vecYLaunch'*aux_stepDat.matHMod*vecYLaunch)/2.0);
+		vecGammaLaunch = vecGammaFit + (aux_stepDat.matHMod*vecYLaunch);
+		%
+		% Decompose vecPLaunch.
+		vecPLaunch = best_vecPHarvest;
+		vecT = qnj_matV' * vecPLaunch;
+		vecPPerp = vecPLaunch - ( qnj_matV * vecT );
+		assert( norm(vecGammaLaunch) > 0.0 );
+		coeffPG = (vecGammaLaunch'*vecT)/sumsq(vecGammaLaunch);
+		vecGammaPerp = vecT - ( coeffPG * vecGammaLaunch );
+		assert( reldiff( vecPLaunch, (qnj_matV*( (coeffPG*vecGammaLaunch) + vecGammaPerp )) + vecPPerp ) <= sqrt(eps) );
+		assert( norm(qnj_matV'*vecPPerp) <= sqrt(eps)*(norm(vecPLaunch)+norm(vecGammaPerp)+abs(coeffPG)*norm(vecGammaLaunch)) );
+		if ( coeffPG > 0.0 )
+			msg( __FILE__, __LINE__, sprintf( "WARNING: Momentum was going uphill (%0.3E)", coeffPG ) );
+			coeffPG = 0.0;
+		endif
+		%
+		% Calculate step.
+		stepPrm = [];
+		[ vecZ, stepDat ] = levsol0111( fLaunch, vecGammaLaunch, matHFit, vecS, qnj_sMax, qnj_dMax, stepPrm );
+		vecYNew = vecYLaunch + vecZ;
+		fNew = fLaunch + (vecZ'*vecGammaLaunch) + ((vecZ'*stepDat.matHMod*vecZ)/2.0);
+		vecGammaNew = vecGammaLaunch + (stepDat.matHMod*vecZ);
+		assert( fLaunch > 0.0 );
+		assert( fNew < fLaunch );
+		alphaF = fNew / fLaunch;
+		assert( norm(vecS.\vecGammaNew) < norm(vecS.\vecGammaLaunch) );
+		alphaG = norm(vecS.\vecGammaNew) / norm(vecS.\vecGammaLaunch);
+		%
+		vecX = vecXAnchor + (qnj_matV * vecYNew) + (alphaG * vecXPerp);
+		vecP = (qnj_matV*( (coeffPG*vecGammaNew) + (alphaG*vecGammaPerp) )) + (alphaF*vecPPerp);
+		%
+		qnj_vecDelta = vecX - vecXHarvest;
+		qnj_s = norm( vecS .* vecZ );
+	else
 	% 2023-01-13: This is placeholder; compare to study/20221216sxsolve/sgsolve.m.
 	vecYLaunch = zeros(size(vecGammaFit));
 	fLaunch = fFit + vecYLaunch'*vecGammaFit + (vecYLaunch'*matHFit*vecYLaunch)/2.0;
@@ -292,6 +340,7 @@ while ( 1 )
 	qnj_s = norm( vecS .* vecZ );
 	vecX += qnj_vecDelta;
 	vecP -= (1.0-gammaRatio)*vecP;
+	endif
 	%
 	% Decide which record to drop... or merge???
 	% 2023-01-13: This is crude.
