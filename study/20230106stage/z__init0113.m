@@ -1,9 +1,13 @@
 function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	datOut = [];
 	datOut.prngstates = setprngstates(0);
+	%%%datOut.prngstates = setprngstates();
 	%
 	%sizeX = 1E1
-	sizeX = 3E1
+	%sizeX = 3E1
+	sizeX = 1E2
+	%sizeX = 1E3
+	%sizeX = 1E4
 	datOut.sizeX = sizeX;
 	%
 	switch ( 10 )
@@ -16,13 +20,15 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	endswitch
 	datOut.sizeL = sizeL;
 	%
-	switch ( 30 )
+	switch ( 25 )
 	case 0
 		cVals = [ 1.0, 0.0, 0.0, 0.0 ]
 	case 10
 		cVals = [ 1.0, 1.0E-2, 1.0E-4, 1.0E-4 ]
 	case 20
 		cVals = [ 0.0, 1.0, 1.0E-4, 1.0E-4 ]
+	case 25
+		cVals = [ 0.0, 1.0, 1.0E-3, 1.0E-3 ]
 	case 30
 		cVals = [ 0.0, 1.0, 1.0E-2, 1.0E-2 ]
 	case 40
@@ -39,6 +45,8 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 		noisePrm = [ 1.0E-10, 1.0E-4; 1.0E-6, 1.0E-6; 1.0E-6, 1.0E-6 ]
 	case 20
 		noisePrm = [ 1.0E-10, 1.0E-4; 1.0E-3, 1.0E-3; 1.0E-3, 1.0E-3 ]
+	case 25
+		noisePrm = [ 1.0E-9, 1.0E-4; 1.0E-2, 1.0E-2; 1.0E-2, 1.0E-2 ]
 	case 30
 		noisePrm = [ 1.0E-8, 1.0E-4; 1.0E-1, 1.0E-1; 1.0E-1, 1.0E-1 ]
 	otherwise
@@ -104,8 +112,8 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	solverPrm.fTol = (eps^0.4)*fVar + (eps^0.6)*fAvg;
 	solverPrm.gTol = (eps^0.4)*gVar + (eps^0.6)*norm(vecGAvg);
 	solverPrm.fBail = max(rvecFStudy)/eps;
-	solverPrm.fevalLimit = 100000;
-	solverPrm.iterLimit = 1000;
+	solverPrm.fevalLimit = 1000000;
+	solverPrm.iterLimit = 10000;
 	solverPrm.timeLimit = 600.0;
 	solverPrm.stopSignalCheckInterval = 1.0;
 	solverPrm.progressReportInterval = 1.0; % Unless...

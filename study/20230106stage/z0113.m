@@ -312,8 +312,10 @@ while ( 1 )
 		vecGammaNew = vecGammaLaunch + (stepDat.matHMod*vecZ);
 		assert( fLaunch > 0.0 );
 		assert( fNew < fLaunch );
+		%assert( fNew*(1.0-100.0*eps) <= fLaunch*(1.0+100.0*eps) );
 		alphaF = fNew / fLaunch;
 		assert( norm(vecS.\vecGammaNew) < norm(vecS.\vecGammaLaunch) );
+		%assert( norm(vecS.\vecGammaNew)*(1.0-100.0*eps) < norm(vecS.\vecGammaLaunch)*(1.0+100.0*eps) );
 		alphaG = norm(vecS.\vecGammaNew) / norm(vecS.\vecGammaLaunch);
 		%
 		vecX = vecXAnchor + (qnj_matV * vecYNew) + (alphaG * vecXPerp);
