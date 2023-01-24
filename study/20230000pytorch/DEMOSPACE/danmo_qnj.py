@@ -101,6 +101,17 @@ record_matG = np.zeros(( sizeX, maxNumRecords ))
 record_rvcF = np.zeros(( 1, maxNumRecords ))
 numRecords = 0
 
+# Init QNJ.
+useQNJ = True
+maxSubspaceSize = maxNumRecords
+msg( 'useQNJ = ', useQNJ )
+msg( 'maxSubspaceSize = ', maxSubspaceSize )
+# Pre-alloc workspaces.
+matD = np.zeros(( sizeX, maxNumRecords ))
+matV = np.zeros(( sizeX, maxSubspaceSize ))
+
+
+
 # Main loop.
 doMainLoop = True
 while doMainLoop:
@@ -226,6 +237,14 @@ while doMainLoop:
 	if ( not doMainLoop ):
 		break
 	
+	# Prepare for next iteration.
+	# Record seed for posterity.
+	# This will almost certainly be modified if use a quasi-newton jump.
+	vecXSeed[:] = vecX
+	vecPSeed[:] = vecP
+	if ( not useQNJ ):
+		continue
+	
 	# Add information to records.
 	if ( numRecords == maxNumRecords ):
 		record_matX = np.roll( record_matX, 1 )
@@ -238,11 +257,22 @@ while doMainLoop:
 	record_matG[:,0] = superPt_vecG[:]
 	record_rvcF[0,0] = superPt_f
 	
-	# Prepare for next iteration.
-	# Record seed for posterity.
-	# This will almost certainly be modified if use a quasi-newton jump.
-	vecXSeed[:] = vecX
-	vecPSeed[:] = vecP
+	# Finally, QNJ!
+	if ( numRecords < 2 ):
+		continue
+	
+	# Generate basis.
+	# DRaburn 2023-01-24: This should be as good as anything.
+	vecXAnchor = best_vecX # Shallow copy / reference only / DO NOT MODIFY!
+	vecGAnchor = best_vecG # Shallow copy / reference only / DO NOT MODIFY!
+	fAnchor = best_f
+	matD[:,0:maxNumRecords] = record_matX[:,0:maxNumRecords] - np.reshape( vecXAnchor, (sizeX,1) ) # Autobroadcast.
+	
+	msg( 'HACK!' )
+	msg( 'WE NEED SOME EQUIVALENT TO UTORTHDROP HERE.' )
+	doMainLoop = False
+	break
+	
 	
 
 # Look at results.
