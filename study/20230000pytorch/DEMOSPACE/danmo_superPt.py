@@ -131,6 +131,9 @@ while doMainLoop:
 	elif ( superPtCount > 0 and superPtCount >= superPtLimit ):
 		msg( "IMPOSED STOP: superPtCount >= superPtLimit." )
 		doMainLoop = False
+	# Check superPt_vecX vs prev?
+	# Check vecXHarvest vs vecXSeed?
+	# Check superPt_f vs prev?
 	if ( not doMainLoop ):
 		break
 	
