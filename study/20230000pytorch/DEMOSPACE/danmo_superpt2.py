@@ -93,6 +93,14 @@ best_vecXHarvest = np.zeros(( sizeX ))
 best_vecPHarvest = np.zeros(( sizeX ))
 badCount = 0
 
+# Init records.
+maxNumRecords = 20
+msg( 'maxNumRecords = ', maxNumRecords )
+record_matX = np.zeros(( sizeX, maxNumRecords ))
+record_matG = np.zeros(( sizeX, maxNumRecords ))
+record_rvcF = np.zeros(( 1, maxNumRecords ))
+numRecords = 0
+
 # Main loop.
 doMainLoop = True
 while doMainLoop:
@@ -188,12 +196,14 @@ while doMainLoop:
 	
 	# Print progress log.
 	if ( newIsMinf ):
-		progLogSymbol = '.'
+		progLogSymbol = '*'
 	elif ( newIsBest ):
-		progLogSymbol = ' '
+		progLogSymbol = '.'
 	else:
 		progLogSymbol = 'X'
-	msg( f'  {fevalCount:7d}, {superPtCount:5d}, (X{badCount:4d});',
+	msg(
+	  f'  {fevalCount:7d}, {superPtCount:5d}:',
+	  f'  (X{badCount:4d}), {numRecords:3d};',
 	  f'  {norm( best_vecX - vecX0 ):8.2E};',
 	  f'  {norm( vecXHarvest - vecXSeed ):8.2E};',
 	  f'  {best_f:8.2E};',
@@ -216,18 +226,35 @@ while doMainLoop:
 	if ( not doMainLoop ):
 		break
 	
+	# Add information to records.
+	if ( numRecords == maxNumRecords ):
+		record_matX = np.roll( record_matX, 1 )
+		record_matG = np.roll( record_matG, 1 )
+		record_rvcF = np.roll( record_rvcF, 1 )
+		# Does this not require unnecessary mem alloc and copy?
+	else:
+		numRecords += 1
+	record_matX[:,0] = superPt_vecX[:]
+	record_matG[:,0] = superPt_vecG[:]
+	record_rvcF[0,0] = superPt_f
+	
 	# Prepare for next iteration.
 	# Record seed for posterity.
+	# This will almost certainly be modified if use a quasi-newton jump.
 	vecXSeed[:] = vecX
 	vecPSeed[:] = vecP
 	
 
 # Look at results.
-msg( f'  {fevalCount:7d}, {superPtCount:5d}, (X{badCount:4d});',
+progLogSymbol = 'F'
+msg(
+  f'  {fevalCount:7d}, {superPtCount:5d}:',
+  f'  (X{badCount:4d}), {numRecords:3d};',
   f'  {norm( superPt_vecX - vecX0 ):8.2E};',
   f'  {-1.0:8.1E};',
   f'  {superPt_f:8.2E};',
-  f'  {norm(superPt_vecG):8.2E}' )
+  f'  {norm(superPt_vecG):8.2E}',
+  progLogSymbol )
 vecXF = best_vecX
 vecGF = best_vecG
 fF = best_f
