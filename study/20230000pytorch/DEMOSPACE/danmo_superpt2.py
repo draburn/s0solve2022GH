@@ -7,7 +7,7 @@ from numpy.random import default_rng
 frame = inspect.currentframe()
 def msg( *arguments, **keywords ):
 	#print( f"[", __file__, ".", frame.f_lineno, "] ", *arguments, **keywords )
-	print( f"[{__file__}.{frame.f_lineno:05d}]", *arguments, **keywords )
+	print( f'[{__file__}.{frame.f_lineno:05d}]', *arguments, **keywords )
 def norm( v ):
 	return np.sqrt( v @ v )
 
@@ -48,26 +48,50 @@ vecP = np.zeros(( sizeX ))
 
 # Init superPt.
 numFevalPerSuperPt = 100
-superPtLimit = 1000
+superPtLimit = 100
 fTol = f0*1.0E-12
-gTol = norm(vecG0)*1.0E-12
+gTol = norm(vecG0)*1.0E-18
 msg( 'numFevalPerSuperPt = ', numFevalPerSuperPt)
 msg( 'superPtLimit = ', superPtLimit )
 msg( 'fTol = ', fTol)
 msg( 'gTol = ', gTol )
 running_fevalCount = 0
 running_fTot = 0.0
+running_fSqTot = 0.0
 running_xtgTot = 0.0
 running_vecGTot = np.zeros(( sizeX ))
 running_vecXTot = np.zeros(( sizeX ))
 superPtCount = 0
 vecXSeed = vecX.copy()
 vecPSeed = vecP.copy()
-vecXHarvest = np.zeros( sizeX )
-vecPHarvest = np.zeros( sizeX )
+vecXHarvest = np.zeros(( sizeX ))
+vecPHarvest = np.zeros(( sizeX ))
 superPt_f = 0.0
-superPt_vecG = np.zeros( sizeX )
-superPt_vecX = np.zeros( sizeX )
+superPt_fVar = 0.0
+superPt_vecG = np.zeros(( sizeX ))
+superPt_vecX = np.zeros(( sizeX ))
+
+# Init minf and best...
+#  "best" is superPt with min ||vecG|| sbjt f not too much larger than minf_f.
+coeff_best_minf = 1.0
+coeff_best_best = 1.0
+coeff_best_curr = 1.0
+msg( 'coeff_best_minf = ', coeff_best_minf )
+msg( 'coeff_best_best = ', coeff_best_best )
+msg( 'coeff_best_curr = ', coeff_best_curr )
+minf_present = False
+minf_f = 0.0
+minf_fVar = 0.0
+minf_vecG = np.zeros(( sizeX ))
+minf_vecX = np.zeros(( sizeX ))
+best_present = False
+best_f = 0.0
+best_fVar = 0.0
+best_vecG = np.zeros(( sizeX ))
+best_vecX = np.zeros(( sizeX ))
+best_vecXHarvest = np.zeros(( sizeX ))
+best_vecPHarvest = np.zeros(( sizeX ))
+badCount = 0
 
 # Main loop.
 doMainLoop = True
@@ -80,6 +104,7 @@ while doMainLoop:
 	xtg = vecX @ vecG
 	running_fevalCount += 1
 	running_fTot += f
+	running_fSqTot += f*f
 	running_xtgTot += xtg
 	running_vecGTot[:] += vecG[:]
 	running_vecXTot[:] += vecX[:]
@@ -90,10 +115,10 @@ while doMainLoop:
 	
 	# Check per-feval stop crit.
 	if ( f > fBail ):
-		msg( "IMPOSED STOP: f > fBail. This strongly indicates divergence." )
+		msg( 'IMPOSED STOP: f > fBail. This strongly indicates divergence.' )
 		doMainLoop = False
 	elif ( fevalLimit > 0 and fevalCount >= fevalLimit ):
-		msg( "IMPOSED STOP: fevalCount >= fevalLimit." )
+		msg( 'IMPOSED STOP: fevalCount >= fevalLimit.' )
 		doMainLoop = False
 	# Check elapsed time?.
 	# Check for "stop signal on disk"?
@@ -114,6 +139,13 @@ while doMainLoop:
 	superPt_fAvg = running_fTot / running_fevalCount
 	superPt_xtgAvg = running_xtgTot / running_fevalCount
 	superPt_f = superPt_fAvg - (( superPt_xtgAvg - ( superPt_vecX @ superPt_vecG ) )/2.0)
+	superPt_fSqVar = (running_fSqTot/running_fevalCount) - (superPt_fAvg**2)
+	if ( 0.0 < superPt_fSqVar ):
+		superPt_fVar = np.sqrt( superPt_fSqVar )
+	else:
+		superPt_fVar = 0.0
+	# Note that part of fVar is due to f actually varying along the path;
+	#  this is not desirable, but is probably acceptable.
 	#
 	running_fevalCount = 0
 	running_fTot = 0.0
@@ -121,28 +153,68 @@ while doMainLoop:
 	running_vecGTot[:] = 0.0
 	running_vecXTot[:] = 0.0
 	
+	# Do minf & best analysis.
+	newIsMinf = False # Unless...
+	newIsBest = False # Unless...
+	if ( not minf_present ):
+		newIsMinf = True
+		newIsBest = True
+	elif ( superPt_f < minf_f ):
+		newIsMinf = True
+		newIsBest = True
+	else:
+		fBestThresh = (  minf_f
+		  + ( coeff_best_minf * minf_fVar )
+		  + ( coeff_best_best * best_fVar )
+		  + ( coeff_best_curr * superPt_fVar )  )
+		if ( superPt_f <= fBestThresh and norm(superPt_vecG) < norm(best_vecG) ):
+			newIsBest = True
+	if ( newIsMinf ):
+		minf_f = superPt_f
+		minf_fVar = superPt_fVar
+		minf_vecX[:] = superPt_vecX[:]
+		minf_vecG[:] = superPt_vecG[:]
+		minf_present = True
+	if ( newIsBest ):
+		best_f = superPt_f
+		best_fVar = superPt_fVar
+		best_vecX[:] = superPt_vecX[:]
+		best_vecG[:] = superPt_vecG[:]
+		best_vecXHarvest[:] = vecXHarvest[:]
+		best_vecPHarvest[:] = vecPHarvest[:]
+		best_present = True
+	else:
+		badCount += 1
+	
+	# Print progress log.
+	if ( newIsMinf ):
+		progLogSymbol = '.'
+	elif ( newIsBest ):
+		progLogSymbol = ' '
+	else:
+		progLogSymbol = 'X'
+	msg( f'  {fevalCount:7d}, {superPtCount:5d}, (X{badCount:4d});',
+	  f'  {norm( best_vecX - vecX0 ):8.2E};',
+	  f'  {norm( vecXHarvest - vecXSeed ):8.2E};',
+	  f'  {best_f:8.2E};',
+	  f'  {norm(best_vecG):8.2E}',
+	  progLogSymbol )
+	
 	# Check superPt stop crit.
 	if ( norm(superPt_vecG) <= gTol ):
-		msg( "SUCCESS: norm(superPt_vecG) <= gTol." )
+		msg( 'SUCCESS: norm(superPt_vecG) <= gTol.' )
 		doMainLoop = False
 	elif ( superPt_f <= fTol ):
-		msg( "SUCCESS: superPt_f <= fTol." )
+		msg( 'SUCCESS: superPt_f <= fTol.' )
 		doMainLoop = False
 	elif ( superPtCount > 0 and superPtCount >= superPtLimit ):
-		msg( "IMPOSED STOP: superPtCount >= superPtLimit." )
+		msg( 'IMPOSED STOP: superPtCount >= superPtLimit.' )
 		doMainLoop = False
 	# Check superPt_vecX vs prev?
 	# Check vecXHarvest vs vecXSeed?
 	# Check superPt_f vs prev?
 	if ( not doMainLoop ):
 		break
-	
-	# Print progress log.
-	msg( f"  {fevalCount:7d}, {superPtCount:5d};",
-	  f"  {norm( superPt_vecX - vecX0 ):8.2E};",
-	  f"  {norm( vecXHarvest - vecXSeed ):8.2E};",
-	  f"  {superPt_f:8.2E};",
-	  f"  {norm(superPt_vecG):8.2E}" )
 	
 	# Prepare for next iteration.
 	# Record seed for posterity.
@@ -151,13 +223,15 @@ while doMainLoop:
 	
 
 # Look at results.
-msg( f"  {fevalCount:7d}, {superPtCount:5d};",
-  f"  {norm( superPt_vecX - vecX0 ):8.2E};",
-  f"  {norm( vecXHarvest - vecXSeed ):8.2E};",
-  f"  {superPt_f:8.2E};",
-  f"  {norm(superPt_vecG):8.2E}" )
-vecXF = vecX
-fF, vecGF = funcFG( vecXF )
+msg( f'  {fevalCount:7d}, {superPtCount:5d}, (X{badCount:4d});',
+  f'  {norm( superPt_vecX - vecX0 ):8.2E};',
+  f'  {-1.0:8.1E};',
+  f'  {superPt_f:8.2E};',
+  f'  {norm(superPt_vecG):8.2E}' )
+vecXF = best_vecX
+vecGF = best_vecG
+fF = best_f
+#fF, vecGF = funcFG( vecXF )
 msg( '||vecXF - vecX0|| = ', norm( vecXF - vecX0 ) )
 msg( '||vecXF - vecXCrit|| = ', norm( vecXF - vecXCrit ) )
 msg( 'fF = ', fF )
