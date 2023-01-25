@@ -8,6 +8,12 @@ frame = inspect.currentframe()
 def msg( *arguments, **keywords ):
 	#print( f"[", __file__, ".", frame.f_lineno, "] ", *arguments, **keywords )
 	print( f'[{__file__}.{frame.f_lineno:05d}]', *arguments, **keywords )
+def reldiff( a, b ):
+	sa = np.sum(np.abs(a))
+	sb = np.sum(np.abs(b))
+	if ( 0.0 == sa and 0.0 == sb ):
+		return 0.0
+	return ( np.sum(np.abs(a-b)) / ( sa + sb ) )
 
 # Init problem.
 rngSeed = 0
@@ -361,8 +367,13 @@ while doMainLoop:
 	vecPLaunch = best_vecPHarvest.copy()
 	vecT = matQ.T @ vecPLaunch
 	vecPPerp = vecPLaunch - ( matQ @ vecT )
+	assert linalg.norm( vecGammaLaunch ) > 0.0
 	coeffPG = ( vecGammaLaunch @ vecT ) / ( vecGammaLaunch @ vecGammaLaunch )
 	vecGammaPerp = vecT - ( coeffPG * vecGammaLaunch )
+	testDecomp = True
+	if ( testDecomp ):
+		assert reldiff( vecXLaunch, vecXAnchor + (matQ @ vecYLaunch) + vecXPerp ) < 1.0E-8
+		assert reldiff( vecPLaunch, (matQ @ ( (coeffPG*vecGammaLaunch) + vecGammaPerp )) + vecPPerp ) <= 1.0E-8
 	if ( coeffPG > 0.0 ):
 		coeffPG = 0.0
 	
@@ -379,6 +390,8 @@ while doMainLoop:
 	vecYNew = vecYLaunch + vecZ
 	vecGammaNew = vecGammaLaunch + ( matHMod @ vecZ )
 	fNew = fLaunch + ( vecZ @ vecGammaLaunch ) + (( vecZ @ vecGammaNew )/2.0)
+	assert fLaunch > 0.0
+	assert linalg.norm(vecGammaLaunch/vecS) > 0.0
 	alphaF = fNew / fLaunch
 	alphaG = linalg.norm( vecGammaNew / vecS ) / linalg.norm( vecGammaLaunch / vecS )
 	vecDelta = matQ @ vecZ
