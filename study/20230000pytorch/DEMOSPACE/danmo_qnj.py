@@ -27,7 +27,8 @@ rng = default_rng(rngSeed)
 matA = np.diag([ 1.0, 2.0, 3.0, 4.0, 5.0 ])
 matHCrit = np.zeros(( sizeX, sizeX ))
 matHCrit[:,:] = matA.T @ matA
-vecXCrit = rng.standard_normal(( sizeX ))
+#vecXCrit = rng.standard_normal(( sizeX ))
+vecXCrit = np.ones(( sizeX ))
 fCrit = 10.0
 #noiseX = 1.0E-6
 noiseX = 0.0
@@ -58,7 +59,7 @@ vecP = np.zeros(( sizeX ))
 numFevalPerSuperPt = 100
 superPtLimit = 1000
 fTol = f0*1.0E-12
-gTol = linalg.norm(vecG0)*1.0E-7
+gTol = linalg.norm(vecG0)*1.0E-10
 msg( 'numFevalPerSuperPt = ', numFevalPerSuperPt)
 msg( 'superPtLimit = ', superPtLimit )
 msg( 'fTol = ', fTol)
@@ -143,6 +144,7 @@ while doMainLoop:
 	# Updage SGD.
 	vecP[:] = ( momentumFactor * vecP[:] ) - ( learningRate * vecG[:] )
 	vecX[:] += vecP[:]
+	#print( 'vecX =\n', vecX )
 	
 	# Check per-feval stop crit.
 	if ( f > fBail ):

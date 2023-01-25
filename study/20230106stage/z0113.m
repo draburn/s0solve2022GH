@@ -62,6 +62,20 @@ while ( 1 )
 	[ f, vecG ] = funchFG( vecX );
 	fevalCount++;
 	%
+	xtg = vecX'*vecG;
+	running_fevalCount++;
+	running_fTot += f;
+	running_xtgTot += xtg;
+	running_vecGTot += vecG;
+	running_vecXTot += vecX;
+	running_fSqTot += f^2;
+	running_xtgSqTot += xtg^2;
+	running_vecGSqTot += vecG.^2;
+	running_vecXSqTot += vecX.^2;
+	%
+	vecP = ( prm.momentumFactor * vecP ) - ( prm.learningRate * vecG );
+	vecX += vecP;
+	%
 	if ( f > prm.fBail )
 		msg( __FILE__, __LINE__, "IMPOSED STOP: f > prm.fBail. This strongly indicates divergence." );
 		break;
@@ -78,20 +92,6 @@ while ( 1 )
 		endif
 		stopsig_lastTime = time();
 	endif
-	%
-	xtg = vecX'*vecG;
-	running_fevalCount++;
-	running_fTot += f;
-	running_xtgTot += xtg;
-	running_vecGTot += vecG;
-	running_vecXTot += vecX;
-	running_fSqTot += f^2;
-	running_xtgSqTot += xtg^2;
-	running_vecGSqTot += vecG.^2;
-	running_vecXSqTot += vecX.^2;
-	%
-	vecP = ( prm.momentumFactor * vecP ) - ( prm.learningRate * vecG );
-	vecX += vecP;
 	%
 	if ( running_fevalCount < prm.numFevalPerSuperPt )
 		continue
