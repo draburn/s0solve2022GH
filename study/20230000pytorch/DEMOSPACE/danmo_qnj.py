@@ -17,19 +17,20 @@ def reldiff( a, b ):
 
 # Init problem.
 rngSeed = 0
-sizeX = 50
+sizeX = 5
 sizeF = sizeX
 msg( 'rngSeed = ', rngSeed )
 msg( 'sizeX = ', sizeX )
 msg( 'sizeF = ', sizeF )
 rng = default_rng(rngSeed)
-matA = rng.standard_normal(( sizeF, sizeX ))
+#matA = rng.standard_normal(( sizeF, sizeX ))
+matA = np.diag([ 1.0, 2.0, 3.0, 4.0, 5.0 ])
 matHCrit = np.zeros(( sizeX, sizeX ))
 matHCrit[:,:] = matA.T @ matA
 vecXCrit = rng.standard_normal(( sizeX ))
 fCrit = 10.0
-noiseX = 1.0E-6
-#noiseX = 0.0
+#noiseX = 1.0E-6
+noiseX = 0.0
 def funcFG( x ):
 	#d = x - vecXCrit
 	d = x - vecXCrit + noiseX*rng.standard_normal(( sizeX ))
@@ -44,7 +45,7 @@ msg( '||vecG0|| = ', linalg.norm(vecG0) )
 # Init SGD solver.
 fBail = f0 * 1E8
 fevalLimit = 100000
-learningRate = 0.001
+learningRate = 0.01
 momentumFactor = 0.9
 msg( 'fevalLimit = ', fevalLimit )
 msg( 'learningRate = ', learningRate )
@@ -110,9 +111,9 @@ numRecords = 0
 
 # Init QNJ.
 useQNJ = True # Unless...
-#useQNJ = False
+useQNJ = False
 maxSubspaceSize = maxNumRecords
-qnj_dropThresh = 0.05
+qnj_dropThresh = 0.1
 msg( 'useQNJ = ', useQNJ )
 msg( 'maxSubspaceSize = ', maxSubspaceSize )
 msg( 'qnj_dropThresh = ', qnj_dropThresh )
@@ -217,7 +218,8 @@ while doMainLoop:
 		badCount += 1
 	
 	# Print progress log.
-	if ( 0 == superPtCount % 10 ):
+	#if ( 0 == superPtCount % 10 ):
+	if ( 0 == superPtCount % 1 ):
 		if ( newIsMinf ):
 			progLogSymbol = '*'
 		elif ( newIsBest ):
@@ -255,7 +257,9 @@ while doMainLoop:
 	sizeK = 0
 	vecXSeed[:] = vecX
 	vecPSeed[:] = vecP
-	if ( not useQNJ ):
+	
+	forceBasisGen = True # For comparison to Octave code.
+	if ( (not useQNJ) and (not forceBasisGen) ):
 		continue
 	
 	# Add information to records.
@@ -328,6 +332,8 @@ while doMainLoop:
 	#msg( 'Q*R =\n', matQ @ matR )
 	matGamma = matQ.T @ matG
 	vecGammaAnchor = matQ.T @ vecGAnchor
+	if ( not useQNJ ):
+		continue
 	
 	# Generate fit.
 	# 2023-02-24: This is simplisic but reasonable.

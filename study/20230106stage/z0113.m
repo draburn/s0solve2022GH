@@ -4,7 +4,8 @@ if ( stopsignalpresent() )
 	return;
 endif
 stopsig_lastTime = time();
-[ funchFG, vecX0, prm, initDat ] = z__init0113();
+%[ funchFG, vecX0, prm, initDat ] = z__init0113();
+[ funchFG, vecX0, prm, initDat ] = z__init0125danmoqnjpy();
 sizeX = size(vecX0,1);
 %
 vecX = vecX0;
@@ -205,6 +206,23 @@ while ( 1 )
 	vecXSeed = vecX; % store, for reference.
 	vecPSeed = vecP;
 	qnj_matV = [];
+	
+	doEarlyBasisGeneration = true;
+	if (doEarlyBasisGeneration)
+		% Doing this to provide comparision to python code basis generation.
+		vecXAnchor = best_vecX;
+		vecGAnchor = best_vecG;
+		fAnchor = best_f;
+		matD = record_matX - vecXAnchor;
+		[ qnj_matV, rvecBasisDrop ] = utorthdrop( matD, prm.qnj_basisDropThresh );
+		if ( size(qnj_matV,2) < 1 )
+			continue;
+		endif
+		matY = triu( qnj_matV' * matD(:,~rvecBasisDrop) );
+		matGamma = qnj_matV' * record_matG(:,~rvecBasisDrop);
+		vecGammaAnchor = qnj_matV' * vecGAnchor;
+	endif
+	
 	%
 	if ( ~prm.useQNJ )
 		continue;
@@ -222,7 +240,8 @@ while ( 1 )
 		continue;
 		% I suppose this means that, if the grad steps continue to be bad, we'll never attempt QNJ. Fine.
 	endif
-			
+	
+	if (~doEarlyBasisGeneration)
 	% Generate basis.
 	% 2023-01-13: I know of no better way to do this, quality-wise.
 	vecXAnchor = best_vecX;
@@ -236,6 +255,8 @@ while ( 1 )
 	matY = triu( qnj_matV' * matD(:,~rvecBasisDrop) );
 	matGamma = qnj_matV' * record_matG(:,~rvecBasisDrop);
 	vecGammaAnchor = qnj_matV' * vecGAnchor;
+	endif
+	
 	%
 	% Generate fit.
 	% 2023-01-13: This is a bit simplistic but reasonable.
