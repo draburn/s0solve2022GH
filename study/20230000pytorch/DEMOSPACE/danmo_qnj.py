@@ -104,6 +104,7 @@ numRecords = 0
 
 # Init QNJ.
 useQNJ = True
+#useQNJ = False
 maxSubspaceSize = maxNumRecords
 qnj_dropThresh = 0.1
 msg( 'useQNJ = ', useQNJ )
@@ -328,8 +329,8 @@ while doMainLoop:
 	matA = linalg.solve( matR.T, (matGamma - np.reshape( vecGammaAnchor, (sizeK,1) ) ).T )
 	matHFit = ( matA.T + matA )/2.0
 	#
-	vecGammaTrue = matQ.T @ matHCrit @ ( vecXAnchor - vecXCrit )
-	matHTrue = matQ.T @ matHCrit @ matQ
+	#vecGammaTrue = matQ.T @ matHCrit @ ( vecXAnchor - vecXCrit )
+	#matHTrue = matQ.T @ matHCrit @ matQ
 	#msg( 'vecGammaFit = ', vecGammaFit )
 	#msg( 'vecGammaTrue = ', vecGammaTrue )
 	#msg( 'matHFit =\n', matHFit )
@@ -338,7 +339,55 @@ while doMainLoop:
 	#	msg( 'ERROR: fit is not true.' )
 	#	doMainLoop = False
 	#	break
-		
+	
+	#vecDelta = matQ @ linalg.solve( matHFit, -vecGammaFit )
+	#vecX[:] = vecXAnchor + vecDelta
+	#vecXSeed[:] = vecX
+	#vecPSeed[:] = vecP
+	#continue
+	
+	# Perturp Hessian so that it is positive definite (and fMin >= 0.0?)
+	# TODO.
+	# Placeholder: don't perturb.
+	matHMod = matHFit.copy()
+	
+	# Decompose "launch".
+	vecXLaunch = best_vecXHarvest.copy()
+	vecDLaunch = vecXLaunch - vecXAnchor
+	vecYLaunch = matQ.T @ vecDLaunch
+	vecXPerp = vecDLaunch - ( matQ @ vecYLaunch )
+	vecGammaLaunch = vecGammaFit + ( matHMod @ vecYLaunch )
+	fLaunch = fFit + ( vecYLaunch @ vecGammaFit ) + (( vecYLaunch @ vecGammaLaunch )/2.0)
+	vecPLaunch = best_vecPHarvest.copy()
+	vecT = matQ.T @ vecPLaunch
+	vecPPerp = vecPLaunch - ( matQ @ vecT )
+	coeffPG = ( vecGammaLaunch @ vecT ) / ( vecGammaLaunch @ vecGammaLaunch )
+	vecGammaPerp = vecT - ( coeffPG * vecGammaLaunch )
+	if ( coeffPG > 0.0 ):
+		coeffPG = 0.0
+	
+	# Update scaling and trust region.
+	# TODO.
+	vecS = np.ones(( sizeK ))
+	
+	# Calculate step.
+	# TODO.
+	# Placeholder: take a Newton step without any trust region.
+	vecZ = linalg.solve( matHMod, -vecGammaLaunch )
+	
+	# Generate new seed.
+	vecYNew = vecYLaunch + vecZ
+	vecGammaNew = vecGammaLaunch + ( matHMod @ vecZ )
+	fNew = fLaunch + ( vecZ @ vecGammaLaunch ) + (( vecZ @ vecGammaNew )/2.0)
+	alphaF = fNew / fLaunch
+	alphaG = linalg.norm( vecGammaNew / vecS ) / linalg.norm( vecGammaLaunch / vecS )
+	vecDelta = matQ @ vecZ
+	#
+	vecX = vecXAnchor + ( matQ @ vecYNew ) + ( alphaG * vecXPerp )
+	vecP = (matQ @ ( (coeffPG*vecGammaNew) + (alphaG*vecGammaPerp) )) + (alphaF*vecPPerp)
+	
+	vecXSeed[:] = vecX
+	vecPSeed[:] = vecP
 	
 	#msg( 'HALT!' )
 	#doMainLoop = False
