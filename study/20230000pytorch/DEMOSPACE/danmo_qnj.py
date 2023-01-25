@@ -58,7 +58,8 @@ vecP = np.zeros(( sizeX ))
 
 # Init superPt.
 numFevalPerSuperPt = 100
-superPtLimit = 1000
+#superPtLimit = 1000
+superPtLimit = 7
 #fTol = f0*1.0E-12
 #gTol = linalg.norm(vecG0)*1.0E-10
 fTol = 1.0E-6
@@ -325,7 +326,7 @@ while doMainLoop:
 	###matQ1, matR1 = linalg.qr( matD[:,0:maxNumRecords], mode='economic' )
 	matQ1, matR1 = linalg.qr( matD, mode='economic' )
 	#msg( 'matQ1 =\n', matQ1 )
-	#msg( 'matR1 =\n', matR1 )
+	msg( 'matR1 =\n', matR1 )
 	rvcKeep = (1.0+qnj_dropThresh) * np.abs(np.diag(matR1)) > qnj_dropThresh * np.sum(np.abs(matR1),0)
 	matD = matD[:,rvcKeep]
 	matG = matG[:,rvcKeep]
