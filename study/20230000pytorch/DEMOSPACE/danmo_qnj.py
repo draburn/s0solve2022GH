@@ -23,6 +23,7 @@ matHCrit[:,:] = matA.T @ matA
 vecXCrit = rng.standard_normal(( sizeX ))
 fCrit = 10.0
 noiseX = 1.0E-6
+#noiseX = 0.0
 def funcFG( x ):
 	#d = x - vecXCrit
 	d = x - vecXCrit + noiseX*rng.standard_normal(( sizeX ))
@@ -243,6 +244,7 @@ while doMainLoop:
 	# Prepare for next iteration.
 	# Record seed for posterity.
 	# This will almost certainly be modified if use a quasi-newton jump.
+	sizeK = 0
 	vecXSeed[:] = vecX
 	vecPSeed[:] = vecP
 	if ( not useQNJ ):
@@ -267,13 +269,16 @@ while doMainLoop:
 		continue
 	
 	# Generate basis.
-	# DRaburn 2023-01-24: This should be as good as anything.
+	# DRaburn 2023-01-24: This is a crude two-pass QR method,
+	#  involving an unfortunate cap to the number of records before the QR calculation.
+	# POITROME
 	vecXAnchor = best_vecX # Shallow copy / reference only / DO NOT MODIFY!
 	vecGAnchor = best_vecG # Shallow copy / reference only / DO NOT MODIFY!
 	fAnchor = best_f
 	###matD[:,0:maxNumRecords] = record_matX[:,0:maxNumRecords] - np.reshape( vecXAnchor, (sizeX,1) ) # Autobroadcast.
 	#msg( 'numRecords = ', numRecords )
 	matD = record_matX[:,0:numRecords].copy() - np.reshape( vecXAnchor, (sizeX,1) ) # Autobroadcast.
+	matG = record_matG[:,0:numRecords].copy()
 	#msg( 'matD =\n', matD )
 	# We want an equivalent of my Octave "utorthdrop":
 	#  construct a basis upper-triangularly, dropping any vectors that are below some threshold in orthogonality.
@@ -284,12 +289,15 @@ while doMainLoop:
 	rvcDMag = np.sum(matD**2,0)
 	#msg( 'rvcDMag = ', rvcDMag )
 	rvcKeepBCMag = rvcDMag > ( 1.0E-8 * np.max(rvcDMag) )
+	###rvcKeepBCMag = rvcDMag > 0.0
 	matD = matD[:,rvcKeepBCMag]
+	matG = matG[:,rvcKeepBCMag]
 	#msg( 'matD =\n', matD )
 	if ( 0 == matD.shape[1] ):
 		continue
 	if ( matD.shape[1] > sizeX ):
 		matD = matD[:,0:sizeX]
+		matG = matG[:,0:sizeX]
 		# The (crude) two-pass QR basis construction won't work without this.
 	# Note consider using overwrite_a = True with qr().
 	###matQ1, matR1 = linalg.qr( matD[:,0:maxNumRecords], mode='economic' )
@@ -297,15 +305,40 @@ while doMainLoop:
 	#msg( 'matQ1 =\n', matQ1 )
 	#msg( 'matR1 =\n', matR1 )
 	rvcKeep = (1.0+qnj_dropThresh) * np.abs(np.diag(matR1)) > qnj_dropThresh * np.sum(np.abs(matR1),0)
+	matD = matD[:,rvcKeep]
+	matG = matG[:,rvcKeep]
 	#msg( 'rvcKeep = ', rvcKeep )
-	#msg( 'matD[...] =\n', matD[:,rvcKeep] )
-	matQ, matR = linalg.qr( matD[:,rvcKeep], mode='economic' )
+	matQ, matR = linalg.qr( matD, mode='economic' )
 	sizeK = matQ.shape[1]
 	#msg( 'matQ =\n', matQ )
 	#msg( 'matR =\n', matR )
 	#msg( 'sizeK = ', sizeK )
 	if ( 0 == sizeK ):
 		continue
+	#msg( 'D =\n', matD )
+	#msg( 'Q*R =\n', matQ @ matR )
+	matGamma = matQ.T @ matG
+	vecGammaAnchor = matQ.T @ vecGAnchor
+	
+	# Generate fit.
+	# 2023-02-24: This is simplisic but reasonable.
+	#  However, see "hessfit.m".
+	vecGammaFit = vecGammaAnchor
+	fFit = fAnchor
+	matA = linalg.solve( matR.T, (matGamma - np.reshape( vecGammaAnchor, (sizeK,1) ) ).T )
+	matHFit = ( matA.T + matA )/2.0
+	#
+	vecGammaTrue = matQ.T @ matHCrit @ ( vecXAnchor - vecXCrit )
+	matHTrue = matQ.T @ matHCrit @ matQ
+	#msg( 'vecGammaFit = ', vecGammaFit )
+	#msg( 'vecGammaTrue = ', vecGammaTrue )
+	#msg( 'matHFit =\n', matHFit )
+	#msg( 'matHTrue = \n', matHTrue )
+	#if ( np.sum(np.abs(matHFit-matHTrue)) >= 1.0e-8*( np.sum(np.abs(matHFit)) + np.sum(np.abs(matHTrue)) ) ):
+	#	msg( 'ERROR: fit is not true.' )
+	#	doMainLoop = False
+	#	break
+		
 	
 	#msg( 'HALT!' )
 	#doMainLoop = False
