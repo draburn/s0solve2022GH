@@ -1,19 +1,17 @@
 import inspect
 import numpy as np
 from numpy.random import default_rng
-#from scipy import linalg
+from scipy import linalg
 
 # Init logging.
 frame = inspect.currentframe()
 def msg( *arguments, **keywords ):
 	#print( f"[", __file__, ".", frame.f_lineno, "] ", *arguments, **keywords )
 	print( f'[{__file__}.{frame.f_lineno:05d}]', *arguments, **keywords )
-def norm( v ):
-	return np.sqrt( v @ v )
 
 # Init problem.
 rngSeed = 0
-sizeX = 3
+sizeX = 5
 sizeF = sizeX
 msg( 'rngSeed = ', rngSeed )
 msg( 'sizeX = ', sizeX )
@@ -24,15 +22,17 @@ matHCrit = np.zeros(( sizeX, sizeX ))
 matHCrit[:,:] = matA.T @ matA
 vecXCrit = rng.standard_normal(( sizeX ))
 fCrit = 10.0
+noiseX = 1.0E-6
 def funcFG( x ):
-	d = x - vecXCrit
+	#d = x - vecXCrit
+	d = x - vecXCrit + noiseX*rng.standard_normal(( sizeX ))
 	g = matHCrit @ d
 	f = fCrit + (( d @ g )/2.0)
 	return ( f, g )
 vecX0 = np.zeros(( sizeX ))
 f0, vecG0 = funcFG( vecX0 )
 msg( 'f0 = ', f0 )
-msg( '||vecG0|| = ', norm(vecG0) )
+msg( '||vecG0|| = ', linalg.norm(vecG0) )
 
 # Init SGD solver.
 fBail = f0 * 1E8
@@ -50,7 +50,7 @@ vecP = np.zeros(( sizeX ))
 numFevalPerSuperPt = 100
 superPtLimit = 100
 fTol = f0*1.0E-12
-gTol = norm(vecG0)*1.0E-18
+gTol = linalg.norm(vecG0)*1.0E-7
 msg( 'numFevalPerSuperPt = ', numFevalPerSuperPt)
 msg( 'superPtLimit = ', superPtLimit )
 msg( 'fTol = ', fTol)
@@ -104,11 +104,14 @@ numRecords = 0
 # Init QNJ.
 useQNJ = True
 maxSubspaceSize = maxNumRecords
+qnj_dropThresh = 0.1
 msg( 'useQNJ = ', useQNJ )
 msg( 'maxSubspaceSize = ', maxSubspaceSize )
+msg( 'qnj_dropThresh = ', qnj_dropThresh )
 # Pre-alloc workspaces.
-matD = np.zeros(( sizeX, maxNumRecords ))
-matV = np.zeros(( sizeX, maxSubspaceSize ))
+###matD = np.zeros(( sizeX, maxNumRecords ))
+###matV = np.zeros(( sizeX, maxSubspaceSize ))
+sizeK = 0
 
 
 
@@ -186,7 +189,7 @@ while doMainLoop:
 		  + ( coeff_best_minf * minf_fVar )
 		  + ( coeff_best_best * best_fVar )
 		  + ( coeff_best_curr * superPt_fVar )  )
-		if ( superPt_f <= fBestThresh and norm(superPt_vecG) < norm(best_vecG) ):
+		if ( superPt_f <= fBestThresh and linalg.norm(superPt_vecG) < linalg.norm(best_vecG) ):
 			newIsBest = True
 	if ( newIsMinf ):
 		minf_f = superPt_f
@@ -214,16 +217,16 @@ while doMainLoop:
 		progLogSymbol = 'X'
 	msg(
 	  f'  {fevalCount:7d}, {superPtCount:5d}:',
-	  f'  (X{badCount:4d}), {numRecords:3d};',
-	  f'  {norm( best_vecX - vecX0 ):8.2E};',
-	  f'  {norm( vecXHarvest - vecXSeed ):8.2E};',
+	  f'  (X{badCount:4d}), {numRecords:3d}, {sizeK:2d};',
+	  f'  {linalg.norm( best_vecX - vecX0 ):8.2E};',
+	  f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E};',
 	  f'  {best_f:8.2E};',
-	  f'  {norm(best_vecG):8.2E}',
+	  f'  {linalg.norm(best_vecG):8.2E}',
 	  progLogSymbol )
 	
 	# Check superPt stop crit.
-	if ( norm(superPt_vecG) <= gTol ):
-		msg( 'SUCCESS: norm(superPt_vecG) <= gTol.' )
+	if ( linalg.norm(superPt_vecG) <= gTol ):
+		msg( 'SUCCESS: linalg.norm(superPt_vecG) <= gTol.' )
 		doMainLoop = False
 	elif ( superPt_f <= fTol ):
 		msg( 'SUCCESS: superPt_f <= fTol.' )
@@ -246,16 +249,18 @@ while doMainLoop:
 		continue
 	
 	# Add information to records.
-	if ( numRecords == maxNumRecords ):
-		record_matX = np.roll( record_matX, 1 )
-		record_matG = np.roll( record_matG, 1 )
-		record_rvcF = np.roll( record_rvcF, 1 )
-		# Does this not require unnecessary mem alloc and copy?
-	else:
+	# Always rolling is wasteful. POITROME.
+	record_matX = np.roll( record_matX, 1 )
+	record_matG = np.roll( record_matG, 1 )
+	record_rvcF = np.roll( record_rvcF, 1 )
+	# Does this not require unnecessary mem alloc and copy?
+	if ( numRecords < maxNumRecords ):
 		numRecords += 1
 	record_matX[:,0] = superPt_vecX[:]
 	record_matG[:,0] = superPt_vecG[:]
 	record_rvcF[0,0] = superPt_f
+	
+	#msg( 'record_matX =\n', record_matX )
 	
 	# Finally, QNJ!
 	if ( numRecords < 2 ):
@@ -266,12 +271,45 @@ while doMainLoop:
 	vecXAnchor = best_vecX # Shallow copy / reference only / DO NOT MODIFY!
 	vecGAnchor = best_vecG # Shallow copy / reference only / DO NOT MODIFY!
 	fAnchor = best_f
-	matD[:,0:maxNumRecords] = record_matX[:,0:maxNumRecords] - np.reshape( vecXAnchor, (sizeX,1) ) # Autobroadcast.
+	###matD[:,0:maxNumRecords] = record_matX[:,0:maxNumRecords] - np.reshape( vecXAnchor, (sizeX,1) ) # Autobroadcast.
+	#msg( 'numRecords = ', numRecords )
+	matD = record_matX[:,0:numRecords].copy() - np.reshape( vecXAnchor, (sizeX,1) ) # Autobroadcast.
+	#msg( 'matD =\n', matD )
+	# We want an equivalent of my Octave "utorthdrop":
+	#  construct a basis upper-triangularly, dropping any vectors that are below some threshold in orthogonality.
+	# I'm going with using linalg.qr twice();
+	#  alternatives are surely possible, but this is easy to implement and may be about as fast as anything.
+	# But, first, drop any vectors that are too small,
+	#  especially the anchor.
+	rvcDMag = np.sum(matD**2,0)
+	#msg( 'rvcDMag = ', rvcDMag )
+	rvcKeepBCMag = rvcDMag > ( 1.0E-8 * np.max(rvcDMag) )
+	matD = matD[:,rvcKeepBCMag]
+	#msg( 'matD =\n', matD )
+	if ( 0 == matD.shape[1] ):
+		continue
+	if ( matD.shape[1] > sizeX ):
+		matD = matD[:,0:sizeX]
+		# The (crude) two-pass QR basis construction won't work without this.
+	# Note consider using overwrite_a = True with qr().
+	###matQ1, matR1 = linalg.qr( matD[:,0:maxNumRecords], mode='economic' )
+	matQ1, matR1 = linalg.qr( matD, mode='economic' )
+	#msg( 'matQ1 =\n', matQ1 )
+	#msg( 'matR1 =\n', matR1 )
+	rvcKeep = (1.0+qnj_dropThresh) * np.abs(np.diag(matR1)) > qnj_dropThresh * np.sum(np.abs(matR1),0)
+	#msg( 'rvcKeep = ', rvcKeep )
+	#msg( 'matD[...] =\n', matD[:,rvcKeep] )
+	matQ, matR = linalg.qr( matD[:,rvcKeep], mode='economic' )
+	sizeK = matQ.shape[1]
+	#msg( 'matQ =\n', matQ )
+	#msg( 'matR =\n', matR )
+	#msg( 'sizeK = ', sizeK )
+	if ( 0 == sizeK ):
+		continue
 	
-	msg( 'HACK!' )
-	msg( 'WE NEED SOME EQUIVALENT TO UTORTHDROP HERE.' )
-	doMainLoop = False
-	break
+	#msg( 'HALT!' )
+	#doMainLoop = False
+	#break
 	
 	
 
@@ -279,18 +317,18 @@ while doMainLoop:
 progLogSymbol = 'F'
 msg(
   f'  {fevalCount:7d}, {superPtCount:5d}:',
-  f'  (X{badCount:4d}), {numRecords:3d};',
-  f'  {norm( superPt_vecX - vecX0 ):8.2E};',
+  f'  (X{badCount:4d}), {numRecords:3d}, {sizeK:2d};',
+  f'  {linalg.norm( superPt_vecX - vecX0 ):8.2E};',
   f'  {-1.0:8.1E};',
   f'  {superPt_f:8.2E};',
-  f'  {norm(superPt_vecG):8.2E}',
+  f'  {linalg.norm(superPt_vecG):8.2E}',
   progLogSymbol )
 vecXF = best_vecX
 vecGF = best_vecG
 fF = best_f
 #fF, vecGF = funcFG( vecXF )
-msg( '||vecXF - vecX0|| = ', norm( vecXF - vecX0 ) )
-msg( '||vecXF - vecXCrit|| = ', norm( vecXF - vecXCrit ) )
+msg( '||vecXF - vecX0|| = ', linalg.norm( vecXF - vecX0 ) )
+msg( '||vecXF - vecXCrit|| = ', linalg.norm( vecXF - vecXCrit ) )
 msg( 'fF = ', fF )
 msg( 'fF - fCrit = ', fF - fCrit )
-msg( '||vecGF|| = ', norm(vecGF) )
+msg( '||vecGF|| = ', linalg.norm(vecGF) )
