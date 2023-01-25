@@ -214,7 +214,9 @@ while ( 1 )
 		vecGAnchor = best_vecG;
 		fAnchor = best_f;
 		matD = record_matX - vecXAnchor;
+		%record_matG
 		[ qnj_matV, rvecBasisDrop ] = utorthdrop( matD, prm.qnj_basisDropThresh );
+		%qnj_matV
 		if ( size(qnj_matV,2) < 1 )
 			continue;
 		endif

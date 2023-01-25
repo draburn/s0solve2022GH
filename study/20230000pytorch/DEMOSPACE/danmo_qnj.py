@@ -293,7 +293,11 @@ while doMainLoop:
 	#msg( 'numRecords = ', numRecords )
 	matD = record_matX[:,0:numRecords].copy() - np.reshape( vecXAnchor, (sizeX,1) ) # Autobroadcast.
 	matG = record_matG[:,0:numRecords].copy()
+	#msg( 'vecXAnchor = ', vecXAnchor )
+	#msg( 'vecGAnchor = ', vecGAnchor )
+	#msg( 'fAnchor = ', fAnchor )
 	#msg( 'matD =\n', matD )
+	#msg( 'matG =\n', matG )
 	# We want an equivalent of my Octave "utorthdrop":
 	#  construct a basis upper-triangularly, dropping any vectors that are below some threshold in orthogonality.
 	# I'm going with using linalg.qr twice();
@@ -302,8 +306,8 @@ while doMainLoop:
 	#  especially the anchor.
 	rvcDMag = np.sum(matD**2,0)
 	#msg( 'rvcDMag = ', rvcDMag )
-	rvcKeepBCMag = rvcDMag > ( 1.0E-8 * np.max(rvcDMag) )
-	###rvcKeepBCMag = rvcDMag > 0.0
+	###rvcKeepBCMag = rvcDMag > ( 1.0E-8 * np.max(rvcDMag) ) # Pretty sure this is a bad idea.
+	rvcKeepBCMag = rvcDMag > 0.0 # Do this to avoid issues with qr().
 	matD = matD[:,rvcKeepBCMag]
 	matG = matG[:,rvcKeepBCMag]
 	#msg( 'matD =\n', matD )
