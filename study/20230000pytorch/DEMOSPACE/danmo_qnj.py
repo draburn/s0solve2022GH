@@ -17,7 +17,7 @@ def reldiff( a, b ):
 
 # Init problem.
 rngSeed = 0
-sizeX = 5
+sizeX = 50
 sizeF = sizeX
 msg( 'rngSeed = ', rngSeed )
 msg( 'sizeX = ', sizeX )
@@ -44,7 +44,7 @@ msg( '||vecG0|| = ', linalg.norm(vecG0) )
 # Init SGD solver.
 fBail = f0 * 1E8
 fevalLimit = 100000
-learningRate = 0.01
+learningRate = 0.001
 momentumFactor = 0.9
 msg( 'fevalLimit = ', fevalLimit )
 msg( 'learningRate = ', learningRate )
@@ -55,7 +55,7 @@ vecP = np.zeros(( sizeX ))
 
 # Init superPt.
 numFevalPerSuperPt = 100
-superPtLimit = 100
+superPtLimit = 1000
 fTol = f0*1.0E-12
 gTol = linalg.norm(vecG0)*1.0E-7
 msg( 'numFevalPerSuperPt = ', numFevalPerSuperPt)
@@ -109,10 +109,10 @@ record_rvcF = np.zeros(( 1, maxNumRecords ))
 numRecords = 0
 
 # Init QNJ.
-useQNJ = True
+useQNJ = True # Unless...
 #useQNJ = False
 maxSubspaceSize = maxNumRecords
-qnj_dropThresh = 0.1
+qnj_dropThresh = 0.05
 msg( 'useQNJ = ', useQNJ )
 msg( 'maxSubspaceSize = ', maxSubspaceSize )
 msg( 'qnj_dropThresh = ', qnj_dropThresh )
@@ -217,20 +217,21 @@ while doMainLoop:
 		badCount += 1
 	
 	# Print progress log.
-	if ( newIsMinf ):
-		progLogSymbol = '*'
-	elif ( newIsBest ):
-		progLogSymbol = '.'
-	else:
-		progLogSymbol = 'X'
-	msg(
-	  f'  {fevalCount:7d}, {superPtCount:5d}:',
-	  f'  (X{badCount:4d}), {numRecords:3d}, {sizeK:2d};',
-	  f'  {linalg.norm( best_vecX - vecX0 ):8.2E};',
-	  f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E};',
-	  f'  {best_f:8.2E};',
-	  f'  {linalg.norm(best_vecG):8.2E}',
-	  progLogSymbol )
+	if ( 0 == superPtCount % 10 ):
+		if ( newIsMinf ):
+			progLogSymbol = '*'
+		elif ( newIsBest ):
+			progLogSymbol = '.'
+		else:
+			progLogSymbol = 'X'
+		msg(
+		  f'  {fevalCount:7d}, {superPtCount:5d}:',
+		  f'  (X{badCount:4d}), {numRecords:3d}, {sizeK:2d};',
+		  f'  {linalg.norm( best_vecX - vecX0 ):8.2E};',
+		  f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E};',
+		  f'  {best_f:8.2E};',
+		  f'  {linalg.norm(best_vecG):8.2E}',
+		  progLogSymbol )
 	
 	# Check superPt stop crit.
 	if ( linalg.norm(superPt_vecG) <= gTol ):
@@ -303,6 +304,7 @@ while doMainLoop:
 	if ( 0 == matD.shape[1] ):
 		continue
 	if ( matD.shape[1] > sizeX ):
+		msg( f'Reducing potential size from {matD.shape[1]} to {sizeX}. Ouch!' )
 		matD = matD[:,0:sizeX]
 		matG = matG[:,0:sizeX]
 		# The (crude) two-pass QR basis construction won't work without this.
