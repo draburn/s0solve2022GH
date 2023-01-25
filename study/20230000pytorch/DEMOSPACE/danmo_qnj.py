@@ -17,14 +17,14 @@ def reldiff( a, b ):
 
 # Init problem.
 rngSeed = 0
-sizeX = 5
+sizeX = 50
 sizeF = sizeX
 msg( 'rngSeed = ', rngSeed )
 msg( 'sizeX = ', sizeX )
 msg( 'sizeF = ', sizeF )
 rng = default_rng(rngSeed)
 #matA = rng.standard_normal(( sizeF, sizeX ))
-matA = np.diag([ 1.0, 2.0, 3.0, 4.0, 5.0 ])
+matA = np.diag(np.linspace(1.0,sizeX,sizeX))
 matHCrit = np.zeros(( sizeX, sizeX ))
 matHCrit[:,:] = matA.T @ matA
 #vecXCrit = rng.standard_normal(( sizeX ))
@@ -47,6 +47,7 @@ msg( '||vecG0|| = ', linalg.norm(vecG0) )
 fBail = f0 * 1E8
 fevalLimit = 100000
 learningRate = 0.01
+learningRate = 0.001
 momentumFactor = 0.9
 msg( 'fevalLimit = ', fevalLimit )
 msg( 'learningRate = ', learningRate )
@@ -58,8 +59,10 @@ vecP = np.zeros(( sizeX ))
 # Init superPt.
 numFevalPerSuperPt = 100
 superPtLimit = 1000
-fTol = f0*1.0E-12
-gTol = linalg.norm(vecG0)*1.0E-10
+#fTol = f0*1.0E-12
+#gTol = linalg.norm(vecG0)*1.0E-10
+fTol = 1.0E-6
+gTol = 1.0E-6
 msg( 'numFevalPerSuperPt = ', numFevalPerSuperPt)
 msg( 'superPtLimit = ', superPtLimit )
 msg( 'fTol = ', fTol)

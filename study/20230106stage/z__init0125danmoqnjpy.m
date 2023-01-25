@@ -3,7 +3,7 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	datOut.prngstates = setprngstates(0);
 	%%%datOut.prngstates = setprngstates();
 	%
-	sizeX = 5
+	sizeX = 50
 	datOut.sizeX = sizeX;
 	%
 	sizeL = sizeX
@@ -57,12 +57,15 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	%
 	solverPrm.learningRate = 0.1; % Unless...
 	solverPrm.learningRate = 0.01; % Overwrite?
+	solverPrm.learningRate = 0.001;
 	solverPrm.momentumFactor = 0.9;
 	%
 	solverPrm.numFevalPerSuperPt = numStudyPts;
 	solverPrm.xTol = (eps^0.6)*norm(vecX0) + (eps^0.8)*fAvg/(norm(vecGAvg)+gVar);
-	solverPrm.fTol = (eps^0.4)*fVar + (eps^0.6)*fAvg;
-	solverPrm.gTol = (eps^0.4)*gVar + (eps^0.6)*norm(vecGAvg);
+	%solverPrm.fTol = (eps^0.4)*fVar + (eps^0.6)*fAvg;
+	%solverPrm.gTol = (eps^0.4)*gVar + (eps^0.6)*norm(vecGAvg);
+	solverPrm.fTol = 1.0E-6;
+	solverPrm.gTol = 1.0E-6
 	solverPrm.fBail = max(rvecFStudy)/eps;
 	solverPrm.fevalLimit = 100000;
 	solverPrm.iterLimit = 1000;
