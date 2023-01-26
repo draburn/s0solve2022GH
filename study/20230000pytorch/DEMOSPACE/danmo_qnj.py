@@ -14,6 +14,52 @@ def reldiff( a, b ):
 	if ( 0.0 == sa and 0.0 == sb ):
 		return 0.0
 	return ( np.sum(np.abs(a-b)) / ( sa + sb ) )
+def utorthdrop( matA, dropRelThresh, dropAbsThresh ):
+	#msg( 'Hey hey hey!' )
+	matV = matA.copy() # Superfluous?
+	sizeK = matA.shape[1]
+	#msg( 'sizeK = ', sizeK )
+	rvcDrop = np.zeros( (sizeK), dtype='bool' )
+	rvcDrop[:] = False # Superfluous?
+	#msg( 'matV = \n', matV )
+	#msg( 'rvcDrop =', rvcDrop )
+	for k in range ( 0, sizeK ):
+		vNorm = linalg.norm( matV[:,k] )
+		if ( vNorm <= dropAbsThresh ):
+			rvcDrop[k] = True
+			matV[:,k] = 0.0
+		else:
+			#msg( f'divding {k} by {vNorm}.' )
+			matV[:,k] /= vNorm
+	#msg( 'matV = \n', matV )
+	#msg( 'rvcDrop =', rvcDrop )
+	for k in range ( 1, sizeK ):
+		###if ( rvcDrop[k] ):
+		###	continue
+		#msg( 'k = ', k )
+		#msg( 'matV[:,k] = ', matV[:,k] )
+		matV[:,k] -= matV[:,0:k-1] @ ( matV[:,0:k-1].T @ matV[:,k] )
+		#msg( 'matV[:,k] = ', matV[:,k] )
+		vNorm = linalg.norm( matV[:,k] )
+		if ( vNorm <= dropRelThresh ):
+			rvcDrop[k] = True
+			matV[:,k] = 0.0
+		else:
+			matV[:,k] /= vNorm
+			matV[:,k] -= matV[:,0:k-1] @ ( matV[:,0:k-1].T @ matV[:,k] )
+			vNorm = linalg.norm( matV[:,k] )
+			if ( vNorm <= dropRelThresh ):
+				rvcDrop[k] = True
+				matV[:,k] = 0.0
+			else:
+				matV[:,k] /= vNorm
+				# Note: if dropThresh is too small, may end up keeping more than sizeX vectors.
+	#msg( 'matV = \n', matV )
+	#msg( 'rvcDrop =', rvcDrop )
+	rvcKeep = ~rvcDrop
+	matV = matV[:,rvcKeep]
+	#msg( 'matV = \n', matV )
+	return ( matV, rvcKeep )
 
 # Init problem.
 rngSeed = 0
@@ -304,42 +350,50 @@ while doMainLoop:
 	#msg( 'matG =\n', matG )
 	# We want an equivalent of my Octave "utorthdrop":
 	#  construct a basis upper-triangularly, dropping any vectors that are below some threshold in orthogonality.
-	# I'm going with using linalg.qr twice();
-	#  alternatives are surely possible, but this is easy to implement and may be about as fast as anything.
-	# But, first, drop any vectors that are too small,
-	#  especially the anchor.
-	rvcDMag = np.sum(matD**2,0)
-	#msg( 'rvcDMag = ', rvcDMag )
-	###rvcKeepBCMag = rvcDMag > ( 1.0E-8 * np.max(rvcDMag) ) # Pretty sure this is a bad idea.
-	rvcKeepBCMag = rvcDMag > 0.0 # Do this to avoid issues with qr().
-	matD = matD[:,rvcKeepBCMag]
-	matG = matG[:,rvcKeepBCMag]
-	#msg( 'matD =\n', matD )
-	if ( 0 == matD.shape[1] ):
-		continue
-	if ( matD.shape[1] > sizeX ):
-		msg( f'Reducing potential size from {matD.shape[1]} to {sizeX}. Ouch!' )
-		matD = matD[:,0:sizeX]
-		matG = matG[:,0:sizeX]
-		# The (crude) two-pass QR basis construction won't work without this.
-	# Note consider using overwrite_a = True with qr().
-	###matQ1, matR1 = linalg.qr( matD[:,0:maxNumRecords], mode='economic' )
-	matQ1, matR1 = linalg.qr( matD, mode='economic' )
-	#msg( 'matQ1 =\n', matQ1 )
-	msg( 'matR1 =\n', matR1 )
-	rvcKeep = (1.0+qnj_dropThresh) * np.abs(np.diag(matR1)) > qnj_dropThresh * np.sum(np.abs(matR1),0)
-	matD = matD[:,rvcKeep]
-	matG = matG[:,rvcKeep]
-	#msg( 'rvcKeep = ', rvcKeep )
-	matQ, matR = linalg.qr( matD, mode='economic' )
+	useUtorthdrop = True
+	if (useUtorthdrop):
+		matQ, rvcKeep = utorthdrop( matD, qnj_dropThresh, 1.0E-16 )
+		matD = matD[:,rvcKeep]
+		matG = matG[:,rvcKeep]
+		matR = np.triu( matQ.T @ matD )
+	else:
+		# I'm going with using linalg.qr twice();
+		#  alternatives are surely possible, but this is easy to implement and may be about as fast as anything.
+		# But, first, drop any vectors that are too small,
+		#  especially the anchor.
+		rvcDMag = np.sum(matD**2,0)
+		#msg( 'rvcDMag = ', rvcDMag )
+		###rvcKeepBCMag = rvcDMag > ( 1.0E-8 * np.max(rvcDMag) ) # Pretty sure this is a bad idea.
+		rvcKeepBCMag = rvcDMag > 0.0 # Do this to avoid issues with qr().
+		matD = matD[:,rvcKeepBCMag]
+		matG = matG[:,rvcKeepBCMag]
+		#msg( 'matD =\n', matD )
+		if ( 0 == matD.shape[1] ):
+			continue
+		if ( matD.shape[1] > sizeX ):
+			msg( f'Reducing potential size from {matD.shape[1]} to {sizeX}. Ouch!' )
+			matD = matD[:,0:sizeX]
+			matG = matG[:,0:sizeX]
+			# The (crude) two-pass QR basis construction won't work without this.
+		# Note consider using overwrite_a = True with qr().
+		###matQ1, matR1 = linalg.qr( matD[:,0:maxNumRecords], mode='economic' )
+		matQ1, matR1 = linalg.qr( matD, mode='economic' )
+		#msg( 'matQ1 =\n', matQ1 )
+		msg( 'matR1 =\n', matR1 )
+		rvcKeep = (1.0+qnj_dropThresh) * np.abs(np.diag(matR1)) > qnj_dropThresh * np.sum(np.abs(matR1),0)
+		matD = matD[:,rvcKeep]
+		matG = matG[:,rvcKeep]
+		#msg( 'rvcKeep = ', rvcKeep )
+		matQ, matR = linalg.qr( matD, mode='economic' )
 	sizeK = matQ.shape[1]
+	msg( 'matQ.T @ matQ =\n', matQ.T @ matQ )
 	#msg( 'matQ =\n', matQ )
 	#msg( 'matR =\n', matR )
 	#msg( 'sizeK = ', sizeK )
-	if ( 0 == sizeK ):
-		continue
 	#msg( 'D =\n', matD )
 	#msg( 'Q*R =\n', matQ @ matR )
+	if ( 0 == sizeK ):
+		continue
 	matGamma = matQ.T @ matG
 	vecGammaAnchor = matQ.T @ vecGAnchor
 	if ( not useQNJ ):
