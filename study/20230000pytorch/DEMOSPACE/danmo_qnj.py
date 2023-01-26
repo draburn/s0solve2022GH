@@ -306,8 +306,8 @@ while doMainLoop:
 	# Record seed for posterity.
 	# This will almost certainly be modified if use a quasi-newton jump.
 	sizeK = 0
-	vecXSeed[:] = vecX
-	vecPSeed[:] = vecP
+	vecXSeed[:] = vecX[:]
+	vecPSeed[:] = vecP[:]
 	
 	forceBasisGen = True # For comparison to Octave code.
 	if ( (not useQNJ) and (not forceBasisGen) ):
@@ -327,9 +327,17 @@ while doMainLoop:
 	
 	#msg( 'record_matX =\n', record_matX )
 	
-	# Finally, QNJ!
+	# Finally, QNJ!... or not.
 	if ( numRecords < 2 ):
 		continue
+	elif ( not newIsBest ):
+		vecX[:] = best_vecXHarvest[:]
+		vecP[:] = best_vecPHarvest[:]
+		sizeK = 0
+		vecXSeed[:] = vecX[:]
+		vecPSeed[:] = vecP[:]
+		continue
+		# This is 'grad-if-bad'.
 	
 	# Generate basis.
 	# DRaburn 2023-01-24: This is a crude two-pass QR method,

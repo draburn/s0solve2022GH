@@ -12,6 +12,7 @@ function [ matV, rvecDrop ] = utorthdrop( matV, dropThresh = 1.0e-4 )
 	if ( vNorm <= dropThresh )
 		rvecDrop(1) = true;
 		matV(:,1) = 0.0;
+		% DRaburn 2023-01-25: Doesn't THIS merely cause drop wrt eps?
 	endif
 	%
 	for k=2:sizeV
