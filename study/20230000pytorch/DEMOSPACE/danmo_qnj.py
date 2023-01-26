@@ -38,7 +38,7 @@ def utorthdrop( matA, dropRelThresh, dropAbsThresh ):
 		###	continue
 		#msg( 'k = ', k )
 		#msg( 'matV[:,k] = ', matV[:,k] )
-		matV[:,k] -= matV[:,0:k-1] @ ( matV[:,0:k-1].T @ matV[:,k] )
+		matV[:,k] -= matV[:,0:k] @ ( matV[:,0:k].T @ matV[:,k] )
 		#msg( 'matV[:,k] = ', matV[:,k] )
 		vNorm = linalg.norm( matV[:,k] )
 		if ( vNorm <= dropRelThresh ):
@@ -46,7 +46,7 @@ def utorthdrop( matA, dropRelThresh, dropAbsThresh ):
 			matV[:,k] = 0.0
 		else:
 			matV[:,k] /= vNorm
-			matV[:,k] -= matV[:,0:k-1] @ ( matV[:,0:k-1].T @ matV[:,k] )
+			matV[:,k] -= matV[:,0:k] @ ( matV[:,0:k].T @ matV[:,k] )
 			vNorm = linalg.norm( matV[:,k] )
 			if ( vNorm <= dropRelThresh ):
 				rvcDrop[k] = True
