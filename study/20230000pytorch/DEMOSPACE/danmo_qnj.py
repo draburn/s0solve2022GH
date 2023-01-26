@@ -69,15 +69,15 @@ msg( 'rngSeed = ', rngSeed )
 msg( 'sizeX = ', sizeX )
 msg( 'sizeF = ', sizeF )
 rng = default_rng(rngSeed)
-#matA = rng.standard_normal(( sizeF, sizeX ))
-matA = np.diag(np.linspace(1.0,sizeX,sizeX))
+matA = rng.standard_normal(( sizeF, sizeX ))
+#matA = np.diag(np.linspace(1.0,sizeX,sizeX))
 matHCrit = np.zeros(( sizeX, sizeX ))
 matHCrit[:,:] = matA.T @ matA
-#vecXCrit = rng.standard_normal(( sizeX ))
-vecXCrit = np.ones(( sizeX ))
+vecXCrit = rng.standard_normal(( sizeX ))
+#vecXCrit = np.ones(( sizeX ))
 fCrit = 10.0
-#noiseX = 1.0E-6
-noiseX = 0.0
+noiseX = 1.0E-5
+#noiseX = 0.0
 def funcFG( x ):
 	#d = x - vecXCrit
 	d = x - vecXCrit + noiseX*rng.standard_normal(( sizeX ))
@@ -104,12 +104,11 @@ vecP = np.zeros(( sizeX ))
 
 # Init superPt.
 numFevalPerSuperPt = 100
-#superPtLimit = 1000
-superPtLimit = 7
-#fTol = f0*1.0E-12
-#gTol = linalg.norm(vecG0)*1.0E-10
-fTol = 1.0E-6
-gTol = 1.0E-6
+superPtLimit = 1000
+fTol = f0*1.0E-12
+gTol = linalg.norm(vecG0)*1.0E-6
+#fTol = 1.0E-6
+#gTol = 1.0E-6
 msg( 'numFevalPerSuperPt = ', numFevalPerSuperPt)
 msg( 'superPtLimit = ', superPtLimit )
 msg( 'fTol = ', fTol)
@@ -162,7 +161,7 @@ numRecords = 0
 
 # Init QNJ.
 useQNJ = True # Unless...
-useQNJ = False
+#useQNJ = False
 maxSubspaceSize = maxNumRecords
 qnj_dropThresh = 0.1
 msg( 'useQNJ = ', useQNJ )
@@ -270,8 +269,8 @@ while doMainLoop:
 		badCount += 1
 	
 	# Print progress log.
-	#if ( 0 == superPtCount % 10 ):
-	if ( 0 == superPtCount % 1 ):
+	if ( 0 == superPtCount % 10 ):
+		#if ( 0 == superPtCount % 1 ):
 		if ( newIsMinf ):
 			progLogSymbol = '*'
 		elif ( newIsBest ):

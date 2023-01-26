@@ -68,7 +68,7 @@ function [ funchFG, vecX0, solverPrm, datOut ] = z__init0113( initPrm=[] )
 	solverPrm.gTol = 1.0E-6
 	solverPrm.fBail = max(rvecFStudy)/eps;
 	solverPrm.fevalLimit = 100000;
-	solverPrm.iterLimit = 7;
+	solverPrm.iterLimit = 1000;
 	solverPrm.timeLimit = 600.0;
 	solverPrm.stopSignalCheckInterval = 1.0;
 	solverPrm.progressReportInterval = 1.0; % Unless...
