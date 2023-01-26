@@ -279,8 +279,8 @@ while doMainLoop:
 		else:
 			progLogSymbol = 'X'
 		msg(
-		  f'  {fevalCount:7d}, {superPtCount:5d}:',
-		  f'  (X{badCount:4d}), {numRecords:3d}, {sizeK:2d};',
+		  f' {superPtCount:4d} ({badCount:4d}X), {fevalCount:7d}:',
+		  f' {sizeK:3d} / {numRecords:3d}:'
 		  f'  {linalg.norm( best_vecX - vecX0 ):8.2E};',
 		  f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E};',
 		  f'  {best_f:8.2E};',
@@ -386,7 +386,7 @@ while doMainLoop:
 		#msg( 'rvcKeep = ', rvcKeep )
 		matQ, matR = linalg.qr( matD, mode='economic' )
 	sizeK = matQ.shape[1]
-	msg( 'matQ.T @ matQ =\n', matQ.T @ matQ )
+	#msg( 'matQ.T @ matQ =\n', matQ.T @ matQ )
 	#msg( 'matQ =\n', matQ )
 	#msg( 'matR =\n', matR )
 	#msg( 'sizeK = ', sizeK )
@@ -483,8 +483,8 @@ while doMainLoop:
 # Look at results.
 progLogSymbol = 'F'
 msg(
-  f'  {fevalCount:7d}, {superPtCount:5d}:',
-  f'  (X{badCount:4d}), {numRecords:3d}, {sizeK:2d};',
+  f' {superPtCount:4d} ({badCount:4d}X), {fevalCount:7d}:',
+  f' {sizeK:3d} / {numRecords:3d}:'
   f'  {linalg.norm( superPt_vecX - vecX0 ):8.2E};',
   f'  {-1.0:8.1E};',
   f'  {superPt_f:8.2E};',
