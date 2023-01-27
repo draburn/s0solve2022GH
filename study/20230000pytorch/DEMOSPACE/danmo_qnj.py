@@ -2,6 +2,7 @@ import inspect
 import numpy as np
 from numpy.random import default_rng
 from scipy import linalg
+#from scipy import optimize
 
 # Init logging.
 frame = inspect.currentframe()
@@ -357,41 +358,10 @@ while doMainLoop:
 	#msg( 'matG =\n', matG )
 	# We want an equivalent of my Octave "utorthdrop":
 	#  construct a basis upper-triangularly, dropping any vectors that are below some threshold in orthogonality.
-	useUtorthdrop = True
-	if (useUtorthdrop):
-		matQ, rvcKeep = utorthdrop( matD, qnj_dropThresh, 1.0E-16 )
-		matD = matD[:,rvcKeep]
-		matG = matG[:,rvcKeep]
-		matR = np.triu( matQ.T @ matD )
-	else:
-		# I'm going with using linalg.qr twice();
-		#  alternatives are surely possible, but this is easy to implement and may be about as fast as anything.
-		# But, first, drop any vectors that are too small,
-		#  especially the anchor.
-		rvcDMag = np.sum(matD**2,0)
-		#msg( 'rvcDMag = ', rvcDMag )
-		###rvcKeepBCMag = rvcDMag > ( 1.0E-8 * np.max(rvcDMag) ) # Pretty sure this is a bad idea.
-		rvcKeepBCMag = rvcDMag > 0.0 # Do this to avoid issues with qr().
-		matD = matD[:,rvcKeepBCMag]
-		matG = matG[:,rvcKeepBCMag]
-		#msg( 'matD =\n', matD )
-		if ( 0 == matD.shape[1] ):
-			continue
-		if ( matD.shape[1] > sizeX ):
-			msg( f'Reducing potential size from {matD.shape[1]} to {sizeX}. Ouch!' )
-			matD = matD[:,0:sizeX]
-			matG = matG[:,0:sizeX]
-			# The (crude) two-pass QR basis construction won't work without this.
-		# Note consider using overwrite_a = True with qr().
-		###matQ1, matR1 = linalg.qr( matD[:,0:maxNumRecords], mode='economic' )
-		matQ1, matR1 = linalg.qr( matD, mode='economic' )
-		#msg( 'matQ1 =\n', matQ1 )
-		msg( 'matR1 =\n', matR1 )
-		rvcKeep = (1.0+qnj_dropThresh) * np.abs(np.diag(matR1)) > qnj_dropThresh * np.sum(np.abs(matR1),0)
-		matD = matD[:,rvcKeep]
-		matG = matG[:,rvcKeep]
-		#msg( 'rvcKeep = ', rvcKeep )
-		matQ, matR = linalg.qr( matD, mode='economic' )
+	matQ, rvcKeep = utorthdrop( matD, qnj_dropThresh, 1.0E-16 )
+	matD = matD[:,rvcKeep]
+	matG = matG[:,rvcKeep]
+	matR = np.triu( matQ.T @ matD )
 	sizeK = matQ.shape[1]
 	#msg( 'matQ.T @ matQ =\n', matQ.T @ matQ )
 	#msg( 'matQ =\n', matQ )
@@ -431,10 +401,35 @@ while doMainLoop:
 	#vecPSeed[:] = vecP
 	#continue
 	
-	# Perturp Hessian so that it is positive definite (and fMin >= 0.0?)
-	# TODO.
-	# Placeholder: don't perturb.
-	matHMod = matHFit.copy()
+	# Update trust region and scaling.
+	# TODO
+	vecS = np.ones(( sizeK )) # Placeholder.
+	matS = np.diag(vecS)
+	matSInv = np.diag(1.0/vecS)
+	vecGammaScl = matSInv @ vecGammaFit
+	matHScl = matSInv @ matHFit @ matSInv
+	
+	# Apply scaling and do eigenfactorization
+	vecLambdaC, matPsi = linalg.eig( matHScl )
+	for n in range( 0, vecLambdaC.shape[0]):
+		assert np.isreal(vecLambdaC[n])
+	vecLambdaOrig = np.real( vecLambdaC )
+	vecPhi = matPsi.T @ (-vecGammaScl)
+	# So, now:
+	#  matM = matLambda + mu * matI
+	#  vecZ = matSInv @ matPsi @ ( matM \ vecPhi )
+	#  s = np.norm( matS * vecZ ) = np.norm( matM \ vecPhi )
+	#  vecDelta = matV @ vecZ
+	#  d = np.norm( vecDelta ) = np.norm( vecZ )
+	#  f = f0 + vecGammaFit
+	#msg( "But... we want to do all of this from LAUNCH not ANCHOR?" )
+	
+	# Calculate lambdaMod,
+	#  lambda perturbed so that Hessian is pos-def and fModMin >= 0.0
+	# TODO
+	vecLambdaMod = vecLambdaOrig.copy()
+	# vecLambdaMod = <work>
+	matHMod = matS @ matPsi @ np.diag(vecLambdaMod) @ (matPsi.T) @ matS
 	
 	# Decompose "launch".
 	vecXLaunch = best_vecXHarvest.copy()
@@ -455,10 +450,6 @@ while doMainLoop:
 		assert reldiff( vecPLaunch, (matQ @ ( (coeffPG*vecGammaLaunch) + vecGammaPerp )) + vecPPerp ) <= 1.0E-8
 	if ( coeffPG > 0.0 ):
 		coeffPG = 0.0
-	
-	# Update scaling and trust region.
-	# TODO.
-	vecS = np.ones(( sizeK ))
 	
 	# Calculate step.
 	# TODO.
