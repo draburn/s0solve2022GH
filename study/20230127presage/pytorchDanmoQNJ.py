@@ -504,6 +504,350 @@ for epoch in range(2):  # loop over the dataset multiple times
             sxsolve_f_min = sxsolve_f
             do_grad_init = False
         
+        # DRaburn 2023-01-27, pytorchDanmo: Interface
+        vecX = sxsolve_x # Just to be sure.
+        vecG = sxsolve_gradloc
+        f = sxsolve_f
+        
+        # DRaburn 2023-01-27, pytorchDanmo: QNJ	fevalCount += 1
+	
+	# Update superPt running totals before updating SGD.
+	xtg = vecX @ vecG
+	running_fevalCount += 1
+	running_fTot += f
+	running_fSqTot += f*f
+	running_xtgTot += xtg
+	running_vecGTot[:] += vecG[:]
+	running_vecXTot[:] += vecX[:]
+	
+	# Updage SGD.
+	vecP[:] = ( momentumFactor * vecP[:] ) - ( learningRate * vecG[:] )
+	vecX[:] += vecP[:]
+	#print( 'vecX =\n', vecX )
+	
+	# Check per-feval stop crit.
+	if ( f > fBail ):
+		msg( 'IMPOSED STOP: f > fBail. This strongly indicates divergence.' )
+		doMainLoop = False
+	elif ( fevalLimit > 0 and fevalCount >= fevalLimit ):
+		msg( 'IMPOSED STOP: fevalCount >= fevalLimit.' )
+		doMainLoop = False
+	# Check elapsed time?.
+	# Check for "stop signal on disk"?
+	if ( not doMainLoop ):
+		break
+	
+	# Have we finished the super point?
+	if ( running_fevalCount < numFevalPerSuperPt ):
+		continue
+	vecXHarvest[:] = vecX[:]
+	vecPHarvest[:] = vecP[:]
+	
+	# Do super-point analysis.
+	superPtCount += 1
+	#
+	superPt_vecG[:] = running_vecGTot[:] / running_fevalCount
+	superPt_vecX[:] = running_vecXTot[:] / running_fevalCount
+	superPt_fAvg = running_fTot / running_fevalCount
+	superPt_xtgAvg = running_xtgTot / running_fevalCount
+	superPt_f = superPt_fAvg - (( superPt_xtgAvg - ( superPt_vecX @ superPt_vecG ) )/2.0)
+	superPt_fSqVar = (running_fSqTot/running_fevalCount) - (superPt_fAvg**2)
+	if ( 0.0 < superPt_fSqVar ):
+		superPt_fVar = np.sqrt( superPt_fSqVar )
+	else:
+		superPt_fVar = 0.0
+	# Note that part of fVar is due to f actually varying along the path;
+	#  this is not desirable, but is probably acceptable.
+	#
+	running_fevalCount = 0
+	running_fTot = 0.0
+	running_xtgTot = 0.0
+	running_vecGTot[:] = 0.0
+	running_vecXTot[:] = 0.0
+	
+	# Do minf & best analysis.
+	newIsMinf = False # Unless...
+	newIsBest = False # Unless...
+	if ( not minf_present ):
+		newIsMinf = True
+		newIsBest = True
+	elif ( superPt_f < minf_f ):
+		newIsMinf = True
+		newIsBest = True
+	else:
+		fBestThresh = (  minf_f
+		  + ( coeff_best_minf * minf_fVar )
+		  + ( coeff_best_best * best_fVar )
+		  + ( coeff_best_curr * superPt_fVar )  )
+		if ( superPt_f <= fBestThresh and linalg.norm(superPt_vecG) < linalg.norm(best_vecG) ):
+			newIsBest = True
+	if ( newIsMinf ):
+		minf_f = superPt_f
+		minf_fVar = superPt_fVar
+		minf_vecX[:] = superPt_vecX[:]
+		minf_vecG[:] = superPt_vecG[:]
+		minf_present = True
+	if ( newIsBest ):
+		best_f = superPt_f
+		best_fVar = superPt_fVar
+		best_vecX[:] = superPt_vecX[:]
+		best_vecG[:] = superPt_vecG[:]
+		best_vecXHarvest[:] = vecXHarvest[:]
+		best_vecPHarvest[:] = vecPHarvest[:]
+		best_present = True
+	else:
+		badCount += 1
+	
+	# Print progress log.
+	if ( 0 == superPtCount % 10 ):
+		if ( newIsMinf ):
+			progLogSymbol = '*'
+		elif ( newIsBest ):
+			progLogSymbol = '.'
+		else:
+			progLogSymbol = 'X'
+		msg(
+		  f' {superPtCount:4d} ({badCount:4d}X), {fevalCount:7d}:',
+		  f' {sizeK:3d} / {numRecords:3d}:'
+		  f'  {linalg.norm( best_vecX - vecX0 ):8.2E};',
+		  f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E}, {qnj_dPrev:8.2E} / {qnj_dMax:8.2E};',
+		  f'  {best_f:8.2E};',
+		  f'  {linalg.norm(best_vecG):8.2E}',
+		  progLogSymbol )
+	
+	# Check superPt stop crit.
+	if ( linalg.norm(superPt_vecG) <= gTol ):
+		msg( 'SUCCESS: linalg.norm(superPt_vecG) <= gTol.' )
+		doMainLoop = False
+	elif ( superPt_f <= fTol ):
+		msg( 'SUCCESS: superPt_f <= fTol.' )
+		doMainLoop = False
+	elif ( superPtCount > 0 and superPtCount >= superPtLimit ):
+		msg( 'IMPOSED STOP: superPtCount >= superPtLimit.' )
+		doMainLoop = False
+	elif ( qnj_havePrev and ( qnj_dPrev < xTol ) and (not newIsBest) ):
+		msg( 'IMPOSED STOP: Failed to improve with a QNJ step smaller than xTol.' )
+		doMainLoop = False
+	# Check superPt_vecX vs prev?
+	# Check vecXHarvest vs vecXSeed?
+	# Check superPt_f vs prev?
+	if ( not doMainLoop ):
+		break
+	
+	# Prepare for next iteration.
+	# Record seed for posterity.
+	# This will almost certainly be modified if use a quasi-newton jump.
+	sizeK = 0
+	vecXSeed[:] = vecX[:]
+	vecPSeed[:] = vecP[:]
+	
+	forceBasisGen = True # For comparison to Octave code.
+	if ( (not useQNJ) and (not forceBasisGen) ):
+		continue
+	
+	# Add information to records.
+	# Always rolling is wasteful. POITROME.
+	record_matX = np.roll( record_matX, 1 )
+	record_matG = np.roll( record_matG, 1 )
+	record_rvcF = np.roll( record_rvcF, 1 )
+	# Does this not require unnecessary mem alloc and copy?
+	if ( numRecords < maxNumRecords ):
+		numRecords += 1
+	record_matX[:,0] = superPt_vecX[:]
+	record_matG[:,0] = superPt_vecG[:]
+	record_rvcF[0,0] = superPt_f
+	
+	#msg( 'record_matX =\n', record_matX )
+	
+	# Finally, QNJ!... or not.
+	if ( numRecords < 2 ):
+		continue
+	elif ( not newIsBest ):
+		vecX[:] = best_vecXHarvest[:]
+		vecP[:] = best_vecPHarvest[:]
+		sizeK = 0
+		vecXSeed[:] = vecX[:]
+		vecPSeed[:] = vecP[:]
+		continue
+		# This is 'grad-if-bad'.
+	
+	# Generate basis.
+	# DRaburn 2023-01-24: This is a crude two-pass QR method,
+	#  involving an unfortunate cap to the number of records before the QR calculation.
+	# POITROME
+	vecXAnchor = best_vecX # Shallow copy / reference only / DO NOT MODIFY!
+	vecGAnchor = best_vecG # Shallow copy / reference only / DO NOT MODIFY!
+	fAnchor = best_f
+	###matD[:,0:maxNumRecords] = record_matX[:,0:maxNumRecords] - np.reshape( vecXAnchor, (sizeX,1) ) # Autobroadcast.
+	#msg( 'numRecords = ', numRecords )
+	matD = record_matX[:,0:numRecords].copy() - np.reshape( vecXAnchor, (sizeX,1) ) # Autobroadcast.
+	matG = record_matG[:,0:numRecords].copy()
+	#msg( 'vecXAnchor = ', vecXAnchor )
+	#msg( 'vecGAnchor = ', vecGAnchor )
+	#msg( 'fAnchor = ', fAnchor )
+	#msg( 'matD =\n', matD )
+	#msg( 'matG =\n', matG )
+	# We want an equivalent of my Octave "utorthdrop":
+	#  construct a basis upper-triangularly, dropping any vectors that are below some threshold in orthogonality.
+	matQ, rvcKeep = utorthdrop( matD, qnj_dropThresh, 1.0E-16 )
+	matD = matD[:,rvcKeep]
+	matG = matG[:,rvcKeep]
+	matR = np.triu( matQ.T @ matD )
+	sizeK = matQ.shape[1]
+	#msg( 'matQ.T @ matQ =\n', matQ.T @ matQ )
+	#msg( 'matQ =\n', matQ )
+	#msg( 'matR =\n', matR )
+	#msg( 'sizeK = ', sizeK )
+	#msg( 'D =\n', matD )
+	#msg( 'Q*R =\n', matQ @ matR )
+	if ( 0 == sizeK ):
+		continue
+	matGamma = matQ.T @ matG
+	vecGammaAnchor = matQ.T @ vecGAnchor
+	if ( not useQNJ ):
+		continue
+	
+	# Generate fit.
+	# 2023-02-24: This is simplisic but reasonable.
+	#  However, see "hessfit.m".
+	vecGammaFit = vecGammaAnchor
+	fFit = fAnchor
+	matA = linalg.solve( matR.T, (matGamma - np.reshape( vecGammaAnchor, (sizeK,1) ) ).T )
+	matHFit = ( matA.T + matA )/2.0
+	#
+	#vecGammaTrue = matQ.T @ matHCrit @ ( vecXAnchor - vecXCrit )
+	#matHTrue = matQ.T @ matHCrit @ matQ
+	#msg( 'vecGammaFit = ', vecGammaFit )
+	#msg( 'vecGammaTrue = ', vecGammaTrue )
+	#msg( 'matHFit =\n', matHFit )
+	#msg( 'matHTrue = \n', matHTrue )
+	#if ( np.sum(np.abs(matHFit-matHTrue)) >= 1.0e-8*( np.sum(np.abs(matHFit)) + np.sum(np.abs(matHTrue)) ) ):
+	#	msg( 'ERROR: fit is not true.' )
+	#	doMainLoop = False
+	#	break
+	
+	#vecDelta = matQ @ linalg.solve( matHFit, -vecGammaFit )
+	#vecX[:] = vecXAnchor + vecDelta
+	#vecXSeed[:] = vecX
+	#vecPSeed[:] = vecP
+	#continue
+	
+	# Update trust region and scaling.
+
+	if ( qnj_havePrev ):
+		if ( newIsBest ):
+			qnj_sMax = qnj_sPrev * qnj_sMax_ftCoeff
+			qnj_dMax = qnj_dPrev * qnj_dMax_ftCoeff
+		else:
+			qnj_sMax = qnj_sPrev * qnj_sMax_btCoeff
+			qnj_dMax = qnj_dPrev * qnj_dMax_btCoeff
+	#msg( 'caps: ', qnj_sMax, qnj_dMax )
+	#msg( 'matR =\n', matR )
+	vecCap = np.max( np.abs(matR), 1 )
+	vecCap[:] += np.sqrt(MYEPS)*np.max(vecCap)
+	#msg( 'vecCap =', vecCap )
+	vecS = 1.0 / vecCap.copy()
+	#msg( 'vecS = ', vecS )
+	matS = np.diag(vecS)
+	matSInv = np.diag(1.0/vecS)
+	vecGammaScl = matSInv @ vecGammaFit
+	matHScl = matSInv @ matHFit @ matSInv
+	
+	# Apply scaling and do eigenfactorization
+	vecLambdaC, matPsi = linalg.eig( matHScl )
+	for n in range( 0, vecLambdaC.shape[0]):
+		assert np.isreal(vecLambdaC[n])
+	vecLambdaOrig = np.real( vecLambdaC )
+	vecPhi = matPsi.T @ (-vecGammaScl)
+	# So, now:
+	#  matM = matLambda + mu * matI
+	#  vecZ = matSInv @ matPsi @ ( matM \ vecPhi )
+	#  s = np.norm( matS * vecZ ) = np.norm( matM \ vecPhi )
+	#  vecDelta = matV @ vecZ
+	#  d = np.norm( vecDelta ) = np.norm( vecZ )
+	#msg( "But... we want to do all of this from LAUNCH not ANCHOR?" )
+	
+	# Calculate lambdaMod,
+	#  lambda perturbed so that Hessian is pos-def and fModMin >= 0.0
+	# Note: we might consider doing this from our launch rather than anchor. Oh well.
+	#msg( 'vecLambdaOrig = ', vecLambdaOrig )
+	doLambdaFloorTest = False
+	if (doLambdaFloorTest):
+		fFit = 1.0
+		vecPhi = np.array([1.0,1.0,1.0])
+		#vecLambdaOrig = np.array([10.0,0.01,-1.0])
+		vecLambdaOrig = np.array([0.0,0.0,-1.0])
+		vecLambdaOrig = np.array([10.0,10.0,10.0])
+		vecLambdaOrig = np.array([10.0,10.0,0.0])
+		vecLambdaOrig = np.array([10.0,10.0,0.56])
+		vecLambdaOrig = np.array([10.0,10.0,0.55])
+		lambdaFloor = getLambdaFloor( fFit, vecPhi, vecLambdaOrig, 0.0 )
+		msg( 'lambdaFloor =', lambdaFloor )
+		vecLambdaMod = vecLambdaOrig.copy()
+		for k in range ( 0, vecLambdaMod.shape[0] ):
+			if ( vecLambdaMod[k] < lambdaFloor ):
+				vecLambdaMod[k] = lambdaFloor
+		fRes = fFit - (np.sum( vecPhi * vecPhi / vecLambdaMod )/2.0)
+		msg( 'fRes = ', fRes )
+		exit()
+	lambdaFloor = getLambdaFloor( fFit, vecPhi, vecLambdaOrig, -0.01*fFit )
+	vecLambdaMod = vecLambdaOrig.copy()
+	for k in range ( 0, vecLambdaMod.shape[0] ):
+		if ( vecLambdaMod[k] < lambdaFloor ):
+			vecLambdaMod[k] = lambdaFloor
+	matHMod = matS @ matPsi @ np.diag(vecLambdaMod) @ (matPsi.T) @ matS
+	
+	# Decompose "launch".
+	vecXLaunch = best_vecXHarvest.copy()
+	vecDLaunch = vecXLaunch - vecXAnchor
+	vecYLaunch = matQ.T @ vecDLaunch
+	vecXPerp = vecDLaunch - ( matQ @ vecYLaunch )
+	vecGammaLaunch = vecGammaFit + ( matHMod @ vecYLaunch )
+	fLaunch = fFit + ( vecYLaunch @ vecGammaFit ) + (( vecYLaunch @ vecGammaLaunch )/2.0)
+	vecPLaunch = best_vecPHarvest.copy()
+	vecT = matQ.T @ vecPLaunch
+	vecPPerp = vecPLaunch - ( matQ @ vecT )
+	assert linalg.norm( vecGammaLaunch ) > 0.0
+	coeffPG = ( vecGammaLaunch @ vecT ) / ( vecGammaLaunch @ vecGammaLaunch )
+	vecGammaPerp = vecT - ( coeffPG * vecGammaLaunch )
+	testDecomp = True
+	if ( testDecomp ):
+		assert reldiff( vecXLaunch, vecXAnchor + (matQ @ vecYLaunch) + vecXPerp ) < MYEPS
+		assert reldiff( vecPLaunch, (matQ @ ( (coeffPG*vecGammaLaunch) + vecGammaPerp )) + vecPPerp ) <= MYEPS
+	if ( coeffPG > 0.0 ):
+		coeffPG = 0.0
+	
+	# Calculate step.
+	# TODO.
+	# Placeholder: take a Newton step without any trust region.
+	#vecZ = linalg.solve( matHMod, -vecGammaLaunch )
+	vecLambdaCurve = vecLambdaMod  # Shallow copy / reference only / DO NOT MODIFY!
+	vecLambdaObjf = vecLambdaOrig  # Shallow copy / reference only / DO NOT MODIFY!
+	qnj_fMin = -0.01*fFit
+	vecZ = levsol( fFit, vecPhi, matPsi, vecLambdaCurve, qnj_sMax, vecS, qnj_dMax, vecLambdaObjf, qnj_fMin )
+	
+	# Generate new seed.
+	vecYNew = vecYLaunch + vecZ
+	vecGammaNew = vecGammaLaunch + ( matHMod @ vecZ )
+	fNew = fLaunch + ( vecZ @ vecGammaLaunch ) + (( vecZ @ vecGammaNew )/2.0)
+	assert fLaunch > 0.0
+	assert linalg.norm(vecGammaLaunch/vecS) > 0.0
+	alphaF = fNew / fLaunch
+	alphaG = linalg.norm( vecGammaNew / vecS ) / linalg.norm( vecGammaLaunch / vecS )
+	vecDelta = matQ @ vecZ
+	#
+	vecX = vecXAnchor + ( matQ @ vecYNew ) + ( alphaG * vecXPerp )
+	vecP = (matQ @ ( (coeffPG*vecGammaNew) + (alphaG*vecGammaPerp) )) + (alphaF*vecPPerp)
+	
+	vecXSeed[:] = vecX
+	vecPSeed[:] = vecP
+	qnj_havePrev = True
+	qnj_dPrev = linalg.norm( vecDelta )
+	qnj_sPrev = linalg.norm( matS @ vecZ )
+        
+        continue
+        # DRaburn 2023-01-27, pytorchDanmo: Pre-QNJ
+        
         # TAKE STEP
         #optimizer.step()
         sxsolve_step = (sxsolve_momentum * sxsolve_step) - (sxsolve_lr * sxsolve_gradloc)
