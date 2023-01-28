@@ -443,7 +443,7 @@ numRecords = 0
 
 # Init QNJ.
 useQNJ = True # Unless...
-useQNJ = False
+#useQNJ = False
 maxSubspaceSize = maxNumRecords
 qnj_dropThresh = 0.1
 msg( 'useQNJ = ', useQNJ )
@@ -616,7 +616,7 @@ for epoch in range(2):  # loop over the dataset multiple times
               f' {superPtCount:4d} ({badCount:4d}X), {fevalCount:7d}:',
               f' {sizeK:3d} / {numRecords:3d}:'
               f'  {linalg.norm( best_vecX - vecX0 ):8.2E};',
-              f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E}, {qnj_dPrev:8.2E} / {qnj_dMax:8.2E};',
+              f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E}, {qnj_dPrev:9.2E} / {qnj_dMax:9.2E};',
               f'  {best_f:8.2E};',
               f'  {linalg.norm(best_vecG):8.2E}',
               progLogSymbol )
@@ -879,3 +879,20 @@ for epoch in range(2):  # loop over the dataset multiple times
             running_feval_count = 0
 
 print('Finished Training Demo')
+# Look at results.
+progLogSymbol = 'F'
+msg(
+  f' {superPtCount:4d} ({badCount:4d}X), {fevalCount:7d}:',
+  f' {sizeK:3d} / {numRecords:3d}:'
+  f'  {linalg.norm( superPt_vecX - vecX0 ):8.2E};',
+  f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E}, {qnj_dPrev:9.2E} / {qnj_dMax:9.2E};',
+  f'  {superPt_f:8.2E};',
+  f'  {linalg.norm(superPt_vecG):8.2E}',
+  progLogSymbol )
+vecXF = best_vecX
+vecGF = best_vecG
+fF = best_f
+#fF, vecGF = funcFG( vecXF )
+msg( '||vecXF - vecX0|| = ', linalg.norm( vecXF - vecX0 ) )
+msg( 'fF = ', fF )
+msg( '||vecGF|| = ', linalg.norm(vecGF) )
