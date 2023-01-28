@@ -352,35 +352,43 @@ vecXCrit = rng.standard_normal(( sizeX ))
 fCrit = 10.0
 noiseX = 1.0E-5
 #noiseX = 0.0
-def funcFG( x ):
-	#d = x - vecXCrit
-	d = x - vecXCrit + noiseX*rng.standard_normal(( sizeX ))
-	g = matHCrit @ d
-	f = fCrit + (( d @ g )/2.0)
-	return ( f, g )
-vecX0 = np.zeros(( sizeX ))
-f0, vecG0 = funcFG( vecX0 )
-msg( 'f0 = ', f0 )
-msg( '||vecG0|| = ', linalg.norm(vecG0) )
+# DRaburn 2023-01-27, pytorchDanmo: Not you.
+#def funcFG( x ):
+#	#d = x - vecXCrit
+#	d = x - vecXCrit + noiseX*rng.standard_normal(( sizeX ))
+#	g = matHCrit @ d
+#	f = fCrit + (( d @ g )/2.0)
+#	return ( f, g )
+#vecX0 = np.zeros(( sizeX ))
+#f0, vecG0 = funcFG( vecX0 )
+#msg( 'f0 = ', f0 )
+#msg( '||vecG0|| = ', linalg.norm(vecG0) )
 
 # Init SGD solver.
-fBail = f0 * 1E8
+# DRaburn 2023-01-27, pytorchDanmo: I failed to write the tolerances integrably.
+#fBail = f0 * 1E8
+fBail = 1.0E8
 fevalLimit = 100000
-learningRate = 0.01
-learningRate = 0.001
-momentumFactor = 0.9
+# DRaburn 2023-01-27, pytorchDanmo: Gradient behavior is controlled by pre-existing (pytorchDemod) code.
+#learningRate = 0.01
+#learningRate = 0.001
+#momentumFactor = 0.9
 msg( 'fevalLimit = ', fevalLimit )
-msg( 'learningRate = ', learningRate )
-msg( 'momentumFactor = ', momentumFactor )
+#msg( 'learningRate = ', learningRate )
+#msg( 'momentumFactor = ', momentumFactor )
 fevalCount = 0
-vecX = vecX0.copy()
-vecP = np.zeros(( sizeX ))
+# DRaburn 2023-01-27, pytorchDanmo: Hook-up to pre-existing code.
+vecX = sxsolve_x
+vecP = sxsolve_step
 
 # Init superPt.
 numFevalPerSuperPt = 100
 superPtLimit = 1000
-fTol = f0*1.0E-12
-gTol = linalg.norm(vecG0)*1.0E-6
+# DRaburn 2023-01-27, pytorchDanmo: I failed to write the tolerances integrably.
+#fTol = f0*1.0E-12
+#gTol = linalg.norm(vecG0)*1.0E-6
+fTol = 1.0E-4
+gTol = 1.0E-12
 xTol = sizeX * 1.0E-12
 #fTol = 1.0E-6
 #gTol = 1.0E-6
