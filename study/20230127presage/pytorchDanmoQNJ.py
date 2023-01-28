@@ -199,6 +199,267 @@ sxsolve_step = numpy.zeros(index_list[-1],dtype=numpy.float32)
 print("Initialization complete.")
 print(f"  Elapsed time = {time.time()-start_time}s")
 print(f"test_and_quit = {test_and_quit}")
+
+
+# BEGIN QNJ INITIALIZATION.
+
+import inspect
+import numpy as np
+from numpy.random import default_rng
+from scipy import linalg
+from scipy import optimize
+
+# Init logging.
+frame = inspect.currentframe()
+def msg( *arguments, **keywords ):
+	#print( f"[", __file__, ".", frame.f_lineno, "] ", *arguments, **keywords )
+	print( f'[{__file__}.{frame.f_lineno:05d}]', *arguments, **keywords )
+def reldiff( a, b ):
+	sa = np.sum(np.abs(a))
+	sb = np.sum(np.abs(b))
+	if ( 0.0 == sa and 0.0 == sb ):
+		return 0.0
+	return ( np.sum(np.abs(a-b)) / ( sa + sb ) )
+def utorthdrop( matA, dropRelThresh, dropAbsThresh ):
+	#msg( 'Hey hey hey!' )
+	matV = matA.copy() # Superfluous?
+	sizeK = matA.shape[1]
+	#msg( 'sizeK = ', sizeK )
+	rvcDrop = np.zeros( (sizeK), dtype='bool' )
+	rvcDrop[:] = False # Superfluous?
+	#msg( 'matV = \n', matV )
+	#msg( 'rvcDrop =', rvcDrop )
+	for k in range ( 0, sizeK ):
+		vNorm = linalg.norm( matV[:,k] )
+		if ( vNorm <= dropAbsThresh ):
+			rvcDrop[k] = True
+			matV[:,k] = 0.0
+		else:
+			#msg( f'divding {k} by {vNorm}.' )
+			matV[:,k] /= vNorm
+	#msg( 'matV = \n', matV )
+	#msg( 'rvcDrop =', rvcDrop )
+	for k in range ( 1, sizeK ):
+		###if ( rvcDrop[k] ):
+		###	continue
+		#msg( 'k = ', k )
+		#msg( 'matV[:,k] = ', matV[:,k] )
+		matV[:,k] -= matV[:,0:k] @ ( matV[:,0:k].T @ matV[:,k] )
+		#msg( 'matV[:,k] = ', matV[:,k] )
+		vNorm = linalg.norm( matV[:,k] )
+		if ( vNorm <= dropRelThresh ):
+			rvcDrop[k] = True
+			matV[:,k] = 0.0
+		else:
+			matV[:,k] /= vNorm
+			matV[:,k] -= matV[:,0:k] @ ( matV[:,0:k].T @ matV[:,k] )
+			vNorm = linalg.norm( matV[:,k] )
+			if ( vNorm <= dropRelThresh ):
+				rvcDrop[k] = True
+				matV[:,k] = 0.0
+			else:
+				matV[:,k] /= vNorm
+				# Note: if dropThresh is too small, may end up keeping more than sizeX vectors.
+	#msg( 'matV = \n', matV )
+	#msg( 'rvcDrop =', rvcDrop )
+	rvcKeep = ~rvcDrop
+	matV = matV[:,rvcKeep]
+	#msg( 'matV = \n', matV )
+	return ( matV, rvcKeep )
+def getLambdaFloor( f0, vecPhi, vecLambda, fFloor ):
+	def fRes( lambdaF ):
+		fRes = f0 - fFloor
+		for k in range( 0, vecLambda.shape[0] ):
+			fRes -= ((vecPhi[k])**2) / (2.0*max( vecLambda[k], lambdaF ))
+		return fRes
+	assert f0 > fFloor
+	if ( min(vecLambda) > 0.0 ):
+		if ( fRes( 0.0 ) >= 0.0 ):
+			return 0.0
+	lambdaHi = (vecPhi @ vecPhi) / ( 2.0 * ( f0 - fFloor )  )
+	#msg( 'lambda: ', lambdaHi )
+	if ( lambdaHi > max(vecLambda) ):
+		return lambdaHi
+	lambdaLo = MYEPS * max(vecLambda)
+	#msg( 'lambda: ', lambdaHi, lambdaLo )
+	if ( fRes( lambdaLo ) >= 0.0 ):
+		return lambdaLo
+	lambdaF = optimize.bisect( fRes, lambdaLo, lambdaHi )
+	#msg( 'lambda: ', lambdaHi, lambdaLo, lambdaF )
+	#msg( 'res = ', fRes(lambdaF) )
+	#exit()
+	return lambdaF
+# Note:
+#  "zeta" here was "phi" in 20230106stage\levsol0111.m;
+#  "phi" here was "gamma" in 20230106stage\levsol0111.m.
+def levsol( f0, vecPhi, matPsi, vecLambdaCurve, sMax, vecS, dMax, vecLambdaObjf, fMin ):
+	def zetaOfP( p ):
+		if ( p < MYEPS ):
+			vecZeta = p * vecPhi / np.min( vecLambdaCurve )
+		else:
+			mu = np.min( vecLambdaCurve ) * ( (1.0/p) - 1.0 )
+			vecZeta = vecPhi / ( vecLambdaCurve + mu )
+		return vecZeta
+	def deltaYOfP( p ):
+		vecZeta = zetaOfP( p )
+		vecDeltaY = ( matPsi @ vecZeta ) / vecS
+		return vecDeltaY
+	def fOfP( p ):
+		vecZeta = zetaOfP( p )
+		f = f0 - ( vecZeta @ vecPhi ) + (( vecZeta @ ( vecLambdaObjf * vecZeta ))/2.0)
+		return f
+	def sPastMaxOfP( p ):
+		return linalg.norm( zetaOfP(p) ) - sMax
+	def dPastMaxOfP( p ):
+		return linalg.norm( deltaYOfP(p) ) - dMax
+	def fTillMinOfP( p ):
+		return fOfP( p ) - fMin
+	assert np.min(vecS) > 0.0
+	assert np.min(vecLambdaCurve) > 0.0
+	assert linalg.norm(vecPhi) > 0.0
+	p1 = 1.0
+	if ( sMax > 0.0 ):
+		assert sPastMaxOfP(0.0) < 0.0
+		if ( sPastMaxOfP(p1) > 0.0 ):
+			p1New = optimize.bisect( sPastMaxOfP, 0.0, p1 )
+			p1 = p1New
+	if ( dMax > 0.0 ):
+		assert dPastMaxOfP(0.0) < 0.0
+		if ( dPastMaxOfP(p1) > 0.0 ):
+			p1New = optimize.bisect( dPastMaxOfP, 0.0, p1 )
+			p1 = p1New
+	# Ugh. Just require fMin.
+	assert fTillMinOfP(0.0) > 0.0
+	if ( fTillMinOfP(p1) < 0.0 ):
+		p1New = optimize.bisect( fTillMinOfP, 0.0, p1 )
+		p1New = p1
+	return deltaYOfP( p1 )
+# Init problem.
+MYEPS = 1.0E-8
+rngSeed = 0
+sizeX = 50
+sizeF = sizeX
+msg( 'rngSeed = ', rngSeed )
+msg( 'sizeX = ', sizeX )
+msg( 'sizeF = ', sizeF )
+rng = default_rng(rngSeed)
+matA = rng.standard_normal(( sizeF, sizeX ))
+#matA = np.diag(np.linspace(1.0,sizeX,sizeX))
+matHCrit = np.zeros(( sizeX, sizeX ))
+matHCrit[:,:] = matA.T @ matA
+vecXCrit = rng.standard_normal(( sizeX ))
+#vecXCrit = np.ones(( sizeX ))
+fCrit = 10.0
+noiseX = 1.0E-5
+#noiseX = 0.0
+def funcFG( x ):
+	#d = x - vecXCrit
+	d = x - vecXCrit + noiseX*rng.standard_normal(( sizeX ))
+	g = matHCrit @ d
+	f = fCrit + (( d @ g )/2.0)
+	return ( f, g )
+vecX0 = np.zeros(( sizeX ))
+f0, vecG0 = funcFG( vecX0 )
+msg( 'f0 = ', f0 )
+msg( '||vecG0|| = ', linalg.norm(vecG0) )
+
+# Init SGD solver.
+fBail = f0 * 1E8
+fevalLimit = 100000
+learningRate = 0.01
+learningRate = 0.001
+momentumFactor = 0.9
+msg( 'fevalLimit = ', fevalLimit )
+msg( 'learningRate = ', learningRate )
+msg( 'momentumFactor = ', momentumFactor )
+fevalCount = 0
+vecX = vecX0.copy()
+vecP = np.zeros(( sizeX ))
+
+# Init superPt.
+numFevalPerSuperPt = 100
+superPtLimit = 1000
+fTol = f0*1.0E-12
+gTol = linalg.norm(vecG0)*1.0E-6
+xTol = sizeX * 1.0E-12
+#fTol = 1.0E-6
+#gTol = 1.0E-6
+msg( 'numFevalPerSuperPt = ', numFevalPerSuperPt)
+msg( 'superPtLimit = ', superPtLimit )
+msg( 'fTol = ', fTol)
+msg( 'gTol = ', gTol )
+running_fevalCount = 0
+running_fTot = 0.0
+running_fSqTot = 0.0
+running_xtgTot = 0.0
+running_vecGTot = np.zeros(( sizeX ))
+running_vecXTot = np.zeros(( sizeX ))
+superPtCount = 0
+vecXSeed = vecX.copy()
+vecPSeed = vecP.copy()
+vecXHarvest = np.zeros(( sizeX ))
+vecPHarvest = np.zeros(( sizeX ))
+superPt_f = 0.0
+superPt_fVar = 0.0
+superPt_vecG = np.zeros(( sizeX ))
+superPt_vecX = np.zeros(( sizeX ))
+
+# Init minf and best...
+#  "best" is superPt with min ||vecG|| sbjt f not too much larger than minf_f.
+coeff_best_minf = 1.0
+coeff_best_best = 1.0
+coeff_best_curr = 1.0
+msg( 'coeff_best_minf = ', coeff_best_minf )
+msg( 'coeff_best_best = ', coeff_best_best )
+msg( 'coeff_best_curr = ', coeff_best_curr )
+minf_present = False
+minf_f = 0.0
+minf_fVar = 0.0
+minf_vecG = np.zeros(( sizeX ))
+minf_vecX = np.zeros(( sizeX ))
+best_present = False
+best_f = 0.0
+best_fVar = 0.0
+best_vecG = np.zeros(( sizeX ))
+best_vecX = np.zeros(( sizeX ))
+best_vecXHarvest = np.zeros(( sizeX ))
+best_vecPHarvest = np.zeros(( sizeX ))
+badCount = 0
+
+# Init records.
+maxNumRecords = 20
+msg( 'maxNumRecords = ', maxNumRecords )
+record_matX = np.zeros(( sizeX, maxNumRecords ))
+record_matG = np.zeros(( sizeX, maxNumRecords ))
+record_rvcF = np.zeros(( 1, maxNumRecords ))
+numRecords = 0
+
+# Init QNJ.
+useQNJ = True # Unless...
+#useQNJ = False
+maxSubspaceSize = maxNumRecords
+qnj_dropThresh = 0.1
+msg( 'useQNJ = ', useQNJ )
+msg( 'maxSubspaceSize = ', maxSubspaceSize )
+msg( 'qnj_dropThresh = ', qnj_dropThresh )
+# Pre-alloc workspaces.
+###matD = np.zeros(( sizeX, maxNumRecords ))
+###matV = np.zeros(( sizeX, maxSubspaceSize ))
+sizeK = 0
+qnj_havePrev = False
+qnj_sPrev = -1.0
+qnj_sMax = 3.0
+qnj_sMax_btCoeff = 0.1
+qnj_sMax_ftCoeff = 2.0
+qnj_dPrev = -1.0
+qnj_dMax = -1.0
+qnj_dMax_btCoeff = 0.1
+qnj_dMax_ftCoeff = 2.0
+
+# END QNJ INITIALIZATION
+
+
+
 print("Main loop...")
 for epoch in range(2):  # loop over the dataset multiple times
     
