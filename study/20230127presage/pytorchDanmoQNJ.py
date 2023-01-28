@@ -360,7 +360,7 @@ sizeX = index_list[-1]
 #    g = matHCrit @ d
 #    f = fCrit + (( d @ g )/2.0)
 #    return ( f, g )
-#vecX0 = np.zeros(( sizeX ))
+vecX0 = sxsolve_x.copy()
 #f0, vecG0 = funcFG( vecX0 )
 #msg( 'f0 = ', f0 )
 #msg( '||vecG0|| = ', linalg.norm(vecG0) )
@@ -381,7 +381,7 @@ vecX = sxsolve_x
 vecP = sxsolve_step
 
 # Init superPt.
-numFevalPerSuperPt = 100
+numFevalPerSuperPt = 1000
 superPtLimit = 1000
 # DRaburn 2023-01-27, pytorchDanmo: I failed to write the tolerances integrably.
 #fTol = f0*1.0E-12
@@ -443,7 +443,7 @@ numRecords = 0
 
 # Init QNJ.
 useQNJ = True # Unless...
-#useQNJ = False
+useQNJ = False
 maxSubspaceSize = maxNumRecords
 qnj_dropThresh = 0.1
 msg( 'useQNJ = ', useQNJ )
@@ -506,9 +506,13 @@ for epoch in range(2):  # loop over the dataset multiple times
             do_grad_init = False
         
         # DRaburn 2023-01-27, pytorchDanmo: Interface
-        vecX = sxsolve_x # Just to be sure.
-        vecG = sxsolve_gradloc
-        f = sxsolve_f
+        #vecX = sxsolve_x.copy()
+        vecG = sxsolve_gradloc.copy()
+        f = float( sxsolve_f.detach().numpy() )
+        #msg( type( vecX ) )
+        #msg( type( vecG ) )
+        #msg( type( f ) )
+        #exit()
         
         # DRaburn 2023-01-27, pytorchDanmo: QNJ    fevalCount += 1
         
@@ -600,7 +604,8 @@ for epoch in range(2):  # loop over the dataset multiple times
             badCount += 1
         
         # Print progress log.
-        if ( 0 == superPtCount % 10 ):
+        #if ( 0 == superPtCount % 10 ):
+        if ( True ):
             if ( newIsMinf ):
                 progLogSymbol = '*'
             elif ( newIsBest ):
@@ -641,6 +646,7 @@ for epoch in range(2):  # loop over the dataset multiple times
         sizeK = 0
         vecXSeed[:] = vecX[:]
         vecPSeed[:] = vecP[:]
+        sxsolve_x[:] = vecX[:]
         
         forceBasisGen = True # For comparison to Octave code.
         if ( (not useQNJ) and (not forceBasisGen) ):
