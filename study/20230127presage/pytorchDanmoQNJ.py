@@ -556,6 +556,7 @@ for epoch in range(2):  # loop over the dataset multiple times
         superPt_fAvg = running_fTot / running_fevalCount
         superPt_xtgAvg = running_xtgTot / running_fevalCount
         superPt_f = superPt_fAvg - (( superPt_xtgAvg - ( superPt_vecX @ superPt_vecG ) )/2.0)
+        assert superPt_f >= -fTol
         superPt_fSqVar = (running_fSqTot/running_fevalCount) - (superPt_fAvg**2)
         if ( 0.0 < superPt_fSqVar ):
             superPt_fVar = np.sqrt( superPt_fSqVar )
@@ -877,6 +878,8 @@ for epoch in range(2):  # loop over the dataset multiple times
             running_loss = 0.0
             running_time0 = time.time()
             running_feval_count = 0
+    if ( not doMainLoop ):
+        break
 
 print('Finished Training Demo')
 # Look at results.
