@@ -75,7 +75,7 @@ def getLambdaFloor( f0, vecPhi, vecLambda, fFloor ):
 	#msg( 'lambda: ', lambdaHi )
 	if ( lambdaHi > max(vecLambda) ):
 		return lambdaHi
-	lambdaLo = 1.0E-8 * max(vecLambda)
+	lambdaLo = MYEPS * max(vecLambda)
 	#msg( 'lambda: ', lambdaHi, lambdaLo )
 	if ( fRes( lambdaLo ) >= 0.0 ):
 		return lambdaLo
@@ -86,6 +86,7 @@ def getLambdaFloor( f0, vecPhi, vecLambda, fFloor ):
 	return lambdaF
 
 # Init problem.
+MYEPS = 1.0E-8
 rngSeed = 0
 sizeX = 50
 sizeF = sizeX
@@ -131,6 +132,7 @@ numFevalPerSuperPt = 100
 superPtLimit = 1000
 fTol = f0*1.0E-12
 gTol = linalg.norm(vecG0)*1.0E-6
+xTol = sizeX * 1.0E-12
 #fTol = 1.0E-6
 #gTol = 1.0E-6
 msg( 'numFevalPerSuperPt = ', numFevalPerSuperPt)
@@ -195,8 +197,15 @@ msg( 'qnj_dropThresh = ', qnj_dropThresh )
 ###matD = np.zeros(( sizeX, maxNumRecords ))
 ###matV = np.zeros(( sizeX, maxSubspaceSize ))
 sizeK = 0
-
-
+qnj_havePrev = False
+qnj_sPrev = -1.0
+qnj_sMax = 3.0
+qnj_sMax_btCoeff = 0.1
+qnj_sMax_ftCoeff = 2.0
+qnj_dPrev = -1.0
+qnj_dMax = -1.0
+qnj_dMax_btCoeff = 0.1
+qnj_dMax_ftCoeff = 2.0
 
 # Main loop.
 doMainLoop = True
@@ -294,7 +303,6 @@ while doMainLoop:
 	
 	# Print progress log.
 	if ( 0 == superPtCount % 10 ):
-		#if ( 0 == superPtCount % 1 ):
 		if ( newIsMinf ):
 			progLogSymbol = '*'
 		elif ( newIsBest ):
@@ -305,7 +313,7 @@ while doMainLoop:
 		  f' {superPtCount:4d} ({badCount:4d}X), {fevalCount:7d}:',
 		  f' {sizeK:3d} / {numRecords:3d}:'
 		  f'  {linalg.norm( best_vecX - vecX0 ):8.2E};',
-		  f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E};',
+		  f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E}, {qnj_dPrev:8.2E} / {qnj_dMax:8.2E};',
 		  f'  {best_f:8.2E};',
 		  f'  {linalg.norm(best_vecG):8.2E}',
 		  progLogSymbol )
@@ -319,6 +327,9 @@ while doMainLoop:
 		doMainLoop = False
 	elif ( superPtCount > 0 and superPtCount >= superPtLimit ):
 		msg( 'IMPOSED STOP: superPtCount >= superPtLimit.' )
+		doMainLoop = False
+	elif ( qnj_havePrev and ( qnj_dPrev < xTol ) and (not newIsBest) ):
+		msg( 'IMPOSED STOP: Failed to improve with a QNJ step smaller than xTol.' )
 		doMainLoop = False
 	# Check superPt_vecX vs prev?
 	# Check vecXHarvest vs vecXSeed?
@@ -425,8 +436,21 @@ while doMainLoop:
 	#continue
 	
 	# Update trust region and scaling.
-	# TODO
-	vecS = np.ones(( sizeK )) # Placeholder.
+
+	if ( qnj_havePrev ):
+		if ( newIsBest ):
+			qnj_sMax = qnj_sPrev * qnj_sMax_ftCoeff
+			qnj_dMax = qnj_dPrev * qnj_dMax_ftCoeff
+		else:
+			qnj_sMax = qnj_sPrev * qnj_sMax_btCoeff
+			qnj_dMax = qnj_dPrev * qnj_dMax_btCoeff
+	#msg( 'caps: ', qnj_sMax, qnj_dMax )
+	#msg( 'matR =\n', matR )
+	vecCap = np.max( np.abs(matR), 1 )
+	vecCap[:] += np.sqrt(MYEPS)*np.max(vecCap)
+	#msg( 'vecCap =', vecCap )
+	vecS = 1.0 / vecCap.copy()
+	#msg( 'vecS = ', vecS )
 	matS = np.diag(vecS)
 	matSInv = np.diag(1.0/vecS)
 	vecGammaScl = matSInv @ vecGammaFit
@@ -448,7 +472,6 @@ while doMainLoop:
 	
 	# Calculate lambdaMod,
 	#  lambda perturbed so that Hessian is pos-def and fModMin >= 0.0
-	# TODO
 	# Note: we might consider doing this from our launch rather than anchor. Oh well.
 	#msg( 'vecLambdaOrig = ', vecLambdaOrig )
 	doLambdaFloorTest = False
@@ -492,8 +515,8 @@ while doMainLoop:
 	vecGammaPerp = vecT - ( coeffPG * vecGammaLaunch )
 	testDecomp = True
 	if ( testDecomp ):
-		assert reldiff( vecXLaunch, vecXAnchor + (matQ @ vecYLaunch) + vecXPerp ) < 1.0E-8
-		assert reldiff( vecPLaunch, (matQ @ ( (coeffPG*vecGammaLaunch) + vecGammaPerp )) + vecPPerp ) <= 1.0E-8
+		assert reldiff( vecXLaunch, vecXAnchor + (matQ @ vecYLaunch) + vecXPerp ) < MYEPS
+		assert reldiff( vecPLaunch, (matQ @ ( (coeffPG*vecGammaLaunch) + vecGammaPerp )) + vecPPerp ) <= MYEPS
 	if ( coeffPG > 0.0 ):
 		coeffPG = 0.0
 	
@@ -517,10 +540,9 @@ while doMainLoop:
 	
 	vecXSeed[:] = vecX
 	vecPSeed[:] = vecP
-	
-	#msg( 'HALT!' )
-	#doMainLoop = False
-	#break
+	qnj_havePrev = True
+	qnj_dPrev = linalg.norm( vecDelta )
+	qnj_sPrev = linalg.norm( matS @ vecZ )
 	
 	
 
@@ -530,7 +552,7 @@ msg(
   f' {superPtCount:4d} ({badCount:4d}X), {fevalCount:7d}:',
   f' {sizeK:3d} / {numRecords:3d}:'
   f'  {linalg.norm( superPt_vecX - vecX0 ):8.2E};',
-  f'  {-1.0:8.1E};',
+  f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E}, {qnj_dPrev:8.2E} / {qnj_dMax:8.2E};',
   f'  {superPt_f:8.2E};',
   f'  {linalg.norm(superPt_vecG):8.2E}',
   progLogSymbol )
