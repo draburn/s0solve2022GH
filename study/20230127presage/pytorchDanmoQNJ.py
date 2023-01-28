@@ -323,11 +323,15 @@ def levsol( f0, vecPhi, matPsi, vecLambdaCurve, sMax, vecS, dMax, vecLambdaObjf,
         if ( sPastMaxOfP(p1) > 0.0 ):
             p1New = optimize.bisect( sPastMaxOfP, 0.0, p1 )
             p1 = p1New
+    elif ( 0.0 == sMax ):
+        p1 = 0.0
     if ( dMax > 0.0 ):
         assert dPastMaxOfP(0.0) < 0.0
         if ( dPastMaxOfP(p1) > 0.0 ):
             p1New = optimize.bisect( dPastMaxOfP, 0.0, p1 )
             p1 = p1New
+    elif ( 0.0 == dMax ):
+        p1 = 0.0
     # Ugh. Just require fMin.
     assert fTillMinOfP(0.0) > 0.0
     if ( fTillMinOfP(p1) < 0.0 ):
@@ -396,6 +400,7 @@ msg( 'superPtLimit = ', superPtLimit )
 msg( 'fTol = ', fTol)
 msg( 'gTol = ', gTol )
 running_fevalCount = 0
+#running_fMin = -1.0
 running_fTot = 0.0
 running_fSqTot = 0.0
 running_xtgTot = 0.0
@@ -416,9 +421,14 @@ superPt_vecX = np.zeros(( sizeX ))
 coeff_best_minf = 1.0
 coeff_best_best = 1.0
 coeff_best_curr = 1.0
+forceNewAsBest = False
 msg( 'coeff_best_minf = ', coeff_best_minf )
 msg( 'coeff_best_best = ', coeff_best_best )
 msg( 'coeff_best_curr = ', coeff_best_curr )
+if (forceNewAsBest):
+    msg( '*** WARNING: forceNewAsBest = ', forceNewAsBest )
+else:
+    msg( 'forceNewAsBest = ', forceNewAsBest )
 minf_present = False
 minf_f = 0.0
 minf_fVar = 0.0
@@ -455,13 +465,13 @@ msg( 'qnj_dropThresh = ', qnj_dropThresh )
 sizeK = 0
 qnj_havePrev = False
 qnj_sPrev = -1.0
-qnj_sMax = 3.0
+qnj_sMax = 1.0
 qnj_sMax_btCoeff = 0.1
-qnj_sMax_ftCoeff = 2.0
+qnj_sMax_ftCoeff = 1.2
 qnj_dPrev = -1.0
 qnj_dMax = -1.0
 qnj_dMax_btCoeff = 0.1
-qnj_dMax_ftCoeff = 2.0
+qnj_dMax_ftCoeff = 1.2
 
 doMainLoop = True
 
@@ -506,6 +516,7 @@ for epoch in range(2):  # loop over the dataset multiple times
             do_grad_init = False
         
         # DRaburn 2023-01-27, pytorchDanmo: Interface
+        fevalCount += 1
         #vecX = sxsolve_x.copy()
         vecG = sxsolve_gradloc.copy()
         f = float( sxsolve_f.detach().numpy() )
@@ -524,6 +535,8 @@ for epoch in range(2):  # loop over the dataset multiple times
         running_xtgTot += xtg
         running_vecGTot[:] += vecG[:]
         running_vecXTot[:] += vecX[:]
+        #if ( running_fMin < 0.0 or f < running_fMin ):
+        #    running_fMin = f
         
         # Updage SGD.
         vecP[:] = ( momentumFactor * vecP[:] ) - ( learningRate * vecG[:] )
@@ -555,7 +568,8 @@ for epoch in range(2):  # loop over the dataset multiple times
         superPt_vecX[:] = running_vecXTot[:] / running_fevalCount
         superPt_fAvg = running_fTot / running_fevalCount
         superPt_xtgAvg = running_xtgTot / running_fevalCount
-        superPt_f = superPt_fAvg - (( superPt_xtgAvg - ( superPt_vecX @ superPt_vecG ) )/2.0)
+        ###superPt_f = superPt_fAvg - (( superPt_xtgAvg - ( superPt_vecX @ superPt_vecG ) )/2.0)
+        superPt_f = superPt_fAvg
         assert superPt_f >= -fTol
         superPt_fSqVar = (running_fSqTot/running_fevalCount) - (superPt_fAvg**2)
         if ( 0.0 < superPt_fSqVar ):
@@ -574,7 +588,10 @@ for epoch in range(2):  # loop over the dataset multiple times
         # Do minf & best analysis.
         newIsMinf = False # Unless...
         newIsBest = False # Unless...
-        if ( not minf_present ):
+        if ( forceNewAsBest ):
+            newIsMinf = True
+            newIsBest = True
+        elif ( not minf_present ):
             newIsMinf = True
             newIsBest = True
         elif ( superPt_f < minf_f ):
@@ -645,12 +662,12 @@ for epoch in range(2):  # loop over the dataset multiple times
         # Record seed for posterity.
         # This will almost certainly be modified if use a quasi-newton jump.
         sizeK = 0
-        vecXSeed[:] = vecX[:]
-        vecPSeed[:] = vecP[:]
-        sxsolve_x[:] = vecX[:]
         
         forceBasisGen = True # For comparison to Octave code.
         if ( (not useQNJ) and (not forceBasisGen) ):
+            vecXSeed[:] = vecX[:]
+            vecPSeed[:] = vecP[:]
+            sxsolve_x[:] = vecX[:]
             continue
         
         # Add information to records.
@@ -669,13 +686,16 @@ for epoch in range(2):  # loop over the dataset multiple times
         
         # Finally, QNJ!... or not.
         if ( numRecords < 2 ):
+            vecXSeed[:] = vecX[:]
+            vecPSeed[:] = vecP[:]
+            sxsolve_x[:] = vecX[:]
             continue
         elif ( not newIsBest ):
             vecX[:] = best_vecXHarvest[:]
             vecP[:] = best_vecPHarvest[:]
-            sizeK = 0
             vecXSeed[:] = vecX[:]
             vecPSeed[:] = vecP[:]
+            sxsolve_x[:] = vecX[:]
             continue
             # This is 'grad-if-bad'.
         
@@ -709,10 +729,16 @@ for epoch in range(2):  # loop over the dataset multiple times
         #msg( 'D =\n', matD )
         #msg( 'Q*R =\n', matQ @ matR )
         if ( 0 == sizeK ):
+            vecXSeed[:] = vecX[:]
+            vecPSeed[:] = vecP[:]
+            sxsolve_x[:] = vecX[:]
             continue
         matGamma = matQ.T @ matG
         vecGammaAnchor = matQ.T @ vecGAnchor
         if ( not useQNJ ):
+            vecXSeed[:] = vecX[:]
+            vecPSeed[:] = vecP[:]
+            sxsolve_x[:] = vecX[:]
             continue
         
         # Generate fit.
@@ -749,6 +775,9 @@ for epoch in range(2):  # loop over the dataset multiple times
             else:
                 qnj_sMax = qnj_sPrev * qnj_sMax_btCoeff
                 qnj_dMax = qnj_dPrev * qnj_dMax_btCoeff
+        else:
+            if ( qnj_dMax < linalg.norm( vecXHarvest - vecXSeed ) ):
+                qnj_dMax = linalg.norm( vecXHarvest - vecXSeed )
         #msg( 'caps: ', qnj_sMax, qnj_dMax )
         #msg( 'matR =\n', matR )
         vecCap = np.max( np.abs(matR), 1 )
@@ -807,12 +836,15 @@ for epoch in range(2):  # loop over the dataset multiple times
         
         # Decompose "launch".
         vecXLaunch = best_vecXHarvest.copy()
+        vecPLaunch = best_vecPHarvest.copy()
+        ###vecXLaunch = vecXHarvest.copy()
+        ###vecPLaunch = vecPHarvest.copy()
+        #
         vecDLaunch = vecXLaunch - vecXAnchor
         vecYLaunch = matQ.T @ vecDLaunch
         vecXPerp = vecDLaunch - ( matQ @ vecYLaunch )
         vecGammaLaunch = vecGammaFit + ( matHMod @ vecYLaunch )
         fLaunch = fFit + ( vecYLaunch @ vecGammaFit ) + (( vecYLaunch @ vecGammaLaunch )/2.0)
-        vecPLaunch = best_vecPHarvest.copy()
         vecT = matQ.T @ vecPLaunch
         vecPPerp = vecPLaunch - ( matQ @ vecT )
         assert linalg.norm( vecGammaLaunch ) > 0.0
@@ -832,7 +864,9 @@ for epoch in range(2):  # loop over the dataset multiple times
         vecLambdaCurve = vecLambdaMod  # Shallow copy / reference only / DO NOT MODIFY!
         vecLambdaObjf = vecLambdaOrig  # Shallow copy / reference only / DO NOT MODIFY!
         qnj_fMin = -0.01*fFit
+        #msg( 'caps = ', qnj_sMax, qnj_dMax )
         vecZ = levsol( fFit, vecPhi, matPsi, vecLambdaCurve, qnj_sMax, vecS, qnj_dMax, vecLambdaObjf, qnj_fMin )
+        ###vecZ = np.zeros( sizeK )
         
         # Generate new seed.
         vecYNew = vecYLaunch + vecZ
@@ -844,11 +878,11 @@ for epoch in range(2):  # loop over the dataset multiple times
         alphaG = linalg.norm( vecGammaNew / vecS ) / linalg.norm( vecGammaLaunch / vecS )
         vecDelta = matQ @ vecZ
         #
-        vecX = vecXAnchor + ( matQ @ vecYNew ) + ( alphaG * vecXPerp )
-        vecP = (matQ @ ( (coeffPG*vecGammaNew) + (alphaG*vecGammaPerp) )) + (alphaF*vecPPerp)
+        vecX[:] = vecXAnchor + ( matQ @ vecYNew ) + ( alphaG * vecXPerp )
+        vecP[:] = (matQ @ ( (coeffPG*vecGammaNew) + (alphaG*vecGammaPerp) )) + (alphaF*vecPPerp)
         
-        vecXSeed[:] = vecX
-        vecPSeed[:] = vecP
+        vecXSeed[:] = vecX[:]
+        vecPSeed[:] = vecP[:]
         qnj_havePrev = True
         qnj_dPrev = linalg.norm( vecDelta )
         qnj_sPrev = linalg.norm( matS @ vecZ )
