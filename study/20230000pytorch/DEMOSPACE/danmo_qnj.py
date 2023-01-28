@@ -451,6 +451,25 @@ while doMainLoop:
 	# TODO
 	# Note: we might consider doing this from our launch rather than anchor. Oh well.
 	#msg( 'vecLambdaOrig = ', vecLambdaOrig )
+	doLambdaFloorTest = False
+	if (doLambdaFloorTest):
+		fFit = 1.0
+		vecPhi = np.array([1.0,1.0,1.0])
+		#vecLambdaOrig = np.array([10.0,0.01,-1.0])
+		vecLambdaOrig = np.array([0.0,0.0,-1.0])
+		vecLambdaOrig = np.array([10.0,10.0,10.0])
+		vecLambdaOrig = np.array([10.0,10.0,0.0])
+		vecLambdaOrig = np.array([10.0,10.0,0.56])
+		vecLambdaOrig = np.array([10.0,10.0,0.55])
+		lambdaFloor = getLambdaFloor( fFit, vecPhi, vecLambdaOrig, 0.0 )
+		msg( 'lambdaFloor =', lambdaFloor )
+		vecLambdaMod = vecLambdaOrig.copy()
+		for k in range ( 0, vecLambdaMod.shape[0] ):
+			if ( vecLambdaMod[k] < lambdaFloor ):
+				vecLambdaMod[k] = lambdaFloor
+		fRes = fFit - (np.sum( vecPhi * vecPhi / vecLambdaMod )/2.0)
+		msg( 'fRes = ', fRes )
+		exit()
 	lambdaFloor = getLambdaFloor( fFit, vecPhi, vecLambdaOrig, -0.01*fFit )
 	vecLambdaMod = vecLambdaOrig.copy()
 	for k in range ( 0, vecLambdaMod.shape[0] ):
