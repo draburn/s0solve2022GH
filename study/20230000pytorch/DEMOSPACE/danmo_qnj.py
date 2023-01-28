@@ -2,7 +2,7 @@ import inspect
 import numpy as np
 from numpy.random import default_rng
 from scipy import linalg
-#from scipy import optimize
+from scipy import optimize
 
 # Init logging.
 frame = inspect.currentframe()
@@ -61,6 +61,29 @@ def utorthdrop( matA, dropRelThresh, dropAbsThresh ):
 	matV = matV[:,rvcKeep]
 	#msg( 'matV = \n', matV )
 	return ( matV, rvcKeep )
+def getLambdaFloor( f0, vecPhi, vecLambda, fFloor ):
+	def fRes( lambdaF ):
+		fRes = f0 - fFloor
+		for k in range( 0, vecLambda.shape[0] ):
+			fRes -= ((vecPhi[k])**2) / (2.0*max( vecLambda[k], lambdaF ))
+		return fRes
+	assert f0 > fFloor
+	if ( min(vecLambda) > 0.0 ):
+		if ( fRes( 0.0 ) >= 0.0 ):
+			return 0.0
+	lambdaHi = (vecPhi @ vecPhi) / ( 2.0 * ( f0 - fFloor )  )
+	#msg( 'lambda: ', lambdaHi )
+	if ( lambdaHi > max(vecLambda) ):
+		return lambdaHi
+	lambdaLo = 1.0E-8 * max(vecLambda)
+	#msg( 'lambda: ', lambdaHi, lambdaLo )
+	if ( fRes( lambdaLo ) >= 0.0 ):
+		return lambdaLo
+	lambdaF = optimize.bisect( fRes, lambdaLo, lambdaHi )
+	#msg( 'lambda: ', lambdaHi, lambdaLo, lambdaF )
+	#msg( 'res = ', fRes(lambdaF) )
+	#exit()
+	return lambdaF
 
 # Init problem.
 rngSeed = 0
@@ -421,14 +444,18 @@ while doMainLoop:
 	#  s = np.norm( matS * vecZ ) = np.norm( matM \ vecPhi )
 	#  vecDelta = matV @ vecZ
 	#  d = np.norm( vecDelta ) = np.norm( vecZ )
-	#  f = f0 + vecGammaFit
 	#msg( "But... we want to do all of this from LAUNCH not ANCHOR?" )
 	
 	# Calculate lambdaMod,
 	#  lambda perturbed so that Hessian is pos-def and fModMin >= 0.0
 	# TODO
+	# Note: we might consider doing this from our launch rather than anchor. Oh well.
+	#msg( 'vecLambdaOrig = ', vecLambdaOrig )
+	lambdaFloor = getLambdaFloor( fFit, vecPhi, vecLambdaOrig, -0.01*fFit )
 	vecLambdaMod = vecLambdaOrig.copy()
-	# vecLambdaMod = <work>
+	for k in range ( 0, vecLambdaMod.shape[0] ):
+		if ( vecLambdaMod[k] < lambdaFloor ):
+			vecLambdaMod[k] = lambdaFloor
 	matHMod = matS @ matPsi @ np.diag(vecLambdaMod) @ (matPsi.T) @ matS
 	
 	# Decompose "launch".
