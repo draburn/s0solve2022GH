@@ -10,3 +10,10 @@ import scipy.optimize as opt
 x0 = opt.bisect( funcy, 0.0, 2.0 )
 print( 'x0 = ', x0 )
 #print( 'r = ', r )
+
+exit()
+# The below fails.
+def funky( x ):
+	return x**3
+xFunky = opt.bisect( funky-2.0, 0.0, 2.0 )
+print( 'xFunky = ', xFunky )

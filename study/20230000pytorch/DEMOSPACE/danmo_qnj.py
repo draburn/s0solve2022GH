@@ -84,7 +84,51 @@ def getLambdaFloor( f0, vecPhi, vecLambda, fFloor ):
 	#msg( 'res = ', fRes(lambdaF) )
 	#exit()
 	return lambdaF
-
+# Note:
+#  "zeta" here was "phi" in 20230106stage\levsol0111.m;
+#  "phi" here was "gamma" in 20230106stage\levsol0111.m.
+def levsol( f0, vecPhi, matPsi, vecLambdaCurve, sMax, vecS, dMax, vecLambdaObjf, fMin ):
+	def zetaOfP( p ):
+		if ( p < MYEPS ):
+			vecZeta = p * vecPhi / np.min( vecLambdaCurve )
+		else:
+			mu = np.min( vecLambdaCurve ) * ( (1.0/p) - 1.0 )
+			vecZeta = vecPhi / ( vecLambdaCurve + mu )
+		return vecZeta
+	def deltaYOfP( p ):
+		vecZeta = zetaOfP( p, vecPhi, vecLambdaCurve )
+		vecDeltaY = ( matPsi @ vecZeta ) / vecS
+		return vecDeltaY
+	def fOfP( p ):
+		vecZeta = zetaOfP( p, vecPhi, vecLambdaCurve )
+		f = f0 - ( vecZeta @ vecPhi ) + (( vecZeta @ ( vecLambdaObjf * vecZeta ))/2.0)
+		return f
+	def sPastMaxOfP( p ):
+		return linalg.norm( zetaOfP(p) ) - sMax
+	def dPastMaxOfP( p ):
+		return linalg.norm( deltaYOfP(p) ) - dMax
+	def fTillMinOfP( p ):
+		return fOfP( p ) - fMin
+	assert np.min(vecS) > 0.0
+	assert np.min(vecLambdaCurve) > 0.0
+	assert linalg.norm(vecPhi) > 0.0
+	p1 = 1.0
+	if ( sMax > 0.0 ):
+		assert sPastMaxOfP(0.0) < 0.0
+		if ( sPastMaxOfP(p1) > 0.0 ):
+			p1New = optimize.bisect( sPastMaxOfP, 0.0, p1 )
+			p1 = p1New
+	if ( dMax > 0.0 ):
+		assert dPastMaxOfP(0.0) < 0.0
+		if ( dPastMaxOfP(p1) > 0.0 ):
+			p1New = optimize.bisect( dPastMaxOfP, 0.0, p1 )
+			p1 = p1New
+	# Ugh. Just require fMin.
+	assert fTillMinOfP(0.0) > 0.0
+	if ( fTillMinOfP(p1) < 0.0 ):
+		p1New = optimize.bisect( fTillMinOfP, 0.0, p1 )
+		p1New = p1
+	vecDeltaY = deltaYOfP( p1 )
 # Init problem.
 MYEPS = 1.0E-8
 rngSeed = 0
