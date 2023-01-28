@@ -96,11 +96,11 @@ def levsol( f0, vecPhi, matPsi, vecLambdaCurve, sMax, vecS, dMax, vecLambdaObjf,
 			vecZeta = vecPhi / ( vecLambdaCurve + mu )
 		return vecZeta
 	def deltaYOfP( p ):
-		vecZeta = zetaOfP( p, vecPhi, vecLambdaCurve )
+		vecZeta = zetaOfP( p )
 		vecDeltaY = ( matPsi @ vecZeta ) / vecS
 		return vecDeltaY
 	def fOfP( p ):
-		vecZeta = zetaOfP( p, vecPhi, vecLambdaCurve )
+		vecZeta = zetaOfP( p )
 		f = f0 - ( vecZeta @ vecPhi ) + (( vecZeta @ ( vecLambdaObjf * vecZeta ))/2.0)
 		return f
 	def sPastMaxOfP( p ):
@@ -128,7 +128,7 @@ def levsol( f0, vecPhi, matPsi, vecLambdaCurve, sMax, vecS, dMax, vecLambdaObjf,
 	if ( fTillMinOfP(p1) < 0.0 ):
 		p1New = optimize.bisect( fTillMinOfP, 0.0, p1 )
 		p1New = p1
-	vecDeltaY = deltaYOfP( p1 )
+	return deltaYOfP( p1 )
 # Init problem.
 MYEPS = 1.0E-8
 rngSeed = 0
@@ -567,7 +567,11 @@ while doMainLoop:
 	# Calculate step.
 	# TODO.
 	# Placeholder: take a Newton step without any trust region.
-	vecZ = linalg.solve( matHMod, -vecGammaLaunch )
+	#vecZ = linalg.solve( matHMod, -vecGammaLaunch )
+	vecLambdaCurve = vecLambdaMod  # Shallow copy / reference only / DO NOT MODIFY!
+	vecLambdaObjf = vecLambdaOrig  # Shallow copy / reference only / DO NOT MODIFY!
+	qnj_fMin = -0.01*fFit
+	vecZ = levsol( fFit, vecPhi, matPsi, vecLambdaCurve, qnj_sMax, vecS, qnj_dMax, vecLambdaObjf, qnj_fMin )
 	
 	# Generate new seed.
 	vecYNew = vecYLaunch + vecZ
