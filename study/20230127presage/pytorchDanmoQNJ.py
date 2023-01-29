@@ -373,7 +373,7 @@ vecX0 = sxsolve_x.copy()
 # DRaburn 2023-01-27, pytorchDanmo: I failed to write the tolerances integrably.
 #fBail = f0 * 1E8
 fBail = 1.0E8
-fevalLimit = 100000
+fevalLimit = 1000000
 learningRate = sxsolve_lr
 momentumFactor = sxsolve_momentum
 msg( 'fevalLimit = ', fevalLimit )
@@ -406,6 +406,10 @@ running_fSqTot = 0.0
 running_xtgTot = 0.0
 running_vecGTot = np.zeros(( sizeX ))
 running_vecXTot = np.zeros(( sizeX ))
+running_fSqTot = 0.0
+running_xtgSqTot = 0.0
+running_vecGSqTot = np.zeros(( sizeX ))
+running_vecXSqTot = np.zeros(( sizeX ))
 superPtCount = 0
 vecXSeed = vecX.copy()
 vecPSeed = vecP.copy()
@@ -421,7 +425,7 @@ superPt_vecX = np.zeros(( sizeX ))
 coeff_best_minf = 1.0
 coeff_best_best = 1.0
 coeff_best_curr = 1.0
-forceNewAsBest = False
+forceNewAsBest = True
 msg( 'coeff_best_minf = ', coeff_best_minf )
 msg( 'coeff_best_best = ', coeff_best_best )
 msg( 'coeff_best_curr = ', coeff_best_curr )
@@ -453,7 +457,7 @@ numRecords = 0
 
 # Init QNJ.
 useQNJ = True # Unless...
-#useQNJ = False
+useQNJ = False
 maxSubspaceSize = maxNumRecords
 qnj_dropThresh = 0.1
 msg( 'useQNJ = ', useQNJ )
@@ -525,7 +529,7 @@ for epoch in range(2):  # loop over the dataset multiple times
         #msg( type( f ) )
         #exit()
         
-        # DRaburn 2023-01-27, pytorchDanmo: QNJ    fevalCount += 1
+        # DRaburn 2023-01-27, pytorchDanmo: QNJ
         
         # Update superPt running totals before updating SGD.
         xtg = vecX @ vecG
@@ -535,10 +539,13 @@ for epoch in range(2):  # loop over the dataset multiple times
         running_xtgTot += xtg
         running_vecGTot[:] += vecG[:]
         running_vecXTot[:] += vecX[:]
+        running_xtgSqTot += xtg*xtg
+        running_vecGSqTot[:] += vecG[:]**2
+        running_vecXSqTot[:] += vecX[:]**2
         #if ( running_fMin < 0.0 or f < running_fMin ):
         #    running_fMin = f
         
-        # Updage SGD.
+        # Update SGD.
         vecP[:] = ( momentumFactor * vecP[:] ) - ( learningRate * vecG[:] )
         vecX[:] += vecP[:]
         #print( 'vecX =\n', vecX )
@@ -578,12 +585,19 @@ for epoch in range(2):  # loop over the dataset multiple times
             superPt_fVar = 0.0
         # Note that part of fVar is due to f actually varying along the path;
         #  this is not desirable, but is probably acceptable.
+        superPt_vecXSqVar = (running_vecXSqTot[:] / running_fevalCount) - superPt_vecX[:]**2
+        superPt_vecGSqVar = (running_vecGSqTot[:] / running_fevalCount) - superPt_vecG[:]**2
+        superPt_gVar = np.sqrt( np.sum( np.abs(superPt_vecGSqVar) ) )
+        
         #
         running_fevalCount = 0
         running_fTot = 0.0
         running_xtgTot = 0.0
         running_vecGTot[:] = 0.0
         running_vecXTot[:] = 0.0
+        running_xtgSqTot = 0.0
+        running_vecGSqTot[:] = 0.0
+        running_vecXSqTot[:] = 0.0
         
         # Do minf & best analysis.
         newIsMinf = False # Unless...
@@ -636,7 +650,7 @@ for epoch in range(2):  # loop over the dataset multiple times
               f'  {linalg.norm( best_vecX - vecX0 ):8.2E};',
               f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E}, {qnj_dPrev:9.2E} / {qnj_dMax:9.2E};',
               f'  {best_f:8.2E};',
-              f'  {linalg.norm(best_vecG):8.2E}',
+              f'  {linalg.norm(best_vecG):8.2E} +/- {superPt_gVar:8.2E}',
               progLogSymbol )
         
         # Check superPt stop crit.
@@ -924,7 +938,7 @@ msg(
   f'  {linalg.norm( superPt_vecX - vecX0 ):8.2E};',
   f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E}, {qnj_dPrev:9.2E} / {qnj_dMax:9.2E};',
   f'  {superPt_f:8.2E};',
-  f'  {linalg.norm(superPt_vecG):8.2E}',
+  f'  {linalg.norm(best_vecG):8.2E} +/- {superPt_gVar:8.2E}',
   progLogSymbol )
 vecXF = best_vecX
 vecGF = best_vecG
