@@ -341,6 +341,7 @@ def levsol( f0, vecPhi, matPsi, vecLambdaCurve, sMax, vecS, dMax, vecLambdaObjf,
 # Init problem.
 MYEPS = 1.0E-8
 sizeX = index_list[-1]
+msg( 'sizeX = ', sizeX )
 # DRaburn 2023-01-27, pytorchDanmo: Not ANY of you.
 #rngSeed = 0
 #sizeX = 50
