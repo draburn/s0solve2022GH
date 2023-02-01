@@ -190,7 +190,7 @@ net.fc3.weight.data = torch.from_numpy(numpy.reshape(sxsolve_x[index_list[9]:ind
 
 #optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 sxsolve_lr = 0.001
-sxsolve_momentum = 0.9
+sxsolve_momentum = 0.5
 print(f"sxsolve_lr = {sxsolve_lr}")
 print(f"sxsolve_momentum = {sxsolve_momentum}")
 do_grad_init = True
@@ -375,6 +375,7 @@ vecX0 = sxsolve_x.copy()
 #fBail = f0 * 1E8
 fBail = 1.0E8
 fevalLimit = 1000000
+#fevalLimit = 105
 learningRate = sxsolve_lr
 momentumFactor = sxsolve_momentum
 msg( 'fevalLimit = ', fevalLimit )
@@ -386,8 +387,10 @@ vecX = sxsolve_x
 vecP = sxsolve_step
 
 # Init superPt.
-numFevalPerSuperPt = 1000
-superPtLimit = 1000
+###numFevalPerSuperPt = 1000
+###superPtLimit = 1000
+numFevalPerSuperPt = 200
+superPtLimit = 10000
 # DRaburn 2023-01-27, pytorchDanmo: I failed to write the tolerances integrably.
 #fTol = f0*1.0E-12
 #gTol = linalg.norm(vecG0)*1.0E-6
@@ -449,11 +452,16 @@ best_vecPHarvest = np.zeros(( sizeX ))
 badCount = 0
 
 # Init records.
-maxNumRecords = 20
+###maxNumRecords = 20
+maxNumRecords = 1000
 msg( 'maxNumRecords = ', maxNumRecords )
 record_matX = np.zeros(( sizeX, maxNumRecords ))
 record_matG = np.zeros(( sizeX, maxNumRecords ))
 record_rvcF = np.zeros(( 1, maxNumRecords ))
+record_matXSeed = np.zeros(( sizeX, maxNumRecords ))
+record_matPSeed = np.zeros(( sizeX, maxNumRecords ))
+record_matXHarvest = np.zeros(( sizeX, maxNumRecords ))
+record_matPHarvest = np.zeros(( sizeX, maxNumRecords ))
 numRecords = 0
 
 # Init QNJ.
@@ -482,10 +490,15 @@ doMainLoop = True
 
 # END QNJ INITIALIZATION
 
+storeAll_use = True
+storeAll_size = 1000
+storeAll_vecX = np.zeros(( sizeX, storeAll_size ))
+storeAll_vecG = np.zeros(( sizeX, storeAll_size ))
+storeAll_f = np.zeros( storeAll_size )
 
 
 print("Main loop...")
-for epoch in range(2):  # loop over the dataset multiple times
+for epoch in range(16):  # loop over the dataset multiple times
     
     running_loss = 0.0
     running_feval_count = 0
@@ -545,6 +558,15 @@ for epoch in range(2):  # loop over the dataset multiple times
         running_vecXSqTot[:] += vecX[:]**2
         #if ( running_fMin < 0.0 or f < running_fMin ):
         #    running_fMin = f
+        
+        if (storeAll_use):
+            #if (fevalCount<=storeAll_size):
+            if (True):
+                #n = fevalCount -1
+                n = fevalCount % storeAll_size
+                storeAll_vecX[:,n] = vecX[:].copy()
+                storeAll_vecG[:,n] = vecG[:].copy()
+                storeAll_f[n] = f
         
         # Update SGD.
         vecP[:] = ( momentumFactor * vecP[:] ) - ( learningRate * vecG[:] )
@@ -637,8 +659,7 @@ for epoch in range(2):  # loop over the dataset multiple times
             badCount += 1
         
         # Print progress log.
-        #if ( 0 == superPtCount % 10 ):
-        if ( True ):
+        if ( 0 == superPtCount % 10 ):
             if ( newIsMinf ):
                 progLogSymbol = '*'
             elif ( newIsBest ):
@@ -678,24 +699,32 @@ for epoch in range(2):  # loop over the dataset multiple times
         # This will almost certainly be modified if use a quasi-newton jump.
         sizeK = 0
         
-        forceBasisGen = True # For comparison to Octave code.
-        if ( (not useQNJ) and (not forceBasisGen) ):
-            vecXSeed[:] = vecX[:]
-            vecPSeed[:] = vecP[:]
-            sxsolve_x[:] = vecX[:]
-            continue
-        
         # Add information to records.
         # Always rolling is wasteful. POITROME.
         record_matX = np.roll( record_matX, 1 )
         record_matG = np.roll( record_matG, 1 )
         record_rvcF = np.roll( record_rvcF, 1 )
+        record_matXSeed = np.roll( record_matXSeed, 1 )
+        record_matPSeed = np.roll( record_matPSeed, 1 )
+        record_matXHarvest = np.roll( record_matXHarvest, 1 )
+        record_matPHarvest = np.roll( record_matPHarvest, 1 )
         # Does this not require unnecessary mem alloc and copy?
         if ( numRecords < maxNumRecords ):
             numRecords += 1
         record_matX[:,0] = superPt_vecX[:]
         record_matG[:,0] = superPt_vecG[:]
         record_rvcF[0,0] = superPt_f
+        record_matXSeed[:,0] = vecXSeed[:]
+        record_matPSeed[:,0] = vecPSeed[:]
+        record_matXHarvest[:,0] = vecXHarvest[:]
+        record_matPHarvest[:,0] = vecPHarvest[:]
+        
+        forceBasisGen = False # For comparison to Octave code.
+        if ( (not useQNJ) and (not forceBasisGen) ):
+            vecXSeed[:] = vecX[:]
+            vecPSeed[:] = vecP[:]
+            sxsolve_x[:] = vecX[:]
+            continue
         
         #msg( 'record_matX =\n', record_matX )
         

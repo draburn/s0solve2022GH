@@ -449,7 +449,7 @@ best_vecPHarvest = np.zeros(( sizeX ))
 badCount = 0
 
 # Init records.
-maxNumRecords = 20
+maxNumRecords = 50
 msg( 'maxNumRecords = ', maxNumRecords )
 record_matX = np.zeros(( sizeX, maxNumRecords ))
 record_matG = np.zeros(( sizeX, maxNumRecords ))
