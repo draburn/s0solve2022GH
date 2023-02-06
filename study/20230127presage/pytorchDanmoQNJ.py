@@ -190,7 +190,8 @@ net.fc3.weight.data = torch.from_numpy(numpy.reshape(sxsolve_x[index_list[9]:ind
 
 #optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 sxsolve_lr = 0.001
-sxsolve_momentum = 0.9
+###sxsolve_momentum = 0.9
+sxsolve_momentum = 0.0
 print(f"sxsolve_lr = {sxsolve_lr}")
 print(f"sxsolve_momentum = {sxsolve_momentum}")
 do_grad_init = True
@@ -386,7 +387,8 @@ vecX = sxsolve_x
 vecP = sxsolve_step
 
 # Init superPt.
-numFevalPerSuperPt = 1000
+#numFevalPerSuperPt = 1000
+numFevalPerSuperPt = 12500 # Everything
 superPtLimit = 1000
 # DRaburn 2023-01-27, pytorchDanmo: I failed to write the tolerances integrably.
 #fTol = f0*1.0E-12
@@ -426,7 +428,8 @@ superPt_vecX = np.zeros(( sizeX ))
 coeff_best_minf = 1.0
 coeff_best_best = 1.0
 coeff_best_curr = 1.0
-forceNewAsBest = True
+###forceNewAsBest = True
+forceNewAsBest = False
 msg( 'coeff_best_minf = ', coeff_best_minf )
 msg( 'coeff_best_best = ', coeff_best_best )
 msg( 'coeff_best_curr = ', coeff_best_curr )
@@ -458,7 +461,7 @@ numRecords = 0
 
 # Init QNJ.
 useQNJ = True # Unless...
-useQNJ = False
+#useQNJ = False
 maxSubspaceSize = maxNumRecords
 qnj_dropThresh = 0.1
 msg( 'useQNJ = ', useQNJ )
@@ -485,7 +488,8 @@ doMainLoop = True
 
 
 print("Main loop...")
-for epoch in range(2):  # loop over the dataset multiple times
+###for epoch in range(2):  # loop over the dataset multiple times
+for epoch in range(300):  # loop over the dataset multiple times
     
     running_loss = 0.0
     running_feval_count = 0
@@ -699,6 +703,19 @@ for epoch in range(2):  # loop over the dataset multiple times
         
         #msg( 'record_matX =\n', record_matX )
         
+        # Update trust region.
+        if ( qnj_havePrev ):
+            if ( newIsBest ):
+                qnj_sMax = qnj_sPrev * qnj_sMax_ftCoeff
+                qnj_dMax = qnj_dPrev * qnj_dMax_ftCoeff
+            else:
+                qnj_sMax = qnj_sPrev * qnj_sMax_btCoeff
+                qnj_dMax = qnj_dPrev * qnj_dMax_btCoeff
+            qnj_havePrev = False
+        else:
+            if ( qnj_dMax < linalg.norm( vecXHarvest - vecXSeed ) ):
+                qnj_dMax = linalg.norm( vecXHarvest - vecXSeed )
+        
         # Finally, QNJ!... or not.
         if ( numRecords < 2 ):
             vecXSeed[:] = vecX[:]
@@ -781,18 +798,7 @@ for epoch in range(2):  # loop over the dataset multiple times
         #vecPSeed[:] = vecP
         #continue
         
-        # Update trust region and scaling.
-
-        if ( qnj_havePrev ):
-            if ( newIsBest ):
-                qnj_sMax = qnj_sPrev * qnj_sMax_ftCoeff
-                qnj_dMax = qnj_dPrev * qnj_dMax_ftCoeff
-            else:
-                qnj_sMax = qnj_sPrev * qnj_sMax_btCoeff
-                qnj_dMax = qnj_dPrev * qnj_dMax_btCoeff
-        else:
-            if ( qnj_dMax < linalg.norm( vecXHarvest - vecXSeed ) ):
-                qnj_dMax = linalg.norm( vecXHarvest - vecXSeed )
+        # Update scaling.
         #msg( 'caps: ', qnj_sMax, qnj_dMax )
         #msg( 'matR =\n', matR )
         vecCap = np.max( np.abs(matR), 1 )
