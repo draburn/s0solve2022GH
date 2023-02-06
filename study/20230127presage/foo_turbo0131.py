@@ -27,6 +27,7 @@ transform = transforms.Compose(
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
 batch_size = 4
+###batch_size = 50000
 
 trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=False, transform=transform)
@@ -258,8 +259,8 @@ for epoch in range(numEpochs):  # loop over the dataset multiple times
     
     # print statistics
     if (True):
-        print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss * 1.0 / running_feval_count:.3f}')
-        print(f"  sxsolve_f_min = {sxsolve_f_min:17e}")
+        print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss * 1.0 / running_feval_count:.17e}')
+        #print(f"  sxsolve_f_min = {sxsolve_f_min:.17e}")
         print(f"  Avg time per feval = { (time.time()-running_time0)*1.0 / running_feval_count }")
         print(f"  Elapsed time = {time.time()-start_time}s")
         running_loss = 0.0
