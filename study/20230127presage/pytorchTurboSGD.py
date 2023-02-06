@@ -12,15 +12,27 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 
-import numpy
-import matplotlib.pyplot as plt
+import time
+start_time = time.time()
 torch.manual_seed(0)
 
 transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-batch_size = 4
+###batch_size = 4
+###learning_rate = 0.001
+batch_size = 500
+learning_rate = 0.3
+###batch_size = 50000
+###learning_rate = 1.0
+momentum_factor = 0.0
+num_epochs = 250
+
+print( f'batch_size = {batch_size}' )
+print( f'learning_rate = {learning_rate:.14e}' )
+print( f'momentum_factor = {momentum_factor:.14f}' )
+print( f'num_epochs = {num_epochs}' )
 
 trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=False, transform=transform)
@@ -77,7 +89,8 @@ import torch.optim as optim
 
 criterion = nn.CrossEntropyLoss()
 ###optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.0)
+optimizer = optim.SGD(net.parameters(), lr=learning_rate, momentum=momentum_factor)
+
 
 
 #
@@ -85,10 +98,9 @@ optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.0)
 #
 
 print('Starting Training')
-
+print('[')
 ###for epoch in range(2):  # loop over the dataset multiple times
-for epoch in range(250):  # loop over the dataset multiple times
-
+for epoch in range(num_epochs):  # loop over the dataset multiple times
     running_loss = 0.0
     running_minibatchcount = 0
     for i, data in enumerate(trainloader, 0):
@@ -107,10 +119,12 @@ for epoch in range(250):  # loop over the dataset multiple times
         # print statistics
         running_loss += loss.item()
         running_minibatchcount += 1
-    print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / running_minibatchcount:.17f}')
-
+    print(f'[ {epoch + 1:3d} {time.time()-start_time:9.3f} {running_loss / running_minibatchcount:18.14f} ]')
+print(']')
 print('Finished Training')
 
 # Let's quickly save...
 PATH = './temp.pth'
 torch.save(net.state_dict(), PATH)
+import numpy
+import matplotlib.pyplot as plt
