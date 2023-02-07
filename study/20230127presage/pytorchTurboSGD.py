@@ -23,10 +23,8 @@ transform = transforms.Compose(
 ###batch_size = 4
 ###learning_rate = 0.001
 batch_size = 500
-learning_rate = 0.3
-###batch_size = 50000
-###learning_rate = 1.0
-momentum_factor = 0.0
+learning_rate = 0.1
+momentum_factor = 0.9
 num_epochs = 250
 
 print( f'batch_size = {batch_size}' )

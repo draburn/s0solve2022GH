@@ -26,8 +26,19 @@ transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-batch_size = 4
+###batch_size = 4
+###learning_rate = 0.001
+batch_size = 500
+learning_rate = 0.3
 ###batch_size = 50000
+###learning_rate = 1.0
+momentum_factor = 0.0
+num_epochs = 250
+
+print( f'batch_size = {batch_size}' )
+print( f'learning_rate = {learning_rate:.14e}' )
+print( f'momentum_factor = {momentum_factor:.14f}' )
+print( f'num_epochs = {num_epochs}' )
 
 trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=False, transform=transform)
@@ -82,8 +93,8 @@ net = Net()
 
 import torch.optim as optim
 
-sxsolve_lr = 0.001
-sxsolve_momentum = 0.0
+sxsolve_lr = learning_rate
+sxsolve_momentum = momentum_factor
 criterion = nn.CrossEntropyLoss()
 ###optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 optimizer = optim.SGD(net.parameters(), lr=sxsolve_lr, momentum=sxsolve_momentum)
@@ -203,7 +214,7 @@ print("Initialization complete.")
 print(f"  Elapsed time = {time.time()-start_time}s")
 print(f"test_and_quit = {test_and_quit}")
 print("Main loop...")
-numEpochs = 250
+numEpochs = num_epochs
 sizeX = index_list[-1]
 matX = numpy.zeros(( sizeX, numEpochs+1 ))
 matP = numpy.zeros(( sizeX, numEpochs+1 ))

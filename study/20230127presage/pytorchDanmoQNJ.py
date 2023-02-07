@@ -25,7 +25,10 @@ transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-batch_size = 4
+batch_size = 500
+learning_rate = 0.01
+momentum_factor = 0.0
+num_epochs = 300
 
 trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=False, transform=transform)
@@ -81,7 +84,8 @@ net = Net()
 import torch.optim as optim
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+###optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+optimizer = optim.SGD(net.parameters(), lr=learning_rate, momentum=momentum_factor)
 
 
 #
@@ -189,11 +193,14 @@ net.fc3.bias.data   = torch.from_numpy(numpy.reshape(sxsolve_x[index_list[8]:ind
 net.fc3.weight.data = torch.from_numpy(numpy.reshape(sxsolve_x[index_list[9]:index_list[10]],size_list[9]))
 
 #optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-sxsolve_lr = 0.001
-###sxsolve_momentum = 0.9
-sxsolve_momentum = 0.0
-print(f"sxsolve_lr = {sxsolve_lr}")
-print(f"sxsolve_momentum = {sxsolve_momentum}")
+sxsolve_lr = learning_rate
+sxsolve_momentum = momentum_factor
+#print(f"sxsolve_lr = {sxsolve_lr:}")
+#print(f"sxsolve_momentum = {sxsolve_momentum}")
+print( f'batch_size = {batch_size}' )
+print( f'learning_rate = {learning_rate:.14e}' )
+print( f'momentum_factor = {momentum_factor:.14f}' )
+print( f'num_epochs = {num_epochs}' )
 do_grad_init = True
 sxsolve_step = numpy.zeros(index_list[-1],dtype=numpy.float32)
 
@@ -388,7 +395,8 @@ vecP = sxsolve_step
 
 # Init superPt.
 #numFevalPerSuperPt = 1000
-numFevalPerSuperPt = 12500 # Everything
+#numFevalPerSuperPt = 12500 # Everything
+numFevalPerSuperPt = round( 50000.0 / batch_size )
 superPtLimit = 1000
 # DRaburn 2023-01-27, pytorchDanmo: I failed to write the tolerances integrably.
 #fTol = f0*1.0E-12
@@ -489,7 +497,7 @@ doMainLoop = True
 
 print("Main loop...")
 ###for epoch in range(2):  # loop over the dataset multiple times
-for epoch in range(300):  # loop over the dataset multiple times
+for epoch in range(num_epochs):  # loop over the dataset multiple times
     
     running_loss = 0.0
     running_feval_count = 0
@@ -645,18 +653,29 @@ for epoch in range(300):  # loop over the dataset multiple times
         if ( True ):
             if ( newIsMinf ):
                 progLogSymbol = '*'
+                progLogCode = 1
             elif ( newIsBest ):
                 progLogSymbol = '.'
+                progLogCode = 0
             else:
                 progLogSymbol = 'X'
-            msg(
-              f' {superPtCount:4d} ({badCount:4d}X), {fevalCount:7d}:',
-              f' {sizeK:3d} / {numRecords:3d}:'
-              f'  {linalg.norm( best_vecX - vecX0 ):8.2E};',
-              f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E}, {qnj_dPrev:9.2E} / {qnj_dMax:9.2E};',
-              f'  {best_f:8.2E};',
-              f'  {linalg.norm(best_vecG):8.2E} +/- {superPt_gVar:8.2E}',
-              progLogSymbol )
+                progLogCode = 9
+            #msg(
+            #  f' {superPtCount:4d} ({badCount:4d}X), {fevalCount:7d}:',
+            #  f' {sizeK:3d} / {numRecords:3d}:'
+            #  f'  {linalg.norm( best_vecX - vecX0 ):8.2E};',
+            #  f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E}, {qnj_dPrev:9.2E} / {qnj_dMax:9.2E};',
+            #  f'  {best_f:20.14E};',
+            #  f'  {linalg.norm(best_vecG):8.2E} +/- {superPt_gVar:8.2E}',
+            #  progLogSymbol )
+            print(
+              f'[ {superPtCount:4d} {badCount:4d} {fevalCount:7d}',
+              f' {sizeK:3d} {numRecords:3d}'
+              f'  {linalg.norm( best_vecX - vecX0 ):8.2E}',
+              f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E} {qnj_dPrev:9.2E} {qnj_dMax:9.2E}',
+              f'  {best_f:20.14E}',
+              f'  {linalg.norm(best_vecG):8.2E} {superPt_gVar:8.2E}',
+              f'  {progLogCode} ]' )
         
         # Check superPt stop crit.
         if ( linalg.norm(superPt_vecG) <= gTol ):
@@ -944,7 +963,7 @@ msg(
   f' {sizeK:3d} / {numRecords:3d}:'
   f'  {linalg.norm( superPt_vecX - vecX0 ):8.2E};',
   f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E}, {qnj_dPrev:9.2E} / {qnj_dMax:9.2E};',
-  f'  {superPt_f:8.2E};',
+  f'  {superPt_f:20.14E};',
   f'  {linalg.norm(best_vecG):8.2E} +/- {superPt_gVar:8.2E}',
   progLogSymbol )
 vecXF = best_vecX
