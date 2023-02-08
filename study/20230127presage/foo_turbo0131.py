@@ -26,14 +26,15 @@ transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-###batch_size = 4
-###learning_rate = 0.001
-batch_size = 500
-learning_rate = 0.3
+batch_size = 4
+learning_rate = 0.001
+###batch_size = 500
+###learning_rate = 0.3
 ###batch_size = 50000
 ###learning_rate = 1.0
-momentum_factor = 0.0
-num_epochs = 250
+momentum_factor = 0.9
+#num_epochs = 300
+num_epochs = 25
 
 print( f'batch_size = {batch_size}' )
 print( f'learning_rate = {learning_rate:.14e}' )
@@ -211,17 +212,34 @@ do_grad_init = True
 sxsolve_step = numpy.zeros(index_list[-1],dtype=numpy.float32)
 
 print("Initialization complete.")
-print(f"  Elapsed time = {time.time()-start_time}s")
+print(f"Elapsed time = {time.time()-start_time}s")
 print(f"test_and_quit = {test_and_quit}")
-print("Main loop...")
 numEpochs = num_epochs
 sizeX = index_list[-1]
 matX = numpy.zeros(( sizeX, numEpochs+1 ))
 matP = numpy.zeros(( sizeX, numEpochs+1 ))
 rvcF = numpy.zeros( numEpochs )
+
+print("Reading from disk...")
+epoch0Plus1 = 120
+print(f"epoch0Plus1 = {epoch0Plus1}")
+fName = 'in_matX.np'
+print(f"fName = {fName}")
+foo = numpy.fromfile(fName)
+sxsolve_x[:] = foo.reshape(sizeX,round(foo.size/sizeX))[:,epoch0Plus1-1]
+fName = 'in_matP.np'
+print(f"fName = {fName}")
+foo = numpy.fromfile(fName)
+sxsolve_step[:] = foo.reshape(sizeX,round(foo.size/sizeX))[:,epoch0Plus1-1]
+foo = []
+
 matX[:,0] = sxsolve_x[:]
 matP[:,0] = sxsolve_step[:]
 
+sxsolve_x.tofile(f'out_vecX_start.np')
+sxsolve_step.tofile(f'out_vecP_start.np')
+print(f"Elapsed time = {time.time()-start_time}s")
+print("Main loop...")
 for epoch in range(numEpochs):  # loop over the dataset multiple times
     
     running_loss = 0.0
@@ -277,5 +295,29 @@ for epoch in range(numEpochs):  # loop over the dataset multiple times
         running_loss = 0.0
         running_time0 = time.time()
         running_feval_count = 0
+    if ( (epoch+1)%50 == 0 ):
+        sxsolve_x.tofile(f'out_vecX_{epoch+1:06d}.np')
+        sxsolve_step.tofile(f'out_vecP_{epoch+1:06d}.np')
+    if ( 125==(epoch+epoch0Plus1) ):
+        print( "" )
+        print( "***" )
+        print( f'sxsolve_momentum = {sxsolve_momentum:.14f}' )
+        print( f'momentum_factor = {momentum_factor:.14f}' )
+        print( f'numpy.linalg.norm(sxsolve_step) = {numpy.linalg.norm(sxsolve_step):.14e}' )
+        print( "RESETTING MOMENTUM!" )
+        sxsolve_momentum = 0.89
+        momentum_factor = 0.89
+        #sxsolve_step[:] = 0.0
+        print( f'sxsolve_momentum = {sxsolve_momentum:.14f}' )
+        print( f'momentum_factor = {momentum_factor:.14f}' )
+        print( f'numpy.linalg.norm(sxsolve_step) = {numpy.linalg.norm(sxsolve_step):.14e}' )
+        print( "***" )
+        print( "" )
+        
 
 print('Finished Training Demo')
+sxsolve_x.tofile(f'out_vecX_fin.np')
+sxsolve_step.tofile(f'out_vecP_fin.np')
+#matX.tofile('out_matX.np')
+#matP.tofile('out_matP.np')
+#rvcF.tofile('out_rvcF.np')

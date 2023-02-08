@@ -18,6 +18,8 @@ import torchvision
 import torchvision.transforms as transforms
 
 import numpy
+import time
+start_time = time.time()
 
 torch.manual_seed(0)
 
@@ -25,10 +27,11 @@ transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-batch_size = 500
-learning_rate = 0.01
+###batch_size = 500
+batch_size = 4
+learning_rate = 0.001
 momentum_factor = 0.0
-num_epochs = 300
+num_epochs = 250
 
 trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=False, transform=transform)
@@ -382,7 +385,7 @@ vecX0 = sxsolve_x.copy()
 # DRaburn 2023-01-27, pytorchDanmo: I failed to write the tolerances integrably.
 #fBail = f0 * 1E8
 fBail = 1.0E8
-fevalLimit = 1000000
+fevalLimit = -1
 learningRate = sxsolve_lr
 momentumFactor = sxsolve_momentum
 msg( 'fevalLimit = ', fevalLimit )
@@ -496,6 +499,8 @@ doMainLoop = True
 
 
 print("Main loop...")
+msg( f'time = {time.time()-start_time}' )
+print( '[' )
 ###for epoch in range(2):  # loop over the dataset multiple times
 for epoch in range(num_epochs):  # loop over the dataset multiple times
     
@@ -565,9 +570,11 @@ for epoch in range(num_epochs):  # loop over the dataset multiple times
         
         # Check per-feval stop crit.
         if ( f > fBail ):
+            print( ']' )
             msg( 'IMPOSED STOP: f > fBail. This strongly indicates divergence.' )
             doMainLoop = False
         elif ( fevalLimit > 0 and fevalCount >= fevalLimit ):
+            print( ']' )
             msg( 'IMPOSED STOP: fevalCount >= fevalLimit.' )
             doMainLoop = False
         # Check elapsed time?.
@@ -668,26 +675,38 @@ for epoch in range(num_epochs):  # loop over the dataset multiple times
             #  f'  {best_f:20.14E};',
             #  f'  {linalg.norm(best_vecG):8.2E} +/- {superPt_gVar:8.2E}',
             #  progLogSymbol )
+            #print(
+            #  f'[ {superPtCount:4d} {badCount:4d} {fevalCount:7d}',
+            #  f' {sizeK:3d} {numRecords:3d}'
+            #  f'  {linalg.norm( best_vecX - vecX0 ):8.2E}',
+            #  f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E} {qnj_dPrev:9.2E} {qnj_dMax:9.2E}',
+            #  f'  {best_f:20.14E}',
+            #  f'  {linalg.norm(best_vecG):8.2E} {superPt_gVar:8.2E}',
+            #  f'  {progLogCode} ]' )
             print(
-              f'[ {superPtCount:4d} {badCount:4d} {fevalCount:7d}',
+              f'[ {time.time()-start_time:8.2f}', 
+              f' {superPtCount:4d} {badCount:4d}',
               f' {sizeK:3d} {numRecords:3d}'
-              f'  {linalg.norm( best_vecX - vecX0 ):8.2E}',
-              f'  {linalg.norm( vecXHarvest - vecXSeed ):8.2E} {qnj_dPrev:9.2E} {qnj_dMax:9.2E}',
-              f'  {best_f:20.14E}',
-              f'  {linalg.norm(best_vecG):8.2E} {superPt_gVar:8.2E}',
-              f'  {progLogCode} ]' )
+              f' {linalg.norm( vecXHarvest - vecXSeed ):8.2E} {qnj_dPrev:9.2E} {qnj_dMax:9.2E}',
+              f' {superPt_f:20.14E} {best_f:20.14E}',
+              f' {linalg.norm(best_vecG):8.2E} {superPt_gVar:8.2E}',
+              f' {progLogCode} ]' )
         
         # Check superPt stop crit.
         if ( linalg.norm(superPt_vecG) <= gTol ):
+            print( ']' )
             msg( 'SUCCESS: linalg.norm(superPt_vecG) <= gTol.' )
             doMainLoop = False
         elif ( superPt_f <= fTol ):
+            print( ']' )
             msg( 'SUCCESS: superPt_f <= fTol.' )
             doMainLoop = False
         elif ( superPtCount > 0 and superPtCount >= superPtLimit ):
+            print( ']' )
             msg( 'IMPOSED STOP: superPtCount >= superPtLimit.' )
             doMainLoop = False
         elif ( qnj_havePrev and ( qnj_dPrev < xTol ) and (not newIsBest) ):
+            print( ']' )
             msg( 'IMPOSED STOP: Failed to improve with a QNJ step smaller than xTol.' )
             doMainLoop = False
         # Check superPt_vecX vs prev?

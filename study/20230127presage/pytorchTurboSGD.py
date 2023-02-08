@@ -20,16 +20,17 @@ transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-###batch_size = 4
-###learning_rate = 0.001
-batch_size = 500
-learning_rate = 0.1
-momentum_factor = 0.9
+batch_size = 4
+learning_rate = 0.001
+###batch_size = 500
+###learning_rate = 0.1
+###momentum_factor = 0.0
+momentum_factor = 0.5
 num_epochs = 250
 
 print( f'batch_size = {batch_size}' )
 print( f'learning_rate = {learning_rate:.14e}' )
-print( f'momentum_factor = {momentum_factor:.14f}' )
+print( f'momentum_factor = {momentum_factor:.14e}' )
 print( f'num_epochs = {num_epochs}' )
 
 trainset = torchvision.datasets.CIFAR10(root='./data', train=True,

@@ -82,7 +82,7 @@ net = Net()
 import torch.optim as optim
 
 sxsolve_lr = 0.001
-sxsolve_momentum = 0.0
+sxsolve_momentum = 0.9
 criterion = nn.CrossEntropyLoss()
 ###optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 optimizer = optim.SGD(net.parameters(), lr=sxsolve_lr, momentum=sxsolve_momentum)
@@ -201,7 +201,6 @@ sxsolve_step = numpy.zeros(index_list[-1],dtype=numpy.float32)
 print("Initialization complete.")
 print(f"  Elapsed time = {time.time()-start_time}s")
 print(f"test_and_quit = {test_and_quit}")
-print("Main loop...")
 numEpochs = 50
 sizeX = index_list[-1]
 matX = numpy.zeros(( sizeX, numEpochs+1 ))
@@ -219,6 +218,7 @@ foo = []
 matX[:,0] = sxsolve_x[:]
 matP[:,0] = sxsolve_step[:]
 
+print("Main loop...")
 for epoch in range(numEpochs):  # loop over the dataset multiple times
     
     running_loss = 0.0
