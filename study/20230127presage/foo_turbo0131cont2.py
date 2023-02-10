@@ -220,21 +220,18 @@ matX = numpy.zeros(( sizeX, numEpochs+1 ))
 matP = numpy.zeros(( sizeX, numEpochs+1 ))
 rvcF = numpy.zeros( numEpochs )
 
-if (False):
-    print("Reading from disk...")
-    epoch0Plus1 = 120
-    print(f"epoch0Plus1 = {epoch0Plus1}")
-    fName = 'in_matX.np'
-    print(f"fName = {fName}")
-    foo = numpy.fromfile(fName)
-    sxsolve_x[:] = foo.reshape(sizeX,round(foo.size/sizeX))[:,epoch0Plus1-1]
-    fName = 'in_matP.np'
-    print(f"fName = {fName}")
-    foo = numpy.fromfile(fName)
-    sxsolve_step[:] = foo.reshape(sizeX,round(foo.size/sizeX))[:,epoch0Plus1-1]
-    foo = []
-else:
-    epoch0Plus1 = 1
+print("Reading from disk...")
+epoch0Plus1 = 120
+print(f"epoch0Plus1 = {epoch0Plus1}")
+fName = 'in_matX.np'
+print(f"fName = {fName}")
+foo = numpy.fromfile(fName)
+sxsolve_x[:] = foo.reshape(sizeX,round(foo.size/sizeX))[:,epoch0Plus1-1]
+fName = 'in_matP.np'
+print(f"fName = {fName}")
+foo = numpy.fromfile(fName)
+sxsolve_step[:] = foo.reshape(sizeX,round(foo.size/sizeX))[:,epoch0Plus1-1]
+foo = []
 
 matX[:,0] = sxsolve_x[:]
 matP[:,0] = sxsolve_step[:]
@@ -301,17 +298,22 @@ for epoch in range(numEpochs):  # loop over the dataset multiple times
     if ( (epoch+1)%50 == 0 ):
         sxsolve_x.tofile(f'out_vecX_{epoch+1:06d}.np')
         sxsolve_step.tofile(f'out_vecP_{epoch+1:06d}.np')
-    if (False):
-    #if ( 125==(epoch+epoch0Plus1) ):
+    if ( 125==(epoch+epoch0Plus1) ):
         print( "" )
         print( "***" )
+        print( f'learning_rate = {learning_rate:.14e}' )
+        print( f"sxsolve_lr = {sxsolve_lr}" )
         print( f'sxsolve_momentum = {sxsolve_momentum:.14f}' )
         print( f'momentum_factor = {momentum_factor:.14f}' )
         print( f'numpy.linalg.norm(sxsolve_step) = {numpy.linalg.norm(sxsolve_step):.14e}' )
-        print( "RESETTING MOMENTUM!" )
-        sxsolve_momentum = 0.89
-        momentum_factor = 0.89
+        print( "CHANGING STUFF!" )
+        learning_rate = 1.0e-4
+        sxsolve_lr = 1.0e-4
+        #sxsolve_momentum = 0.89
+        #momentum_factor = 0.89
         #sxsolve_step[:] = 0.0
+        print( f'learning_rate = {learning_rate:.14e}' )
+        print( f"sxsolve_lr = {sxsolve_lr}" )
         print( f'sxsolve_momentum = {sxsolve_momentum:.14f}' )
         print( f'momentum_factor = {momentum_factor:.14f}' )
         print( f'numpy.linalg.norm(sxsolve_step) = {numpy.linalg.norm(sxsolve_step):.14e}' )
