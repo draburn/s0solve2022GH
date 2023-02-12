@@ -27,14 +27,16 @@ transform = transforms.Compose(
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
 batch_size = 4
-learning_rate = 0.001
+###learning_rate = 0.001
+learning_rate = 0.0001
 ###batch_size = 500
 ###learning_rate = 0.3
 ###batch_size = 50000
 ###learning_rate = 1.0
-momentum_factor = 0.9
+###momentum_factor = 0.9
+momentum_factor = 0.0
 #num_epochs = 300
-num_epochs = 25
+num_epochs = 5000
 
 print( f'batch_size = {batch_size}' )
 print( f'learning_rate = {learning_rate:.14e}' )

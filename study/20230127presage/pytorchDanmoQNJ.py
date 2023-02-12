@@ -29,7 +29,8 @@ transform = transforms.Compose(
 
 ###batch_size = 500
 batch_size = 4
-learning_rate = 0.001
+#learning_rate = 0.001
+learning_rate = 0.0001
 momentum_factor = 0.0
 num_epochs = 250
 
@@ -400,6 +401,7 @@ vecP = sxsolve_step
 #numFevalPerSuperPt = 1000
 #numFevalPerSuperPt = 12500 # Everything
 numFevalPerSuperPt = round( 50000.0 / batch_size )
+###numFevalPerSuperPt = 2500
 superPtLimit = 1000
 # DRaburn 2023-01-27, pytorchDanmo: I failed to write the tolerances integrably.
 #fTol = f0*1.0E-12
@@ -475,6 +477,7 @@ useQNJ = True # Unless...
 #useQNJ = False
 maxSubspaceSize = maxNumRecords
 qnj_dropThresh = 0.1
+###qnj_dropThresh = 0.01
 msg( 'useQNJ = ', useQNJ )
 msg( 'maxSubspaceSize = ', maxSubspaceSize )
 msg( 'qnj_dropThresh = ', qnj_dropThresh )
@@ -484,13 +487,16 @@ msg( 'qnj_dropThresh = ', qnj_dropThresh )
 sizeK = 0
 qnj_havePrev = False
 qnj_sPrev = -1.0
-qnj_sMax = 1.0
+###qnj_sMax = 1.0
+qnj_sMax = 3.0
 qnj_sMax_btCoeff = 0.1
-qnj_sMax_ftCoeff = 1.2
+###qnj_sMax_ftCoeff = 1.2
+qnj_sMax_ftCoeff = 1.5
 qnj_dPrev = -1.0
 qnj_dMax = -1.0
 qnj_dMax_btCoeff = 0.1
-qnj_dMax_ftCoeff = 1.2
+###qnj_dMax_ftCoeff = 1.2
+qnj_dMax_ftCoeff = 1.5
 
 doMainLoop = True
 
@@ -500,6 +506,7 @@ doMainLoop = True
 
 print("Main loop...")
 msg( f'time = {time.time()-start_time}' )
+print( '' )
 print( '[' )
 ###for epoch in range(2):  # loop over the dataset multiple times
 for epoch in range(num_epochs):  # loop over the dataset multiple times
@@ -618,6 +625,10 @@ for epoch in range(num_epochs):  # loop over the dataset multiple times
         running_xtgSqTot = 0.0
         running_vecGSqTot[:] = 0.0
         running_vecXSqTot[:] = 0.0
+        
+        if ( superPtCount%50 == 0 ):
+            sxsolve_x.tofile(f'out_vecX_{superPtCount:06d}.np')
+            sxsolve_step.tofile(f'out_vecP_{superPtCount:06d}.np')
         
         # Do minf & best analysis.
         newIsMinf = False # Unless...
@@ -751,8 +762,8 @@ for epoch in range(num_epochs):  # loop over the dataset multiple times
                 qnj_dMax = qnj_dPrev * qnj_dMax_btCoeff
             qnj_havePrev = False
         else:
-            if ( qnj_dMax < linalg.norm( vecXHarvest - vecXSeed ) ):
-                qnj_dMax = linalg.norm( vecXHarvest - vecXSeed )
+            if ( qnj_dMax < 10.0*linalg.norm( vecXHarvest - vecXSeed ) ):
+                qnj_dMax = 10.0*linalg.norm( vecXHarvest - vecXSeed )
         
         # Finally, QNJ!... or not.
         if ( numRecords < 2 ):
@@ -974,7 +985,11 @@ for epoch in range(num_epochs):  # loop over the dataset multiple times
     if ( not doMainLoop ):
         break
 
+print( ']' )
+print( '' )
 print('Finished Training Demo')
+sxsolve_x.tofile(f'out_vecX_fin.np')
+sxsolve_step.tofile(f'out_vecP_fin.np')
 # Look at results.
 progLogSymbol = 'F'
 msg(
