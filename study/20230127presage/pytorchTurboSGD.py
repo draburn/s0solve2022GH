@@ -20,14 +20,10 @@ transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-batch_size = 4
-###learning_rate = 0.001
-learning_rate = 0.0001
-###batch_size = 500
-###learning_rate = 0.1
-###momentum_factor = 0.0
-momentum_factor = 0.0
-num_epochs = 1000
+batch_size = 500
+learning_rate = 0.01
+momentum_factor = 0.9
+num_epochs = 5
 
 print( f'batch_size = {batch_size}' )
 print( f'learning_rate = {learning_rate:.14e}' )

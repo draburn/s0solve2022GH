@@ -26,17 +26,10 @@ transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-batch_size = 4
-###learning_rate = 0.001
-learning_rate = 0.0001
-###batch_size = 500
-###learning_rate = 0.3
-###batch_size = 50000
-###learning_rate = 1.0
-###momentum_factor = 0.9
-momentum_factor = 0.0
-#num_epochs = 300
-num_epochs = 5000
+batch_size = 500
+learning_rate = 0.01
+momentum_factor = 0.9
+num_epochs = 200
 
 print( f'batch_size = {batch_size}' )
 print( f'learning_rate = {learning_rate:.14e}' )
@@ -176,16 +169,16 @@ def init_x_from_net(this_net):
 def init_grad_from_net(this_net):
     index_list = get_index_list(this_net)
     this_grad = numpy.zeros(index_list[-1], dtype=numpy.float32)
-    this_grad[index_list[0]:index_list[1]] = numpy.reshape(this_net.conv1.bias.data.numpy(), -1)
-    this_grad[index_list[1]:index_list[2]] = numpy.reshape(this_net.conv1.weight.data.numpy(), -1)
-    this_grad[index_list[2]:index_list[3]] = numpy.reshape(this_net.conv2.bias.data.numpy(), -1)
-    this_grad[index_list[3]:index_list[4]] = numpy.reshape(this_net.conv2.weight.data.numpy(), -1)
-    this_grad[index_list[4]:index_list[5]] = numpy.reshape(this_net.fc1.bias.data.numpy(), -1)
-    this_grad[index_list[5]:index_list[6]] = numpy.reshape(this_net.fc1.weight.data.numpy(), -1)
-    this_grad[index_list[6]:index_list[7]] = numpy.reshape(this_net.fc2.bias.data.numpy(), -1)
-    this_grad[index_list[7]:index_list[8]] = numpy.reshape(this_net.fc2.weight.data.numpy(), -1)
-    this_grad[index_list[8]:index_list[9]] = numpy.reshape(this_net.fc3.bias.data.numpy(), -1)
-    this_grad[index_list[9]:index_list[10]] = numpy.reshape(this_net.fc3.weight.data.numpy(), -1)
+    this_grad[index_list[0]:index_list[1]] = numpy.reshape(this_net.conv1.bias.grad.numpy(), -1)
+    this_grad[index_list[1]:index_list[2]] = numpy.reshape(this_net.conv1.weight.grad.numpy(), -1)
+    this_grad[index_list[2]:index_list[3]] = numpy.reshape(this_net.conv2.bias.grad.numpy(), -1)
+    this_grad[index_list[3]:index_list[4]] = numpy.reshape(this_net.conv2.weight.grad.numpy(), -1)
+    this_grad[index_list[4]:index_list[5]] = numpy.reshape(this_net.fc1.bias.grad.numpy(), -1)
+    this_grad[index_list[5]:index_list[6]] = numpy.reshape(this_net.fc1.weight.grad.numpy(), -1)
+    this_grad[index_list[6]:index_list[7]] = numpy.reshape(this_net.fc2.bias.grad.numpy(), -1)
+    this_grad[index_list[7]:index_list[8]] = numpy.reshape(this_net.fc2.weight.grad.numpy(), -1)
+    this_grad[index_list[8]:index_list[9]] = numpy.reshape(this_net.fc3.bias.grad.numpy(), -1)
+    this_grad[index_list[9]:index_list[10]] = numpy.reshape(this_net.fc3.weight.grad.numpy(), -1)
     return this_grad
 
 size_list = get_size_list(net)
@@ -241,8 +234,8 @@ else:
 matX[:,0] = sxsolve_x[:]
 matP[:,0] = sxsolve_step[:]
 
-sxsolve_x.tofile(f'out_vecX_start.np')
-sxsolve_step.tofile(f'out_vecP_start.np')
+#sxsolve_x.tofile(f'out_vecX_start.np')
+#sxsolve_step.tofile(f'out_vecP_start.np')
 print(f"Elapsed time = {time.time()-start_time}s")
 print("Main loop...")
 for epoch in range(numEpochs):  # loop over the dataset multiple times
@@ -251,7 +244,6 @@ for epoch in range(numEpochs):  # loop over the dataset multiple times
     running_feval_count = 0
     running_time0 = time.time()
     for i, data in enumerate(trainloader, 0):
-        
         # get the inputs; data is a list of [inputs, labels]
         inputs, labels = data
 
