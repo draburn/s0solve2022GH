@@ -8,6 +8,7 @@ import time
 import torch
 import torchvision
 import numpy as np
+import danutil
 
 # Startup.
 start_time = time.time()
@@ -134,10 +135,10 @@ def init_g_from_net(this_net):
 	return this_grad
 size_list = get_size_list(net)
 cumel_list = get_cumel_list(net)
-sizeX = cumel_list[-1]
+num_unknowns = cumel_list[-1]
 #msg(f'size_list = {size_list}')
 #msg(f'cumel_list = {cumel_list}')
-msg(f'sizeX = {sizeX}')
+msg(f'num_unknowns = {num_unknowns}')
 
 # Initialize our "x".
 # DRaburn 2023-02-16:
@@ -158,11 +159,12 @@ net.fc3.weight.data   = torch.from_numpy(np.reshape(shared_vecX[cumel_list[9]:cu
 # I'm not sure what happens to original memory in net, and I don't particularly care.
 if (''!=fname_x0):
 	msg(f'Reading x0 from disk using dtype = "{dtype_x0}".')
-	foo = np.fromfile(fname_x0,dtype=dtype_x0)
-	shared_vecX[:] = foo[:]
-	foo = []
-msg(f'shared_vecX[0] = {shared_vecX[0]:0.18E}')
-msg(f'||x0|| = {np.sqrt(shared_vecX@shared_vecX):0.18E}')
+	vecX0 = np.fromfile(fname_x0,dtype=dtype_x0)
+	shared_vecX[:] = vecX0[:]
+else:
+	vecX0 = shared_vecX.copy()
+msg(f'vecX0[0] = {vecX0[0]:0.18E}')
+msg(f'||vecX0|| = {np.linalg.norm(vecX0):0.18E}')
 
 # Initialize our gradient.
 # DRaburn 2023-02-16:
@@ -190,14 +192,15 @@ net.fc3.weight.grad   = torch.from_numpy(np.reshape(shared_vecG[cumel_list[9]:cu
 
 # Initialize momentum.
 # This one is easy, since we don't need to interface with Torch.
-vecP = np.zeros(sizeX, dtype=np.float32)
+vecP = np.zeros(num_unknowns, dtype=np.float32)
 if (''!=fname_p0):
 	msg(f'Reading p0 from disk using dtype = "{dtype_p0}".')
-	foo = np.fromfile(fname_p0,dtype=dtype_p0)
-	vecP[:] = foo[:]
-	foo = []
-msg(f'vecP[0] = {vecP[0]:0.18E}')
-msg(f'||p0|| = {np.sqrt(vecP@vecP):0.18E}')
+	vecP0 = np.fromfile(fname_p0,dtype=dtype_p0)
+	vecP[:] = vecP0[:]
+else:
+	vecP0 = vecP.copy()
+msg(f'vecP0[0] = {vecP0[0]:0.18E}')
+msg(f'||vecP0|| = {np.linalg.norm(vecP0):0.18E}')
 
 # Main loop.
 msg('Finished initialization.')
@@ -206,27 +209,58 @@ msg('Starting main loop...')
 print('')
 print('[')
 for epoch in range(max_num_epochs):
-	running_loss = 0.0
-	running_batch_count = 0
+	vecXSeed = shared_vecX.copy()
+	vecPSeed = vecP.copy()
+	batch_count = 0
+	avg_f = 0.0
+	avg_vecX = np.zeros(num_unknowns)
+	avg_vecG = np.zeros(num_unknowns)
+	avg_fSq = 0.0
+	avg_vecXSq = np.zeros(num_unknowns)
+	avg_vecGSq = np.zeros(num_unknowns)
 	for batch_index, batch_data in enumerate(trainloader, 0):
-		# Prep.
-		torch_optim_SGD.zero_grad()
-		
 		# Calculate f (loss) and gradient.
+		torch_optim_SGD.zero_grad()
 		batch_inputs, batch_labels = batch_data
 		batch_outputs = net(batch_inputs)
 		batch_loss = loss_criterion(batch_outputs, batch_labels)
 		batch_loss.backward()
+		batch_f = batch_loss.item()
 		
-		# Grab some data.
-		running_loss += batch_loss.item()
-		running_batch_count += 1
+		# Grab data.
+		batch_count += 1
+		avg_f += batch_f
+		avg_vecX[:] += shared_vecX[:]
+		avg_vecG[:] += shared_vecG[:]
+		avg_fSq += (batch_f**2)
+		avg_vecXSq[:] += (shared_vecX[:]**2)
+		avg_vecGSq[:] += (shared_vecG[:]**2)
 		
-		# Take step and cleanup.
-		#torch_optim_SGD.step()
-		vecP[:] = ( momentum_coefficient * vecP[:] ) - ( learning_rate * shared_vecG[:] )
+		# Take step.
+		vecP[:] = (momentum_coefficient * vecP[:]) - (learning_rate * shared_vecG[:])
 		shared_vecX[:] += vecP[:]
-	print(f'[ {time.time()-start_time:10.3f} {epoch:5d} {running_loss / running_batch_count:26.18E} ]')
+	# Calc stuff over epoch.
+	vecXHarvest = shared_vecX.copy()
+	vecPHarvest = vecP.copy()
+	avg_f /= batch_count
+	avg_vecX[:] /= batch_count
+	avg_vecG[:] /= batch_count
+	avg_fSq /= batch_count
+	avg_vecXSq[:] /= batch_count
+	avg_vecGSq[:] /= batch_count
+	var_f = danutil.var( avg_f, avg_fSq )
+	var_x = danutil.var( avg_vecX, avg_vecXSq )
+	avg_d = np.linalg.norm( avg_vecX - vecX0 )
+	avg_g = np.linalg.norm( avg_vecG )
+	var_g = danutil.var( avg_vecG, avg_vecGSq )
+	print(f'[', end='')
+	print(f' {time.time()-start_time:10.3f} {epoch:5d}', end='')
+	print(f'  ', end='')
+	print(f'  {avg_d:15.9E} {var_x:15.9E}', end='')
+	print(f'  ', end='')
+	print(f'  {avg_f:15.9E} {var_f:15.9E}', end='')
+	print(f'  {avg_g:15.9E} {var_g:14.9E}', end='')
+	print(f' ]')
 print(']')
 print('')
 msg('Finished main loop.')
