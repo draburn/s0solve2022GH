@@ -133,21 +133,24 @@ def levsol( f0, vecPhi, matPsi, vecLambdaCurve, sMax, vecS, dMax, vecLambdaObjf,
 class prm:
 	dropRelThresh = 0.1
 	dropAbsThresh = 1.0E-12
-	pBailThresh = 0.1
+	#pBailThresh = 0.1
 	#pBailThresh = 0.001
+	gBailThresh = 0.5
 
 def calcJump( vecXLaunch, vecPLaunch, record_matX, record_matG, record_rvcF, trSize, prm ):
 	# Set default return values
-	vecXNext = None
-	vecPNext = None
+	vecXNext = vecXLaunch.copy()
+	vecPNext = vecPLaunch.copy()
 	sizeK = 0
+	gammaRat = 0.0
+	fNew = -1.0
 	#
 	# Startup.
 	if ( trSize <= 0.0 ):
-		return ( vecXNext, vecPNext, sizeK )
+		return ( 100, vecXNext, vecPNext, sizeK, gammaRat, fNew )
 	numRecords = record_matX.shape[1]
 	if ( numRecords <= 1 ):
-		return ( vecXNext, vecPNext, sizeK )
+		return ( 200, vecXNext, vecPNext, sizeK, gammaRat, fNew )
 	sizeX = record_matX.shape[0]
 	#
 	# Set anchor.
@@ -156,6 +159,7 @@ def calcJump( vecXLaunch, vecPLaunch, record_matX, record_matG, record_rvcF, trS
 	fAnchor = record_rvcF[0,0]
 	matD = record_matX[:,0:numRecords].copy() - np.reshape( vecXAnchor, (sizeX,1) ) # Autobroadcast
 	matG = record_matG[:,0:numRecords].copy()
+	#msg(f'np.linalg.noprm(vecGAnchor) = {np.linalg.norm(vecGAnchor)}')
 	#
 	# Calculate basis.
 	matQ, rvcKeep = utorthdrop( matD, prm.dropRelThresh, prm.dropAbsThresh )
@@ -164,7 +168,7 @@ def calcJump( vecXLaunch, vecPLaunch, record_matX, record_matG, record_rvcF, trS
 	matR = np.triu( matQ.T @ matD ) # Should really be calc'd by utorthdrop, but, POITROME.
 	sizeK = matQ.shape[1]
 	if ( 0 == sizeK ):
-		return ( vecXNext, vecPNext, sizeK )
+		return ( 210, vecXNext, vecPNext, sizeK, gammaRat, fNew )
 	matGamma = matQ.T @ matG
 	vecGammaAnchor = matQ.T @ vecGAnchor
 	#
@@ -172,10 +176,10 @@ def calcJump( vecXLaunch, vecPLaunch, record_matX, record_matG, record_rvcF, trS
 	#  This part is new!
 	#  Bail if momentum is too outside of subspace!
 	vecPIn = matQ.T @ vecPLaunch
-	if ( np.linalg.norm(vecPIn) < prm.pBailThresh * np.linalg.norm(vecPLaunch) ):
-		#msg(f'Bailing per pBailThresh: {np.linalg.norm(vecPIn)} < {prm.pBailThresh} * {np.linalg.norm(vecPLaunch)}.')
-		sizeK = 0
-		return ( vecXNext, vecPNext, sizeK )
+	#msg(f'np.linalg.noprm(vecGammaAnchor) = {np.linalg.norm(vecGammaAnchor)}')
+	gammaRat = np.linalg.norm(vecGammaAnchor) / np.linalg.norm(vecGAnchor)
+	if ( np.linalg.norm(vecGammaAnchor) < prm.gBailThresh * np.linalg.norm(vecGAnchor) ):
+		return ( 300, vecXNext, vecPNext, sizeK, gammaRat, fNew )
 	#
 	# Generate "fit"/"model".
 	# DRaburn 2023-02-16:
@@ -248,6 +252,8 @@ def calcJump( vecXLaunch, vecPLaunch, record_matX, record_matG, record_rvcF, trS
 	vecYNew = vecYLaunch + vecZ
 	vecGammaNew = vecGammaLaunch + ( matHMod @ vecZ )
 	fNew = fLaunch + ( vecZ @ vecGammaLaunch ) + (( vecZ @ vecGammaNew )/2.0)
+	assert fNew < fLaunch
+	assert fNew < fAnchor
 	assert fLaunch > 0.0
 	assert np.linalg.norm(vecGammaLaunch/vecS) > 0.0
 	alphaF = fNew / fLaunch
@@ -258,4 +264,4 @@ def calcJump( vecXLaunch, vecPLaunch, record_matX, record_matG, record_rvcF, trS
 	vecPNext = np.zeros( sizeX )
 	vecXNext[:] = vecXAnchor + ( matQ @ vecYNew ) + ( alphaG * vecXPerp )
 	vecPNext[:] = (matQ @ ( (coeffPG*vecGammaNew) + (alphaG*vecGammaPerp) )) + (alphaF*vecPPerp)
-	return ( vecXNext, vecPNext, sizeK )
+	return ( 500, vecXNext, vecPNext, sizeK, gammaRat, fNew )

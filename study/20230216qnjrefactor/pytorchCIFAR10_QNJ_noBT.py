@@ -217,6 +217,7 @@ num_records = 0
 
 # Initialize inter-interval-info and QNJ param.
 prev_f = -1.0 # Negative indicates no prev.
+prev_fPred = -1.0
 tr_size = 0.0
 qnj_prm = qnj.prm()
 
@@ -273,6 +274,8 @@ for epoch_index in range(max_num_epochs):
 	avg_d = np.linalg.norm( avg_vecX - vecX0 )
 	avg_g = np.linalg.norm( avg_vecG )
 	var_g = danutil.var( avg_vecG, avg_vecGSq )
+	hmsx = np.linalg.norm( vecXHarvest - vecXSeed )
+	hmsp = np.linalg.norm( vecPHarvest - vecPSeed )
 	
 	# Add record.
 	# DRaburn 2023-02-16: Always rolling may be wasteful, but POITROME.
@@ -286,51 +289,44 @@ for epoch_index in range(max_num_epochs):
 	record_rvcF[0,0] = avg_f
 	
 	# Update trust region.
-	#if (prev_f < 0.0):
-	#	tr_size = 10.0*var_x
-	#	# Won't actually matter if jump requires at least two record entries.
-	#else:
-	#	if (avg_f > prev_f):
-	#		tr_size = 0.0
-	#	else:
-	#		# Including the case where tr_size < 0.0.
-	#		tr_size *= tr_accel_coeff
-	#		tr_size = max([ tr_size, 10.0*var_x ])
-	tr_size = 0.1 * np.linalg.norm( vecXHarvest - vecXSeed )
+	tr_lo = 0.1*hmsx
+	tr_hi = 10.0*hmsx
+	tr_accel = 1.2
+	if (prev_f < 0.0):
+		tr_size = tr_lo
+	elif (avg_f > prev_f):
+		tr_size = 0.0
+	elif (fPred < 0.0):
+		tr_size = tr_lo
+	#elif (avg_f < (prev_f+prev_fPred)/2.0):
+	elif (avg_f < prev_fPred):
+		# NOTE: "fPred" does nto consider that we start lower and go lower after landing.
+		tr_size = np.median([ tr_accel*tr_size, tr_lo, tr_hi ])
 	# End update trust region.
 	
 	# Calculate jump.
-	if (tr_size <= 0.0):
-		vecXNext = vecXHarvest.copy()
-		vecPNext = vecPHarvest.copy()
-		sizeK = 0
-	else:
-		vecXNext, vecPNext, sizeK = qnj.calcJump(
-		  vecXHarvest,
-		  vecPHarvest,
-		  record_matX[:,0:num_records],
-		  record_matG[:,0:num_records],
-		  record_rvcF[:,0:num_records],
-		  tr_size,
-		  qnj_prm )
-		if (not type(vecXNext) == np.ndarray ):
-			assert( None == vecXNext )
-			assert( None == vecPNext )
-			vecXNext = vecXHarvest.copy()
-			vecPNext = vecPHarvest.copy()
-			tr_size = 0.0
+	qnjCode, vecXNext, vecPNext, sizeK, gammaRat, fPred = qnj.calcJump(
+	  vecXHarvest,
+	  vecPHarvest,
+	  record_matX[:,0:num_records],
+	  record_matG[:,0:num_records],
+	  record_rvcF[:,0:num_records],
+	  tr_size,
+	  qnj_prm )
 	# End calculate jump.
 	
 	# Report.
 	print(f'[', end='')
 	print(f' {time.time()-start_time:10.3f} {epoch_index+1:5d}', end='')
 	print(f' ', end='')
-	print(f'  {avg_f:15.9E} {var_f:15.9E}', end='')
+	print(f'  {avg_f:12.6E} {var_f:12.6E}', end='')
 	print(f' ', end='')
-	print(f'  {avg_d:15.9E} {var_x:15.9E}', end='')
-	print(f'  {avg_g:15.9E} {var_g:15.9E}', end='')
+	print(f'  {avg_d:12.6E} {var_x:12.6E}', end='')
+	print(f'  {avg_g:12.6E} {var_g:12.6E}', end='')
 	print(f'   ', end='')
-	print(f'  {tr_size:15.9E} {sizeK:3d}', end='' )
+	print(f'  {hmsx:12.6E} {np.linalg.norm(vecPSeed):12.6E} {np.linalg.norm(vecPHarvest):12.6E} {tr_size:12.6E}', end='')
+	print(f'  {np.linalg.norm(vecXNext-vecXHarvest):12.6E} {np.linalg.norm(vecPNext):12.6E}', end='')
+	print(f'  {qnjCode:3d} {sizeK:3d} {gammaRat:12.6E} {fPred:13.6E}', end='' )
 	print(f' ]')
 	
 	# Save progress
@@ -340,11 +336,12 @@ for epoch_index in range(max_num_epochs):
 	
 	# Move to next step.
 	prev_f = avg_f
+	prev_fPred = fPred
 	shared_vecX[:] = vecXNext[:]
 	vecP[:] = vecPNext[:]
 # End epoch loop.
 
-print(']')
+print('];')
 print('')
 msg('Finished main loop.')
 
