@@ -87,7 +87,12 @@ for epoch in range(max_num_epochs):
 		
 		# Take step and cleanup.
 		torch_optim_SGD.step()
-	print(f'[ {time.time()-start_time:10.3f} {epoch:5d} {running_loss / running_batch_count:26.18E} ]')
+	# End batch loop.
+	print(f'[', end='')
+	print(f' {time.time()-start_time:10.3f} {epoch:5d}', end='')
+	print(f'  ', end='')
+	print(f'  {running_loss / running_batch_count:15.9E}', end='')
+	print(f' ]')
 print(']')
 print('')
 msg('Finished main loop.')

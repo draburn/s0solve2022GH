@@ -239,6 +239,8 @@ for epoch in range(max_num_epochs):
 		# Take step.
 		vecP[:] = (momentum_coefficient * vecP[:]) - (learning_rate * shared_vecG[:])
 		shared_vecX[:] += vecP[:]
+	# End batch loop.
+	
 	# Calc stuff over epoch.
 	vecXHarvest = shared_vecX.copy()
 	vecPHarvest = vecP.copy()
@@ -253,13 +255,15 @@ for epoch in range(max_num_epochs):
 	avg_d = np.linalg.norm( avg_vecX - vecX0 )
 	avg_g = np.linalg.norm( avg_vecG )
 	var_g = danutil.var( avg_vecG, avg_vecGSq )
+	
+	# Report.
 	print(f'[', end='')
 	print(f' {time.time()-start_time:10.3f} {epoch:5d}', end='')
 	print(f'  ', end='')
-	print(f'  {avg_d:15.9E} {var_x:15.9E}', end='')
-	print(f'  ', end='')
 	print(f'  {avg_f:15.9E} {var_f:15.9E}', end='')
-	print(f'  {avg_g:15.9E} {var_g:14.9E}', end='')
+	print(f'  ', end='')
+	print(f'  {avg_d:15.9E} {var_x:15.9E}', end='')
+	print(f'  {avg_g:15.9E} {var_g:15.9E}', end='')
 	print(f' ]')
 print(']')
 print('')

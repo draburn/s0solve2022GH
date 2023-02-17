@@ -26,6 +26,7 @@ CIFAR10_root = '../../dat/CIFAR10data'
 batch_size = 500
 learning_rate = 0.1
 momentum_coefficient = 0.9
+max_num_records = 100
 max_num_epochs = 10
 fname_x0 = ''
 dtype_x0 = np.float32
@@ -36,6 +37,7 @@ msg(f'batch_size = {batch_size}')
 msg(f'CIFAR10_root = "{CIFAR10_root}"')
 msg(f'learning_rate = {learning_rate:0.9E}')
 msg(f'momentum_coefficient = {momentum_coefficient:0.9E}')
+msg(f'max_num_records = {max_num_records}')
 msg(f'max_num_epochs = {max_num_epochs}')
 msg(f'fname_x0 = "{fname_x0}"')
 msg(f'fname_p0 = "{fname_p0}"')
@@ -202,6 +204,12 @@ else:
 msg(f'vecP0[0] = {vecP0[0]:0.18E}')
 msg(f'||vecP0|| = {np.linalg.norm(vecP0):0.18E}')
 
+# Initialize records.
+record_matX = np.zeros(( num_unknowns, max_num_records ))
+record_matG = np.zeros(( num_unknowns, max_num_records ))
+record_rvcF = np.zeros(( 1, max_num_records ))
+num_records = 0
+
 # Main loop.
 msg('Finished initialization.')
 msgtime()
@@ -239,6 +247,8 @@ for epoch in range(max_num_epochs):
 		# Take step.
 		vecP[:] = (momentum_coefficient * vecP[:]) - (learning_rate * shared_vecG[:])
 		shared_vecX[:] += vecP[:]
+	# End batch loop.
+	
 	# Calc stuff over epoch.
 	vecXHarvest = shared_vecX.copy()
 	vecPHarvest = vecP.copy()
@@ -253,14 +263,28 @@ for epoch in range(max_num_epochs):
 	avg_d = np.linalg.norm( avg_vecX - vecX0 )
 	avg_g = np.linalg.norm( avg_vecG )
 	var_g = danutil.var( avg_vecG, avg_vecGSq )
+	
+	# Report.
 	print(f'[', end='')
 	print(f' {time.time()-start_time:10.3f} {epoch:5d}', end='')
 	print(f'  ', end='')
-	print(f'  {avg_d:15.9E} {var_x:15.9E}', end='')
-	print(f'  ', end='')
 	print(f'  {avg_f:15.9E} {var_f:15.9E}', end='')
-	print(f'  {avg_g:15.9E} {var_g:14.9E}', end='')
+	print(f'  ', end='')
+	print(f'  {avg_d:15.9E} {var_x:15.9E}', end='')
+	print(f'  {avg_g:15.9E} {var_g:15.9E}', end='')
 	print(f' ]')
+	
+	# Add record.
+	# DRaburn 2023-02-16: Always rolling may be wasteful, but POITROME.
+	record_matX = np.roll( record_matX, 1 )
+	record_matG = np.roll( record_matG, 1 )
+	record_rvcF = np.roll( record_rvcF, 1 )
+	if ( num_records < max_num_records ):
+		num_records += 1
+	record_matX[:,0] = avg_vecX[:]
+	record_matG[:,0] = avg_vecG[:]
+	record_rvcF[0,0] = avg_f
+	
 print(']')
 print('')
 msg('Finished main loop.')
