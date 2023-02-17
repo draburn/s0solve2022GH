@@ -135,7 +135,8 @@ class prm:
 	dropAbsThresh = 1.0E-12
 	#pBailThresh = 0.1
 	#pBailThresh = 0.001
-	gBailThresh = 0.5
+	#gBailThresh = 0.5
+	gBailThresh = 0.2
 
 def calcJump( vecXLaunch, vecPLaunch, record_matX, record_matG, record_rvcF, trSize, prm ):
 	# Set default return values
