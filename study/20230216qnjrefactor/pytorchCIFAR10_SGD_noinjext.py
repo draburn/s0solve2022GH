@@ -29,8 +29,8 @@ max_num_epochs = 10
 msg(f'torch_seed = {torch_seed}')
 msg(f'batch_size = {batch_size}')
 msg(f'CIFAR10_root = "{CIFAR10_root}"')
-msg(f'learning_rate = {learning_rate:0.12E}')
-msg(f'momentum_coefficient = {momentum_coefficient:0.12E}')
+msg(f'learning_rate = {learning_rate:0.9E}')
+msg(f'momentum_coefficient = {momentum_coefficient:0.9E}')
 msg(f'max_num_epochs = {max_num_epochs}')
 
 # Init Torch, NN, etc.
@@ -63,31 +63,33 @@ torch_optim_SGD = torch.optim.SGD(net.parameters(), lr=learning_rate, momentum=m
 loss_criterion = torch.nn.CrossEntropyLoss()
 
 # Main loop.
-msgtime()
 msg('Finished initialization.')
+msgtime()
 msg('Starting main loop...')
 print('')
 print('[')
 for epoch in range(max_num_epochs):
-	torch_optim_SGD.zero_grad()
 	running_loss = 0.0
 	running_batch_count = 0
 	for batch_index, batch_data in enumerate(trainloader, 0):
+		# Prep.
+		torch_optim_SGD.zero_grad()
+		
 		# Calculate f (loss) and gradient.
 		batch_inputs, batch_labels = batch_data
 		batch_outputs = net(batch_inputs)
 		batch_loss = loss_criterion(batch_outputs, batch_labels)
 		batch_loss.backward()
+		
 		# Grab some data.
 		running_loss += batch_loss.item()
 		running_batch_count += 1
+		
 		# Take step and cleanup.
 		torch_optim_SGD.step()
-		torch_optim_SGD.zero_grad()
-	print(f'[ {time.time()-start_time:9.3f} {epoch:3d} {running_loss / running_batch_count:18.12f} ]')
+	print(f'[ {time.time()-start_time:10.3f} {epoch:5d} {running_loss / running_batch_count:26.18E} ]')
 print(']')
 print('')
-msgtime()
 msg('Finished main loop.')
 
 # Exit.
