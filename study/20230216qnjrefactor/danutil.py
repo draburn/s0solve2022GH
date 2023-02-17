@@ -11,3 +11,9 @@ def var( xAvg, xSqAvg ):
 	xVarSq = xSqAvg - (xAvg**2)
 	xVarSq[xVarSq<0.0] = 0.0
 	return np.linalg.norm(xVarSq)
+
+def tfInt( tf ):
+	if (tf):
+		return 1
+	else:
+		return 0

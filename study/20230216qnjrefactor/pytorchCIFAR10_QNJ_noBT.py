@@ -9,6 +9,7 @@ import torch
 import torchvision
 import numpy as np
 import danutil
+import qnj
 
 # Startup.
 start_time = time.time()
@@ -27,7 +28,8 @@ batch_size = 500
 learning_rate = 0.1
 momentum_coefficient = 0.9
 max_num_records = 100
-max_num_epochs = 10
+tr_accel_coeff = 2.0
+max_num_epochs = 5
 fname_x0 = ''
 dtype_x0 = np.float32
 fname_p0 = ''
@@ -38,6 +40,7 @@ msg(f'CIFAR10_root = "{CIFAR10_root}"')
 msg(f'learning_rate = {learning_rate:0.9E}')
 msg(f'momentum_coefficient = {momentum_coefficient:0.9E}')
 msg(f'max_num_records = {max_num_records}')
+msg(f'tr_accel_coeff = {tr_accel_coeff:0.9E}')
 msg(f'max_num_epochs = {max_num_epochs}')
 msg(f'fname_x0 = "{fname_x0}"')
 msg(f'fname_p0 = "{fname_p0}"')
@@ -210,6 +213,10 @@ record_matG = np.zeros(( num_unknowns, max_num_records ))
 record_rvcF = np.zeros(( 1, max_num_records ))
 num_records = 0
 
+# Initialize inter-interval-info.
+prev_f = -1.0 # Negative indicates no prev.
+tr_size = 0.0
+
 # Main loop.
 msg('Finished initialization.')
 msgtime()
@@ -275,20 +282,44 @@ for epoch in range(max_num_epochs):
 	record_matG[:,0] = avg_vecG[:]
 	record_rvcF[0,0] = avg_f
 	
-	# Analyze jump.
-	msg('NOT IMPLEMENTED!')
-	exit()
-	#vecXNew, vecPNew = qnj.calcJump( vecXHarvest, vecPHarvest, record_matX, record_matG, record_rvcF, qnj_prm )
+	# Update trust region.
+	if (prev_f < 0.0):
+		tr_size = var_x
+		# Won't actually matter if jump requires at least two record entries.
+	else:
+		if (avg_f > prev_f):
+			tr_size = 0.0
+		else:
+			tr_size *= tr_accel_coeff
+			tr_size = max([ tr_size, var_x ])
+	
+	# Calculate jump.
+	if (tr_size <= 0.0):
+		vecXNext = vecXHarvest.copy()
+		vecPNext = vecPHarvest.copy()
+	else:
+		msg('Placeholder hack!')
+		vecXNext = vecXHarvest.copy()
+		vecPNext = vecPHarvest.copy()
+		#vecXNext, vecPNext = qnj.calcJump( vecXHarvest, vecPHarvest, record_matX, record_matG, record_rvcF, qnj_prm )
+		#using_jump = True
 	
 	# Report.
 	print(f'[', end='')
 	print(f' {time.time()-start_time:10.3f} {epoch:5d}', end='')
-	print(f'  ', end='')
+	print(f' ', end='')
 	print(f'  {avg_f:15.9E} {var_f:15.9E}', end='')
-	print(f'  ', end='')
+	print(f' ', end='')
 	print(f'  {avg_d:15.9E} {var_x:15.9E}', end='')
 	print(f'  {avg_g:15.9E} {var_g:15.9E}', end='')
+	print(f'   ', end='')
+	print(f'  {tr_size:15.9E}', end='' )
 	print(f' ]')
+	
+	# Move to next step.
+	prev_f = avg_f
+	shared_vecX[:] = vecXNext[:]
+	vecP[:] = vecPNext[:]
 # End epoch loop.
 
 print(']')

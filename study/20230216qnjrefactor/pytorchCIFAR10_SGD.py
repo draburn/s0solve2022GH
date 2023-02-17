@@ -259,9 +259,9 @@ for epoch in range(max_num_epochs):
 	# Report.
 	print(f'[', end='')
 	print(f' {time.time()-start_time:10.3f} {epoch:5d}', end='')
-	print(f'  ', end='')
+	print(f' ', end='')
 	print(f'  {avg_f:15.9E} {var_f:15.9E}', end='')
-	print(f'  ', end='')
+	print(f' ', end='')
 	print(f'  {avg_d:15.9E} {var_x:15.9E}', end='')
 	print(f'  {avg_g:15.9E} {var_g:15.9E}', end='')
 	print(f' ]')
