@@ -264,16 +264,6 @@ for epoch in range(max_num_epochs):
 	avg_g = np.linalg.norm( avg_vecG )
 	var_g = danutil.var( avg_vecG, avg_vecGSq )
 	
-	# Report.
-	print(f'[', end='')
-	print(f' {time.time()-start_time:10.3f} {epoch:5d}', end='')
-	print(f'  ', end='')
-	print(f'  {avg_f:15.9E} {var_f:15.9E}', end='')
-	print(f'  ', end='')
-	print(f'  {avg_d:15.9E} {var_x:15.9E}', end='')
-	print(f'  {avg_g:15.9E} {var_g:15.9E}', end='')
-	print(f' ]')
-	
 	# Add record.
 	# DRaburn 2023-02-16: Always rolling may be wasteful, but POITROME.
 	record_matX = np.roll( record_matX, 1 )
@@ -285,6 +275,22 @@ for epoch in range(max_num_epochs):
 	record_matG[:,0] = avg_vecG[:]
 	record_rvcF[0,0] = avg_f
 	
+	# Analyze jump.
+	msg('NOT IMPLEMENTED!')
+	exit()
+	#vecXNew, vecPNew = qnj.calcJump( vecXHarvest, vecPHarvest, record_matX, record_matG, record_rvcF, qnj_prm )
+	
+	# Report.
+	print(f'[', end='')
+	print(f' {time.time()-start_time:10.3f} {epoch:5d}', end='')
+	print(f'  ', end='')
+	print(f'  {avg_f:15.9E} {var_f:15.9E}', end='')
+	print(f'  ', end='')
+	print(f'  {avg_d:15.9E} {var_x:15.9E}', end='')
+	print(f'  {avg_g:15.9E} {var_g:15.9E}', end='')
+	print(f' ]')
+# End epoch loop.
+
 print(']')
 print('')
 msg('Finished main loop.')

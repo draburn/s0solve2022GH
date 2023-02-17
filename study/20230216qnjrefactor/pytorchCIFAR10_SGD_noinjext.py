@@ -93,6 +93,7 @@ for epoch in range(max_num_epochs):
 	print(f'  ', end='')
 	print(f'  {running_loss / running_batch_count:15.9E}', end='')
 	print(f' ]')
+# End epoch loop.
 print(']')
 print('')
 msg('Finished main loop.')
