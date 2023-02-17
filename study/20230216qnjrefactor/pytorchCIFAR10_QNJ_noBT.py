@@ -213,9 +213,10 @@ record_matG = np.zeros(( num_unknowns, max_num_records ))
 record_rvcF = np.zeros(( 1, max_num_records ))
 num_records = 0
 
-# Initialize inter-interval-info.
+# Initialize inter-interval-info and QNJ param.
 prev_f = -1.0 # Negative indicates no prev.
 tr_size = 0.0
+qnj_prm = qnj.prm()
 
 # Main loop.
 msg('Finished initialization.')
@@ -298,11 +299,7 @@ for epoch in range(max_num_epochs):
 		vecXNext = vecXHarvest.copy()
 		vecPNext = vecPHarvest.copy()
 	else:
-		msg('Placeholder hack!')
-		vecXNext = vecXHarvest.copy()
-		vecPNext = vecPHarvest.copy()
-		#vecXNext, vecPNext = qnj.calcJump( vecXHarvest, vecPHarvest, record_matX, record_matG, record_rvcF, qnj_prm )
-		#using_jump = True
+		vecXNext, vecPNext = qnj.calcJump( vecXHarvest, vecPHarvest, record_matX, record_matG, record_rvcF, qnj_prm )
 	
 	# Report.
 	print(f'[', end='')

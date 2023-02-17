@@ -17,3 +17,10 @@ def tfInt( tf ):
 		return 1
 	else:
 		return 0
+
+def reldiff( a, b ):
+    sa = np.sum(np.abs(a))
+    sb = np.sum(np.abs(b))
+    if ( 0.0 == sa and 0.0 == sb ):
+        return 0.0
+    return ( np.sum(np.abs(a-b)) / ( sa + sb ) )
