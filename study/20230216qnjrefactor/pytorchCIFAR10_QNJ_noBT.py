@@ -25,10 +25,10 @@ msg(f'Initializing...')
 torch_seed = 0
 CIFAR10_root = '../../dat/CIFAR10data'
 batch_size = 500
-learning_rate = 0.1
+learning_rate = 0.01
 momentum_coefficient = 0.9
-max_num_records = 100
-tr_accel_coeff = 2.0
+max_num_records = 200
+#tr_accel_coeff = 2.0
 max_num_epochs = 200
 #fname_x0 = 'in_vecX0.np'
 #fname_p0 = 'in_vecP0.np'
@@ -42,7 +42,7 @@ msg(f'CIFAR10_root = "{CIFAR10_root}"')
 msg(f'learning_rate = {learning_rate:0.9E}')
 msg(f'momentum_coefficient = {momentum_coefficient:0.9E}')
 msg(f'max_num_records = {max_num_records}')
-msg(f'tr_accel_coeff = {tr_accel_coeff:0.9E}')
+#msg(f'tr_accel_coeff = {tr_accel_coeff:0.9E}')
 msg(f'max_num_epochs = {max_num_epochs}')
 msg(f'fname_x0 = "{fname_x0}"')
 msg(f'fname_p0 = "{fname_p0}"')
@@ -286,16 +286,17 @@ for epoch_index in range(max_num_epochs):
 	record_rvcF[0,0] = avg_f
 	
 	# Update trust region.
-	if (prev_f < 0.0):
-		tr_size = var_x
-		# Won't actually matter if jump requires at least two record entries.
-	else:
-		if (avg_f > prev_f):
-			tr_size = 0.0
-		else:
-			# Including the case where tr_size < 0.0.
-			tr_size *= tr_accel_coeff
-			tr_size = max([ tr_size, var_x ])
+	#if (prev_f < 0.0):
+	#	tr_size = 10.0*var_x
+	#	# Won't actually matter if jump requires at least two record entries.
+	#else:
+	#	if (avg_f > prev_f):
+	#		tr_size = 0.0
+	#	else:
+	#		# Including the case where tr_size < 0.0.
+	#		tr_size *= tr_accel_coeff
+	#		tr_size = max([ tr_size, 10.0*var_x ])
+	tr_size = 0.1 * np.linalg.norm( vecXHarvest - vecXSeed )
 	# End update trust region.
 	
 	# Calculate jump.

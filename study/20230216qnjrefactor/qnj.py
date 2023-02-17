@@ -133,8 +133,8 @@ def levsol( f0, vecPhi, matPsi, vecLambdaCurve, sMax, vecS, dMax, vecLambdaObjf,
 class prm:
 	dropRelThresh = 0.1
 	dropAbsThresh = 1.0E-12
-	#pBailThresh = 0.1
-	pBailThresh = 0.001
+	pBailThresh = 0.1
+	#pBailThresh = 0.001
 
 def calcJump( vecXLaunch, vecPLaunch, record_matX, record_matG, record_rvcF, trSize, prm ):
 	# Set default return values
@@ -173,7 +173,7 @@ def calcJump( vecXLaunch, vecPLaunch, record_matX, record_matG, record_rvcF, trS
 	#  Bail if momentum is too outside of subspace!
 	vecPIn = matQ.T @ vecPLaunch
 	if ( np.linalg.norm(vecPIn) < prm.pBailThresh * np.linalg.norm(vecPLaunch) ):
-		msg(f'Bailing per pBailThresh: {np.linalg.norm(vecPIn)} < {prm.pBailThresh} * {np.linalg.norm(vecPLaunch)}.')
+		#msg(f'Bailing per pBailThresh: {np.linalg.norm(vecPIn)} < {prm.pBailThresh} * {np.linalg.norm(vecPLaunch)}.')
 		sizeK = 0
 		return ( vecXNext, vecPNext, sizeK )
 	#
