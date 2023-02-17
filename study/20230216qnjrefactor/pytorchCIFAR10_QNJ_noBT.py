@@ -29,10 +29,12 @@ learning_rate = 0.1
 momentum_coefficient = 0.9
 max_num_records = 100
 tr_accel_coeff = 2.0
-max_num_epochs = 5
+max_num_epochs = 200
+#fname_x0 = 'in_vecX0.np'
+#fname_p0 = 'in_vecP0.np'
 fname_x0 = ''
-dtype_x0 = np.float32
 fname_p0 = ''
+dtype_x0 = np.float32
 dtype_p0 = np.float32
 msg(f'torch_seed = {torch_seed}')
 msg(f'batch_size = {batch_size}')
@@ -224,7 +226,7 @@ msgtime()
 msg('Starting main loop...')
 print('')
 print('[')
-for epoch in range(max_num_epochs):
+for epoch_index in range(max_num_epochs):
 	vecXSeed = shared_vecX.copy()
 	vecPSeed = vecP.copy()
 	batch_count = 0
@@ -291,27 +293,49 @@ for epoch in range(max_num_epochs):
 		if (avg_f > prev_f):
 			tr_size = 0.0
 		else:
+			# Including the case where tr_size < 0.0.
 			tr_size *= tr_accel_coeff
 			tr_size = max([ tr_size, var_x ])
+	# End update trust region.
 	
 	# Calculate jump.
 	if (tr_size <= 0.0):
 		vecXNext = vecXHarvest.copy()
 		vecPNext = vecPHarvest.copy()
+		sizeK = 0
 	else:
-		vecXNext, vecPNext = qnj.calcJump( vecXHarvest, vecPHarvest, record_matX, record_matG, record_rvcF, qnj_prm )
+		vecXNext, vecPNext, sizeK = qnj.calcJump(
+		  vecXHarvest,
+		  vecPHarvest,
+		  record_matX[:,0:num_records],
+		  record_matG[:,0:num_records],
+		  record_rvcF[:,0:num_records],
+		  tr_size,
+		  qnj_prm )
+		if (not type(vecXNext) == np.ndarray ):
+			assert( None == vecXNext )
+			assert( None == vecPNext )
+			vecXNext = vecXHarvest.copy()
+			vecPNext = vecPHarvest.copy()
+			tr_size = 0.0
+	# End calculate jump.
 	
 	# Report.
 	print(f'[', end='')
-	print(f' {time.time()-start_time:10.3f} {epoch:5d}', end='')
+	print(f' {time.time()-start_time:10.3f} {epoch_index+1:5d}', end='')
 	print(f' ', end='')
 	print(f'  {avg_f:15.9E} {var_f:15.9E}', end='')
 	print(f' ', end='')
 	print(f'  {avg_d:15.9E} {var_x:15.9E}', end='')
 	print(f'  {avg_g:15.9E} {var_g:15.9E}', end='')
 	print(f'   ', end='')
-	print(f'  {tr_size:15.9E}', end='' )
+	print(f'  {tr_size:15.9E} {sizeK:3d}', end='' )
 	print(f' ]')
+	
+	# Save progress
+	if ( (epoch_index+1)%100 == 0 ):
+		shared_vecX.tofile(f'out_vecX_{epoch_index+1:06d}.np')
+		vecP.tofile(f'out_vecP_{epoch_index+1:06d}.np')
 	
 	# Move to next step.
 	prev_f = avg_f
