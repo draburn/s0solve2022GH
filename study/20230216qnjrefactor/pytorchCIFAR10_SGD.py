@@ -26,12 +26,18 @@ batch_size = 500
 learning_rate = 0.1
 momentum_coefficient = 0.9
 max_num_epochs = 10
+fname_x0 = ''
+dtype_x0 = np.float32
+fname_p0 = ''
+dtype_p0 = np.float32
 msg(f'torch_seed = {torch_seed}')
 msg(f'batch_size = {batch_size}')
 msg(f'CIFAR10_root = "{CIFAR10_root}"')
-msg(f'learning_rate = {learning_rate:0.12E}')
-msg(f'momentum_coefficient = {momentum_coefficient:0.12E}')
+msg(f'learning_rate = {learning_rate:0.9E}')
+msg(f'momentum_coefficient = {momentum_coefficient:0.9E}')
 msg(f'max_num_epochs = {max_num_epochs}')
+msg(f'fname_x0 = "{fname_x0}"')
+msg(f'fname_p0 = "{fname_p0}"')
 
 # Init Torch, NN, etc.
 torch.manual_seed(torch_seed)
@@ -62,32 +68,167 @@ net = Net()
 torch_optim_SGD = torch.optim.SGD(net.parameters(), lr=learning_rate, momentum=momentum_coefficient)
 loss_criterion = torch.nn.CrossEntropyLoss()
 
+# Stuff for injection/extraction of Torch data.
+# DRaburn 2023-02-16:
+#  I'd imagine a proper Pytorch API exists, but I couldn't find information about it.
+#  A "brute-force comprehensive Python" approach is likely also possible, but, mise;
+#   this code is limited to the specific NN defined above.
+def get_size_list(this_net):
+	size_list = []
+	size_list.append(this_net.conv1.bias.data.size())
+	size_list.append(this_net.conv1.weight.data.size())
+	size_list.append(this_net.conv2.bias.data.size())
+	size_list.append(this_net.conv2.weight.data.size())
+	size_list.append(this_net.fc1.bias.data.size())
+	size_list.append(this_net.fc1.weight.data.size())
+	size_list.append(this_net.fc2.bias.data.size())
+	size_list.append(this_net.fc2.weight.data.size())
+	size_list.append(this_net.fc3.bias.data.size())
+	size_list.append(this_net.fc3.weight.data.size())
+	return size_list
+def get_numel_list(this_net):
+	numel_list = [this_net.conv1.bias.data.numel()]
+	numel_list.append(this_net.conv1.weight.data.numel())
+	numel_list.append(this_net.conv2.bias.data.numel())
+	numel_list.append(this_net.conv2.weight.data.numel())
+	numel_list.append(this_net.fc1.bias.data.numel())
+	numel_list.append(this_net.fc1.weight.data.numel())
+	numel_list.append(this_net.fc2.bias.data.numel())
+	numel_list.append(this_net.fc2.weight.data.numel())
+	numel_list.append(this_net.fc3.bias.data.numel())
+	numel_list.append(this_net.fc3.weight.data.numel())
+	return numel_list
+def get_cumel_list(this_net):
+	 numel_list = get_numel_list(this_net)
+	 cumel_list = [0];
+	 for n in range(len(numel_list)):
+		  cumel_list.append(cumel_list[n] + numel_list[n])
+	 return cumel_list
+def init_x_from_net(this_net):
+	cumel_list = get_cumel_list(this_net)
+	this_x = np.zeros(cumel_list[-1], dtype=np.float32)
+	this_x[cumel_list[0]:cumel_list[1]] = np.reshape(this_net.conv1.bias.data.numpy(), -1)
+	this_x[cumel_list[1]:cumel_list[2]] = np.reshape(this_net.conv1.weight.data.numpy(), -1)
+	this_x[cumel_list[2]:cumel_list[3]] = np.reshape(this_net.conv2.bias.data.numpy(), -1)
+	this_x[cumel_list[3]:cumel_list[4]] = np.reshape(this_net.conv2.weight.data.numpy(), -1)
+	this_x[cumel_list[4]:cumel_list[5]] = np.reshape(this_net.fc1.bias.data.numpy(), -1)
+	this_x[cumel_list[5]:cumel_list[6]] = np.reshape(this_net.fc1.weight.data.numpy(), -1)
+	this_x[cumel_list[6]:cumel_list[7]] = np.reshape(this_net.fc2.bias.data.numpy(), -1)
+	this_x[cumel_list[7]:cumel_list[8]] = np.reshape(this_net.fc2.weight.data.numpy(), -1)
+	this_x[cumel_list[8]:cumel_list[9]] = np.reshape(this_net.fc3.bias.data.numpy(), -1)
+	this_x[cumel_list[9]:cumel_list[10]] = np.reshape(this_net.fc3.weight.data.numpy(), -1)
+	return this_x
+def init_g_from_net(this_net):
+	cumel_list = get_cumel_list(this_net)
+	this_grad = np.zeros(cumel_list[-1], dtype=np.float32)
+	this_grad[cumel_list[0]:cumel_list[1]] = np.reshape(this_net.conv1.bias.grad.numpy(), -1)
+	this_grad[cumel_list[1]:cumel_list[2]] = np.reshape(this_net.conv1.weight.grad.numpy(), -1)
+	this_grad[cumel_list[2]:cumel_list[3]] = np.reshape(this_net.conv2.bias.grad.numpy(), -1)
+	this_grad[cumel_list[3]:cumel_list[4]] = np.reshape(this_net.conv2.weight.grad.numpy(), -1)
+	this_grad[cumel_list[4]:cumel_list[5]] = np.reshape(this_net.fc1.bias.grad.numpy(), -1)
+	this_grad[cumel_list[5]:cumel_list[6]] = np.reshape(this_net.fc1.weight.grad.numpy(), -1)
+	this_grad[cumel_list[6]:cumel_list[7]] = np.reshape(this_net.fc2.bias.grad.numpy(), -1)
+	this_grad[cumel_list[7]:cumel_list[8]] = np.reshape(this_net.fc2.weight.grad.numpy(), -1)
+	this_grad[cumel_list[8]:cumel_list[9]] = np.reshape(this_net.fc3.bias.grad.numpy(), -1)
+	this_grad[cumel_list[9]:cumel_list[10]] = np.reshape(this_net.fc3.weight.grad.numpy(), -1)
+	return this_grad
+size_list = get_size_list(net)
+cumel_list = get_cumel_list(net)
+sizeX = cumel_list[-1]
+#msg(f'size_list = {size_list}')
+#msg(f'cumel_list = {cumel_list}')
+msg(f'sizeX = {sizeX}')
+
+# Initialize our "x".
+# DRaburn 2023-02-16:
+#  There may be a better way to do this, but, I don't know what it is.
+#  First, we'll create a "shared_vecX" and populate it.
+#  Then, we make the weights (and biases) in the net point to our "shared_vecX".
+shared_vecX = init_x_from_net(net)
+net.conv1.bias.data   = torch.from_numpy(np.reshape(shared_vecX[cumel_list[0]:cumel_list[1]],size_list[0]))
+net.conv1.weight.data = torch.from_numpy(np.reshape(shared_vecX[cumel_list[1]:cumel_list[2]],size_list[1]))
+net.conv2.bias.data   = torch.from_numpy(np.reshape(shared_vecX[cumel_list[2]:cumel_list[3]],size_list[2]))
+net.conv2.weight.data = torch.from_numpy(np.reshape(shared_vecX[cumel_list[3]:cumel_list[4]],size_list[3]))
+net.fc1.bias.data     = torch.from_numpy(np.reshape(shared_vecX[cumel_list[4]:cumel_list[5]],size_list[4]))
+net.fc1.weight.data   = torch.from_numpy(np.reshape(shared_vecX[cumel_list[5]:cumel_list[6]],size_list[5]))
+net.fc2.bias.data     = torch.from_numpy(np.reshape(shared_vecX[cumel_list[6]:cumel_list[7]],size_list[6]))
+net.fc2.weight.data   = torch.from_numpy(np.reshape(shared_vecX[cumel_list[7]:cumel_list[8]],size_list[7]))
+net.fc3.bias.data     = torch.from_numpy(np.reshape(shared_vecX[cumel_list[8]:cumel_list[9]],size_list[8]))
+net.fc3.weight.data   = torch.from_numpy(np.reshape(shared_vecX[cumel_list[9]:cumel_list[10]],size_list[9]))
+# I'm not sure what happens to original memory in net, and I don't particularly care.
+if (''!=fname_x0):
+	msg(f'Reading x0 from disk using dtype = "{dtype_x0}".')
+	foo = np.fromfile(fname_x0,dtype=dtype_x0)
+	shared_vecX[:] = foo[:]
+	foo = []
+msg(f'shared_vecX[0] = {shared_vecX[0]:0.18E}')
+msg(f'||x0|| = {np.sqrt(shared_vecX@shared_vecX):0.18E}')
+
+# Initialize our gradient.
+# DRaburn 2023-02-16:
+#  There may be a better way to do this, but, I don't know what it is.
+#  This approach is basically the same as for shared_vecX, but,
+#   it seems we need to do at least one gradient calculation first.
+torch_optim_SGD.zero_grad()
+for batch_index, batch_data in enumerate(trainloader, 0):
+	batch_inputs, batch_labels = batch_data
+	batch_outputs = net(batch_inputs)
+	batch_loss = loss_criterion(batch_outputs, batch_labels)
+	batch_loss.backward()
+	break
+shared_vecG = init_g_from_net(net)
+net.conv1.bias.grad   = torch.from_numpy(np.reshape(shared_vecG[cumel_list[0]:cumel_list[1]],size_list[0]))
+net.conv1.weight.grad = torch.from_numpy(np.reshape(shared_vecG[cumel_list[1]:cumel_list[2]],size_list[1]))
+net.conv2.bias.grad   = torch.from_numpy(np.reshape(shared_vecG[cumel_list[2]:cumel_list[3]],size_list[2]))
+net.conv2.weight.grad = torch.from_numpy(np.reshape(shared_vecG[cumel_list[3]:cumel_list[4]],size_list[3]))
+net.fc1.bias.grad     = torch.from_numpy(np.reshape(shared_vecG[cumel_list[4]:cumel_list[5]],size_list[4]))
+net.fc1.weight.grad   = torch.from_numpy(np.reshape(shared_vecG[cumel_list[5]:cumel_list[6]],size_list[5]))
+net.fc2.bias.grad     = torch.from_numpy(np.reshape(shared_vecG[cumel_list[6]:cumel_list[7]],size_list[6]))
+net.fc2.weight.grad   = torch.from_numpy(np.reshape(shared_vecG[cumel_list[7]:cumel_list[8]],size_list[7]))
+net.fc3.bias.grad     = torch.from_numpy(np.reshape(shared_vecG[cumel_list[8]:cumel_list[9]],size_list[8]))
+net.fc3.weight.grad   = torch.from_numpy(np.reshape(shared_vecG[cumel_list[9]:cumel_list[10]],size_list[9]))
+
+# Initialize momentum.
+# This one is easy, since we don't need to interface with Torch.
+vecP = np.zeros(sizeX, dtype=np.float32)
+if (''!=fname_p0):
+	msg(f'Reading p0 from disk using dtype = "{dtype_p0}".')
+	foo = np.fromfile(fname_p0,dtype=dtype_p0)
+	vecP[:] = foo[:]
+	foo = []
+msg(f'vecP[0] = {vecP[0]:0.18E}')
+msg(f'||p0|| = {np.sqrt(vecP@vecP):0.18E}')
+
 # Main loop.
-msgtime()
 msg('Finished initialization.')
+msgtime()
 msg('Starting main loop...')
 print('')
 print('[')
 for epoch in range(max_num_epochs):
-	torch_optim_SGD.zero_grad()
 	running_loss = 0.0
 	running_batch_count = 0
 	for batch_index, batch_data in enumerate(trainloader, 0):
+		# Prep.
+		torch_optim_SGD.zero_grad()
+		
 		# Calculate f (loss) and gradient.
 		batch_inputs, batch_labels = batch_data
 		batch_outputs = net(batch_inputs)
 		batch_loss = loss_criterion(batch_outputs, batch_labels)
 		batch_loss.backward()
+		
 		# Grab some data.
 		running_loss += batch_loss.item()
 		running_batch_count += 1
+		
 		# Take step and cleanup.
-		torch_optim_SGD.step()
-		torch_optim_SGD.zero_grad()
-	print(f'[ {time.time()-start_time:9.3f} {epoch:3d} {running_loss / running_batch_count:18.12f} ]')
+		#torch_optim_SGD.step()
+		vecP[:] = ( momentum_coefficient * vecP[:] ) - ( learning_rate * shared_vecG[:] )
+		shared_vecX[:] += vecP[:]
+	print(f'[ {time.time()-start_time:10.3f} {epoch:5d} {running_loss / running_batch_count:26.18E} ]')
 print(']')
 print('')
-msgtime()
 msg('Finished main loop.')
 
 # Exit.
