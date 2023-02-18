@@ -132,11 +132,13 @@ def levsol( f0, vecPhi, matPsi, vecLambdaCurve, sMax, vecS, dMax, vecLambdaObjf,
 
 class prm:
 	dropRelThresh = 0.1
+	#dropRelThresh = 0.01
 	dropAbsThresh = 1.0E-12
 	#pBailThresh = 0.1
 	#pBailThresh = 0.001
 	#gBailThresh = 0.5
 	gBailThresh = 0.2
+	#gBailThresh = 0.1
 
 def calcJump( vecXLaunch, vecPLaunch, record_matX, record_matG, record_rvcF, trSize, prm ):
 	# Set default return values

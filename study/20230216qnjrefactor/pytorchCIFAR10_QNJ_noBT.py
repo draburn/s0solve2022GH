@@ -25,15 +25,15 @@ msg(f'Initializing...')
 torch_seed = 0
 CIFAR10_root = '../../dat/CIFAR10data'
 batch_size = 500
-learning_rate = 0.01
+learning_rate = 0.001
 momentum_coefficient = 0.9
 max_num_records = 200
 #tr_accel_coeff = 2.0
-max_num_epochs = 200
-#fname_x0 = 'in_vecX0.np'
-#fname_p0 = 'in_vecP0.np'
+max_num_epochs = 500
 fname_x0 = ''
 fname_p0 = ''
+fname_x0 = 'in_vecX0.np'
+#fname_p0 = 'in_vecP0.np'
 dtype_x0 = np.float32
 dtype_p0 = np.float32
 msg(f'torch_seed = {torch_seed}')
@@ -290,18 +290,26 @@ for epoch_index in range(max_num_epochs):
 	
 	# Update trust region.
 	tr_lo = 0.1*hmsx
-	tr_hi = 10.0*hmsx
+	#tr_hi = 10.0*hmsx
+	tr_hi = 100.0*hmsx
+	#tr_decel = 0.0
+	tr_decel = 0.5
 	tr_accel = 1.2
 	if (prev_f < 0.0):
+		msg(f'Useless(?) TR: {tr_size} {tr_lo}, {tr_hi}')
+		tr_size = tr_lo
+	elif (prev_fPred < 0.0):
+		msg(f'(Re)init TR: {tr_size} {tr_lo}, {tr_hi}')
 		tr_size = tr_lo
 	elif (avg_f > prev_f):
-		tr_size = 0.0
-	elif (fPred < 0.0):
-		tr_size = tr_lo
+		msg(f'Decel TR: {tr_size} {tr_lo}, {tr_hi}')
+		tr_size *= tr_decel
 	#elif (avg_f < (prev_f+prev_fPred)/2.0):
 	elif (avg_f < prev_fPred):
+		msg(f'Accel TR: {tr_size} {tr_lo}, {tr_hi}')
 		# NOTE: "fPred" does nto consider that we start lower and go lower after landing.
-		tr_size = np.median([ tr_accel*tr_size, tr_lo, tr_hi ])
+		tr_size *= tr_accel
+	tr_size = np.median([ tr_size, tr_lo, tr_hi ])
 	# End update trust region.
 	
 	# Calculate jump.
@@ -323,10 +331,11 @@ for epoch_index in range(max_num_epochs):
 	print(f' ', end='')
 	print(f'  {avg_d:12.6E} {var_x:12.6E}', end='')
 	print(f'  {avg_g:12.6E} {var_g:12.6E}', end='')
-	print(f'   ', end='')
-	print(f'  {hmsx:12.6E} {np.linalg.norm(vecPSeed):12.6E} {np.linalg.norm(vecPHarvest):12.6E} {tr_size:12.6E}', end='')
-	print(f'  {np.linalg.norm(vecXNext-vecXHarvest):12.6E} {np.linalg.norm(vecPNext):12.6E}', end='')
-	print(f'  {qnjCode:3d} {sizeK:3d} {gammaRat:12.6E} {fPred:13.6E}', end='' )
+	print(f'  ', end='')
+	print(f' {hmsx:12.6E} {np.linalg.norm(vecPSeed):12.6E} {np.linalg.norm(vecPHarvest):12.6E} {tr_size:12.6E}', end='')
+	print(f'  ', end='')
+	print(f' {np.linalg.norm(vecXNext-vecXHarvest):12.6E} {np.linalg.norm(vecPNext):12.6E}', end='')
+	print(f' {qnjCode:3d} {sizeK:3d} {gammaRat:12.6E} {fPred:13.6E}', end='' )
 	print(f' ]')
 	
 	# Save progress

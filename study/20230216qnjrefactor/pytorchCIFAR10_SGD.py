@@ -24,9 +24,9 @@ msg(f'Initializing...')
 torch_seed = 0
 CIFAR10_root = '../../dat/CIFAR10data'
 batch_size = 500
-learning_rate = 0.01
+learning_rate = 0.001
 momentum_coefficient = 0.9
-max_num_epochs = 200
+max_num_epochs = 2000
 fname_x0 = ''
 dtype_x0 = np.float32
 fname_p0 = ''
