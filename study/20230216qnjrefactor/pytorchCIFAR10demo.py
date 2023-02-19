@@ -200,6 +200,17 @@ if (report_initialization):
 #
 # INTERFACE ROUTINES FOR EXTERNAL OPTIMIZER.
 #
+def var( xAvg, xSqAvg ):
+	assert ( type(xAvg) == type(xSqAvg) )
+	if ( type(xAvg) == float ):
+		xVarSq = xSqAvg - (xAvg**2)
+		if ( xVarSq > 0.0 ):
+			return np.sqrt(xVarSq)
+		return 0.0
+	assert( type(xAvg) == np.ndarray )
+	xVarSq = xSqAvg - (xAvg**2)
+	xVarSq[xVarSq<0.0] = 0.0
+	return np.sqrt(xVarSq)
 
 def get_vecX():
 	return shared_vecX.copy()
@@ -214,21 +225,23 @@ class eval_epoch_sgd_datOut():
 		self.avg_vecX = np.zeros(num_unknowns)
 		self.avg_vecG = np.zeros(num_unknowns)
 		self.avg_vecP = np.zeros(num_unknowns)
-		self.avg_fSq = 0.0
-		self.avg_vecXSq = np.zeros(num_unknowns)
-		self.avg_vecGSq = np.zeros(num_unknowns)
-		self.avg_vecPSq = np.zeros(num_unknowns)
+		self.var_f = 0.0
+		self.var_vecX = np.zeros(num_unknowns)
+		self.var_vecG = np.zeros(num_unknowns)
+		self.var_vecP = np.zeros(num_unknowns)
 		self.vecXHarvest = np.zeros(num_unknowns)
 		self.vecPHarvest = np.zeros(num_unknowns)
 	def dump(self):
 		msg('Begin eval_epoch_sgd_datOut.dump()...')
 		print(f'  batch_count = {self.batch_count}')
-		print(f'  f: avg = {self.avg_f:25.18E}, sqAvg = {self.avg_fSq:25.18E}')
-		print(f'  vecG: avg[0] = {self.avg_vecG[0]:25.18E}, avgSq[0] = {self.avg_vecGSq[0]:25.18E}, ||avg|| = {np.linalg.norm(self.avg_vecG):25.18E}, ||avgSq|| = {np.linalg.norm(self.avg_vecGSq):25.18E}')
-		print(f'  vecX: avg[0] = {self.avg_vecX[0]:25.18E}, avgSq[0] = {self.avg_vecXSq[0]:25.18E}, ||avg|| = {np.linalg.norm(self.avg_vecX):25.18E}, ||avgSq|| = {np.linalg.norm(self.avg_vecXSq):25.18E}, hms[0] = {self.vecXHarvest[0]-self.vecXSeed[0]:25.18E}, ||hms|| = {np.linalg.norm(self.vecXHarvest-self.vecXSeed):25.18E}')
-		print(f'  vecP: avg[0] = {self.avg_vecP[0]:25.18E}, avgSq[0] = {self.avg_vecPSq[0]:25.18E}, ||avg|| = {np.linalg.norm(self.avg_vecP):25.18E}, ||avgSq|| = {np.linalg.norm(self.avg_vecPSq):25.18E}, hms[0] = {self.vecPHarvest[0]-self.vecPSeed[0]:25.18E}, ||hms|| = {np.linalg.norm(self.vecPHarvest-self.vecPSeed):25.18E}')
-		print(f'  vecPSeed:    self[0] = {self.vecPSeed[0]:25.18E}, ||self|| = {np.linalg.norm(self.vecPSeed):25.18E}')
-		print(f'  vecPHarvest: self[0] = {self.vecPHarvest[0]:25.18E}, ||self|| = {np.linalg.norm(self.vecPHarvest):25.18E}')
+		print(f'  f = {self.avg_f:25.18E} +/- {self.var_f:24.18E}')
+		print(f'  vecG[0] = {self.avg_vecG[0]:16.9E} +/- {self.var_vecG[0]:15.9E}, ||vecG|| = {np.linalg.norm(self.avg_vecG):15.9E} +/- {np.linalg.norm(self.var_vecG):15.9E}')
+		print(f'  vecX[0] = {self.avg_vecX[0]:16.9E} +/- {self.var_vecX[0]:15.9E}, ||vecX|| = {np.linalg.norm(self.avg_vecX):15.9E} +/- {np.linalg.norm(self.var_vecX):15.9E}')
+		print(f'  vecP[0] = {self.avg_vecP[0]:16.9E} +/- {self.var_vecP[0]:15.9E}, ||vecP|| = {np.linalg.norm(self.avg_vecP):15.9E} +/- {np.linalg.norm(self.var_vecP):15.9E}')
+		print(f'  vecXHMS[0]  = {self.vecXHarvest[0]-self.vecXSeed[0]:16.9E}, ||vecXHMS||  = {np.linalg.norm(self.vecXHarvest-self.vecXSeed):15.9E}')
+		print(f'  vecPSeed[0] = {self.vecPSeed[0]:16.9E}, ||vecPSeed|| = {np.linalg.norm(self.vecPSeed):15.9E}')
+		print(f'  vecPHvst[0] = {self.vecPHarvest[0]:16.9E}, ||vecPHvst|| = {np.linalg.norm(self.vecPHarvest):15.9E}')
+		print(f'  vecPHMS[0]  = {self.vecPHarvest[0]-self.vecPSeed[0]:16.9E}, ||vecPHMS||  = {np.linalg.norm(self.vecPHarvest-self.vecPSeed):15.9E}')
 		msg('End eval_epoch_sgd_datOut.dump().')
 # End eval_epoch_sgd_datOut().
 
@@ -244,8 +257,8 @@ def eval_epoch_sgd( vecXSeed, vecPSeed, learning_rate, momentum_coefficient, num
 		batch_count += 1
 		dat.avg_vecX[:] += vecX[:]
 		dat.avg_vecP[:] += vecP[:]
-		dat.avg_vecXSq[:] += vecX[:]**2
-		dat.avg_vecPSq[:] += vecP[:]**2
+		dat.var_vecX[:] += vecX[:]**2
+		dat.var_vecP[:] += vecP[:]**2
 		# Do feval.
 		shared_vecX[:] = vecX[:]
 		torch_optim_SGD.zero_grad()
@@ -257,8 +270,8 @@ def eval_epoch_sgd( vecXSeed, vecPSeed, learning_rate, momentum_coefficient, num
 		# Accumulate post-feval data.
 		dat.avg_f += batch_f
 		dat.avg_vecG[:] += shared_vecG[:]
-		dat.avg_fSq += batch_f**2
-		dat.avg_vecGSq[:] += shared_vecG[:]**2
+		dat.var_f += batch_f**2
+		dat.var_vecG[:] += shared_vecG[:]**2
 		# Take step.
 		vecP[:] = (momentum_coefficient * vecP[:]) - (learning_rate * shared_vecG[:])
 		vecX[:] += vecP[:]
@@ -273,10 +286,14 @@ def eval_epoch_sgd( vecXSeed, vecPSeed, learning_rate, momentum_coefficient, num
 	dat.avg_vecX[:] /= batch_count
 	dat.avg_vecG[:] /= batch_count
 	dat.avg_vecP[:] /= batch_count
-	dat.avg_fSq /= batch_count
-	dat.avg_vecXSq[:] /= batch_count
-	dat.avg_vecGSq[:] /= batch_count
-	dat.avg_vecPSq[:] /= batch_count
+	dat.var_f /= batch_count
+	dat.var_vecX[:] /= batch_count
+	dat.var_vecG[:] /= batch_count
+	dat.var_vecP[:] /= batch_count
+	dat.var_f = var( dat.avg_f, dat.var_f )
+	dat.var_vecX = var( dat.avg_vecX, dat.var_vecX )
+	dat.var_vecG = var( dat.avg_vecG, dat.var_vecG )
+	dat.var_vecP = var( dat.avg_vecP, dat.var_vecP )
 	dat.vecXHarvest[:] = vecX[:]
 	dat.vecPHarvest[:] = vecP[:]
 	return ( dat.avg_f, dat.avg_vecG, dat )

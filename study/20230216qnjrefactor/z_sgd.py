@@ -52,7 +52,8 @@ msg('')
 msg('Starting main loop...')
 print('[')
 for epoch_index in range(max_num_epochs):
-	f, vecG, dat = pytorchCIFAR10demo.eval_epoch_sgd( vecX, vecP, learning_rate, momentum_coefficient, 100 )
+	f, vecG, dat = pytorchCIFAR10demo.eval_epoch_sgd( vecX, vecP, learning_rate, momentum_coefficient, 0 )
+	#dat.dump()
 	print(f'[{time.time()-start_time:7.2f} {epoch_index:3d} {f:12.6e} {np.linalg.norm(vecG):12.6e}', end='')
 	print(f']')
 	vecX[:] = dat.vecXHarvest[:]
