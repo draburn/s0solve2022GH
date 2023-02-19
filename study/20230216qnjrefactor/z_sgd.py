@@ -22,18 +22,20 @@ sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
 learning_rate = 0.001
 momentum_coefficient = 0.9
-max_num_epochs = 20
+max_num_epochs = 10
 fname_x0 = ''
-dtype_x0 = np.float32
 fname_p0 = ''
+dtype_x0 = np.float32
 dtype_p0 = np.float32
-fname_x0 = 'in_vecX0.np'
+#fname_x0 = 'in_vecX0.np'
 #fname_p0 = 'in_vecP0.np'
+dump_interval = 0
 msg(f'  learning_rate = {learning_rate:0.18E}')
 msg(f'  momentum_coefficient = {momentum_coefficient:0.18E}')
 msg(f'  max_num_epochs = {max_num_epochs}')
 msg(f'  fname_x0 = "{fname_x0}"')
 msg(f'  fname_p0 = "{fname_p0}"')
+msg(f'  dump_interval = {dump_interval}')
 if (''!=fname_x0):
 	msg(f'Reading x0 from disk using dtype = "{dtype_x0}".')
 	vecX0[:] = np.fromfile(fname_x0,dtype=dtype_x0)[:]
@@ -49,12 +51,17 @@ vecP = vecP0.copy()
 msg('')
 msg('Starting main loop...')
 print('[')
-for epochIndex in range(max_num_epochs):
-	f, vecG, dat = pytorchCIFAR10demo.eval_epoch_sgd( vecX, vecP, learning_rate, momentum_coefficient )
-	print(f'[{time.time()-start_time:6.2f} {epochIndex:2d} {f:12.6e} {np.linalg.norm(vecG):12.6e}', end='')
+for epoch_index in range(max_num_epochs):
+	f, vecG, dat = pytorchCIFAR10demo.eval_epoch_sgd( vecX, vecP, learning_rate, momentum_coefficient, 100 )
+	print(f'[{time.time()-start_time:7.2f} {epoch_index:3d} {f:12.6e} {np.linalg.norm(vecG):12.6e}', end='')
 	print(f']')
 	vecX[:] = dat.vecXHarvest[:]
 	vecP[:] = dat.vecPHarvest[:]
+	if ( (dump_interval>0) and (epoch_index>0) and (epoch_index%dump_interval == 0) ):
+		vecX.tofile(f'out_vecX_{epoch_index:06d}.np')
+		vecP.tofile(f'out_vecP_{epoch_index:06d}.np')
+	# End saving progress.
+# End epoch loop.
 print('];')
 print('')
 msg('Finished main loop.')

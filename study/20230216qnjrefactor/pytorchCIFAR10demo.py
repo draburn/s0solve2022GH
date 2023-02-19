@@ -18,12 +18,13 @@ def msg(*arguments, **keywords):
 
 # Set base params.
 # Modify these as needed.
+report_initialization = True
 torch_seed = 0
 CIFAR10_root = '../../dat/CIFAR10data'
 batch_size = 500
 placeholder_lr = 0.0
 placeholder_momentum = 0.0
-report_initialization = True
+num_workers = 2
 
 # Our neural network.
 class Net(torch.nn.Module):
@@ -108,15 +109,21 @@ def init_g_from_net(this_net):
 	this_grad[cumel_list[8]:cumel_list[9]] = np.reshape(this_net.fc3.bias.grad.numpy(), -1)
 	this_grad[cumel_list[9]:cumel_list[10]] = np.reshape(this_net.fc3.weight.grad.numpy(), -1)
 	return this_grad
+# DRaburn 2023-02-19:
+#  From stack overflow, a start at a more general interface:
+#total_params = 0
+#for name, parameter in Net().named_parameters():
+#	if not parameter.requires_grad: continue
+#	params = parameter.numel()
+#	print(name, params)
+#	total_params+=params
+#print(f"Total Trainable Params: {total_params}")
 
 # Report(?)
 if (report_initialization):
 	msg(f'Initializing pytorchCIFAR10demo...')
 	msg(f'  torch_seed = {torch_seed}')
-	msg(f'  batch_size = {batch_size}')
 	msg(f'  CIFAR10_root = "{CIFAR10_root}"')
-	msg(f'  placeholder_lr = {placeholder_lr:0.18E}')
-	msg(f'  placeholder_momentum = {placeholder_momentum:0.18E}')
 
 # Init Torch, NN, etc.
 torch.manual_seed(torch_seed)
@@ -124,7 +131,7 @@ transform = torchvision.transforms.Compose([
   torchvision.transforms.ToTensor(),
   torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 trainset = torchvision.datasets.CIFAR10(root=CIFAR10_root, train=True, download=False, transform=transform)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 net = Net()
 torch_optim_SGD = torch.optim.SGD(net.parameters(), lr=placeholder_lr, momentum=placeholder_momentum)
@@ -132,6 +139,8 @@ loss_criterion = torch.nn.CrossEntropyLoss()
 size_list = get_size_list(net)
 cumel_list = get_cumel_list(net)
 num_unknowns = cumel_list[-1]
+num_samples = len(trainset)
+num_batches_in_epoch = round( num_samples / batch_size )
 
 # Initialize our "x".
 # DRaburn 2023-02-16:
@@ -176,6 +185,15 @@ net.fc3.bias.grad     = torch.from_numpy(np.reshape(shared_vecG[cumel_list[8]:cu
 net.fc3.weight.grad   = torch.from_numpy(np.reshape(shared_vecG[cumel_list[9]:cumel_list[10]],size_list[9]))
 #
 if (report_initialization):
+	msg(f'  num_unknowns = {num_unknowns}')
+	msg(f'  num_samples = {num_samples}')
+	msg(f'  batch_size = {batch_size}')
+	if ( num_batches_in_epoch * batch_size != num_samples ):
+		msg(f'*** WARNING: The number of samples is not divisible by the batch size. ***')
+	msg(f'  num_workers = {num_workers}')
+	msg(f'  placeholder_lr = {placeholder_lr:0.18E}')
+	msg(f'  placeholder_momentum = {placeholder_momentum:0.18E}')
+	msg(f'  num_batches_in_epoch = {num_batches_in_epoch}')
 	msg('Finished pytorchCIFAR10demo initialization.')
 
 ################################################################################
@@ -214,7 +232,7 @@ class eval_epoch_sgd_datOut():
 		msg('End eval_epoch_sgd_datOut.dump().')
 # End eval_epoch_sgd_datOut().
 
-def eval_epoch_sgd( vecXSeed, vecPSeed, learning_rate, momentum_coefficient ):
+def eval_epoch_sgd( vecXSeed, vecPSeed, learning_rate, momentum_coefficient, num_batches ):
 	vecX = vecXSeed.copy()
 	vecP = vecPSeed.copy()
 	batch_count = 0
@@ -244,6 +262,11 @@ def eval_epoch_sgd( vecXSeed, vecPSeed, learning_rate, momentum_coefficient ):
 		# Take step.
 		vecP[:] = (momentum_coefficient * vecP[:]) - (learning_rate * shared_vecG[:])
 		vecX[:] += vecP[:]
+		#
+		if ((num_batches > 0) and (batch_index+1 >= num_batches)):
+			break
+	if ((num_batches > 0) and (batch_index+1 < num_batches)):
+		msg(f'*** WARNING: {num_batches} batches were requested but only {batch_index+1} were performed. ***')
 	# End batch loop.
 	dat.batch_count = batch_count
 	dat.avg_f /= batch_count
