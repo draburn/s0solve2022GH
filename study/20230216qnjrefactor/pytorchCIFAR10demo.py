@@ -298,3 +298,75 @@ def eval_epoch_sgd( vecXSeed, vecPSeed, learning_rate, momentum_coefficient, num
 	dat.vecPHarvest[:] = vecP[:]
 	return ( dat.avg_f, dat.avg_vecG, dat )
 # End eval_epoch_sgd__x_forced().
+
+def eval_batch_loss_turbo( vecXSeed ):
+	shared_vecX[:] = vecXSeed[:]
+	for batch_index, batch_data in enumerate(trainloader, 0):
+		batch_inputs, batch_labels = batch_data
+		batch_outputs = net(batch_inputs)
+		batch_loss = loss_criterion(batch_outputs, batch_labels)
+		return batch_loss.item()
+
+def eval_epoch_sgd_record( vecXSeed, vecPSeed, learning_rate, momentum_coefficient, num_batches ):
+	if ( num_batches <= 0 ):
+		num_batches = num_batches_in_epoch
+	vecX = vecXSeed.copy()
+	vecP = vecPSeed.copy()
+	batch_count = 0
+	dat = eval_epoch_sgd_datOut()
+	dat.vecXSeed = vecXSeed.copy()
+	dat.vecPSeed = vecPSeed.copy()
+	rvcF = np.zeros((1, num_batches))
+	matX = np.zeros((num_unknowns, num_batches))
+	matG = np.zeros((num_unknowns, num_batches))
+	matP = np.zeros((num_unknowns, num_batches))
+	for batch_index, batch_data in enumerate(trainloader, 0):
+		# Accumulate pre-feval data.
+		batch_count += 1
+		dat.avg_vecX[:] += vecX[:]
+		dat.avg_vecP[:] += vecP[:]
+		dat.var_vecX[:] += vecX[:]**2
+		dat.var_vecP[:] += vecP[:]**2
+		matX[:, batch_index] = vecX[:]
+		# Do feval.
+		shared_vecX[:] = vecX[:]
+		torch_optim_SGD.zero_grad()
+		batch_inputs, batch_labels = batch_data
+		batch_outputs = net(batch_inputs)
+		batch_loss = loss_criterion(batch_outputs, batch_labels)
+		batch_loss.backward()
+		batch_f = batch_loss.item()
+		rvcF[0, batch_index] = batch_f
+		matG[:, batch_index] = shared_vecG[:]
+		# Accumulate post-feval data.
+		dat.avg_f += batch_f
+		dat.avg_vecG[:] += shared_vecG[:]
+		dat.var_f += batch_f**2
+		dat.var_vecG[:] += shared_vecG[:]**2
+		# Take step.
+		vecP[:] = (momentum_coefficient * vecP[:]) - (learning_rate * shared_vecG[:])
+		vecX[:] += vecP[:]
+		matP[:, batch_index] = vecP[:]
+		#
+		if ((num_batches > 0) and (batch_index+1 >= num_batches)):
+			break
+	if ((num_batches > 0) and (batch_index+1 < num_batches)):
+		msg(f'*** WARNING: {num_batches} batches were requested but only {batch_index+1} were performed. ***')
+	# End batch loop.
+	dat.batch_count = batch_count
+	dat.avg_f /= batch_count
+	dat.avg_vecX[:] /= batch_count
+	dat.avg_vecG[:] /= batch_count
+	dat.avg_vecP[:] /= batch_count
+	dat.var_f /= batch_count
+	dat.var_vecX[:] /= batch_count
+	dat.var_vecG[:] /= batch_count
+	dat.var_vecP[:] /= batch_count
+	dat.var_f = var( dat.avg_f, dat.var_f )
+	dat.var_vecX = var( dat.avg_vecX, dat.var_vecX )
+	dat.var_vecG = var( dat.avg_vecG, dat.var_vecG )
+	dat.var_vecP = var( dat.avg_vecP, dat.var_vecP )
+	dat.vecXHarvest[:] = vecX[:]
+	dat.vecPHarvest[:] = vecP[:]
+	return ( dat.avg_f, dat.avg_vecG, dat, matX, rvcF, matG, matP )
+# End eval_epoch_sgd__x_forced().
