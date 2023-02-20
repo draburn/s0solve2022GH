@@ -19,21 +19,21 @@ def ang(vecA, vecB):
 		return 0.0
 	return (vecA @ vecB)/(normA*normB)
 msgtime()
-import demolossfunc0219 as prob
-#import pytorchCIFAR10demo
+#import demolossfunc0219 as prob
+import pytorchCIFAR10demo as prob
 import matplotlib.pyplot as plt
 msgtime()
 
 msg('')
-epoch_limit = 10000
+epoch_limit = 5
 search_limit = 10
 divergence_coeff = 100.0
-report_interval = 1000
+report_interval = 1
 msg(f'epoch_limit = {epoch_limit}')
 msg(f'search_limit = {search_limit}')
 msg(f'divergence_coeff = {divergence_coeff:0.18e}')
 msg(f'report_interval = {report_interval}')
-vecX0 = prob.get_vecX0()
+vecX0 = prob.get_vecX()
 f0, vecG0 = prob.fgeval(vecX0)
 msg(f'vecX0[0] = {vecX0[0]:0.18e}, ||vecX0|| = {norm(vecX0):0.18e}')
 msg(f'f0 = {f0:0.18E}')

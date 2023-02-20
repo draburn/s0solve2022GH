@@ -13,20 +13,20 @@ def msg(*arguments, **keywords):
 def msgtime():
 	msg(f'It is {time.asctime()}; time since start is {time.time()-start_time:0.3f}s.')
 msgtime()
-import demolossfunc0219 as prob
-#import pytorchCIFAR10demo
+#import demolossfunc0219 as prob
+import pytorchCIFAR10demo as prob
 msgtime()
 
 msg('')
-learning_rate = 1.0e-4
-epoch_limit = 100000
+learning_rate = 1.0e-5
+epoch_limit = 10
 divergence_coeff = 100.0
-report_interval = 10000
+report_interval = 1
 msg(f'learning_rate = {learning_rate:0.18e}')
 msg(f'epoch_limit = {epoch_limit}')
 msg(f'divergence_coeff = {divergence_coeff:0.18e}')
 msg(f'report_interval = {report_interval}')
-vecX0 = prob.get_vecX0()
+vecX0 = prob.get_vecX()
 f0, vecG0 = prob.fgeval(vecX0)
 msg(f'vecX0[0] = {vecX0[0]:0.18e}, ||vecX0|| = {norm(vecX0):0.18e}')
 msg(f'f0 = {f0:0.18E}')
