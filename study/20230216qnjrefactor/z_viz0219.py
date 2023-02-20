@@ -13,6 +13,8 @@ msgtime()
 msg('')
 import numpy as np
 import pytorchCIFAR10demo
+import matplotlib.pyplot as plt
+from numpy.linalg import norm
 msgtime()
 
 msg('')
@@ -44,21 +46,56 @@ msgtime()
 
 f0, vecG0, dat0 = pytorchCIFAR10demo.eval_epoch_sgd( vecX0, vecP0, learning_rate, momentum_coefficient, 0 )
 print(f'[{time.time()-start_time:7.2f} {f0:12.6e} {np.linalg.norm(vecG0):12.6e}]')
+vecPHarvest0 = dat0.vecPHarvest.copy()
 
-numPts = 1000
-matD = np.zeros(( sizeX, numPts ))
-rvcF = np.zeros(( 1, numPts ))
-matG = np.zeros(( sizeX, numPts ))
+dMax = 1.0
+numPts = 20
+
+pMax = dMax/norm(vecPHarvest0)
+matDP = np.zeros(( sizeX, numPts ))
+rvcFP = np.zeros(( 1, numPts ))
 for n in range(numPts):
-	temp_vecD = 20.0*(n*1.0/numPts)*(-vecG0.copy())
-	matD[:, n] = temp_vecD[:]
-	temp_f = pytorchCIFAR10demo.eval_batch_loss_turbo( vecX0+temp_vecD )
+	temp_vecD = (n*1.0/numPts)*(pMax)*vecPHarvest0.copy()
+	#temp_f = pytorchCIFAR10demo.eval_batch_loss_turbo( vecX0+temp_vecD )
+	temp_f = pytorchCIFAR10demo.eval_epoch_loss(vecX0+temp_vecD)
+	#temp_f = pytorchCIFAR10demo.eval_batch_loss( vecX0+temp_vecD, 0 )
+	#temp_f, temp_vecG, temp_dat = pytorchCIFAR10demo.eval_epoch_sgd( vecX0+temp_vecD, vecP0, learning_rate, momentum_coefficient, 0 )
 	print(f'[{time.time()-start_time:7.2f} {n:4d} {temp_f:12.6e}]')
-	#print(f'[{time.time()-start_time:7.2f} {n:4d} {temp_f:12.6e} {np.linalg.norm(temp_vecG):12.6e}]')
-	rvcF[0, n] = temp_f
-	#matG[:, n] = temp_vecG[:]
-import matplotlib.pyplot as plt
+	matDP[:, n] = temp_vecD[:]
+	rvcFP[0, n] = temp_f
 
-plt.plot(rvcF[0,:],'o-')
+# "W" is for "walk".
+vecW = dat0.vecXHarvest - dat0.vecXSeed
+print(f'||vecXHarvest0 - vecXSeed0|| = {norm(vecW)}')
+wMax = dMax/norm(vecW)
+matDW = np.zeros(( sizeX, numPts ))
+rvcFW = np.zeros(( 1, numPts ))
+for n in range(numPts):
+	temp_vecD = (n*1.0/numPts)*(wMax)*vecW.copy()
+	#temp_f = pytorchCIFAR10demo.eval_batch_loss_turbo( vecX0+temp_vecD )
+	temp_f = pytorchCIFAR10demo.eval_epoch_loss(vecX0+temp_vecD)
+	#temp_f = pytorchCIFAR10demo.eval_batch_loss( vecX0+temp_vecD, 0 )
+	#temp_f, temp_vecG, temp_dat = pytorchCIFAR10demo.eval_epoch_sgd( vecX0+temp_vecD, vecP0, learning_rate, momentum_coefficient, 0 )
+	print(f'[{time.time()-start_time:7.2f} {n:4d} {temp_f:12.6e}]')
+	matDW[:, n] = temp_vecD[:]
+	rvcFW[0, n] = temp_f
 
+gMax = dMax/norm(vecG0)
+matDG = np.zeros(( sizeX, numPts ))
+rvcFG = np.zeros(( 1, numPts ))
+for n in range(numPts):
+	temp_vecD = (n*1.0/numPts)*(-gMax)*vecG0.copy()
+	#temp_f = pytorchCIFAR10demo.eval_batch_loss_turbo( vecX0+temp_vecD )
+	temp_f = pytorchCIFAR10demo.eval_epoch_loss(vecX0+temp_vecD)
+	#temp_f = pytorchCIFAR10demo.eval_batch_loss( vecX0+temp_vecD, 0 )
+	#temp_f, temp_vecG, temp_dat = pytorchCIFAR10demo.eval_epoch_sgd( vecX0+temp_vecD, vecP0, learning_rate, momentum_coefficient, 0 )
+	print(f'[{time.time()-start_time:7.2f} {n:4d} {temp_f:12.6e}]')
+	matDG[:, n] = temp_vecD[:]
+	rvcFG[0, n] = temp_f
+
+plt.plot(np.sqrt(np.sum(matDP*matDP,0)),rvcFP[0,:],'x-')
+plt.plot(np.sqrt(np.sum(matDW*matDW,0)),rvcFW[0,:],'^-')
+plt.plot(np.sqrt(np.sum(matDG*matDG,0)),rvcFG[0,:],'o-')
+plt.legend(['vecPHarvest0','vecXHarvest0-vecXSeed0','vecG0'])
+plt.grid(True)
 plt.show()
