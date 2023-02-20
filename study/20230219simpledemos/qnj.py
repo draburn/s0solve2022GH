@@ -3,6 +3,7 @@ import numpy as np
 import danutil
 #import scipy
 from scipy import optimize as scipy_optimize
+from numpy.linalg import norm
 
 MYEPS = 1.0E-8
 main_frame = inspect.currentframe()
@@ -125,9 +126,14 @@ def levsol( f0, vecPhi, matPsi, vecLambdaCurve, sMax, vecS, dMax, vecLambdaObjf,
         p1 = 0.0
     # Ugh. Just require fMin.
     assert fTillMinOfP(0.0) > 0.0
+    #print(f'L129: p1 = {p1}')
+    #print(f'L130: fMin = {fMin}')
+    #print(f'L131: fOfP(p1) = {fOfP(p1)}')
+    #print(f'L132: fTillMinOfP(p1) = {fTillMinOfP(p1)}')
     if ( fTillMinOfP(p1) < 0.0 ):
         p1New = scipy_optimize.bisect( fTillMinOfP, 0.0, p1 )
-        p1New = p1
+        ###p1New = p1 # DRaburn 2023-02-20: Aaaaaahhh!!!!
+        p1 = p1New
     return deltaYOfP( p1 )
 
 class prm:
@@ -139,6 +145,8 @@ class prm:
 	#gBailThresh = 0.5
 	gBailThresh = 0.2
 	#gBailThresh = 0.1
+	doViz = False
+	viz_numPts = 10
 
 def calcJump( vecXLaunch, vecPLaunch, record_matX, record_matG, record_rvcF, trSize, prm ):
 	# Set default return values
@@ -254,7 +262,8 @@ def calcJump( vecXLaunch, vecPLaunch, record_matX, record_matG, record_rvcF, trS
 	# Generate new seed.
 	vecYNew = vecYLaunch + vecZ
 	vecGammaNew = vecGammaLaunch + ( matHMod @ vecZ )
-	fNew = fLaunch + ( vecZ @ vecGammaLaunch ) + (( vecZ @ vecGammaNew )/2.0)
+	###fNew = fLaunch + ( vecZ @ vecGammaLaunch ) + (( vecZ @ vecGammaNew )/2.0)
+	fNew = fLaunch + ( vecZ @ vecGammaLaunch ) + (( vecZ @ matHFit @ vecZ )/2.0)
 	assert fNew <= fLaunch
 	assert fNew <= fAnchor
 	assert fLaunch >= 0.0
@@ -267,4 +276,30 @@ def calcJump( vecXLaunch, vecPLaunch, record_matX, record_matG, record_rvcF, trS
 	vecPNext = np.zeros( sizeX )
 	vecXNext[:] = vecXAnchor + ( matQ @ vecYNew ) + ( alphaG * vecXPerp )
 	vecPNext[:] = (matQ @ ( (coeffPG*vecGammaNew) + (alphaG*vecGammaPerp) )) + (alphaF*vecPPerp)
+	#
+	if (prm.doViz):
+		msg(f'qnj_dMax = {qnj_dMax}')
+		msg(f'||vecZ|| = {norm(vecZ)}')
+		#
+		vecZNewt = levsol( fFit, vecPhi, matPsi, vecLambdaCurve, -1.0, vecS, -1.0, vecLambdaObjf, -0.01*fFit )
+		zNewtNorm = norm(vecZNewt)
+		#lev_dMax = zNewtNorm
+		lev_dMax = zNewtNorm
+		lev_matDelta = np.zeros((sizeX, prm.viz_numPts))
+		lev_vecD = np.zeros(prm.viz_numPts)
+		lev_vecFModel = np.zeros(prm.viz_numPts)
+		lev_vecFCurve = np.zeros(prm.viz_numPts)
+		for n in range(prm.viz_numPts):
+			temp_dMax = (n/(prm.viz_numPts-1.0))*lev_dMax
+			temp_vecZ = levsol( fFit, vecPhi, matPsi, vecLambdaCurve, -1.0, vecS, temp_dMax, vecLambdaObjf, -0.01*fFit )
+			temp_fNew = fLaunch + ( temp_vecZ @ vecGammaLaunch ) + (( temp_vecZ @ matHFit @ temp_vecZ)/2.0)
+			temp_vecDelta = matQ @ temp_vecZ
+			lev_matDelta[:,n] = temp_vecDelta[:]
+			lev_vecD[n] = norm(temp_vecZ)
+			lev_vecFModel[n] = temp_fNew
+			temp_fCurve = fLaunch + ( temp_vecZ @ vecGammaLaunch ) + (( temp_vecZ @ matHMod @ temp_vecZ)/2.0)
+			lev_vecFCurve[n] = temp_fCurve
+		
+		return ( 510, vecXNext, vecPNext, sizeK, gammaRat, fNew, lev_matDelta, lev_vecD, lev_vecFModel, lev_vecFCurve )
+	
 	return ( 500, vecXNext, vecPNext, sizeK, gammaRat, fNew )

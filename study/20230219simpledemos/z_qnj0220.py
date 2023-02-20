@@ -73,6 +73,7 @@ for epoch_index in range(epoch_limit):
 	record_rvcF[0,0] = f
 	
 	# Calculate jump.
+	qnj_prm.doViz = False
 	qnjCode, vecXNext, ignore_vecPNext, sizeK, gammaRat, fPred = qnj.calcJump(
 	  vecX,
 	  ignore_vecPHarvest,
@@ -81,6 +82,30 @@ for epoch_index in range(epoch_limit):
 	  record_rvcF[:,0:num_records],
 	  tr_size,
 	  qnj_prm )
+	qnj_prm.doViz = True
+	if ((500==qnjCode) and (qnj_prm.doViz)):
+		qnj_prm.viz_numPts = 100
+		qnjCode, vecXNext, ignore_vecPNext, sizeK, gammaRat, fPred, lev_matDelta, lev_vecD, lev_vecF, lev_vecFC = qnj.calcJump(
+		  vecX,
+		  ignore_vecPHarvest,
+		  record_matX[:,0:num_records],
+		  record_matG[:,0:num_records],
+		  record_rvcF[:,0:num_records],
+		  tr_size,
+		  qnj_prm )
+		lev_vecFActual = np.zeros(qnj_prm.viz_numPts)
+		for n in range (qnj_prm.viz_numPts):
+			temp_f, temp_vecG = prob.fgeval( vecX + lev_matDelta[:,n])
+			#temp_f = 0.0
+			lev_vecFActual[n] = temp_f
+		plt.plot(lev_vecD, lev_vecF, 'o-')
+		plt.plot(lev_vecD, lev_vecFC, 's-')
+		plt.plot(lev_vecD, lev_vecFActual, 'x-')
+		plt.grid(True)
+		plt.show()
+		msg('HALT!')
+		exit()
+	
 	vecX[:] = vecXNext[:] + ((-learning_rate)*vecG[:])
 	f, vecG = prob.fgeval(vecX)
 	if (f > divergence_coeff*f0):

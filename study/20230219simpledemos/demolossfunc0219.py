@@ -34,6 +34,6 @@ def fgeval( vecX ):
 	return f, vecG
 # End def fgeval().
 
-def get_vecX0():
+def get_vecX():
 	return np.zeros(prob_size)
 # End def getVecX0().
