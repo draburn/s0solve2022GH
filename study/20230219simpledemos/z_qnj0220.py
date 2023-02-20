@@ -26,11 +26,11 @@ import matplotlib.pyplot as plt
 msgtime()
 
 msg('')
-learning_rate = 0.01
-epoch_limit = 100
-max_num_records = 100
+learning_rate = 1.0e-4
+epoch_limit = 1000
+max_num_records = 10
 divergence_coeff = 100.0
-report_interval = 1
+report_interval = 100
 msg(f'learning_rate = {learning_rate:0.18e}')
 msg('*** UGH! HACKY! SOLVER SHOULD BE SUCH-THAT learning_rate IS UNNECESSARY! ***')
 msg(f'epoch_limit = {epoch_limit}')
@@ -84,23 +84,29 @@ for epoch_index in range(epoch_limit):
 	vecX[:] = vecXNext[:] + ((-learning_rate)*vecG[:])
 	f, vecG = prob.fgeval(vecX)
 	if (f > divergence_coeff*f0):
-		print(f'[{time.time()-start_time:5.2f} {epoch_index:5d} {f:12.6e} {norm(vecG):12.6e}]')
+		print(f'[{time.time()-start_time:8.2f} {epoch_index:6d} {f:12.6e} {norm(vecG):12.6e}]')
 		print('];')
+		print('')
 		msg('We appear to be diverging...')
 		msg(f'  {f:0.18e} > {divergence_coeff:0.18e} * {f0:0.18e}.')
 		msg('The learning_rate ({learning_rate:0.18e}) should probably be reduced.')
-		exit()
+		break
 	if ((report_interval > 0) and ((epoch_index+1)%report_interval == 0)):
 		print(f'[{time.time()-start_time:8.2f} {epoch_index+1:6d} {f:12.6e} {norm(vecG):12.6e}]')
 	if ( f < 1.0e-12*f0 ):
+		print('];')
+		print('')
 		msg(f'Hit prompt f-convergence: {f:0.18e} < 1.0e-12 * {f0:0.18e}')
 		break
 	elif (norm(vecG) < 1.0e-12*norm(vecG0)):
+		print('];')
+		print('')
 		msg(f'Hit prompt gNorm-convergence: {norm(vecG):0.18e} < 1.0e-12 * {norm(vecG0):0.18e}')
 		break
 # End epoch loop.
 print('];')
 print('')
+print(f'[{time.time()-start_time:8.2f} {epoch_index+1:6d} {f:12.6e} {norm(vecG):12.6e}]')
 msgtime()
 msg('Finished main loop.')
 

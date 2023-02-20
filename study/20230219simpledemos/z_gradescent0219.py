@@ -18,7 +18,7 @@ import demolossfunc0219 as prob
 msgtime()
 
 msg('')
-learning_rate = 0.05
+learning_rate = 1.0e-4
 epoch_limit = 100000
 divergence_coeff = 100.0
 report_interval = 10000

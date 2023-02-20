@@ -11,12 +11,13 @@ def msg(*arguments, **keywords):
 # Set base params; modify these as needed.
 report_initialization = True
 np_seed = 0
-prob_size = 10
+prob_size = 100
 
 # End if (report_initialization).
 np.random.seed(np_seed)
 vecXC = np.random.randn(prob_size)
-fC = float(abs(np.random.randn(1)))
+#fC = float(abs(np.random.randn(1)))
+fC = 0.0
 matA = np.random.randn(prob_size,prob_size)
 matH = matA.T @ matA
 
