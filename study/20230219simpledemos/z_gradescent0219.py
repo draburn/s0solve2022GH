@@ -11,7 +11,7 @@ main_frame = inspect.currentframe()
 def msg(*arguments, **keywords):
 	print(f'[{__file__}.{main_frame.f_lineno:05d}]', *arguments, **keywords)
 def msgtime():
-	msg(f'It is now {time.asctime()}; time since start is {time.time()-start_time:0.3f}s.')
+	msg(f'It is {time.asctime()}; time since start is {time.time()-start_time:0.3f}s.')
 msgtime()
 import demolossfunc0219 as prob
 #import pytorchCIFAR10demo
@@ -20,10 +20,10 @@ msgtime()
 msg('')
 learning_rate = 0.05
 #epoch_limit = 300001
-epoch_limit = 1001
+epoch_limit = 10000
 divergence_coeff = 100.0
 #report_interval = 10000
-report_interval = 100
+report_interval = 1000
 msg(f'learning_rate = {learning_rate:0.18e}')
 msg(f'epoch_limit = {epoch_limit}')
 msg(f'divergence_coeff = {divergence_coeff:0.18e}')
@@ -52,8 +52,8 @@ for epoch_index in range(epoch_limit):
 		msg(f'  {f:0.18e} > {divergence_coeff:0.18e} * {f0:0.18e}.')
 		msg('The learning_rate ({learning_rate:0.18e}) should probably be reduced.')
 		exit()
-	if ((epoch_index > 0) and (report_interval > 0) and (epoch_index%report_interval == 0)):
-		print(f'[{time.time()-start_time:8.2f} {epoch_index:6d} {f:12.6e} {norm(vecG):12.6e}]')
+	if ((report_interval > 0) and ((epoch_index+1)%report_interval == 0)):
+		print(f'[{time.time()-start_time:8.2f} {(epoch_index+1):6d} {f:12.6e} {norm(vecG):12.6e}]')
 # End epoch loop.
 print('];')
 print('')

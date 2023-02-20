@@ -11,7 +11,13 @@ main_frame = inspect.currentframe()
 def msg(*arguments, **keywords):
 	print(f'[{__file__}.{main_frame.f_lineno:05d}]', *arguments, **keywords)
 def msgtime():
-	msg(f'It is now {time.asctime()}; time since start is {time.time()-start_time:0.3f}s.')
+	msg(f'It is {time.asctime()}; time since start is {time.time()-start_time:0.3f}s.')
+def ang(vecA, vecB):
+	normA = norm(vecA)
+	normB = norm(vecB)
+	if((0.0==normA) or (0.0==normB)):
+		return 0.0
+	return (vecA @ vecB)/(normA*normB)
 msgtime()
 import demolossfunc0219 as prob
 #import pytorchCIFAR10demo
@@ -19,10 +25,10 @@ import matplotlib.pyplot as plt
 msgtime()
 
 msg('')
-epoch_limit = 1001
+epoch_limit = 10000
 search_limit = 100
 divergence_coeff = 100.0
-report_interval = 100
+report_interval = 1000
 msg(f'epoch_limit = {epoch_limit}')
 msg(f'search_limit = {search_limit}')
 msg(f'divergence_coeff = {divergence_coeff:0.18e}')
@@ -58,22 +64,51 @@ for epoch_index in range(epoch_limit):
 		search_gNormLo = norm(search_vecGLo)
 		search_gNormHi = norm(search_vecGHi)
 		temp_gNorm = norm(temp_vecG)
-		if (temp_f >= search_fLo):
-			temp_replaceHi = True
-		elif (temp_f >= search_fHi):
-			temp_replaceHi = False
-		elif (search_fLo <= search_fHi):
-			temp_replaceHi = True
-		else:
-			temp_replaceHi = False
+		search_gangLo = ang(search_vecGLo, vecG)
+		search_gangHi = ang(search_vecGHi, vecG)
+		temp_gang = ang(temp_vecG, vecG)
+		#msg(f'search: {search_sLo}, {temp_s}, {search_sHi}; {search_gangLo}, {temp_gang}, {search_gangHi}')
+		#
+		search_type = 2
+		if (0 == search_type):
+			if (temp_f >= search_fLo):
+				temp_replaceHi = True
+			elif (temp_f >= search_fHi):
+				temp_replaceHi = False
+			elif (search_fLo <= search_fHi):
+				temp_replaceHi = True
+			else:
+				temp_replaceHi = False
+		elif (1 == search_type):
+			if (temp_gNorm >= search_gNormLo):
+				temp_replaceHi = True
+			elif (temp_gNorm >= search_gNormHi):
+				temp_replaceHi = False
+			elif (search_gNormLo <= search_gNormHi):
+				temp_replaceHi = True
+			else:
+				temp_replaceHi = False
+		elif (2 == search_type):
+			if ( temp_gang * search_gangLo <= 0.0 ):
+				temp_replaceHi = True
+			elif ( temp_gang * search_gangHi <= 0.0 ):
+				temp_repalceHi = False
+			elif ( abs(search_gangLo) <= abs(search_gangHi) ):
+				temp_replaceHi = True
+			else:
+				temp_replaceHi = False
 		if (temp_replaceHi):
+			#msg(f'Replacing Hi... search_sHi = {search_sHi}')
 			search_sHi = temp_s
 			search_fHi = temp_f
 			search_vecGHi = temp_vecG
+			#msg(f'                search_sHi = {search_sHi}')
 		else:
+			#msg(f'Replacing Lo... search_sLo = {search_sLo}')
 			search_sLo = temp_s
 			search_fLo = temp_f
-			search_vecLo = temp_vecG
+			search_vecGLo = temp_vecG
+			#msg(f'                search_sHi = {search_sLo}')
 	# End search loop.
 	doPlot137 = False
 	if (doPlot137 and (137 == epoch_index)):
@@ -82,18 +117,22 @@ for epoch_index in range(epoch_limit):
 		numPts = 10000
 		rvcS = np.zeros(numPts)
 		rvcF = np.zeros(numPts)
-		rvcG = np.zeros(numPts)
+		rvcGNorm = np.zeros(numPts)
+		rvcGAng = np.zeros(numPts)
 		for n in range (numPts):
 			temp_s = 2.0*n/(numPts-1.0)
 			temp_f, temp_vecG = prob.fgeval(vecX+(temp_s*search_vecDelta))
 			rvcS[n] = temp_s
 			rvcF[n] = temp_f
-			rvcG[n] = norm(temp_vecG)
-		plt.plot(rvcS,rvcF,'o-')
+			rvcGNorm[n] = norm(temp_vecG)
+			rvcGAng[n] = ang(temp_vecG, vecG)
+		#plt.plot(rvcS,rvcF,'o-')
+		plt.plot(rvcS,rvcGAng,'o-')
 		plt.grid(True)
 		plt.show()
 		msg('HALT!')
 		exit()
+	#msg(f'search_sHi = {search_sHi:0.18e}')
 	vecX[:] += search_sHi * search_vecDelta
 	#vecX[:] += (-0.05)*vecG
 	f, vecG = prob.fgeval(vecX)
@@ -104,8 +143,8 @@ for epoch_index in range(epoch_limit):
 		msg(f'  {f:0.18e} > {divergence_coeff:0.18e} * {f0:0.18e}.')
 		msg('The learning_rate ({learning_rate:0.18e}) should probably be reduced.')
 		exit()
-	if ((epoch_index > 0) and (report_interval > 0) and (epoch_index%report_interval == 0)):
-		print(f'[{time.time()-start_time:8.2f} {epoch_index:6d} {f:12.6e} {norm(vecG):12.6e}]')
+	if ((report_interval > 0) and ((epoch_index+1)%report_interval == 0)):
+		print(f'[{time.time()-start_time:8.2f} {epoch_index+1:6d} {f:12.6e} {norm(vecG):12.6e}]')
 # End epoch loop.
 print('];')
 print('')
