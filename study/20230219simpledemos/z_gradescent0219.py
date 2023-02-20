@@ -19,11 +19,9 @@ msgtime()
 
 msg('')
 learning_rate = 0.05
-#epoch_limit = 300001
-epoch_limit = 10000
+epoch_limit = 100000
 divergence_coeff = 100.0
-#report_interval = 10000
-report_interval = 1000
+report_interval = 10000
 msg(f'learning_rate = {learning_rate:0.18e}')
 msg(f'epoch_limit = {epoch_limit}')
 msg(f'divergence_coeff = {divergence_coeff:0.18e}')

@@ -26,7 +26,7 @@ msgtime()
 
 msg('')
 epoch_limit = 10000
-search_limit = 30
+search_limit = 10
 divergence_coeff = 100.0
 report_interval = 1000
 msg(f'epoch_limit = {epoch_limit}')
@@ -52,14 +52,15 @@ for epoch_index in range(epoch_limit):
 	assert(f > 0.0)
 	assert(gNorm > 0.0)
 	search_vecDelta = (-f/gNorm)*vecG
-	search_sLo = 0.0
-	search_fLo = f
-	search_vecGLo = vecG.copy()
+	search_sLo = 1.0e-14
 	search_sHi = 2.0
+	search_fLo, search_vecGLo = prob.fgeval(vecX+(search_sLo*search_vecDelta))
 	search_fHi, search_vecGHi = prob.fgeval(vecX+(search_sHi*search_vecDelta))
+	search_coeff = 0.1
 	for search_index in range(search_limit):
 		# Simple bisection.
-		temp_s = (search_sLo+search_sHi)/2.0
+		#temp_s = (search_sLo+search_sHi)/2.0
+		temp_s = search_sLo + (search_coeff*(search_sHi-search_sLo))
 		temp_f, temp_vecG = prob.fgeval(vecX+(temp_s*search_vecDelta))
 		search_gNormLo = norm(search_vecGLo)
 		search_gNormHi = norm(search_vecGHi)
@@ -108,6 +109,7 @@ for epoch_index in range(epoch_limit):
 			search_sLo = temp_s
 			search_fLo = temp_f
 			search_vecGLo = temp_vecG
+			search_coeff = 0.5
 			#msg(f'                search_sHi = {search_sLo}')
 	# End search loop.
 	doPlot137 = False
