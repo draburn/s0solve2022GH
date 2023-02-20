@@ -306,13 +306,14 @@ def eval_batch_loss( vecXSeed ):
 		batch_outputs = net(batch_inputs)
 		batch_loss = loss_criterion(batch_outputs, batch_labels)
 		return batch_loss.item()
+# End eval_batch_loss().
 
 def eval_epoch_loss( vecXSeed, num_batches ):
 	batch_count = 0
 	f = 0.0
 	fSq = 0.0
+	shared_vecX[:] = vecXSeed[:]
 	for batch_index, batch_data in enumerate(trainloader, 0):
-		shared_vecX[:] = vecXSeed[:]
 		batch_inputs, batch_labels = batch_data
 		batch_f = loss_criterion(net(batch_inputs), batch_labels).item()
 		batch_count += 1
@@ -326,6 +327,7 @@ def eval_epoch_loss( vecXSeed, num_batches ):
 	fSq /= batch_count
 	fVar = var( f, fSq )
 	return f, fVar
+# End eval_epoch_loss().
 
 def eval_epoch_sgd_record( vecXSeed, vecPSeed, learning_rate, momentum_coefficient, num_batches ):
 	if ( num_batches <= 0 ):

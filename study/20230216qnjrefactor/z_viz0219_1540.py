@@ -66,7 +66,7 @@ dMin = 0.0
 dMax = 1.0
 g = norm(vecG0)
 
-numPts = 0
+numPts = 10
 if (numPts > 0):
 	matDG = np.zeros(( sizeX, numPts ))
 	rvcFG = np.zeros(( 1, numPts ))
@@ -75,7 +75,7 @@ if (numPts > 0):
 	for n in range(numPts):
 		temp_vecD = -vecG0.copy()*( dMin + (dMax-dMin)*n/(numPts-1.0) )/g
 		temp_f, temp_fVar = pytorchCIFAR10demo.eval_epoch_loss(vecX0+temp_vecD, 0)
-		print(f'[{time.time()-start_time:7.2f} {n:4d} {temp_f:12.6e}]')
+		print(f'[{time.time()-start_time:7.2f} {n:4d} {temp_f:12.6e} {temp_fVar:12.6e}]')
 		matDG[:, n] = temp_vecD[:]
 		rvcFG[0, n] = temp_f
 		rvcFGLo[0, n] = temp_f - temp_fVar
