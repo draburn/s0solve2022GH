@@ -299,7 +299,7 @@ def eval_epoch_sgd( vecXSeed, vecPSeed, learning_rate, momentum_coefficient, num
 	return ( dat.avg_f, dat.avg_vecG, dat )
 # End eval_epoch_sgd__x_forced().
 
-def eval_batch_loss_turbo( vecXSeed ):
+def eval_batch_loss( vecXSeed ):
 	shared_vecX[:] = vecXSeed[:]
 	for batch_index, batch_data in enumerate(trainloader, 0):
 		batch_inputs, batch_labels = batch_data
@@ -307,33 +307,23 @@ def eval_batch_loss_turbo( vecXSeed ):
 		batch_loss = loss_criterion(batch_outputs, batch_labels)
 		return batch_loss.item()
 
-def eval_batch_loss( vecXSeed, num_batches ):
+def eval_epoch_loss( vecXSeed, num_batches ):
 	batch_count = 0
 	f = 0.0
+	fSq = 0.0
 	for batch_index, batch_data in enumerate(trainloader, 0):
 		shared_vecX[:] = vecXSeed[:]
 		batch_inputs, batch_labels = batch_data
-		batch_outputs = net(batch_inputs)
-		batch_loss = loss_criterion(batch_outputs, batch_labels)
-		batch_count += 1
-		f += batch_loss.item()
-		if ((num_batches > 0) and (batch_count >= num_batches)):
-			break
-	if ((num_batches > 0) and (batch_count < num_batches)):
-		msg(f'*** WARNING: {num_batches} batches were requested but only {batch_count} were performed. ***')
-	return f / batch_count
-
-def eval_epoch_loss( vecXSeed ):
-	f = 0.0
-	fSq = 0.0
-	shared_vecX[:] = vecXSeed[:]
-	for batch_index, batch_data in enumerate(trainloader, 0):
-		batch_inputs, batch_labels = batch_data
 		batch_f = loss_criterion(net(batch_inputs), batch_labels).item()
+		batch_count += 1
 		f += batch_f
 		fSq += batch_f**2
-	f /= num_batches_in_epoch
-	fSq /= num_batches_in_epoch
+		if ((num_batches > 0) and (batch_count == num_batches)):
+			break
+	if ((num_batches > 0) and (batch_count != num_batches)):
+		msg(f'*** WARNING: {num_batches} batches were requested but only {batch_count} were performed. ***')
+	f /= batch_count
+	fSq /= batch_count
 	fVar = var( f, fSq )
 	return f, fVar
 
