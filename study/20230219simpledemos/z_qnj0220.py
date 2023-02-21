@@ -27,7 +27,7 @@ msgtime()
 
 msg('')
 learning_rate = 1.0e-5
-epoch_limit = 10
+epoch_limit = 50
 max_num_records = 10
 divergence_coeff = 100.0
 report_interval = 1
@@ -55,7 +55,7 @@ vecX = vecX0
 f = f0
 vecG = vecG0
 ignore_vecPHarvest = np.zeros(sizeX)
-tr_size = 1.0e-2
+tr_size = 1.0e-1
 qnj_prm = qnj.prm()
 print('[')
 print(f'[{time.time()-start_time:8.2f} {0:6d} {f0:12.6e} {norm(vecG0):12.6e}]')
@@ -82,8 +82,10 @@ for epoch_index in range(epoch_limit):
 	  record_rvcF[:,0:num_records],
 	  tr_size,
 	  qnj_prm )
-	qnj_prm.doViz = True
-	if ((500==qnjCode) and (qnj_prm.doViz)):
+	msg(f'{qnjCode} {sizeK} {gammaRat}')
+	if ((500==qnjCode) and (sizeK>5) and (epoch_index>5)):
+		qnj_prm.doViz = True
+	if (qnj_prm.doViz):
 		qnj_prm.viz_numPts = 100
 		qnjCode, vecXNext, ignore_vecPNext, sizeK, gammaRat, fPred, lev_matDelta, lev_vecD, lev_vecF, lev_vecFC = qnj.calcJump(
 		  vecX,
@@ -95,13 +97,16 @@ for epoch_index in range(epoch_limit):
 		  qnj_prm )
 		lev_vecFActual = np.zeros(qnj_prm.viz_numPts)
 		for n in range (qnj_prm.viz_numPts):
+			msg(f'Viz: {n} / {qnj_prm.viz_numPts}')
 			temp_f, temp_vecG = prob.fgeval( vecX + lev_matDelta[:,n])
-			#temp_f = 0.0
 			lev_vecFActual[n] = temp_f
 		plt.plot(lev_vecD, lev_vecF, 'o-')
 		plt.plot(lev_vecD, lev_vecFC, 's-')
 		plt.plot(lev_vecD, lev_vecFActual, 'x-')
 		plt.grid(True)
+		plt.legend(['model (orig)','model (mod)','actual'])
+		plt.xlabel('||delta||')
+		plt.ylabel('f')
 		plt.show()
 		msg('HALT!')
 		exit()
