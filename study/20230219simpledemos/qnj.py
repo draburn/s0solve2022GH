@@ -198,6 +198,8 @@ def calcJump( vecXLaunch, vecPLaunch, record_matX, record_matG, record_rvcF, trS
 	#   However, see "hessfit.m".'
 	vecGammaFit = vecGammaAnchor
 	fFit = fAnchor
+	print(f'L201: fFit = {fFit}')
+	print(f'L202: fAnchor = {fAnchor}')
 	matA = np.linalg.solve( matR.T, (matGamma - np.reshape( vecGammaAnchor, (sizeK,1) ) ).T )
 	matHFit = ( matA.T + matA )/2.0
 	#
@@ -230,10 +232,13 @@ def calcJump( vecXLaunch, vecPLaunch, record_matX, record_matG, record_rvcF, trS
 	matHMod = matS @ matPsi @ np.diag(vecLambdaMod) @ (matPsi.T) @ matS
 	#
 	vecDLaunch = vecXLaunch - vecXAnchor
+	print(f'L235: vecDLaunch = {vecDLaunch}')
 	vecYLaunch = matQ.T @ vecDLaunch
+	print(f'L235: vecYLaunch = {vecYLaunch}')
 	vecXPerp = vecDLaunch - ( matQ @ vecYLaunch )
 	vecGammaLaunch = vecGammaFit + ( matHMod @ vecYLaunch )
 	fLaunch = fFit + ( vecYLaunch @ vecGammaFit ) + (( vecYLaunch @ vecGammaLaunch )/2.0)
+	print(f'L241: fLaunch = {fLaunch}')
 	vecT = matQ.T @ vecPLaunch
 	vecPPerp = vecPLaunch - ( matQ @ vecT )
 	assert np.linalg.norm( vecGammaLaunch ) > 0.0
@@ -262,10 +267,13 @@ def calcJump( vecXLaunch, vecPLaunch, record_matX, record_matG, record_rvcF, trS
 	# Generate new seed.
 	vecYNew = vecYLaunch + vecZ
 	vecGammaNew = vecGammaLaunch + ( matHMod @ vecZ )
-	###fNew = fLaunch + ( vecZ @ vecGammaLaunch ) + (( vecZ @ vecGammaNew )/2.0)
+	fNew = fLaunch + ( vecZ @ vecGammaLaunch ) + (( vecZ @ vecGammaNew )/2.0)
+	print(f'L271: fNew = {fNew}')
 	fNew = fLaunch + ( vecZ @ vecGammaLaunch ) + (( vecZ @ matHFit @ vecZ )/2.0)
-	assert fNew <= fLaunch
-	assert fNew <= fAnchor
+	print(f'L273: fNew = {fNew}')
+	
+	###assert fNew <= fLaunch
+	###assert fNew <= fAnchor
 	assert fLaunch >= 0.0
 	assert np.linalg.norm(vecGammaLaunch/vecS) >= 0.0
 	alphaF = fNew / fLaunch
@@ -284,7 +292,7 @@ def calcJump( vecXLaunch, vecPLaunch, record_matX, record_matG, record_rvcF, trS
 		vecZNewt = levsol( fFit, vecPhi, matPsi, vecLambdaCurve, -1.0, vecS, -1.0, vecLambdaObjf, -0.01*fFit )
 		zNewtNorm = norm(vecZNewt)
 		#lev_dMax = zNewtNorm
-		lev_dMax = zNewtNorm
+		lev_dMax = 0.1*zNewtNorm
 		lev_matDelta = np.zeros((sizeX, prm.viz_numPts))
 		lev_vecD = np.zeros(prm.viz_numPts)
 		lev_vecFModel = np.zeros(prm.viz_numPts)

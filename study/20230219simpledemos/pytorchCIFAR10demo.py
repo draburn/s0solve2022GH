@@ -21,6 +21,7 @@ def msg(*arguments, **keywords):
 report_initialization = True
 torch_seed = 0
 CIFAR10_root = '../../dat/CIFAR10data'
+trainset_size = 5000
 batch_size = 500
 placeholder_lr = 0.0
 placeholder_momentum = 0.0
@@ -123,6 +124,7 @@ def init_g_from_net(this_net):
 if (report_initialization):
 	msg(f'Initializing pytorchCIFAR10demo...')
 	msg(f'  torch_seed = {torch_seed}')
+	msg(f'  trainset_size = {trainset_size}')
 	msg(f'  CIFAR10_root = "{CIFAR10_root}"')
 
 # Init Torch, NN, etc.
@@ -130,7 +132,13 @@ torch.manual_seed(torch_seed)
 transform = torchvision.transforms.Compose([
   torchvision.transforms.ToTensor(),
   torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-trainset = torchvision.datasets.CIFAR10(root=CIFAR10_root, train=True, download=False, transform=transform)
+if (trainset_size > 0):
+	full_dataset = torchvision.datasets.CIFAR10(root=CIFAR10_root, train=True, download=False, transform=transform)
+	full_num_samples = len(full_dataset)
+	msg(f'*** WARNING: Only using {trainset_size} / {full_num_samples} samples.')
+	trainset, dummyset = torch.utils.data.random_split(full_dataset, [trainset_size, full_num_samples-trainset_size])
+else:
+	trainset = torchvision.datasets.CIFAR10(root=CIFAR10_root, train=True, download=False, transform=transform)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 net = Net()

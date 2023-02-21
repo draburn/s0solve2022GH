@@ -29,8 +29,8 @@ msg('')
 learning_rate = 1.0e-1
 momentum_coefficient = 0.9
 tr_size = 1.0e-1
-epoch_limit = 50
-max_num_records = 10
+epoch_limit = 100
+max_num_records = 100
 divergence_coeff = 100.0
 report_interval = 1
 msg(f'learning_rate = {learning_rate:0.18e}')
@@ -79,24 +79,29 @@ for epoch_index in range(epoch_limit):
 	record_matG[:,0] = vecG[:]
 	record_rvcF[0,0] = f
 	
+	vecXLaunch = vecXHarvest.copy()
+	vecPLaunch = vecPHarvest.copy()
+	
 	# Calculate jump.
 	qnj_prm.doViz = False
 	qnjCode, vecXNext, vecPNext, sizeK, gammaRat, fPred = qnj.calcJump(
-	  vecXHarvest,
-	  vecPHarvest,
+	  vecXLaunch,
+	  vecPLaunch,
 	  record_matX[:,0:num_records],
 	  record_matG[:,0:num_records],
 	  record_rvcF[:,0:num_records],
 	  tr_size,
 	  qnj_prm )
 	msg(f'{qnjCode} {sizeK} {gammaRat}')
-	if ((500==qnjCode) and (sizeK>5) and (epoch_index>5)):
+	if ((500==qnjCode) and (sizeK>0) and (epoch_index>0)):
 		qnj_prm.doViz = True
 	if (qnj_prm.doViz):
-		qnj_prm.viz_numPts = 100
+		vecXLaunch = dat.avg_vecX.copy()
+		vecPLaunch = np.zeros(sizeX)
+		qnj_prm.viz_numPts = 3
 		qnjCode, vecXNext, vecPNext, sizeK, gammaRat, fPred, lev_matDelta, lev_vecD, lev_vecF, lev_vecFC = qnj.calcJump(
-		  vecXHarvest,
-		  vecPHarvest,
+		  vecXLaunch,
+		  vecPLaunch,
 		  record_matX[:,0:num_records],
 		  record_matG[:,0:num_records],
 		  record_rvcF[:,0:num_records],
@@ -105,7 +110,9 @@ for epoch_index in range(epoch_limit):
 		lev_vecFActual = np.zeros(qnj_prm.viz_numPts)
 		for n in range (qnj_prm.viz_numPts):
 			msg(f'Viz: {n} / {qnj_prm.viz_numPts}')
-			temp_f, temp_vecG = prob.fgeval( vecXHarvest + lev_matDelta[:,n])
+			temp_f, temp_vecG = prob.fgeval( vecXLaunch + lev_matDelta[:,n])
+			# Augh! We don't have appropriate vecP!
+			#temp_f, temp_vecG, temp_dat = prob.eval_epoch_sgd( vecXHarvest+ lev_matDelta[:,n], vecPHarvest, learning_rate, momentum_coefficient, -1 )
 			lev_vecFActual[n] = temp_f
 		plt.plot(lev_vecD, lev_vecF, 'o-')
 		plt.plot(lev_vecD, lev_vecFC, 's-')
