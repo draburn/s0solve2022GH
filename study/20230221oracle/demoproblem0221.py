@@ -58,6 +58,8 @@ class evalSGD_statsDat():
 		self.var_vecX = np.zeros(sizeX)
 		self.avg_f = 0.0
 		self.var_f = 0.0
+		self.avg_xtg = 0.0
+		self.var_xtg = 0.0
 		self.avg_vecG = np.zeros(sizeX)
 		self.var_vecG = np.zeros(sizeX)
 	def dump(self):
@@ -67,6 +69,8 @@ class evalSGD_statsDat():
 		msg(f'  var_vecX = {self.var_vecX}')
 		msg(f'  avg_f = {self.avg_f}')
 		msg(f'  var_f = {self.var_f}')
+		msg(f'  avg_xtg = {self.avg_xtg}')
+		msg(f'  var_xtg = {self.var_xtg}')
 		msg(f'  avg_vecG = {self.avg_vecG}')
 		msg(f'  var_vecG = {self.var_vecG}')
 class evalSGD_storeDat():
@@ -96,28 +100,25 @@ def evalSGD( vecXSeed, vecPSeed, prm=evalSGD_prm() ):
 	else:
 		storeDat = None
 	for stepIndex in range(prm.numSteps):
-		if (prm.doStats):
-			statsDat.avg_vecX[:] += vecX[:]
-			statsDat.var_vecX[:] += vecX[:]**2
-		if (prm.doStore):
-			storeDat.matX[:,stepIndex] = vecX[:]
-		#
-		# Begin actual work.
 		f, vecG = evalFG(vecX)
-		vecP[:] = (prm.momentumCoeff * vecP[:]) - (prm.learningRate * vecG[:])
-		vecX[:] += vecP[:]
-		# End actual work.
-		#
 		numSteps += 1
 		avg_f += f
 		if (prm.doStats):
+			statsDat.avg_vecX[:] += vecX[:]
+			statsDat.var_vecX[:] += vecX[:]**2
 			statsDat.avg_f += f
 			statsDat.var_f += f**2
+			xtg = vecX @ vecG
+			statsDat.avg_xtg += xtg
+			statsDat.var_xtg += xtg**2
 			statsDat.avg_vecG[:] += vecG[:]
 			statsDat.var_vecG[:] += vecG[:]**2
 		if (prm.doStore):
+			storeDat.matX[:,stepIndex] = vecX[:]
 			storeDat.vecF[stepIndex] = f
 			storeDat.matG[:,stepIndex] = vecG[:]
+		vecP[:] = (prm.momentumCoeff * vecP[:]) - (prm.learningRate * vecG[:])
+		vecX[:] += vecP[:]
 	# End step loop.
 	if (prm.doStats):
 		statsDat.numSteps = numSteps
@@ -125,10 +126,13 @@ def evalSGD( vecXSeed, vecPSeed, prm=evalSGD_prm() ):
 		statsDat.var_vecX[:] /= numSteps
 		statsDat.avg_f /= numSteps
 		statsDat.var_f /= numSteps
+		statsDat.avg_xtg /= numSteps
+		statsDat.var_xtg /= numSteps
 		statsDat.avg_vecG[:] /= numSteps
 		statsDat.var_vecG[:] /= numSteps
-		statsDat.var_f = danutil.var( statsDat.avg_f, statsDat.var_f )
-		statsDat.var_vecX = danutil.var( statsDat.avg_vecX, statsDat.var_vecX )
-		statsDat.var_vecG = danutil.var( statsDat.avg_vecG, statsDat.var_vecG )
+		statsDat.var_vecX = danutil.var(statsDat.avg_vecX, statsDat.var_vecX)
+		statsDat.var_f = danutil.var(statsDat.avg_f, statsDat.var_f)
+		statsDat.var_xtg = danutil.var(statsDat.avg_xtg, statsDat.var_xtg)
+		statsDat.var_vecG = danutil.var(statsDat.avg_vecG, statsDat.var_vecG)
 	return vecX, vecP, avg_f, statsDat, storeDat
 # End evalSGD().

@@ -3,7 +3,7 @@ from danutil import msg
 import numpy as np
 from numpy.linalg import norm
 import demoproblem0221 as prob
-import qnj0221
+#import qnj0221
 
 vecX0 = prob.genVecX0()
 sizeX = vecX0.shape[0]
