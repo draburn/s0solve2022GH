@@ -23,14 +23,14 @@ if (reportInit):
 def genVecX0():
 	return np.zeros(sizeX)
 
-def evalF(vecX):
+def evalF( vecX ):
 	vecD = vecX - vecXC
 	vecG = matH @ vecD
 	f = fC + ((vecG @ vecD)/2.0)
 	return f
 # End def evalF().
 
-def evalFG(vecX):
+def evalFG( vecX ):
 	vecD = vecX - vecXC
 	vecG = matH @ vecD
 	f = fC + ((vecG @ vecD)/2.0)
@@ -42,8 +42,16 @@ class evalSGD_prm():
 		self.learningRate = 1.0e-3
 		self.momentumCoeff = 0.9
 		self.numSteps = 10
-		self.calcDatOut = True
-class evalSGD_datOut():
+		self.doStats = True
+		self.doStore = False
+	def dump(self):
+		msg(f'self = {self}')
+		msg(f'  learningRate = {self.learningRate}')
+		msg(f'  momentumCoeff = {self.momentumCoeff}')
+		msg(f'  numSteps = {self.numSteps}')
+		msg(f'  genStatsDat = {self.genStatsDat}')
+		msg(f'  genRecordsDat = {self.genRecordsDat}')
+class evalSGD_statsDat():
 	def __init__(self):
 		self.numSteps = 0
 		self.avg_vecX = np.zeros(sizeX)
@@ -52,40 +60,75 @@ class evalSGD_datOut():
 		self.var_f = 0.0
 		self.avg_vecG = np.zeros(sizeX)
 		self.var_vecG = np.zeros(sizeX)
-def evalSGD(vecXSeed, vecPSeed, prm=evalSGD_prm()):
+	def dump(self):
+		msg(f'self = {self}')
+		msg(f'  numSteps = {self.numSteps}')
+		msg(f'  avg_vecX = {self.avg_vecX}')
+		msg(f'  var_vecX = {self.var_vecX}')
+		msg(f'  avg_f = {self.avg_f}')
+		msg(f'  var_f = {self.var_f}')
+		msg(f'  avg_vecG = {self.avg_vecG}')
+		msg(f'  var_vecG = {self.var_vecG}')
+class evalSGD_storeDat():
+	def __init__(self, numSteps):
+		self.numSteps = numSteps
+		self.matX = np.zeros((sizeX, numSteps))
+		self.vecF = np.zeros(numSteps)
+		self.matG = np.zeros((sizeX, numSteps))
+	def dump(self):
+		msg(f'self = {self}')
+		msg(f'  numSteps = {self.numSteps}')
+		msg(f'  matX = {self.matX}')
+		msg(f'  vecF = {self.vecF}')
+		msg(f'  matG = {self.matG}')
+def evalSGD( vecXSeed, vecPSeed, prm=evalSGD_prm() ):
 	vecX = vecXSeed.copy()
 	vecP = vecPSeed.copy()
 	numSteps = 0
 	avg_f = 0.0
-	if (prm.calcDatOut):
-		datOut = evalSGD_datOut()
+	if (prm.doStats):
+		statsDat = evalSGD_statsDat()
+	else:
+		statsDat = None
+	if (prm.doStore):
+		msg(f'prm.numSteps = {prm.numSteps}')
+		storeDat = evalSGD_storeDat(prm.numSteps)
+	else:
+		storeDat = None
 	for stepIndex in range(prm.numSteps):
-		if (prm.calcDatOut):
-			datOut.avg_vecX[:] += vecX[:]
-			datOut.var_vecX[:] += vecX[:]**2
+		if (prm.doStats):
+			statsDat.avg_vecX[:] += vecX[:]
+			statsDat.var_vecX[:] += vecX[:]**2
+		if (prm.doStore):
+			storeDat.matX[:,stepIndex] = vecX[:]
+		#
+		# Begin actual work.
 		f, vecG = evalFG(vecX)
 		vecP[:] = (prm.momentumCoeff * vecP[:]) - (prm.learningRate * vecG[:])
 		vecX[:] += vecP[:]
+		# End actual work.
+		#
 		numSteps += 1
 		avg_f += f
-		if (prm.calcDatOut):
-			datOut.avg_f += f
-			datOut.var_f += f**2
-			datOut.avg_vecG[:] += vecG[:]
-			datOut.var_vecG[:] += vecG[:]**2
+		if (prm.doStats):
+			statsDat.avg_f += f
+			statsDat.var_f += f**2
+			statsDat.avg_vecG[:] += vecG[:]
+			statsDat.var_vecG[:] += vecG[:]**2
+		if (prm.doStore):
+			storeDat.vecF[stepIndex] = f
+			storeDat.matG[:,stepIndex] = vecG[:]
 	# End step loop.
-	if (prm.calcDatOut):
-		datOut.numSteps = numSteps
-		datOut.avg_vecX[:] /= numSteps
-		datOut.var_vecX[:] /= numSteps
-		datOut.avg_f /= numSteps
-		datOut.var_f /= numSteps
-		datOut.avg_vecG[:] /= numSteps
-		datOut.var_vecG[:] /= numSteps
-		datOut.var_f = danutil.var( datOut.avg_f, datOut.var_f )
-		datOut.var_vecX = danutil.var( datOut.avg_vecX, datOut.var_vecX )
-		datOut.var_vecG = danutil.var( datOut.avg_vecG, datOut.var_vecG )
-		return vecX, vecP, avg_f, datOut
-	else:
-		return vecX, vecP, avg_f, None
+	if (prm.doStats):
+		statsDat.numSteps = numSteps
+		statsDat.avg_vecX[:] /= numSteps
+		statsDat.var_vecX[:] /= numSteps
+		statsDat.avg_f /= numSteps
+		statsDat.var_f /= numSteps
+		statsDat.avg_vecG[:] /= numSteps
+		statsDat.var_vecG[:] /= numSteps
+		statsDat.var_f = danutil.var( statsDat.avg_f, statsDat.var_f )
+		statsDat.var_vecX = danutil.var( statsDat.avg_vecX, statsDat.var_vecX )
+		statsDat.var_vecG = danutil.var( statsDat.avg_vecG, statsDat.var_vecG )
+	return vecX, vecP, avg_f, statsDat, storeDat
 # End evalSGD().

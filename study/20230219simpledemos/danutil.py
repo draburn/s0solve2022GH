@@ -11,7 +11,7 @@ def var( xAvg, xSqAvg ):
 	assert( type(xAvg) == np.ndarray )
 	xVarSq = xSqAvg - (xAvg**2)
 	xVarSq[xVarSq<0.0] = 0.0
-	return np.linalg.norm(xVarSq)
+	return np.qrt(xVarSq)
 
 def tfInt( tf ):
 	if (tf):

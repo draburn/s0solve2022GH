@@ -9,6 +9,23 @@ vecX0 = prob.genVecX0()
 sizeX = vecX0.shape[0]
 vecX0 = prob.genVecX0()
 vecP0 = np.zeros(sizeX)
+
+sgdPrm = prob.evalSGD_prm()
+sgdPrm.doStore = True
+
+vecX, vecP, f, statDat, storeDat = prob.evalSGD(vecX0, vecP0, sgdPrm)
+msg(f'vecX = {vecX}')
+msg(f'vecP = {vecP}')
+msg(f'f = {f}')
+msg('statDat...')
+statDat.dump()
+msg('storeDat...')
+storeDat.dump()
+
+
+msg('Bye.')
+exit()
+
 sgdPrm = prob.evalSGD_prm()
 msg(f'sgdPrm = {sgdPrm}')
 sgdPrm.pie = 3.14159
@@ -18,10 +35,11 @@ sgdPrm2.pie = 2.0000
 msg(f'sgdPrm2.pie = {sgdPrm2.pie}')
 msg(f'sgdPrm.pie = {sgdPrm.pie}')
 
-vecX, vecP, f, _ = prob.evalSGD(vecX0, vecP0)
+vecX, vecP, f, sgdDat = prob.evalSGD(vecX0, vecP0)
 msg(f'vecX = {vecX}')
 msg(f'vecP = {vecP}')
 msg(f'f = {f}')
+sgdDat.dump()
 
 sgdPrm = prob.evalSGD_prm()
 sgdPrm.genDatOut = False

@@ -7,7 +7,7 @@ def var( xAvg, xSqAvg ):
 	if ( type(xAvg) == np.ndarray):
 		xVarSq = xSqAvg - (xAvg**2)
 		xVarSq[xVarSq<0.0] = 0.0
-		return norm(xVarSq)
+		return np.sqrt(xVarSq)
 	xVarSq = xSqAvg - (xAvg**2)
 	if ( xVarSq > 0.0 ):
 		return np.sqrt(xVarSq)
