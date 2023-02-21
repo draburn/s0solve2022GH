@@ -1,4 +1,5 @@
 import numpy as np
+import inspect
 
 def var( xAvg, xSqAvg ):
 	assert ( type(xAvg) == type(xSqAvg) )
@@ -24,3 +25,6 @@ def reldiff( a, b ):
     if ( 0.0 == sa and 0.0 == sb ):
         return 0.0
     return ( np.sum(np.abs(a-b)) / ( sa + sb ) )
+
+def msg(*arguments, **keywords):
+	print(f'[{inspect.stack()[1].filename}.{inspect.stack()[1].lineno:05d}]', *arguments, **keywords)
