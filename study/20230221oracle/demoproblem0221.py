@@ -64,6 +64,7 @@ class evalSGD_statsDat():
 		self.var_xtg = 0.0
 		self.avg_vecG = np.zeros(sizeX)
 		self.var_vecG = np.zeros(sizeX)
+		self.hessfit_f = 0.0
 	def dump(self):
 		msg(f'Begin evalSGD_statsDat.dump()...')
 		msg(f'self = {self}')
@@ -76,6 +77,7 @@ class evalSGD_statsDat():
 		msg(f'  var_xtg = {self.var_xtg}')
 		msg(f'  avg_vecG = {self.avg_vecG}')
 		msg(f'  var_vecG = {self.var_vecG}')
+		msg(f'  hessfit_f = {self.hessfit_f}')
 		msg(f'End evalSGD_statsDat.dump().')
 	def absorb(self, vecX, f, vecG):
 		self.numSteps +=1
@@ -102,6 +104,7 @@ class evalSGD_statsDat():
 		self.var_f = danutil.var(self.avg_f, self.var_f)
 		self.var_xtg = danutil.var(self.avg_xtg, self.var_xtg)
 		self.var_vecG = danutil.var(self.avg_vecG, self.var_vecG)
+		self.hessfit_f = self.avg_f - (( self.avg_xtg - (self.avg_vecX @ self.avg_vecG))/2.0)
 class evalSGD_storeDat():
 	def __init__(self, storageSize):
 		self.numSteps = 0
