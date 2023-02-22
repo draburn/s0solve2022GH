@@ -7,3 +7,6 @@ extFit/deprecate
 output
 runspc
 dat/
+__*/
+data/
+scratch/
