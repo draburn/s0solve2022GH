@@ -45,12 +45,14 @@ class evalSGD_prm():
 		self.doStats = True
 		self.doStore = False
 	def dump(self):
+		msg(f'Begin evalSGD_prm.dump()...')
 		msg(f'self = {self}')
 		msg(f'  learningRate = {self.learningRate}')
 		msg(f'  momentumCoeff = {self.momentumCoeff}')
 		msg(f'  numSteps = {self.numSteps}')
 		msg(f'  genStatsDat = {self.genStatsDat}')
 		msg(f'  genRecordsDat = {self.genRecordsDat}')
+		msg(f'End evalSGD_prm.dump().')
 class evalSGD_statsDat():
 	def __init__(self):
 		self.numSteps = 0
@@ -63,6 +65,7 @@ class evalSGD_statsDat():
 		self.avg_vecG = np.zeros(sizeX)
 		self.var_vecG = np.zeros(sizeX)
 	def dump(self):
+		msg(f'Begin evalSGD_statsDat.dump()...')
 		msg(f'self = {self}')
 		msg(f'  numSteps = {self.numSteps}')
 		msg(f'  avg_vecX = {self.avg_vecX}')
@@ -73,66 +76,95 @@ class evalSGD_statsDat():
 		msg(f'  var_xtg = {self.var_xtg}')
 		msg(f'  avg_vecG = {self.avg_vecG}')
 		msg(f'  var_vecG = {self.var_vecG}')
+		msg(f'End evalSGD_statsDat.dump().')
+	def absorb(self, vecX, f, vecG):
+		self.numSteps +=1
+		self.avg_vecX[:] += vecX[:]
+		self.var_vecX[:] += vecX[:]**2
+		self.avg_f += f
+		self.var_f += f**2
+		xtg = vecX @ vecG
+		self.avg_xtg += xtg
+		self.var_xtg += xtg**2
+		self.avg_vecG[:] += vecG[:]
+		self.var_vecG[:] += vecG[:]**2
+	def finalize(self):
+		numSteps = self.numSteps
+		self.avg_vecX[:] /= numSteps
+		self.var_vecX[:] /= numSteps
+		self.avg_f /= numSteps
+		self.var_f /= numSteps
+		self.avg_xtg /= numSteps
+		self.var_xtg /= numSteps
+		self.avg_vecG[:] /= numSteps
+		self.var_vecG[:] /= numSteps
+		self.var_vecX = danutil.var(self.avg_vecX, self.var_vecX)
+		self.var_f = danutil.var(self.avg_f, self.var_f)
+		self.var_xtg = danutil.var(self.avg_xtg, self.var_xtg)
+		self.var_vecG = danutil.var(self.avg_vecG, self.var_vecG)
 class evalSGD_storeDat():
-	def __init__(self, numSteps):
-		self.numSteps = numSteps
-		self.matX = np.zeros((sizeX, numSteps))
-		self.vecF = np.zeros(numSteps)
-		self.matG = np.zeros((sizeX, numSteps))
+	def __init__(self, storageSize):
+		self.numSteps = 0
+		self.matX = np.zeros((sizeX, storageSize))
+		self.vecF = np.zeros(storageSize)
+		self.matG = np.zeros((sizeX, storageSize))
 	def dump(self):
+		msg(f'Begin evalSGD_storeDat.dump()...')
 		msg(f'self = {self}')
 		msg(f'  numSteps = {self.numSteps}')
-		msg(f'  matX = {self.matX}')
+		msg(f'  matX = ...\n{self.matX}')
 		msg(f'  vecF = {self.vecF}')
-		msg(f'  matG = {self.matG}')
-def evalSGD( vecXSeed, vecPSeed, prm=evalSGD_prm() ):
+		msg(f'  matG = ...\n{self.matG}')
+		msg(f'End evalSGD_storeDat.dump().')
+	def absorb(self, vecX, f, vecG):
+		self.matX[:,self.numSteps] = vecX[:]
+		self.vecF[self.numSteps] = f
+		self.matG[:,self.numSteps] = vecG[:]
+		self.numSteps += 1
+	def finalize(self):
+		pass
+class evalSGD_datOut():
+	def __init__(self, doStats, doStore, storageSize):
+		self.statsDat = None # Unless...
+		self.storeDat = None # Unless...
+		if (doStats):
+			self.statsDat = evalSGD_statsDat()
+		if (doStore):
+			self.storeDat = evalSGD_storeDat(storageSize)
+	def dump(self):
+		msg(f'Begin evalSGD_datOut.dump()...')
+		msg(f'self = {self}')
+		msg(f'  statsDat = {self.statsDat}')
+		if (not(None == self.statsDat)):
+			self.statsDat.dump()
+		msg(f'  storeDat = {self.storeDat}')
+		if (not(None == self.storeDat)):
+			self.storeDat.dump()
+		msg(f'End evalSGD_datOut.dump().')
+	def absorb(self, vecX, f, vecG):
+		if (not(None == self.statsDat)):
+			self.statsDat.absorb(vecX, f, vecG)
+		if (not(None == self.storeDat)):
+			self.storeDat.absorb(vecX, f, vecG)
+	def finalize(self):
+		if (not(None == self.statsDat)):
+			self.statsDat.finalize()
+		if (not(None == self.storeDat)):
+			self.storeDat.finalize()
+def evalSGD( vecXSeed, vecPSeed=np.zeros(sizeX), prm=evalSGD_prm() ):
 	vecX = vecXSeed.copy()
 	vecP = vecPSeed.copy()
-	numSteps = 0
+	stepCount = 0
 	avg_f = 0.0
-	if (prm.doStats):
-		statsDat = evalSGD_statsDat()
-	else:
-		statsDat = None
-	if (prm.doStore):
-		msg(f'prm.numSteps = {prm.numSteps}')
-		storeDat = evalSGD_storeDat(prm.numSteps)
-	else:
-		storeDat = None
+	datOut = evalSGD_datOut(prm.doStats, prm.doStore, prm.numSteps)
 	for stepIndex in range(prm.numSteps):
 		f, vecG = evalFG(vecX)
-		numSteps += 1
+		datOut.absorb( vecX, f, vecG )
+		stepCount += 1
 		avg_f += f
-		if (prm.doStats):
-			statsDat.avg_vecX[:] += vecX[:]
-			statsDat.var_vecX[:] += vecX[:]**2
-			statsDat.avg_f += f
-			statsDat.var_f += f**2
-			xtg = vecX @ vecG
-			statsDat.avg_xtg += xtg
-			statsDat.var_xtg += xtg**2
-			statsDat.avg_vecG[:] += vecG[:]
-			statsDat.var_vecG[:] += vecG[:]**2
-		if (prm.doStore):
-			storeDat.matX[:,stepIndex] = vecX[:]
-			storeDat.vecF[stepIndex] = f
-			storeDat.matG[:,stepIndex] = vecG[:]
 		vecP[:] = (prm.momentumCoeff * vecP[:]) - (prm.learningRate * vecG[:])
 		vecX[:] += vecP[:]
-	# End step loop.
-	if (prm.doStats):
-		statsDat.numSteps = numSteps
-		statsDat.avg_vecX[:] /= numSteps
-		statsDat.var_vecX[:] /= numSteps
-		statsDat.avg_f /= numSteps
-		statsDat.var_f /= numSteps
-		statsDat.avg_xtg /= numSteps
-		statsDat.var_xtg /= numSteps
-		statsDat.avg_vecG[:] /= numSteps
-		statsDat.var_vecG[:] /= numSteps
-		statsDat.var_vecX = danutil.var(statsDat.avg_vecX, statsDat.var_vecX)
-		statsDat.var_f = danutil.var(statsDat.avg_f, statsDat.var_f)
-		statsDat.var_xtg = danutil.var(statsDat.avg_xtg, statsDat.var_xtg)
-		statsDat.var_vecG = danutil.var(statsDat.avg_vecG, statsDat.var_vecG)
-	return vecX, vecP, avg_f, statsDat, storeDat
+	datOut.finalize()
+	avg_f /= stepCount
+	return vecX, vecP, avg_f, datOut
 # End evalSGD().

@@ -13,15 +13,34 @@ vecP0 = np.zeros(sizeX)
 sgdPrm = prob.evalSGD_prm()
 sgdPrm.doStore = True
 
-vecX, vecP, f, statDat, storeDat = prob.evalSGD(vecX0, vecP0, sgdPrm)
+vecX, vecP, f, sgdDat = prob.evalSGD(vecX0, vecP0, sgdPrm)
 msg(f'vecX = {vecX}')
 msg(f'vecP = {vecP}')
 msg(f'f = {f}')
-msg('statDat...')
-statDat.dump()
-msg('storeDat...')
-storeDat.dump()
+msg(f'sgdDat = {sgdDat}...')
+sgdDat.dump()
 
+vecX, vecP, f, sgdDat = prob.evalSGD(vecX0)
+msg(f'vecX = {vecX}')
+msg(f'vecP = {vecP}')
+msg(f'f = {f}')
+msg(f'sgdDat = {sgdDat}...')
+sgdDat.dump()
+
+msg('Bye.')
+exit()
+
+sgdPrm.doStats = False
+sgdPrm.doStore = True
+vecX, vecP, f, sgdDat = prob.evalSGD(vecX0, vecP0, sgdPrm)
+msg(f'sgdDat = {sgdDat}...')
+sgdDat.dump()
+
+sgdPrm.doStats = False
+sgdPrm.doStore = True
+vecX, vecP, f, sgdDat = prob.evalSGD(vecX0)
+msg(f'sgdDat = {sgdDat}...')
+sgdDat.dump()
 
 msg('Bye.')
 exit()
