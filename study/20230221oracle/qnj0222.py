@@ -2,6 +2,7 @@ import danutil
 from danutil import msg
 import numpy as np
 from numpy.linalg import norm
+from scipy import optimize
 
 class hessModelType():
 	def __init(self):
@@ -35,6 +36,8 @@ class hessModelType():
 		else:
 			vecG = None
 		return f, vecG, vecGamma
+# End class hessModelType().
+
 class calcHessModel_prm():
 	def __init__(self):
 		self.dropRelThresh = 1.0e-1
@@ -138,4 +141,107 @@ def calcHessModel_fullspace( vecXAnchor, funch_evalFG, prm=calcHessModel_prm() )
 	hessModel.vecGPerpA = np.zeros(sizeX)
 	hessModel.matW = np.zeros((sizeX, sizeX))
 	return hessModel
-# End def calcHessModel().
+# End def calcHessModel() etc.
+
+class calcCurves_prm():
+	def __init__(self):
+		self.numVals = 10
+		self.fFloorC0 = 0.0
+		self.fFloorC1 = -0.01
+		self.epsEigWB = 1.0e-6
+		self.epsCurve = 1.0e-6
+	def dump(self):
+		msg(f'Begin calcCurves_prm().dump...')
+		msg(f'self = {self}')
+		msg(f'  numVals = {self.numVals}')
+		msg(f'  fFloorC0 = {self.fFloorC0}')
+		msg(f'  fFloorC1 = {self.fFloorC1}')
+		msg(f'  epsEigWB = {self.epsEigWB}')
+		msg(f'  epsCurve = {self.epsCurve}')
+		msg(f'End calcCurves_prm().dump.')
+class calcCurves_datOut():
+	def __init__(self):
+		pass
+	def dump(self):
+		pass
+def calcCurves__eigWB__floor( f0, vecPhi, vecLambda, prm ):
+	fFloor = prm.fFloorC0 + (prm.fFloorC1 * f0)
+	assert (fFloor < f0)
+	def fRes( lambdaF ):
+		fRes = f0 - fFloor
+		for k in range( 0, vecLambda.shape[0] ):
+			fRes -= ((vecPhi[k])**2) / (2.0*max( vecLambda[k], lambdaF ))
+		return fRes
+	if (min(vecLambda) > 0.0):
+		if (fRes(0.0) >= 0.0):
+			return 0.0
+	lambdaHi = (vecPhi @ vecPhi) / (2.0*(f0 - fFloor))
+	if (max(vecLambda) < lambdaHi):
+		return lambdaHi
+	lambdaLo = prm.epsEigWB * max(vecLambda)
+	if (fRes(lambdaLo) >= 0.0):
+		return lambdaLo
+	lambdaF = optimize.bisect( fRes, lambdaLo, lambdaHi )
+	return lambdaF
+def calcCurves__eigWB( f0, vecGamma0, matH, prm ):
+	vecLambdaC, matPsi = np.linalg.eig(matH)
+	for n in range(len(vecLambdaC)):
+		assert ( np.isreal(vecLambdaC[n]) )
+	vecLambda = np.real(vecLambdaC)
+	vecPhi = matPsi.T @ (-vecGamma0)
+	lambdaFloor = calcCurves__eigWB__floor(f0, vecPhi, vecLambda, prm)
+	vecLambdaWB = vecLambda.copy()
+	vecLambdaWB[vecLambdaWB < lambdaFloor] = lambdaFloor
+	return vecLambda, matPsi, vecPhi, vecLambdaWB
+def calcCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcCurves_prm() ):
+	# Parse input.
+	sizeX = hessModel.matV.shape[0]
+	sizeK = hessModel.matV.shape[1]
+	if (None == vecYLaunch):
+		vecYLaunch = np.zeros(sizeK)
+	if (None == vecS):
+		vecS = np.ones(sizeK)
+	# Move to launch point, scale, and get well-behaved eigen-factorization.
+	f0 = hessModel.fA + (vecYLaunch @ hessModel.vecGammaA) + ((vecYLaunch @ hessModel.matH @ vecYLaunch)/2.0)
+	vecGamma0 = (hessModel.vecGammaA + (hessModel.matH @ vecYLaunch)) * vecS
+	matA = (hessModel.matH * vecS).T * vecS
+	matH0 = (matA.T + matA)/2.0 # Just to be safe.
+	vecLambda, matPsi, vecPhi, vecLambdaWB = calcCurves__eigWB( f0, vecGamma0, matH0, prm )
+	#
+	msg(f'f0 = {f0}')
+	msg(f'vecGamma0 = {vecGamma0}')
+	msg(f'matH0 = ...\n{matH0}')
+	msg(f'(matPsi @ np.diag(vecLambda) @ matPsi.T) - matH0 = ...\n{(matPsi @ np.diag(vecLambda) @ matPsi.T) - matH0}')
+	msg(f'vecLambda = {vecLambda}')
+	msg(f'matPsi = ...\n{matPsi}')
+	msg(f'vecPhi = {vecPhi}')
+	msg(f'vecLambdaWB = {vecLambdaWB}')
+	#
+	numVals = prm.numVals
+	mu0 = np.min(vecLambdaWB)
+	tVals = 1.0 - ((1.0-(np.linspace( 0.0, 1.0, numVals )**2))**2)
+	vecZetaVals = np.zeros((sizeK, numVals))
+	for n in range(numVals):
+		t = tVals[n]
+		if ( t < prm.epsCurve ):
+			vecZetaVals[:,n] = vecPhi*(t/mu0)
+		else:
+			mu = mu0*((1.0/t)-1.0)
+			vecZetaVals[:,n] = vecPhi / (vecLambdaWB + mu)
+	#
+	msg('END OF VALID CODE.')
+	exit()
+	vecYSclVals = matPsi @ vecZetaVals
+	vecYVals = np.reshape(vecS,(sizeK,1)) * vecYSclVals
+	vecDeltaVals = hessModel.matV @ vecYVals
+	vecXVals = vecDeltaVals + np.reshape(hessModel.vecXA,(sizeX,1)) # Autobroadcast.
+	#
+	orig_vecF = np.zeros(numVals)
+	matGamma = np.zeros((sizeK, numVals))
+	matGOrig
+	vecFWB
+	wb_fVals = np.zeros(numVals)
+	#vecGammaOrigVals
+	#for n in range(numVals):
+	#
+	return vecYVals

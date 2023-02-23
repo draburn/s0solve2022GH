@@ -63,5 +63,8 @@ msg(f'  vecG = {vecG}')
 msg(f'  vecGamma = {vecGamma}')
 msg(f'  matH = ...\n{hm.matH}')
 #
+foo = qnj.calcCurves( hm )
+msg(f'foo = {foo}')
+#
 msg('')
 msg('Bye.')
