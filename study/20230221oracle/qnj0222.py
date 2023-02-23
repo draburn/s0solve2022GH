@@ -158,6 +158,7 @@ class calcCurves_prm():
 		self.fFloorC0 = 0.0
 		self.fFloorC1 = -0.01
 		self.epsEigWB = 1.0e-6
+		self.approxMaxStep = -1.0
 		self.numVals = 100
 		self.curveExpA = 2.0
 		self.curveExpB = 2.0
@@ -165,10 +166,13 @@ class calcCurves_prm():
 	def dump(self):
 		msg(f'Begin calcCurves_prm().dump...')
 		msg(f'self = {self}')
-		msg(f'  numVals = {self.numVals}')
 		msg(f'  fFloorC0 = {self.fFloorC0}')
 		msg(f'  fFloorC1 = {self.fFloorC1}')
 		msg(f'  epsEigWB = {self.epsEigWB}')
+		msg(f'  approxMaxStep = {self.approxMaxStep}')
+		msg(f'  numVals = {self.numVals}')
+		msg(f'  curveExpA = {self.curveExpA}')
+		msg(f'  curveExpB = {self.curveExpB}')
 		msg(f'  epsCurve = {self.epsCurve}')
 		msg(f'End calcCurves_prm().dump.')
 class calcCurves_datOut():
@@ -221,6 +225,13 @@ def calcCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcCurves_prm() ):
 	matH0 = (matA.T + matA)/2.0 # Just to be safe.
 	vecLambda, matPsi, vecPhi, vecLambdaWB = calcCurves__eigWB( f0, vecGamma0, matH0, prm )
 	#
+	matHWB = matPsi @ np.diag(vecLambdaWB) @ matPsi.T # Not needed, except for datOut.
+	vecZetaNewt = vecPhi / vecLambdaWB
+	vecDeltaYNewt = vecS * (matPsi @ vecZetaNewt)
+	vecDeltaXNewt = hessModel.matV @ vecDeltaYNewt
+	vecYNewt = vecDeltaYNewt + vecYLaunch
+	vecXNewt = vecDeltaXNewt + vecXLaunch
+	#
 	msg(f'f0 = {f0}')
 	msg(f'vecGamma0 = {vecGamma0}')
 	msg(f'matH0 = ...\n{matH0}')
@@ -232,7 +243,12 @@ def calcCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcCurves_prm() ):
 	#
 	numVals = prm.numVals
 	mu0 = np.min(vecLambdaWB)
-	tVals = 1.0 - ((1.0-(np.linspace( 0.0, 1.0, numVals )**prm.curveExpA))**prm.curveExpB)
+	tLo = 0.0
+	tHi = 1.0 # Unless...
+	if (0.0 < prm.approxMaxStep):
+		if (norm(vecDeltaYNewt) > prm.approxMaxStep):
+			tHi = prm.approxMaxStep / norm(vecDeltaYNewt)
+	tVals = tLo + ((tHi-tLo)*( 1.0 - ((1.0-(np.linspace( 0.0, 1.0, numVals )**prm.curveExpA))**prm.curveExpB) ))
 	muVals = np.zeros(numVals)
 	vecZetaVals = np.zeros((sizeK, numVals))
 	for n in range(numVals):
@@ -259,6 +275,12 @@ def calcCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcCurves_prm() ):
 	datOut.vecLambda = vecLambda
 	datOut.vecLambdaWB = vecLambdaWB
 	datOut.mu0 = mu0
+	datOut.matHWB = matHWB
+	datOut.vecZetaNewt = vecZetaNewt
+	datOut.vecDeltaYNewt = vecDeltaYNewt
+	datOut.vecDeltaXNewt = vecDeltaXNewt
+	datOut.vecYNewt = vecYNewt
+	datOut.vecXNewt = vecXNewt
 	#
 	datOut.tVals = tVals
 	datOut.muVals = muVals
@@ -268,15 +290,20 @@ def calcCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcCurves_prm() ):
 	datOut.vecDeltaXVals = vecDeltaXVals
 	datOut.vecYVals = vecYVals
 	datOut.vecXVals = vecXVals
+	#
 	datOut.dVals = np.zeros(numVals)
-	for n in range(numVals):
-		datOut.dVals[n] = norm(vecDeltaXVals[:,n])
 	datOut.fVals = np.zeros(numVals)
 	datOut.vecGammaVals = np.zeros((sizeK, numVals))
 	datOut.vecGPerpVals = np.zeros((sizeX, numVals))
+	datOut.fWBVals = np.zeros(numVals)
+	datOut.vecGammaWBVals = np.zeros((sizeK, numVals))
 	for n in range(numVals):
-		temp_f, temp_vecGamma, temp_vecGPerp = hessModel.evalFGammaGPerpOfY(vecYVals[:,n])
+		temp_vecY = vecYVals[:,n]
+		temp_f, temp_vecGamma, temp_vecGPerp = hessModel.evalFGammaGPerpOfY(temp_vecY)
+		datOut.dVals[n] = norm(temp_vecY)
 		datOut.fVals[n] = temp_f
 		datOut.vecGammaVals[:,n] = temp_vecGamma
 		datOut.vecGPerpVals[:,n] = temp_vecGPerp
+		datOut.fWBVals[n] = f0 + (temp_vecY @ vecGamma0) + ((temp_vecY @ matHWB @ temp_vecY)/2.0)
+		datOut.vecGammaWBVals[:,n] = vecGamma0 + (matHWB @ temp_vecY)
 	return datOut

@@ -66,8 +66,7 @@ msg(f'  matH = ...\n{hm.matH}')
 curveDat = qnj.calcCurves( hm )
 msg(f'curveDat = {curveDat}')
 import matplotlib.pyplot as plt
-#plt.plot(curveDat.tVals, curveDat.fVals, '.-')
-plt.plot(curveDat.dVals, curveDat.fVals, '.-')
+plt.plot(curveDat.dVals, curveDat.fVals, '.-', curveDat.dVals, curveDat.fWBVals, 'x-')
 plt.grid(True)
 plt.show()
 #
