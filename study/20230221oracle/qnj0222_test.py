@@ -63,8 +63,13 @@ msg(f'  vecG = {vecG}')
 msg(f'  vecGamma = {vecGamma}')
 msg(f'  matH = ...\n{hm.matH}')
 #
-foo = qnj.calcCurves( hm )
-msg(f'foo = {foo}')
+curveDat = qnj.calcCurves( hm )
+msg(f'curveDat = {curveDat}')
+import matplotlib.pyplot as plt
+#plt.plot(curveDat.tVals, curveDat.fVals, '.-')
+plt.plot(curveDat.dVals, curveDat.fVals, '.-')
+plt.grid(True)
+plt.show()
 #
 msg('')
 msg('Bye.')

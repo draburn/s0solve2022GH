@@ -36,6 +36,16 @@ class hessModelType():
 		else:
 			vecG = None
 		return f, vecG, vecGamma
+	def evalFGammaGPerpOfY(self, vecY):
+		# This eval() is also mostly for illustrative purpose.
+		vecHY = self.matH @ vecY
+		vecGamma = self.vecGammaA + vecHY
+		f = self.fA + (vecY @ self.vecGammaA) + ((vecY @ vecHY)/2.0)
+		if (self.havePerp):
+			vecGPerp = self.vecGPerpA + (self.matW @ vecY)
+		else:
+			vecGPerp = None
+		return f, vecGamma, vecGPerp
 # End class hessModelType().
 
 class calcHessModel_prm():
@@ -145,10 +155,12 @@ def calcHessModel_fullspace( vecXAnchor, funch_evalFG, prm=calcHessModel_prm() )
 
 class calcCurves_prm():
 	def __init__(self):
-		self.numVals = 10
 		self.fFloorC0 = 0.0
 		self.fFloorC1 = -0.01
 		self.epsEigWB = 1.0e-6
+		self.numVals = 100
+		self.curveExpA = 2.0
+		self.curveExpB = 2.0
 		self.epsCurve = 1.0e-6
 	def dump(self):
 		msg(f'Begin calcCurves_prm().dump...')
@@ -201,6 +213,7 @@ def calcCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcCurves_prm() ):
 		vecYLaunch = np.zeros(sizeK)
 	if (None == vecS):
 		vecS = np.ones(sizeK)
+	vecXLaunch = hessModel.vecXA + (hessModel.matV @ vecYLaunch)
 	# Move to launch point, scale, and get well-behaved eigen-factorization.
 	f0 = hessModel.fA + (vecYLaunch @ hessModel.vecGammaA) + ((vecYLaunch @ hessModel.matH @ vecYLaunch)/2.0)
 	vecGamma0 = (hessModel.vecGammaA + (hessModel.matH @ vecYLaunch)) * vecS
@@ -219,29 +232,51 @@ def calcCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcCurves_prm() ):
 	#
 	numVals = prm.numVals
 	mu0 = np.min(vecLambdaWB)
-	tVals = 1.0 - ((1.0-(np.linspace( 0.0, 1.0, numVals )**2))**2)
+	tVals = 1.0 - ((1.0-(np.linspace( 0.0, 1.0, numVals )**prm.curveExpA))**prm.curveExpB)
+	muVals = np.zeros(numVals)
 	vecZetaVals = np.zeros((sizeK, numVals))
 	for n in range(numVals):
 		t = tVals[n]
 		if ( t < prm.epsCurve ):
+			muVals[n] = 0.0
 			vecZetaVals[:,n] = vecPhi*(t/mu0)
 		else:
 			mu = mu0*((1.0/t)-1.0)
+			muVals[n] = mu
 			vecZetaVals[:,n] = vecPhi / (vecLambdaWB + mu)
 	#
-	msg('END OF VALID CODE.')
-	exit()
-	vecYSclVals = matPsi @ vecZetaVals
-	vecYVals = np.reshape(vecS,(sizeK,1)) * vecYSclVals
-	vecDeltaVals = hessModel.matV @ vecYVals
-	vecXVals = vecDeltaVals + np.reshape(hessModel.vecXA,(sizeX,1)) # Autobroadcast.
+	vecDeltaYVals = (np.reshape(vecS,(sizeK,1)) * (matPsi @ vecZetaVals))
+	vecDeltaXVals = hessModel.matV @ vecDeltaYVals
+	vecYVals = vecDeltaYVals + np.reshape(vecYLaunch, (sizeK,1)) # Autobroadcast.
+	vecXVals = vecDeltaXVals + np.reshape(vecXLaunch, (sizeX,1)) # Autobroadcast.
 	#
-	orig_vecF = np.zeros(numVals)
-	matGamma = np.zeros((sizeK, numVals))
-	matGOrig
-	vecFWB
-	wb_fVals = np.zeros(numVals)
-	#vecGammaOrigVals
-	#for n in range(numVals):
+	datOut = calcCurves_datOut()
+	datOut.vecYLaunch = vecYLaunch
+	datOut.vecXLaunch = vecXLaunch
+	datOut.vecS = vecS
 	#
-	return vecYVals
+	datOut.matPsi = matPsi
+	datOut.vecLambda = vecLambda
+	datOut.vecLambdaWB = vecLambdaWB
+	datOut.mu0 = mu0
+	#
+	datOut.tVals = tVals
+	datOut.muVals = muVals
+	datOut.vecZetaVals = vecZetaVals
+	#
+	datOut.vecDeltaYVals = vecDeltaYVals
+	datOut.vecDeltaXVals = vecDeltaXVals
+	datOut.vecYVals = vecYVals
+	datOut.vecXVals = vecXVals
+	datOut.dVals = np.zeros(numVals)
+	for n in range(numVals):
+		datOut.dVals[n] = norm(vecDeltaXVals[:,n])
+	datOut.fVals = np.zeros(numVals)
+	datOut.vecGammaVals = np.zeros((sizeK, numVals))
+	datOut.vecGPerpVals = np.zeros((sizeX, numVals))
+	for n in range(numVals):
+		temp_f, temp_vecGamma, temp_vecGPerp = hessModel.evalFGammaGPerpOfY(vecYVals[:,n])
+		datOut.fVals[n] = temp_f
+		datOut.vecGammaVals[:,n] = temp_vecGamma
+		datOut.vecGPerpVals[:,n] = temp_vecGPerp
+	return datOut
