@@ -333,6 +333,7 @@ def evalSGD( vecXSeed, vecPSeed=np.zeros(num_unknowns), prm=evalSGD_prm() ):
 	vecP = vecPSeed.copy()
 	stepCount = 0
 	avg_f = 0.0
+	msg('WARNING: "prm.numSteps" here is wrong!')
 	datOut = evalSGD_datOut(prm.doStats, prm.doStore, prm.numSteps)
 	for batch_index, batch_data in enumerate(trainloader, 0):
 		shared_vecX[:] = vecX[:]

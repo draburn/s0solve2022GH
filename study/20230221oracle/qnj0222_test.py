@@ -1,5 +1,5 @@
 import danutil
-from danutil import msg
+from danutil import msg, msgtime
 import numpy as np
 from numpy.linalg import norm
 #import demoproblem0221 as prob
@@ -24,6 +24,7 @@ for n in range(numSteps):
 	record_matG[:,n] = sgdDat.statsDat.avg_vecG[:]
 	vecXSeed[:] = vecXHarvest[:]
 	vecPSeed[:] = vecPHarvest[:]
+	msg(f'{n} {f}')
 # End steps loop.
 msg('')
 chmPrm = qnj.calcHessModel_prm()
@@ -66,10 +67,23 @@ msg(f'  matH = ...\n{hm.matH}')
 #
 curveDat = qnj.calcCurves( hm )
 msg(f'curveDat = {curveDat}')
+coarse_vecXVals = curveDat.coarse_vecXVals
+coarse_dVals = curveDat.coarse_dVals
+coarse_numPts = coarse_vecXVals.shape[1]
+coarse_fActualVals = np.zeros(coarse_numPts)
+coarse_vecGActualVals = np.zeros(( sizeX, coarse_numPts ))
+for n in range(coarse_numPts):
+	msg(f'{n}')
+	vecX = curveDat.coarse_vecXVals[:,n]
+	f, vecG = prob.evalFG(vecX)
+	coarse_fActualVals[n] = f
+	coarse_vecGActualVals[:,n] = vecG
+#
 import matplotlib.pyplot as plt
-plt.plot(curveDat.dVals, curveDat.fVals, '.-', curveDat.dVals, curveDat.fWBVals, 'x-')
+plt.plot(curveDat.dVals, curveDat.fVals, '.-', curveDat.dVals, curveDat.fWBVals, 'x-', coarse_dVals, coarse_fActualVals, 's-')
 plt.grid(True)
 plt.show()
 #
 msg('')
+msgtime()
 msg('Bye.')

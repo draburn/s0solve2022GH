@@ -163,6 +163,7 @@ class calcCurves_prm():
 		self.curveExpA = 2.0
 		self.curveExpB = 2.0
 		self.epsCurve = 1.0e-6
+		self.coarse_numVals = 7
 	def dump(self):
 		msg(f'Begin calcCurves_prm().dump...')
 		msg(f'self = {self}')
@@ -174,6 +175,7 @@ class calcCurves_prm():
 		msg(f'  curveExpA = {self.curveExpA}')
 		msg(f'  curveExpB = {self.curveExpB}')
 		msg(f'  epsCurve = {self.epsCurve}')
+		msg(f'  coarse_numVals = {self.coarse_numVals}')
 		msg(f'End calcCurves_prm().dump.')
 class calcCurves_datOut():
 	def __init__(self):
@@ -258,7 +260,6 @@ def calcCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcCurves_prm() ):
 			mu = mu0*((1.0/t)-1.0)
 			muVals[n] = mu
 			vecZetaVals[:,n] = vecPhi / (vecLambdaWB + mu)
-	#
 	vecDeltaYVals = (np.reshape(vecS,(sizeK,1)) * (matPsi @ vecZetaVals))
 	vecDeltaXVals = hessModel.matV @ vecDeltaYVals
 	vecYVals = vecDeltaYVals + np.reshape(vecYLaunch, (sizeK,1)) # Autobroadcast.
@@ -304,4 +305,47 @@ def calcCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcCurves_prm() ):
 		datOut.vecGPerpVals[:,n] = temp_vecGPerp
 		datOut.fWBVals[n] = f0 + (temp_vecY @ vecGamma0) + ((temp_vecY @ matHWB @ temp_vecY)/2.0)
 		datOut.vecGammaWBVals[:,n] = vecGamma0 + (matHWB @ temp_vecY)
+	#
+	coarse_numVals = prm.coarse_numVals
+	coarse_tVals = tLo + ((tHi-tLo)*np.linspace( 0.0, 1.0, coarse_numVals ))
+	coarse_muVals = np.zeros(coarse_numVals)
+	coarse_vecZetaVals = np.zeros((sizeK, coarse_numVals))
+	for n in range(coarse_numVals):
+		t = coarse_tVals[n]
+		if ( t < prm.epsCurve ):
+			coarse_muVals[n] = 0.0
+			coarse_vecZetaVals[:,n] = vecPhi*(t/mu0)
+		else:
+			mu = mu0*((1.0/t)-1.0)
+			coarse_muVals[n] = mu
+			coarse_vecZetaVals[:,n] = vecPhi / (vecLambdaWB + mu)
+	coarse_vecDeltaYVals = (np.reshape(vecS,(sizeK,1)) * (matPsi @ coarse_vecZetaVals))
+	coarse_vecDeltaXVals = hessModel.matV @ coarse_vecDeltaYVals
+	coarse_vecYVals = coarse_vecDeltaYVals + np.reshape(vecYLaunch, (sizeK,1)) # Autobroadcast.
+	coarse_vecXVals = coarse_vecDeltaXVals + np.reshape(vecXLaunch, (sizeX,1)) # Autobroadcast.
+	#
+	datOut.coarse_tVals = coarse_tVals
+	datOut.coarse_muVals = coarse_muVals
+	datOut.coarse_vecZetaVals = coarse_vecZetaVals
+	datOut.coarse_vecDeltaYVals = coarse_vecDeltaYVals
+	datOut.coarse_vecDeltaXVals = coarse_vecDeltaXVals
+	datOut.coarse_vecYVals = coarse_vecYVals
+	datOut.coarse_vecXVals = coarse_vecXVals
+	#
+	datOut.coarse_dVals = np.zeros(coarse_numVals)
+	datOut.coarse_fVals = np.zeros(coarse_numVals)
+	datOut.coarse_vecGammaVals = np.zeros((sizeK, coarse_numVals))
+	datOut.coarse_vecGPerpVals = np.zeros((sizeX, coarse_numVals))
+	datOut.coarse_fWBVals = np.zeros(coarse_numVals)
+	datOut.coarse_vecGammaWBVals = np.zeros((sizeK, coarse_numVals))
+	for n in range(coarse_numVals):
+		temp_vecY = coarse_vecYVals[:,n]
+		temp_f, temp_vecGamma, temp_vecGPerp = hessModel.evalFGammaGPerpOfY(temp_vecY)
+		datOut.coarse_dVals[n] = norm(temp_vecY)
+		datOut.coarse_fVals[n] = temp_f
+		datOut.coarse_vecGammaVals[:,n] = temp_vecGamma
+		datOut.coarse_vecGPerpVals[:,n] = temp_vecGPerp
+		datOut.coarse_fWBVals[n] = f0 + (temp_vecY @ vecGamma0) + ((temp_vecY @ matHWB @ temp_vecY)/2.0)
+		datOut.coarse_vecGammaWBVals[:,n] = vecGamma0 + (matHWB @ temp_vecY)
+	#
 	return datOut

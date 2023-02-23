@@ -1,6 +1,9 @@
 import inspect
+import time
 import numpy as np
 from numpy.linalg import norm
+
+danutil_import_time = time.time()
 
 def var( xAvg, xSqAvg ):
 	assert (type(xAvg) == type(xSqAvg) )
@@ -32,6 +35,9 @@ def reldiff( a, b ):
 def msg( *arguments, **keywords ):
 	print(f'[{inspect.stack()[1].filename}.{inspect.stack()[1].lineno:05d}]', *arguments, **keywords)
 # End def msg().
+def msgtime():
+	msg(f'It is {time.asctime()}; time since start is {time.time()-danutil_import_time:0.3f}s.')
+# End msgtime().
 
 # Upper-triangular orthonormalization, with drop.
 # DRaburn 2023-02-21:
