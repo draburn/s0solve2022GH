@@ -10,13 +10,13 @@ vecX0 = prob.genVecX0()
 sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
 #
-numSteps = 10
-record_matX = np.zeros((sizeX, numSteps))
-record_vecF = np.zeros(numSteps)
-record_matG = np.zeros((sizeX, numSteps))
+numSuperPts = 10
+record_matX = np.zeros((sizeX, numSuperPts))
+record_vecF = np.zeros(numSuperPts)
+record_matG = np.zeros((sizeX, numSuperPts))
 vecXSeed = vecX0.copy()
 vecPSeed = vecP0.copy()
-for n in range(numSteps):
+for n in range(numSuperPts):
 	vecXHarvest, vecPHarvest, f, sgdDat = prob.evalSGD(vecXSeed, vecPSeed)
 	record_matX[:,n] = sgdDat.statsDat.avg_vecX[:]
 	#record_vecF[n] = sgdDat.statsDat.avg_f
@@ -29,7 +29,7 @@ for n in range(numSteps):
 msg('')
 chmPrm = qnj.calcHessModel_prm()
 #chmPrm.dropRelThresh = 1.0e-4
-if (True):
+if (False):
 	msg('Using qnj.calcHessModel_basic()...')
 	n = 0
 	hm = qnj.calcHessModel_basic(
@@ -40,7 +40,7 @@ if (True):
 	  record_vecF,
 	  record_matG,
 	  chmPrm )
-elif (False):
+elif (True):
 	msg('Using qnj.calcHessModel_basicOracle()...')
 	n = 0
 	hm = qnj.calcHessModel_basicOracle(record_matX[:,n], record_matX, prob.evalFG, chmPrm)

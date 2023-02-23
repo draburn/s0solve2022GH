@@ -52,15 +52,17 @@ class calcHessModel_prm():
 	def __init__(self):
 		self.dropRelThresh = 1.0e-1
 		self.dropAbsThresh = 1.0e-12
-		self.epsFD = 1.0e-4
 		self.fdOrder = 2
+		self.coeffFD = 1.0e-4
+		self.epsFD = 1.0e-4
 	def dump(self):
 		msg(f'Begin calcHessModel_prm().dump...')
 		msg(f'self = {self}')
 		msg(f'  dropRelThresh = {self.dropRelThresh}')
 		msg(f'  dropAbsThresh = {self.dropAbsThresh}')
-		msg(f'  epsFD = {self.epsFD}')
 		msg(f'  fdOrder = {self.fdOrder}')
+		msg(f'  coeffFD = {self.coeffFD}')
+		msg(f'  epsFD = {self.epsFD}')
 		msg(f'End calcHessModel_prm().dump.')
 def calcHessModel_basic( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, record_matG, prm=calcHessModel_prm() ):
 	# Note: record_vecF is not actually used, but is included for consistency.
@@ -94,23 +96,34 @@ def calcHessModel_basicOracle( vecXAnchor, record_matX, funch_evalFG, prm=calcHe
 	matV, vecKeep = danutil.utorthdrop(matD, prm.dropRelThresh, prm.dropAbsThresh)
 	sizeK = matV.shape[1]
 	#
+	dScale = max(np.sqrt(np.sum(matD**2,0)))
+	assert ( dScale > 0.0 )
+	#
 	fA, vecGA = funch_evalFG(vecXAnchor)
 	vecGammaA = matV.T @ vecGA
 	matM = np.zeros((sizeX, sizeK))
 	#matA = np.zeros((sizeK, sizeK)) # Does not require matM.
 	if (1 == prm.fdOrder):
 		for k in range(sizeK):
-			fP, vecGP = funch_evalFG(vecXAnchor + (prm.epsFD*matV[:,k]))
+			msg(f'{k} / {sizeK}')
+			fP, vecGP = funch_evalFG(vecXAnchor + (prm.coeffFD*dScale*matV[:,k]))
 			#matA[:,k] = (matV.T @ (vecGP-vecGA))/prm.epsFD # Does note require matM.
-			matM[:,k] = (vecGP - vecGA)/prm.epsFD
+			matM[:,k] = (vecGP - vecGA)(prm.coeffFD*dScale)
 	elif (2 == prm.fdOrder):
 		for k in range(sizeK):
-			fP, vecGP = funch_evalFG(vecXAnchor + (prm.epsFD*matV[:,k]))
-			fM, vecGM = funch_evalFG(vecXAnchor - (prm.epsFD*matV[:,k]))
+			msg(f'{k} / {sizeK}')
+			fP, vecGP = funch_evalFG(vecXAnchor + (prm.coeffFD*dScale*matV[:,k]))
+			fM, vecGM = funch_evalFG(vecXAnchor - (prm.coeffFD*dScale*matV[:,k]))
 			#matA[:,k] = (matV.T @ (vecGP-vecGM))/(2.0*prm.epsFD) # Does note require matM.
-			matM[:,k] = (vecGP - vecGM)/(2.0*prm.epsFD)
+			matM[:,k] = (vecGP - vecGM)/(2.0*prm.coeffFD*dScale)
+			msg(f'  fP = {fP}')
+			msg(f'  fM = {fM}')
+			msg(f'  vecGP = {vecGP}')
+			msg(f'  vecGM = {vecGM}')
 	matA = matV.T @ matM
+	msg(f'matA = ...\n{matA}')
 	matH = ( matA.T + matA )/2.0
+	msg(f'matH = ...\n{matH}')
 	matW = matM - ( matV @ matH )
 	#
 	hessModel = hessModelType()
@@ -132,10 +145,12 @@ def calcHessModel_fullspace( vecXAnchor, funch_evalFG, prm=calcHessModel_prm() )
 	matA = np.zeros((sizeX, sizeX))
 	if (1 == prm.fdOrder):
 		for k in range(sizeK):
+			msg(f'{k} / {sizeK}')
 			fP, vecGP = funch_evalFG(vecXAnchor + (prm.epsFD*matV[:,k]))
 			matA[:,k] = (vecGP-vecGA)/prm.epsFD
 	elif (2 == prm.fdOrder):
 		for k in range(sizeK):
+			msg(f'{k} / {sizeK}')
 			fP, vecGP = funch_evalFG(vecXAnchor + (prm.epsFD*matV[:,k]))
 			fM, vecGM = funch_evalFG(vecXAnchor - (prm.epsFD*matV[:,k]))
 			matA[:,k] = (vecGP-vecGM)/(2.0*prm.epsFD)
@@ -159,11 +174,11 @@ class calcCurves_prm():
 		self.fFloorC1 = -0.01
 		self.epsEigWB = 1.0e-6
 		self.approxMaxStep = -1.0
-		self.numVals = 100
-		self.curveExpA = 2.0
-		self.curveExpB = 2.0
+		self.numVals = 200
+		self.curveExpA = 4.0
+		self.curveExpB = 4.0
 		self.epsCurve = 1.0e-6
-		self.coarse_numVals = 7
+		self.coarse_numVals = 200
 	def dump(self):
 		msg(f'Begin calcCurves_prm().dump...')
 		msg(f'self = {self}')
@@ -209,6 +224,10 @@ def calcCurves__eigWB( f0, vecGamma0, matH, prm ):
 	vecLambdaWB = vecLambda.copy()
 	vecLambdaWB[vecLambdaWB < lambdaFloor] = lambdaFloor
 	return vecLambda, matPsi, vecPhi, vecLambdaWB
+# DRaburn 2023-02-23:
+#  Thinkin' it'd be better to just return the function vecDeltaY(mu),
+#  and let everything else be calculated externally.
+#  Next version.
 def calcCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcCurves_prm() ):
 	# Parse input.
 	sizeX = hessModel.matV.shape[0]
@@ -307,7 +326,8 @@ def calcCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcCurves_prm() ):
 		datOut.vecGammaWBVals[:,n] = vecGamma0 + (matHWB @ temp_vecY)
 	#
 	coarse_numVals = prm.coarse_numVals
-	coarse_tVals = tLo + ((tHi-tLo)*np.linspace( 0.0, 1.0, coarse_numVals ))
+	#coarse_tVals = tLo + ((tHi-tLo)*np.linspace( 0.0, 1.0, coarse_numVals ))
+	coarse_tVals = tLo + ((tHi-tLo)*( 1.0 - ((1.0-(np.linspace( 0.0, 1.0, coarse_numVals )**prm.curveExpA))**prm.curveExpB) ))
 	coarse_muVals = np.zeros(coarse_numVals)
 	coarse_vecZetaVals = np.zeros((sizeK, coarse_numVals))
 	for n in range(coarse_numVals):

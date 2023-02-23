@@ -23,7 +23,7 @@ trainset_size = 5000
 batch_size = 500
 placeholder_lr = 0.0
 placeholder_momentum = 0.0
-num_workers = 2
+num_workers = 2 # num_workers impacts threads for reading from disk, or something.
 
 # Our neural network.
 class Net(torch.nn.Module):
@@ -117,8 +117,6 @@ def init_g_from_net(this_net):
 #	print(name, params)
 #	total_params+=params
 #print(f"Total Trainable Params: {total_params}")
-
-# Report(?)
 if (report_initialization):
 	msg(f'Initializing pytorchCIFAR10demo...')
 	msg(f'  torch_seed = {torch_seed}')
@@ -189,7 +187,7 @@ net.fc2.bias.grad     = torch.from_numpy(np.reshape(shared_vecG[cumel_list[6]:cu
 net.fc2.weight.grad   = torch.from_numpy(np.reshape(shared_vecG[cumel_list[7]:cumel_list[8]],size_list[7]))
 net.fc3.bias.grad     = torch.from_numpy(np.reshape(shared_vecG[cumel_list[8]:cumel_list[9]],size_list[8]))
 net.fc3.weight.grad   = torch.from_numpy(np.reshape(shared_vecG[cumel_list[9]:cumel_list[10]],size_list[9]))
-#
+
 if (report_initialization):
 	msg(f'  num_unknowns = {num_unknowns}')
 	msg(f'  num_samples = {num_samples}')
@@ -214,9 +212,9 @@ class evalSGD_prm():
 	def __init__(self):
 		self.learningRate = 1.0e-3
 		self.momentumCoeff = 0.9
-		self.numSteps = 10
 		self.doStats = True
 		self.doStore = False
+		self.storageSize = num_batches_in_epoch + 1 # +1 to be safe.
 	def dump(self):
 		msg(f'Begin evalSGD_prm.dump()...')
 		msg(f'self = {self}')
@@ -327,14 +325,17 @@ class evalSGD_datOut():
 			self.statsDat.finalize()
 		if (not(None == self.storeDat)):
 			self.storeDat.finalize()
-
+# DRaburn 2023-02-23:
+# The concepts for evalSGD(), evalFG(), and evalF() here are a bit inconsistent with
+#  what I originally had in demoproblem0221.py regarding "numSteps":
+#  consistency would be for evalSGD to go for numSteps epochs.
+# Oh well. This is just for proof-of-principle anyway.
 def evalSGD( vecXSeed, vecPSeed=np.zeros(num_unknowns), prm=evalSGD_prm() ):
 	vecX = vecXSeed.copy()
 	vecP = vecPSeed.copy()
 	stepCount = 0
 	avg_f = 0.0
-	msg('WARNING: "prm.numSteps" here is wrong!')
-	datOut = evalSGD_datOut(prm.doStats, prm.doStore, prm.numSteps)
+	datOut = evalSGD_datOut(prm.doStats, prm.doStore, prm.storageSize)
 	for batch_index, batch_data in enumerate(trainloader, 0):
 		shared_vecX[:] = vecX[:]
 		torch_optim_SGD.zero_grad()
