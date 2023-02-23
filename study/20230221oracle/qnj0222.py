@@ -178,8 +178,6 @@ class calcCurves_prm():
 class calcCurves_datOut():
 	def __init__(self):
 		pass
-	def dump(self):
-		pass
 def calcCurves__eigWB__floor( f0, vecPhi, vecLambda, prm ):
 	fFloor = prm.fFloorC0 + (prm.fFloorC1 * f0)
 	assert (fFloor < f0)
@@ -232,14 +230,14 @@ def calcCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcCurves_prm() ):
 	vecYNewt = vecDeltaYNewt + vecYLaunch
 	vecXNewt = vecDeltaXNewt + vecXLaunch
 	#
-	msg(f'f0 = {f0}')
-	msg(f'vecGamma0 = {vecGamma0}')
-	msg(f'matH0 = ...\n{matH0}')
-	msg(f'(matPsi @ np.diag(vecLambda) @ matPsi.T) - matH0 = ...\n{(matPsi @ np.diag(vecLambda) @ matPsi.T) - matH0}')
-	msg(f'vecLambda = {vecLambda}')
-	msg(f'matPsi = ...\n{matPsi}')
-	msg(f'vecPhi = {vecPhi}')
-	msg(f'vecLambdaWB = {vecLambdaWB}')
+	#msg(f'f0 = {f0}')
+	#msg(f'vecGamma0 = {vecGamma0}')
+	#msg(f'matH0 = ...\n{matH0}')
+	#msg(f'(matPsi @ np.diag(vecLambda) @ matPsi.T) - matH0 = ...\n{(matPsi @ np.diag(vecLambda) @ matPsi.T) - matH0}')
+	#msg(f'vecLambda = {vecLambda}')
+	#msg(f'matPsi = ...\n{matPsi}')
+	#msg(f'vecPhi = {vecPhi}')
+	#msg(f'vecLambdaWB = {vecLambdaWB}')
 	#
 	numVals = prm.numVals
 	mu0 = np.min(vecLambdaWB)

@@ -2,14 +2,15 @@ import danutil
 from danutil import msg
 import numpy as np
 from numpy.linalg import norm
-import demoproblem0221 as prob
+#import demoproblem0221 as prob
+import pytorchCIFAR10demo as prob
 import qnj0222 as qnj
 
 vecX0 = prob.genVecX0()
 sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
 #
-numSteps = 100
+numSteps = 10
 record_matX = np.zeros((sizeX, numSteps))
 record_vecF = np.zeros(numSteps)
 record_matG = np.zeros((sizeX, numSteps))
@@ -55,7 +56,7 @@ msg(f'Using prob.evalFG(vecX)...')
 msg(f'  f = {f}')
 msg(f'  vecG = {vecG}')
 msg(f'  vecGamma = {hm.matV.T @ vecG}')
-msg(f'  matH = ...\n{hm.matV.T @ prob.matH @ hm.matV}')
+#msg(f'  matH = ...\n{hm.matV.T @ prob.matH @ hm.matV}')
 f, vecG, vecGamma = hm.evalFGGamma(vecX)
 msg(f'Using hm.evalFGGamma(vecX)...')
 msg(f'  f = {f}')
