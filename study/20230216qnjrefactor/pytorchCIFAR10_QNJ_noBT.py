@@ -25,14 +25,14 @@ msg(f'Initializing...')
 torch_seed = 0
 CIFAR10_root = '../../dat/CIFAR10data'
 batch_size = 500
-learning_rate = 0.001
+learning_rate = 0.01
 momentum_coefficient = 0.9
 max_num_records = 200
 #tr_accel_coeff = 2.0
-max_num_epochs = 500
+max_num_epochs = 200
 fname_x0 = ''
 fname_p0 = ''
-fname_x0 = 'in_vecX0.np'
+#fname_x0 = 'in_vecX0.np'
 #fname_p0 = 'in_vecP0.np'
 dtype_x0 = np.float32
 dtype_p0 = np.float32
@@ -282,6 +282,13 @@ for epoch_index in range(max_num_epochs):
 	record_matX = np.roll( record_matX, 1 )
 	record_matG = np.roll( record_matG, 1 )
 	record_rvcF = np.roll( record_rvcF, 1 )
+	# DRaburn 2023-02-23:
+	# I had intended for roll() to do the following:
+	#record_matX[:,1:] = record_matX[:,:-1]
+	#record_matG[:,1:] = record_matG[:,:-1]
+	#record_rvcF[0,1:] = record_rvcF[0,:-1]
+	# What it actually does is different, but the incorrect part gets overwritten anyway,
+	# so it doesn't impact the calculations.
 	if ( num_records < max_num_records ):
 		num_records += 1
 	record_matX[:,0] = avg_vecX[:]

@@ -51,8 +51,8 @@ class evalSGD_prm():
 		msg(f'  learningRate = {self.learningRate}')
 		msg(f'  momentumCoeff = {self.momentumCoeff}')
 		msg(f'  numSteps = {self.numSteps}')
-		msg(f'  genStatsDat = {self.genStatsDat}')
-		msg(f'  genRecordsDat = {self.genRecordsDat}')
+		msg(f'  doStats = {self.doStats}')
+		msg(f'  doStore = {self.doStore}')
 		msg(f'End evalSGD_prm.dump().')
 class evalSGD_statsDat():
 	def __init__(self):

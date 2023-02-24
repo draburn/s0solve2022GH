@@ -10,45 +10,60 @@ vecX0 = prob.genVecX0()
 sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
 #
-numSuperPts = 5
-record_matX = np.zeros((sizeX, numSuperPts))
-record_vecF = np.zeros(numSuperPts)
-record_matG = np.zeros((sizeX, numSuperPts))
+maxNumRecords = 50
+record_matX = np.zeros((sizeX, maxNumRecords))
+record_vecF = np.zeros(maxNumRecords)
+record_matG = np.zeros((sizeX, maxNumRecords))
+numRecords = 0
+#
 vecXSeed = vecX0.copy()
 vecPSeed = vecP0.copy()
+numSuperPts = 50
 sgdPrm = prob.evalSGD_prm()
-sgdPrm.learning_rate = 1.0e-1
-sgdPrm.momentum_coefficient = 0.9
+sgdPrm.learningRate = 1.0e-2
+sgdPrm.momentumCoefficient = 0.9
+msg(f'sgdPrm = {sgdPrm}...')
+sgdPrm.dump()
 for n in range(numSuperPts):
 	vecXHarvest, vecPHarvest, f, sgdDat = prob.evalSGD(vecXSeed, vecPSeed, sgdPrm)
 	assert ( f >= 0.0 )
-	record_matX[:,n] = sgdDat.statsDat.avg_vecX[:]
+	
+	record_matX[:,1:-1] = record_matX[:,0:-2]
+	record_matG[:,1:-1] = record_matG[:,0:-2]
+	record_vecF[1:-1] = record_vecF[1:-1]
+	if ( numRecords < maxNumRecords ):
+		numRecords += 1
+	record_matX[:,0] = sgdDat.statsDat.avg_vecX[:]
 	if (sgdDat.statsDat.hessfit_f > 0.0):
-		record_vecF[n] = sgdDat.statsDat.hessfit_f
+		record_vecF[0] = sgdDat.statsDat.hessfit_f
 	else:
-		record_vecF[n] = sgdDat.statsDat.avg_f
-	record_matG[:,n] = sgdDat.statsDat.avg_vecG[:]
+		record_vecF[0] = sgdDat.statsDat.avg_f
+	record_matG[:,0] = sgdDat.statsDat.avg_vecG[:]
+	
 	vecXSeed[:] = vecXHarvest[:]
 	vecPSeed[:] = vecPHarvest[:]
 	msg(f'{n}/{numSuperPts} {f}')
 # End steps loop.
+
 msg('')
 chmPrm = qnj.calcHessModel_prm()
+chmPrm.dropRelThresh = 1.0e-2
+msg(f'chmPrm = {chmPrm}...')
+chmPrm.dump()
 
-chmPrm.dropRelThresh = 1.0e-4
-
-nAnchor = numSuperPts-1
+msg('')
+nAnchor = 0
 msg('Using qnj.calcHessModel_basic()...')
 hm_basic = qnj.calcHessModel_basic(
   record_matX[:,nAnchor],
   record_vecF[nAnchor],
   record_matG[:,nAnchor],
-  record_matX,
-  record_vecF,
-  record_matG,
+  record_matX[:,0:numRecords],
+  record_vecF[0:numRecords],
+  record_matG[:,0:numRecords],
   chmPrm )
 msg('Using qnj.calcHessModel_basicOracle()...')
-hm_oracle = qnj.calcHessModel_basicOracle(record_matX[:,nAnchor], record_matX, prob.evalFG, chmPrm)
+hm_oracle = qnj.calcHessModel_basicOracle(record_matX[:,nAnchor], record_matX[:,0:numRecords], prob.evalFG, chmPrm)
 #
 msg(f'hm_basic = {hm_basic}...')
 hm_basic.dump()
@@ -79,6 +94,7 @@ for n in range(coracle_numPts):
 	f, vecG = prob.evalFG(vecX)
 	coracle_fActualVals[n] = f
 	coracle_vecGActualVals[:,n] = vecG
+msgtime()
 #
 import matplotlib.pyplot as plt
 plt.plot( 
