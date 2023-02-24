@@ -6,11 +6,12 @@ from numpy.linalg import norm
 import pytorchCIFAR10demo as prob
 import qnj0222 as qnj
 
+msgtime()
 vecX0 = prob.genVecX0()
 sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
 #
-maxNumRecords = 50
+maxNumRecords = 100
 record_matX = np.zeros((sizeX, maxNumRecords))
 record_vecF = np.zeros(maxNumRecords)
 record_matG = np.zeros((sizeX, maxNumRecords))
@@ -18,7 +19,7 @@ numRecords = 0
 #
 vecXSeed = vecX0.copy()
 vecPSeed = vecP0.copy()
-numSuperPts = 50
+numSuperPts = 100
 sgdPrm = prob.evalSGD_prm()
 sgdPrm.learningRate = 1.0e-2
 sgdPrm.momentumCoefficient = 0.9
@@ -47,13 +48,12 @@ for n in range(numSuperPts):
 
 msg('')
 chmPrm = qnj.calcHessModel_prm()
-chmPrm.dropRelThresh = 1.0e-2
-msg(f'chmPrm = {chmPrm}...')
-chmPrm.dump()
 
 msg('')
 nAnchor = 0
 msg('Using qnj.calcHessModel_basic()...')
+msg(f'chmPrm = {chmPrm}...')
+chmPrm.dump()
 hm_basic = qnj.calcHessModel_basic(
   record_matX[:,nAnchor],
   record_vecF[nAnchor],
@@ -62,7 +62,10 @@ hm_basic = qnj.calcHessModel_basic(
   record_vecF[0:numRecords],
   record_matG[:,0:numRecords],
   chmPrm )
+chmPrm.dropRelThresh = 1.0e-2
 msg('Using qnj.calcHessModel_basicOracle()...')
+msg(f'chmPrm = {chmPrm}...')
+chmPrm.dump()
 hm_oracle = qnj.calcHessModel_basicOracle(record_matX[:,nAnchor], record_matX[:,0:numRecords], prob.evalFG, chmPrm)
 #
 msg(f'hm_basic = {hm_basic}...')

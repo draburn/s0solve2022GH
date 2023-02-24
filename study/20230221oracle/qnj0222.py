@@ -18,6 +18,8 @@ class hessModelType():
 		msg(f'Begin hessModelType().dump...')
 		msg(f'self = {self}')
 		msg(f'  vecXA = {self.vecXA}')
+		msg(f'  matV.shape[0] = {self.matV.shape[0]}')
+		msg(f'  matV.shape[1] = {self.matV.shape[1]}')
 		msg(f'  matV = ...\n{self.matV}')
 		msg(f'  fA = {self.fA}')
 		msg(f'  vecGammaA = {self.vecGammaA}')
@@ -279,6 +281,7 @@ def calcCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcCurves_prm() ):
 			mu = mu0*((1.0/t)-1.0)
 			muVals[n] = mu
 			vecZetaVals[:,n] = vecPhi / (vecLambdaWB + mu)
+		#vecZetaVals[:,n] = 10.0*vecPhi*t #GRAD(?) HACK!!!
 	vecDeltaYVals = (np.reshape(vecS,(sizeK,1)) * (matPsi @ vecZetaVals))
 	vecDeltaXVals = hessModel.matV @ vecDeltaYVals
 	vecYVals = vecDeltaYVals + np.reshape(vecYLaunch, (sizeK,1)) # Autobroadcast.
@@ -339,6 +342,7 @@ def calcCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcCurves_prm() ):
 			mu = mu0*((1.0/t)-1.0)
 			coarse_muVals[n] = mu
 			coarse_vecZetaVals[:,n] = vecPhi / (vecLambdaWB + mu)
+		#coarse_vecZetaVals[:,n] = 10.0*vecPhi*t #GRAD(?) HACK!!!
 	coarse_vecDeltaYVals = (np.reshape(vecS,(sizeK,1)) * (matPsi @ coarse_vecZetaVals))
 	coarse_vecDeltaXVals = hessModel.matV @ coarse_vecDeltaYVals
 	coarse_vecYVals = coarse_vecDeltaYVals + np.reshape(vecYLaunch, (sizeK,1)) # Autobroadcast.
