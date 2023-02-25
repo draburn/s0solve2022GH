@@ -37,8 +37,9 @@ class hessModelType():
 		cp.fA = self.fA.copy()
 		cp.vecGammaA = self.vecGammaA.copy()
 		cp.matH = self.matH.copy()
-		cp.vecGammaPerpA = self.vecGammaPerpA.copy()
+		cp.vecGPerpA = self.vecGPerpA.copy()
 		cp.matW = self.matW.copy()
+		return cp
 	# Evaluation functions are largely for illustrative purpose.
 	def evalYOfProjX(self, vecX):
 		vecY = self.matV.T @ (vecX - self.vecXA)
@@ -75,7 +76,7 @@ class hessCurvesType():
 		msg(f'self = {self}')
 		msg(f'  vecYLaunch = {self.vecYLaunch}')
 		msg(f'  vecS = {self.vecS}')
-		msg(f'  matPsi.shape[0] = {matPsi.shape[0]}')
+		msg(f'  matPsi.shape[0] = {self.matPsi.shape[0]}')
 		msg(f'  matPsi = ...\n{self.matPsi}')
 		msg(f'  vecPhi = {self.vecPhi}')
 		msg(f'  vecLambdaLS = {self.vecLambdaLS}')
@@ -228,26 +229,30 @@ def calcHessCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcHessCurves_pr
 	sizeK = hessModel.matV.shape[1]
 	if (vecYLaunch is None):
 		vecYLaunch = np.zeros(sizeK)
+	else:
+		msg('WARNING: Use of non-zero vecYLaunch has not been tested.')
 	if (vecS is None):
 		vecS = np.ones(sizeK)
+	else:
+		msg('WARNING: Use of scaling matrix has not been tested.')
 	assert (min(vecS) > 0.0)
 	#
 	# Move to launch point, scale, and get eigen-factorization.
 	fLS = hessModel.fA + (vecYLaunch @ hessModel.vecGammaA) + ((vecYLaunch @ hessModel.matH @ vecYLaunch)/2.0)
 	vecGammaLS = (hessModel.vecGammaA + (hessModel.matH @ vecYLaunch)) * vecS
 	matHLS = danutil.symm((hessModel.matH * vecS).T * vecS)
-	vecLambdaC, matPsi = np.linalg.eig(matHLS)
+	vecLambdaCmplx, matPsi = np.linalg.eig(matHLS)
 	vecPhi = matPsi.T @ (-vecGammaLS)
-	for n in range(len(vecLambdaC)):
-		assert ( np.isreal(vecLambdaC[n]) )
-	vecLambdaOrig = np.real(vecLambdaC)
+	for n in range(len(vecLambdaCmplx)):
+		assert ( np.isreal(vecLambdaCmplx[n]) )
+	vecLambdaLS = np.real(vecLambdaCmplx)
 	#
-	vecLambdaPSD = vecLambdaOrig.copy()
+	vecLambdaPSD = vecLambdaLS.copy()
 	vecLambdaPSD[vecLambdaPSD < 0.0] = 0.0
 	#
 	if (fLS > 0.0):
-		lambdaWBFloor = calcHessCurves__calcLambdaWBFloor( fLS, vecPhi, vecLambda, 0.0, prm.epsRelWB )
-		vecLambdaWB = vecLambdaOrig.copy()
+		lambdaWBFloor = calcHessCurves__calcLambdaWBFloor( fLS, vecPhi, vecLambdaLS, 0.0, prm.epsRelWB )
+		vecLambdaWB = vecLambdaLS.copy()
 		vecLambdaWB[vecLambdaWB < lambdaWBFloor] = lambdaWBFloor
 	else:
 		msg(f'WARNING: fLS <= 0.0 (fLS = {fLS} while fA = {hessModel.fA}).')
@@ -260,7 +265,7 @@ def calcHessCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcHessCurves_pr
 	hessCurves.vecS = vecS.copy()
 	hessCurves.matPsi = matPsi.copy()
 	hessCurves.vecPhi = vecPhi.copy()
-	hessCurves.vecLambdaOrig = vecLambdaOrig.copy()
+	hessCurves.vecLambdaLS = vecLambdaLS.copy()
 	hessCurves.vecLambdaPSD = vecLambdaPSD.copy()
 	hessCurves.vecLambdaWB = vecLambdaWB.copy()
 	#
@@ -273,7 +278,7 @@ def calcHessCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcHessCurves_pr
 	hessModelLS.fA = fLS.copy()
 	hessModelLS.vecGammaA = vecGammaLS / vecS
 	hessModelLS.vecGPerpA = hessModel.vecGPerpA + (hessModel.matW @ vecYLaunch)
-	hessModelLS.matH = danutil.symm( (( matPsi @ np.diag(vecLambdaOrig) @ matPsi.T )/vecS).T / vecS )
+	hessModelLS.matH = danutil.symm( (( matPsi @ np.diag(vecLambdaLS) @ matPsi.T )/vecS).T / vecS )
 	assert ( danutil.reldiff(hessModelLS.matH, hessModel.matH) < 1.0e-4 )
 	#
 	hessModelPSD = hessModelLS.copy()
@@ -282,5 +287,6 @@ def calcHessCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcHessCurves_pr
 	hessModelWB = hessModelLS.copy()
 	hessModelWB.matH = danutil.symm( (( matPsi @ np.diag(vecLambdaWB) @ matPsi.T )/vecS).T / vecS )
 	#
+	# Note that hessModelLS should behave identically to hessModel, just with a different anchor.
 	return hessCurves, hessModelPSD, hessModelWB, hessModelLS
 # End def calcHessCurves() etc.

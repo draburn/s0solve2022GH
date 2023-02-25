@@ -29,9 +29,9 @@ sgdPrm.dump()
 for n in range(numSuperPts):
 	vecXHarvest, vecPHarvest, f, sgdDat = prob.evalSGD(vecXSeed, vecPSeed, sgdPrm)
 	assert ( f >= 0.0 )
-	record_matX[:,:-1] = record_matX[:,1:]
-	record_matG[:,:-1] = record_matG[:,1:]
-	record_vecF[:-1] = record_vecF[1:]
+	record_matX[:,1:] = record_matX[:,:-1]
+	record_matG[:,1:] = record_matG[:,:-1]
+	record_vecF[1:] = record_vecF[:-1]
 	if ( numRecords < maxNumRecords ):
 		numRecords += 1
 	record_matX[:,0] = sgdDat.statsDat.avg_vecX[:]
@@ -50,7 +50,7 @@ chmPrm = hessmodel.calcHessModel_prm()
 nAnchor = 0
 
 msg('')
-msg('Using hessmodel.calcHessModel()...')
+msg('Calling hessmodel.calcHessModel()...')
 msg(f'chmPrm = {chmPrm}...')
 chmPrm.dump()
 hm = hessmodel.calcHessModel(
@@ -62,7 +62,7 @@ hm = hessmodel.calcHessModel(
   record_matG[:,0:numRecords],
   chmPrm )
 msg('')
-msg('Using hessmodel.calcHessModel_basicOracle()...')
+msg('Calling hessmodel.calcHessModel_basicOracle()...')
 #chm.dropRelThresh /= 10.0
 msg(f'chmPrm = {chmPrm}...')
 chmPrm.dump()
@@ -77,6 +77,21 @@ oracle_hm.dump()
 if (True):
 	msg('')
 	msg(f'hm.matV.T @ prob.matH @ hm.matV = ...\n{hm.matV.T @ prob.matH @ hm.matV}')
+
+msg('')
+msg('Calling hessmodel.calcHessCurves(hm)...')
+hc, hmPSD, hmWB, debug_hmLS = hessmodel.calcHessCurves(hm)
+msg('')
+msg('Calling hessmodel.calcHessCurves(oracle_hm)...')
+oracle_hc, oracle_hmPSD, oracle_hmWB, oracle_debug_hmLS = hessmodel.calcHessCurves(oracle_hm)
+#
+msg('')
+msg(f'hc = {hc}...')
+hc.dump()
+msg('')
+msg(f'oracle_hc = {oracle_hc}...')
+oracle_hc.dump()
+
 
 msg('')
 msgtime()
