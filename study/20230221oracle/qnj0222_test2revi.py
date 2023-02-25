@@ -11,7 +11,7 @@ vecX0 = prob.genVecX0()
 sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
 #
-maxNumRecords = 100
+maxNumRecords = 10
 record_matX = np.zeros((sizeX, maxNumRecords))
 record_vecF = np.zeros(maxNumRecords)
 record_matG = np.zeros((sizeX, maxNumRecords))
@@ -19,7 +19,7 @@ numRecords = 0
 #
 vecXSeed = vecX0.copy()
 vecPSeed = vecP0.copy()
-numSuperPts = 100
+numSuperPts = 10
 sgdPrm = prob.evalSGD_prm()
 sgdPrm.learningRate = 1.0e-2
 sgdPrm.momentumCoefficient = 0.9
@@ -72,6 +72,50 @@ msg(f'hm_basic = {hm_basic}...')
 hm_basic.dump()
 msg(f'hm_oracle = {hm_oracle}...')
 hm_oracle.dump()
+
+if (True):
+	msg('')
+	ccPrm = qnj.calcCurves_prm()
+	ccPrm.fFloorC0 = 0.0
+	ccPrm.fFloorC1 = 0.0
+	msg('Calculating calcCurves(hm_basic)...')
+	curveDat = qnj.calcCurves(hm_basic, None, None, ccPrm)
+	msg('')
+	msg('Calculating calcCurves(hm_oracle)...')
+	curveDat_oracle = qnj.calcCurves(hm_oracle, None, None, ccPrm)
+	msg('')
+	msg('')
+	msg('Spot check (to compare with old, qnj0222_test2 code)...')
+	msg('')
+	msg('  Along levWB...')
+	#n = 80
+	n = 40
+	mu = curveDat.muVals[n]
+	vecY = curveDat.vecYVals[:,n]
+	vecX = hm_basic.vecXA + (hm_basic.matV @ vecY)
+	f, vecG = prob.evalFG(vecX)
+	msg(f'  At mu = {mu:0.18E}...')
+	msg(f'    vecY = {vecY}')
+	msg(f'    vecX = {vecX}')
+	msg(f'    f = {f}')
+	msg(f'    vecG = {vecG}')
+	msg('')
+	msg(f' Along oracle_levWB...')
+	#n = 80
+	n = 40
+	mu = curveDat_oracle.muVals[n]
+	vecY = curveDat_oracle.vecYVals[:,n]
+	vecX = hm_oracle.vecXA + (hm_oracle.matV @ vecY)
+	f, vecG = prob.evalFG(vecX)
+	msg(f'  At mu = {mu:0.18E}...')
+	msg(f'    vecY = {vecY}')
+	msg(f'    vecX = {vecX}')
+	msg(f'    f = {f}')
+	msg(f'    vecG = {vecG}')
+	msg('')
+	danutil.bye()
+
+
 #
 curveDat = qnj.calcCurves(hm_basic)
 coarse_vecXVals = curveDat.coarse_vecXVals

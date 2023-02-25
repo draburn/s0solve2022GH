@@ -12,7 +12,7 @@ sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
 #
 #
-numSuperPts = 5
+numSuperPts = 10
 maxNumRecords = numSuperPts
 #
 record_matX = np.zeros((sizeX, maxNumRecords))
@@ -65,7 +65,7 @@ sizeK = hm.matV.shape[1]
 msg(f'sizeK = {sizeK}')
 msg('')
 msg('Calling hessmodel.calcHessModel_basicOracle()...')
-#chm.dropRelThresh /= 10.0
+chmPrm.dropRelThresh /= 10.0
 msg(f'chmPrm = {chmPrm}...')
 chmPrm.dump()
 oracle_hm = hessmodel.oracle_calcHessModel(prob.evalFG, record_matX[:,nAnchor], record_matX[:,0:numRecords], chmPrm)
@@ -97,6 +97,39 @@ hc.dump()
 msg('')
 msg(f'oracle_hc = {oracle_hc}...')
 oracle_hc.dump()
+
+if (True):
+	msg('')
+	msg('')
+	msg('Spot check (to compare with old, qnj0222_test2 code)...')
+	msg('')
+	msg('  Along levWB...')
+	#mu  =  7.967038104510303
+	#mu = 1.886649452148539685E-01
+	mu = 1.905526115325545111E-01
+	vecY = hc.calcYLevWBOfMu(mu)
+	vecX = hm.evalXOfY(vecY)
+	f, vecG = prob.evalFG(vecX)
+	msg(f'  At mu = {mu}...')
+	msg(f'    vecY = {vecY}')
+	msg(f'    vecX = {vecX}')
+	msg(f'    f = {f}')
+	msg(f'    vecG = {vecG}')
+	msg('')
+	msg(f' Along oracle_levWB...')
+	#mu  = 7.967038851655461
+	#mu = 1.876539040971718364E-01
+	mu = 1.895312328559821957E-01
+	vecY = oracle_hc.calcYLevWBOfMu(mu)
+	vecX = oracle_hm.evalXOfY(vecY)
+	f, vecG = prob.evalFG(vecX)
+	msg(f'  At mu = {mu}...')
+	msg(f'    vecY = {vecY}')
+	msg(f'    vecX = {vecX}')
+	msg(f'    f = {f}')
+	msg(f'    vecG = {vecG}')
+	msg('')
+	danutil.bye()
 
 numVals = 10
 muScl = min(hc.vecLambdaWB)

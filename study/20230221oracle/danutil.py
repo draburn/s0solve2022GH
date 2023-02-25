@@ -75,3 +75,9 @@ def utorthdrop( matA, dropRelThresh, dropAbsThresh ):
 
 def symm( matA ):
 	return (matA.T + matA)/2.0
+
+def bye():
+	print(f'[{inspect.stack()[1].filename}.{inspect.stack()[1].lineno:05d}]')
+	print(f'[{inspect.stack()[1].filename}.{inspect.stack()[1].lineno:05d}] It is {time.asctime()}; time since start is {time.time()-danutil_import_time:0.3f}s.')
+	print(f'[{inspect.stack()[1].filename}.{inspect.stack()[1].lineno:05d}] Goodbye.')
+	exit()
