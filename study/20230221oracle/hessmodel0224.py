@@ -34,7 +34,7 @@ class hessModelType():
 		cp = hessModelType()
 		cp.vecXA = self.vecXA.copy()
 		cp.matV = self.matV.copy()
-		cp.fA = self.fA.copy()
+		cp.fA = self.fA
 		cp.vecGammaA = self.vecGammaA.copy()
 		cp.matH = self.matH.copy()
 		cp.vecGPerpA = self.vecGPerpA.copy()
