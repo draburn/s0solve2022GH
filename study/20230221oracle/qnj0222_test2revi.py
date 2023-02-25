@@ -29,9 +29,9 @@ for n in range(numSuperPts):
 	vecXHarvest, vecPHarvest, f, sgdDat = prob.evalSGD(vecXSeed, vecPSeed, sgdPrm)
 	assert ( f >= 0.0 )
 	
-	record_matX[:,1:-1] = record_matX[:,0:-2]
-	record_matG[:,1:-1] = record_matG[:,0:-2]
-	record_vecF[1:-1] = record_vecF[1:-1]
+	record_matX[:,1:] = record_matX[:,:-1]
+	record_matG[:,1:] = record_matG[:,:-1]
+	record_vecF[1:] = record_vecF[:-1]
 	if ( numRecords < maxNumRecords ):
 		numRecords += 1
 	record_matX[:,0] = sgdDat.statsDat.avg_vecX[:]
