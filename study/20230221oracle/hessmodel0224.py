@@ -62,7 +62,9 @@ class hessModelType():
 
 class hessCurvesType():
 	def __init__(self):
-		# Input arguments in addition to hessModel.
+		# Basis.
+		self.vecXA = None
+		self.matV = None
 		self.vecYLaunch = None
 		self.vecS = None
 		# Derived values.
@@ -74,9 +76,11 @@ class hessCurvesType():
 	def dump(self):
 		msg(f'Begin hessCurvesType().dump...')
 		msg(f'self = {self}')
-		msg(f'  vecYLaunch = {self.vecYLaunch}')
+		msg(f'  vecXA = {self.vecXA}')
+		msg(f'  matV.shape[0] = {self.matV.shape[0]}')
+		msg(f'  matV.shape[1] = {self.matV.shape[1]}')
+		msg(f'  matV = ...\n{self.matV}')
 		msg(f'  vecS = {self.vecS}')
-		msg(f'  matPsi.shape[0] = {self.matPsi.shape[0]}')
 		msg(f'  matPsi = ...\n{self.matPsi}')
 		msg(f'  vecPhi = {self.vecPhi}')
 		msg(f'  vecLambdaLS = {self.vecLambdaLS}')
@@ -105,6 +109,12 @@ class hessCurvesType():
 		vecZeta = self.vecPhi / (self.vecLambdaWB + mu)
 		vecY = self.vecYLaunch + self.vecS * (self.matPsi @ vecZeta)
 		return vecY
+	def calcXLevLSOfMu(self, mu):
+		return self.vecXA + (self.matV @ self.calcYLevLSOfMu(mu))
+	def calcXLevPSDOfMu(self, mu):
+		return self.vecXA + (self.matV @ self.calcYLevPSDOfMu(mu))
+	def calcXLevWBOfMu(self, mu):
+		return self.vecXA + (self.matV @ self.calcYLevWBOfMu(mu))
 # End class class hessCurvesType().
 
 class calcHessModel_prm():
@@ -261,6 +271,8 @@ def calcHessCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcHessCurves_pr
 		vecLambdaWB[:] = -1.0E10
 	#
 	hessCurves = hessCurvesType()
+	hessCurves.vecXA = hessModel.vecXA
+	hessCurves.matV = hessModel.matV.copy()
 	hessCurves.vecYLaunch = vecYLaunch.copy()
 	hessCurves.vecS = vecS.copy()
 	hessCurves.matPsi = matPsi.copy()
@@ -272,9 +284,13 @@ def calcHessCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcHessCurves_pr
 	# Calcualte modified models...
 	# We could re-use the original anchor and shift the "LS" quantities back,
 	# but, it's probably easier to just shift the anchor.
+	# Note that we are NOT doing the anchor shift for the hessCurves.
+	# DRaburn 2023-02-25:
+	#  Actually, it'd be nice to undo this.
+	msg('NOTE: vecXA (anchor) is shifted for modified Hessian models.')
 	# Note "hessModelLS" is merely for debug.
 	hessModelLS = hessModel.copy()
-	hessModelLS.vecXA = hessModel.vecXA + (hessModel.matV @ vecYLaunch)
+	hessModelLS.vecXA = hessCurves.vecXA.copy()
 	hessModelLS.fA = fLS.copy()
 	hessModelLS.vecGammaA = vecGammaLS / vecS
 	hessModelLS.vecGPerpA = hessModel.vecGPerpA + (hessModel.matW @ vecYLaunch)
@@ -290,3 +306,19 @@ def calcHessCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcHessCurves_pr
 	# Note that hessModelLS should behave identically to hessModel, just with a different anchor.
 	return hessCurves, hessModelPSD, hessModelWB, hessModelLS
 # End def calcHessCurves() etc.
+
+class searchHessCurve_prm():
+	def __init__(self):
+		self.curveSelector = "WB"
+		self.dRelTol = 1.0e-6
+		self.iterLimit = 100
+	def dump(self):
+		msg(f'Begin searchHessCurve_prm().dump...')
+		msg(f'self = {self}')
+		msg(f'  curveSelector = {self.curveSelector}')
+		msg(f'  dRelTol = {self.dRelTol}')
+		msg(f'  iterLimit = {self.iterLimit}')
+		msg(f'End searchHessCurve_prm.dump().')
+def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
+	msg('ERROR: NOT IMPLEMENTED')
+	danutil.bye()

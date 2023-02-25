@@ -108,7 +108,8 @@ if (True):
 	#mu = 1.886649452148539685E-01
 	mu = 1.905526115325545111E-01
 	vecY = hc.calcYLevWBOfMu(mu)
-	vecX = hm.evalXOfY(vecY)
+	#vecX = hm.evalXOfY(vecY)
+	vecX = hc.calcXLevWBOfMu(mu)
 	f, vecG = prob.evalFG(vecX)
 	msg(f'  At mu = {mu}...')
 	msg(f'    vecY = {vecY}')
@@ -121,7 +122,8 @@ if (True):
 	#mu = 1.876539040971718364E-01
 	mu = 1.895312328559821957E-01
 	vecY = oracle_hc.calcYLevWBOfMu(mu)
-	vecX = oracle_hm.evalXOfY(vecY)
+	#vecX = oracle_hm.evalXOfY(vecY)
+	vecX = oracle_hc.calcXLevWBOfMu(mu)
 	f, vecG = prob.evalFG(vecX)
 	msg(f'  At mu = {mu}...')
 	msg(f'    vecY = {vecY}')
