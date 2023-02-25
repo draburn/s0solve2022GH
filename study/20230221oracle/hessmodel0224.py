@@ -1,0 +1,286 @@
+import danutil
+from danutil import msg
+import numpy as np
+from numpy.linalg import norm
+from scipy import optimize
+
+class hessModelType():
+	def __init(self):
+		# Basis.
+		self.vecXA = None
+		self.matV = None
+		# Core model.
+		self.fA = None
+		self.vecGammaA = None # "gamma" = V^T * g
+		self.matH = None
+		# Perpendicular compnent of gradient.
+		self.vecGPerpA = None
+		self.matW = None
+		# A potential optimization is eliminating calculation of matW.
+	def dump(self):
+		msg(f'Begin hessModelType().dump...')
+		msg(f'self = {self}')
+		msg(f'  vecXA = {self.vecXA}')
+		msg(f'  matV.shape[0] = {self.matV.shape[0]}')
+		msg(f'  matV.shape[1] = {self.matV.shape[1]}')
+		msg(f'  matV = ...\n{self.matV}')
+		msg(f'  fA = {self.fA}')
+		msg(f'  vecGammaA = {self.vecGammaA}')
+		msg(f'  matH = ...\n{self.matH}')
+		msg(f'  vecGPerpA = {self.vecGPerpA}')
+		msg(f'  matW = ...\n{self.matW}')
+		msg(f'End hessModelType.dump().')
+	def copy(self):
+		cp = hessModelType()
+		cp.vecXA = self.vecXA.copy()
+		cp.matV = self.matV.copy()
+		cp.fA = self.fA.copy()
+		cp.vecGammaA = self.vecGammaA.copy()
+		cp.matH = self.matH.copy()
+		cp.vecGammaPerpA = self.vecGammaPerpA.copy()
+		cp.matW = self.matW.copy()
+	# Evaluation functions are largely for illustrative purpose.
+	def evalYOfProjX(self, vecX):
+		vecY = self.matV.T @ (vecX - self.vecXA)
+		return vecY
+	def evalXOfY(self, vecY):
+		vecX = self.vecXA + (self.matV @ vecY)
+		return vecX
+	def evalFGammaGPerpOfY(self, vecY):
+		vecHY = self.matH @ vecY
+		f = self.fA + (vecY @ self.vecGammaA) + ((vecY @ vecHY)/2.0)
+		vecGamma = self.vecGammaA + vecHY
+		vecGPerp = self.vecGPerpA + (self.matW @ vecY)
+		return f, vecGamma, vecGPerp
+	def evalFGOfProjX(self, vecX):
+		vecY = self.getYOfProjX(vecX)
+		f, vecGamma, vecGPerp = self.evalFGammaGPerpOfY(vecY)
+		vecG = (self.matV @ vecGamma) + vecGPerp
+		return f, vecG
+# End class hessModelType().
+
+class hessCurvesType():
+	def __init__(self):
+		# Input arguments in addition to hessModel.
+		self.vecYLaunch = None
+		self.vecS = None
+		# Derived values.
+		self.matPsi = None
+		self.vecPhi = None # "phi" = PSI^T * (-gamma)
+		self.vecLambdaLS = None # "LS" = "launch, scaled"
+		self.vecLambdaPSD = None # "PSD" = "positive-semi-definite" (+LS)
+		self.vecLambdaWB = None # "WB" = "well-behaved" = strictly pos-def and fMin >= 0.0 (+LS)
+	def dump(self):
+		msg(f'Begin hessCurvesType().dump...')
+		msg(f'self = {self}')
+		msg(f'  vecYLaunch = {self.vecYLaunch}')
+		msg(f'  vecS = {self.vecS}')
+		msg(f'  matPsi.shape[0] = {matPsi.shape[0]}')
+		msg(f'  matPsi = ...\n{self.matPsi}')
+		msg(f'  vecPhi = {self.vecPhi}')
+		msg(f'  vecLambdaLS = {self.vecLambdaLS}')
+		msg(f'  vecLambdaPSD = {self.vecLambdaPSD}')
+		msg(f'  vecLambdaWB = {self.vecLambdaWB}')
+		msg(f'End hessCurvesType.dump().')
+	def calcYLevLSOfMu(self, mu):
+		if ( min(self.vecLambdaLS) + mu <= 0.0 ):
+			msg(f('ERROR: mu = {mu} and min(self.vecLambdaLS) + mu = {min(self.vecLambdaLS) + mu}')
+			return None
+		vecZeta = self.vecPhi / (self.vecLambdaLS + mu)
+		vecY = self.vecYLaunch + self.vecS * (self.matPsi @ vecZeta)
+		return vecY
+	def calcYLevPSDOfMu(self, mu):
+		if ( min(self.vecLambdaPSD) + mu <= 0.0 ):
+			msg(f('ERROR: mu = {mu} and min(self.vecLambdaPSD) + mu = {min(self.vecLambdaPSD) + mu}')
+			return None
+		vecZeta = self.vecPhi / (self.vecLambdaPSD + mu)
+		vecY = self.vecYLaunch + self.vecS * (self.matPsi @ vecZeta)
+		return vecY
+	def calcYLevWBOfMu(self, mu):
+		if ( min(self.vecLambdaWB) + mu <= 0.0 ):
+			msg(f('ERROR: mu = {mu} and min(self.vecLambdaWB) + mu = {min(self.vecLambdaWB) + mu}')
+			assert( min(self.vecLambdaWB) > 0.0 )
+			return None
+		vecZeta = self.vecPhi / (self.vecLambdaWB + mu)
+		vecY = self.vecYLaunch + self.vecS * (self.matPsi @ vecZeta)
+		return vecY
+# End class class hessCurvesType().
+
+class calcHessModel_prm
+	def __init__(self):
+		self.dropRelThresh = 1.0e-1
+		self.dropAbsThresh = 1.0e-12
+		self.fdOrder = 2
+		self.epsRelFD = 1.0e-4
+	def dump(self):
+		msg(f'Begin calcHessModel_prm().dump...')
+		msg(f'self = {self}')
+		msg(f'  dropRelThresh = {self.dropRelThresh}')
+		msg(f'  dropAbsThresh = {self.dropAbsThresh}')
+		msg(f'  fdOrder = {self.fdOrder}')
+		msg(f'  epsRelFD = {self.epsRelFD}')
+		msg(f'End calcHessModel_prm().dump.')
+def calcHessModel( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, record_matG, prm=calcHessModel_prm() ):
+	sizeX = vecXAnchor.shape[0]
+	matD = record_matX - np.reshape(vecXAnchor, (sizeX,1)) # Autobroadcast
+	matV, vecKeep = danutil.utorthdrop(matD, prm.dropRelThresh, prm.dropAbsThresh)
+	sizeK = matV.shape[1]
+	if ( 0 == sizeK ):
+		msg('ERROR: sizeK is zero.')
+		return None
+	#
+	vecGammaA = matV.T @ vecGAnchor
+	matY = np.triu( matV.T @ matD[:,vecKeep] ) # Ideally could be calc'd by utorthdrop.
+	matGamma = matV.T @ record_matG[:,vecKeep]
+	#matA = np.linalg.solve(matY.T, (  matGamma - np.reshape(vecGammaAnchor, (sizeK,1))  ).T) # Does not require matM.
+	#matH = (matA.T + matA)/2.0  # Does not require matM.
+	matM = np.linalg.solve(matY.T, (  record_matG[:,vecKeep] - np.reshape(vecGAnchor, (sizeX,1)) ).T).T
+	matH = danutil.symm(matV.T @ matM)
+	matW = matM - (matV @ matH)
+	#
+	hessModel = hessModelType()
+	hessModel.vecXA = vecXAnchor.copy()
+	hessModel.matV = matV.copy()
+	hessModel.fA = fAnchor.copy()
+	hessModel.vecGammaA = vecGammaA.copy()
+	hessModel.matH = matH.copy()
+	hessModel.vecGPerpA = vecGAnchor.copy() - (matV @ vecGammaA)
+	hessModel.matW = matW.copy()
+	return hessModel
+def oracle_calcHessModel( funchFG, vecXAnchor, record_matX, prm=calcHessFit_prm() ):
+	sizeX = vecXAnchor.shape[0]
+	matD = record_matX - np.reshape(vecXAnchor, (sizeX,1)) # Autobroadcast
+	matV, vecKeep = danutil.utorthdrop(matD, prm.dropRelThresh, prm.dropAbsThresh)
+	sizeK = matV.shape[1]
+	if ( 0 == sizeK ):
+		msg('ERROR: sizeK is zero.')
+		return None
+	#
+	fA, vecGA = funch_evalFG(vecXAnchor)
+	vecGammaA = matV.T @ vecGA
+	#
+	dScale = max(np.sqrt(np.sum(matD**2,0)))
+	assert ( dScale > 0.0 )
+	epsFD = prm.epsRelFD * dScale
+	#matA = np.zeros((sizeK, sizeK)) # Does not require matM.
+	matM = np.zeros((sizeX, sizeK))
+	if (1 == prm.fdOrder):
+		for k in range(sizeK):
+			msg(f'{k} / {sizeK}')
+			fP, vecGP = funch_evalFG(vecXAnchor + (epsFD*matV[:,k]))
+			#matA[:,k] = (matV.T @ (vecGP-vecGA))/epsFD # Does note require matM.
+			matM[:,k] = (vecGP - vecGA)/epsFD
+	elif (2 == prm.fdOrder):
+		for k in range(sizeK):
+			msg(f'{k} / {sizeK}')
+			fP, vecGP = funch_evalFG(vecXAnchor + (epsFD*matV[:,k]))
+			fM, vecGM = funch_evalFG(vecXAnchor - (epsFD*matV[:,k]))
+			#matA[:,k] = (matV.T @ (vecGP-vecGM))/(2.0*epsFD) # Does note require matM.
+			matM[:,k] = (vecGP - vecGM)/(2.0*epsFD)
+			msg(f'  fP = {fP}')
+			msg(f'  fM = {fM}')
+			msg(f'  vecGP = {vecGP}')
+			msg(f'  vecGM = {vecGM}')
+	#matH = (matA.T + matA)/2.0
+	matH = danutil.symm(matV.T @ matM)
+	matW = matM - (matV @ matH)
+	#
+	hessModel = hessModelType()
+	hessModel.vecXA = vecXAnchor.copy()
+	hessModel.matV = matV.copy()
+	hessModel.fA = fAnchor.copy()
+	hessModel.vecGammaA = vecGammaA.copy()
+	hessModel.matH = matH.copy()
+	hessModel.vecGPerpA = vecGAnchor.copy() - (matV @ vecGammaA)
+	hessModel.matW = matW.copy()
+	return hessModel
+# End def calcHessModel() etc.
+
+class calcHessCurves_prm():
+	def __init__(self):
+		self.epsRelWB = 1.0e-6
+	def dump(self):
+		msg(f'Begin calcHessCurves_prm().dump...')
+		msg(f'self = {self}')
+		msg(f'  epsRelWB = {self.epsRelWB}')
+		msg(f'End calcHessCurves_prm.dump().')
+def calcHessCurves__calcLambdaWBFloor( f0, vecPhi, vecLambda, fFloor, epsRelWB ):
+	assert (f0 > fFloor)
+	def fRes( lambdaF ):
+		fRes = f0 - fFloor
+		for k in range( 0, vecLambda.shape[0] ):
+			fRes -= ((vecPhi[k])**2) / (2.0*max( vecLambda[k], lambdaF ))
+		return fRes
+	if (min(vecLambda) > 0.0):
+		if (fRes(0.0) >= 0.0):
+			return 0.0
+	lambdaHi = (vecPhi @ vecPhi) / (2.0*(f0 - fFloor))
+	if (max(vecLambda) < lambdaHi):
+		return lambdaHi
+	lambdaLo = epsRelWB * max(vecLambda)
+	if (fRes(lambdaLo) >= 0.0):
+		return lambdaLo
+	lambdaF = optimize.bisect( fRes, lambdaLo, lambdaHi )
+	return lambdaF
+def calcHessCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcCurves_prm() ):
+	# Parse input.
+	sizeX = hessModel.matV.shape[0]
+	sizeK = hessModel.matV.shape[1]
+	if (vecYLaunch is None):
+		vecYLaunch = np.zeros(sizeK)
+	if (vecS is None):
+		vecS = np.ones(sizeK)
+	assert (min(vecS) > 0.0)
+	#
+	# Move to launch point, scale, and get eigen-factorization.
+	fLS = hessModel.fA + (vecYLaunch @ hessModel.vecGammaA) + ((vecYLaunch @ hessModel.matH @ vecYLaunch)/2.0)
+	vecGammaLS = (hessModel.vecGammaA + (hessModel.matH @ vecYLaunch)) * vecS
+	matHLS = danutil.symm((hessModel.matH * vecS).T * vecS)
+	vecLambdaC, matPsi = np.linalg.eig(matHLS)
+	vecPhi = matPsi.T @ (-vecGammaLS)
+	for n in range(len(vecLambdaC)):
+		assert ( np.isreal(vecLambdaC[n]) )
+	vecLambdaOrig = np.real(vecLambdaC)
+	#
+	vecLambdaPSD = vecLambdaOrig.copy()
+	vecLambdaPSD[vecLambdaPSD < 0.0] = 0.0
+	#
+	if (fLS > 0.0):
+		lambdaWBFloor = calcHessCurves__calcLambdaWBFloor( fLS, vecPhi, vecLambda, 0.0, prm.epsRelWB )
+		vecLambdaWB = vecLambdaOrig.copy()
+		vecLambdaWB[vecLambdaWB < lambdaWBFloor] = lambdaWBFloor
+	else:
+		msg(f'WARNING: fLS <= 0.0 (fLS = {fLS} while fA = {hessModel.fA}).')
+		msg(f'  Please consider a different launch point.')
+		msg(f'  Setting every element of vecLambdaWB to a large negative value.')
+		vecLambdaWB[:] = -1.0E10
+	#
+	hessCurves = hessCurvesType()
+	hessCurves.vecYLaunch = vecYLaunch.copy()
+	hessCurves.vecS = vecS.copy()
+	hessCurves.matPsi = matPsi.copy()
+	hessCurves.vecPhi = vecPhi.copy()
+	hessCurves.vecLambdaOrig = vecLambdaOrig.copy()
+	hessCurves.vecLambdaPSD = vecLambdaPSD.copy()
+	hessCurves.vecLambdaWB = vecLambdaWB.copy()
+	#
+	# Calcualte modified models...
+	# We could re-use the original anchor and shift the "LS" quantities back,
+	# but, it's probably easier to just shift the anchor.
+	# Note "hessModelLS" is merely for debug.
+	hessModelLS = hessModel.copy()
+	hessModelLS.vecXA = hessModel.vecXA + (hessModel.matV @ vecYLaunch)
+	hessModelLS.fA = fLS.copy()
+	hessModelLS.vecGammaA = vecGammaLS / vecS
+	hessModelLS.vecGPerpA = hessModel.vecGPerpA + (hessModel.matW @ vecYLaunch)
+	hessModelLS.matH = danutil.symm( (( matPsi @ np.diag(vecLambdaOrig) @ matPsi.T )/vecS).T / vecS )
+	assert ( danutil.reldiff(hessModelLS.matH, hessModel.matH) < 1.0e-4 )
+	#
+	hessModelPSD = hessModelLS.copy()
+	hessModelPSD.matH = danutil.symm( (( matPsi @ np.diag(vecLambdaPSD) @ matPsi.T )/vecS).T / vecS )
+	#
+	hessModelWB = hessModelLS.copy()
+	hessModelWB.matH = danutil.symm( (( matPsi @ np.diag(vecLambdaWB) @ matPsi.T )/vecS).T / vecS )
+	#
+	return hessCurves, hessModelPSD, hessModelWB, hessModelLS
+# End def calcHessCurves() etc.
