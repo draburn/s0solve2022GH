@@ -84,21 +84,21 @@ class hessCurvesType():
 		msg(f'End hessCurvesType.dump().')
 	def calcYLevLSOfMu(self, mu):
 		if ( min(self.vecLambdaLS) + mu <= 0.0 ):
-			msg(f('ERROR: mu = {mu} and min(self.vecLambdaLS) + mu = {min(self.vecLambdaLS) + mu}')
+			msg(f'ERROR: mu = {mu} and min(self.vecLambdaLS) + mu = {min(self.vecLambdaLS) + mu}')
 			return None
 		vecZeta = self.vecPhi / (self.vecLambdaLS + mu)
 		vecY = self.vecYLaunch + self.vecS * (self.matPsi @ vecZeta)
 		return vecY
 	def calcYLevPSDOfMu(self, mu):
 		if ( min(self.vecLambdaPSD) + mu <= 0.0 ):
-			msg(f('ERROR: mu = {mu} and min(self.vecLambdaPSD) + mu = {min(self.vecLambdaPSD) + mu}')
+			msg(f'ERROR: mu = {mu} and min(self.vecLambdaPSD) + mu = {min(self.vecLambdaPSD) + mu}')
 			return None
 		vecZeta = self.vecPhi / (self.vecLambdaPSD + mu)
 		vecY = self.vecYLaunch + self.vecS * (self.matPsi @ vecZeta)
 		return vecY
 	def calcYLevWBOfMu(self, mu):
 		if ( min(self.vecLambdaWB) + mu <= 0.0 ):
-			msg(f('ERROR: mu = {mu} and min(self.vecLambdaWB) + mu = {min(self.vecLambdaWB) + mu}')
+			msg(f'ERROR: mu = {mu} and min(self.vecLambdaWB) + mu = {min(self.vecLambdaWB) + mu}')
 			assert( min(self.vecLambdaWB) > 0.0 )
 			return None
 		vecZeta = self.vecPhi / (self.vecLambdaWB + mu)
@@ -106,7 +106,7 @@ class hessCurvesType():
 		return vecY
 # End class class hessCurvesType().
 
-class calcHessModel_prm
+class calcHessModel_prm():
 	def __init__(self):
 		self.dropRelThresh = 1.0e-1
 		self.dropAbsThresh = 1.0e-12
@@ -147,7 +147,7 @@ def calcHessModel( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, re
 	hessModel.vecGPerpA = vecGAnchor.copy() - (matV @ vecGammaA)
 	hessModel.matW = matW.copy()
 	return hessModel
-def oracle_calcHessModel( funchFG, vecXAnchor, record_matX, prm=calcHessFit_prm() ):
+def oracle_calcHessModel( funch_evalFG, vecXAnchor, record_matX, prm=calcHessModel_prm() ):
 	sizeX = vecXAnchor.shape[0]
 	matD = record_matX - np.reshape(vecXAnchor, (sizeX,1)) # Autobroadcast
 	matV, vecKeep = danutil.utorthdrop(matD, prm.dropRelThresh, prm.dropAbsThresh)
@@ -156,8 +156,8 @@ def oracle_calcHessModel( funchFG, vecXAnchor, record_matX, prm=calcHessFit_prm(
 		msg('ERROR: sizeK is zero.')
 		return None
 	#
-	fA, vecGA = funch_evalFG(vecXAnchor)
-	vecGammaA = matV.T @ vecGA
+	fAnchor, vecGAnchor = funch_evalFG(vecXAnchor)
+	vecGammaA = matV.T @ vecGAnchor
 	#
 	dScale = max(np.sqrt(np.sum(matD**2,0)))
 	assert ( dScale > 0.0 )
@@ -169,7 +169,7 @@ def oracle_calcHessModel( funchFG, vecXAnchor, record_matX, prm=calcHessFit_prm(
 			msg(f'{k} / {sizeK}')
 			fP, vecGP = funch_evalFG(vecXAnchor + (epsFD*matV[:,k]))
 			#matA[:,k] = (matV.T @ (vecGP-vecGA))/epsFD # Does note require matM.
-			matM[:,k] = (vecGP - vecGA)/epsFD
+			matM[:,k] = (vecGP - vecGAnchor)/epsFD
 	elif (2 == prm.fdOrder):
 		for k in range(sizeK):
 			msg(f'{k} / {sizeK}')
@@ -188,7 +188,7 @@ def oracle_calcHessModel( funchFG, vecXAnchor, record_matX, prm=calcHessFit_prm(
 	hessModel = hessModelType()
 	hessModel.vecXA = vecXAnchor.copy()
 	hessModel.matV = matV.copy()
-	hessModel.fA = fAnchor.copy()
+	hessModel.fA = fAnchor
 	hessModel.vecGammaA = vecGammaA.copy()
 	hessModel.matH = matH.copy()
 	hessModel.vecGPerpA = vecGAnchor.copy() - (matV @ vecGammaA)
@@ -222,7 +222,7 @@ def calcHessCurves__calcLambdaWBFloor( f0, vecPhi, vecLambda, fFloor, epsRelWB )
 		return lambdaLo
 	lambdaF = optimize.bisect( fRes, lambdaLo, lambdaHi )
 	return lambdaF
-def calcHessCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcCurves_prm() ):
+def calcHessCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcHessCurves_prm() ):
 	# Parse input.
 	sizeX = hessModel.matV.shape[0]
 	sizeK = hessModel.matV.shape[1]

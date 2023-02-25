@@ -73,5 +73,5 @@ def utorthdrop( matA, dropRelThresh, dropAbsThresh ):
 	return matV, vecKeep
 # End utorthdrop().
 
-def symm( matA )
+def symm( matA ):
 	return (matA.T + matA)/2.0
