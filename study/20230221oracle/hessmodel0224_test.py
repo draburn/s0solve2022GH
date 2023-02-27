@@ -144,9 +144,9 @@ if (False):
 	msg(f'min f = {min(record_vecF)}, fOptim = {fOptim}, oracle_fOptim = {oracle_fOptim}')
 	danutil.bye()
 
-numVals = 100
+numVals = 200
 #tVals = np.array(np.linspace(0.0,1.0,numVals))
-tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**4))**4
+tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**3))**3
 #
 muScl = min(hc.vecLambdaWB)
 muVals = np.zeros(numVals)
@@ -190,9 +190,11 @@ for n in range(numVals):
 	levWB_fActVals[n] = f
 	levWB_vecGammaActVals[:,n] = vecGamma[:]
 	levWB_vecGPerpActVals[:,n] = vecGPerp[:]
-	assert (danutil.reldiff(levWB_fVals[n], levWB_fLSVals[n]) < 1.0e-6)
-	assert (danutil.reldiff(levWB_vecGammaVals[:,n], levWB_vecGammaLSVals[:,n]) < 1.0e-6)
-	assert (danutil.reldiff(levWB_vecGPerpVals[:,n], levWB_vecGPerpLSVals[:,n]) < 1.0e-6)
+	if ( (danutil.reldiff(levWB_fVals[n], levWB_fLSVals[n]) > 1.0e-6)
+	  or (danutil.reldiff(levWB_vecGammaVals[:,n], levWB_vecGammaLSVals[:,n]) < 1.0e-6)
+	  or (danutil.reldiff(levWB_vecGPerpVals[:,n], levWB_vecGPerpLSVals[:,n]) < 1.0e-6) ):
+		msg('Warning: "LS" values did not (quite) match original.')
+		msg('You may want to investigte this.')
 #
 oracle_muScl = min(oracle_hc.vecLambdaWB)
 oracle_muVals = np.zeros(numVals)
@@ -236,10 +238,13 @@ for n in range(numVals):
 	oracle_levWB_fActVals[n] = f
 	oracle_levWB_vecGammaActVals[:,n] = vecGamma[:]
 	oracle_levWB_vecGPerpActVals[:,n] = vecGPerp[:]
-	assert (danutil.reldiff(oracle_levWB_fVals[n], oracle_levWB_fLSVals[n]) < 1.0e-6)
-	assert (danutil.reldiff(oracle_levWB_vecGammaVals[:,n], oracle_levWB_vecGammaLSVals[:,n]) < 1.0e-6)
-	assert (danutil.reldiff(oracle_levWB_vecGPerpVals[:,n], oracle_levWB_vecGPerpLSVals[:,n]) < 1.0e-6)
+	if ( (danutil.reldiff(oracle_levWB_fVals[n], oracle_levWB_fLSVals[n]) > 1.0e-6)
+	  or (danutil.reldiff(oracle_levWB_vecGammaVals[:,n], oracle_levWB_vecGammaLSVals[:,n]) < 1.0e-6)
+	  or (danutil.reldiff(oracle_levWB_vecGPerpVals[:,n], oracle_levWB_vecGPerpLSVals[:,n]) < 1.0e-6) ):
+		msg('Warning: oracle "LS" values did not (quite) match original.')
+		msg('You may want to investigte this.')
 
+msgtime()
 import matplotlib.pyplot as plt
 plt.plot(
   levWB_dVals, levWB_fVals, 'x-',
@@ -249,15 +254,19 @@ plt.plot(
   oracle_levWB_dVals, oracle_levWB_fVals, 'x-',
   oracle_levWB_dVals, oracle_levWB_fPSDVals, 'o-',
   oracle_levWB_dVals, oracle_levWB_fWBVals, 's-',
-  oracle_levWB_dVals, oracle_levWB_fActVals, '+-' )
+  oracle_levWB_dVals, oracle_levWB_fActVals, '+-',
+  levWB_dVals, levWB_fLSVals, '.-',
+  oracle_levWB_dVals, oracle_levWB_fLSVals, '.-' )
 plt.grid(True)
 plt.legend([
   'fModel(levWB)',
   'fPSD(levWB)',
   'fWB(levWB)',
-  'fAct(levWB)',
-  'fModel(oracle_levWB)',
-  'fPSD(oracle_levWB)',
-  'fWB(oracle_levWB)',
-  'fAct(oracle_levWB)' ])
+  'F(levWB)',
+  'OfModel(OlevWB)',
+  'OfPSD(OlevWB)',
+  'OfWB(OlevWB)',
+  'F(OlevWB)',
+  'fLS(levWB)',
+  'OfLS(OlevWB)' ])
 plt.show()

@@ -122,7 +122,8 @@ class calcHessModel_prm():
 		self.dropRelThresh = 1.0e-1
 		self.dropAbsThresh = 1.0e-12
 		self.fdOrder = 2
-		self.epsRelFD = 1.0e-4
+		#self.epsRelFD = 1.0e-4 # DR 02-26: too small post "rollfix".
+		self.epsRelFD = 1.0e-2
 	def dump(self):
 		msg(f'Begin calcHessModel_prm().dump...')
 		msg(f'self = {self}')
