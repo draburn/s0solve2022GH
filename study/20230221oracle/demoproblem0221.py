@@ -13,8 +13,8 @@ fC = float(abs(np.random.randn(1))) # Leave uncommented to preserve PRNG state.
 fC = 0.0 + 1E4
 vecXC = np.random.randn(sizeX)
 matA = np.random.randn(sizeX, sizeX)
-#matH = matA.T @ matA
-matH = (matA.T + matA)/2.0
+matH = matA.T @ matA
+#matH = (matA.T + matA)/2.0
 if (reportInit):
 	msg(f'Initialized problem...')
 	msg(f'  prngSeed = {prngSeed}')

@@ -65,7 +65,7 @@ sizeK = hm.matV.shape[1]
 msg(f'sizeK = {sizeK}')
 msg('')
 msg('Calling hessmodel.calcHessModel_basicOracle()...')
-#chmPrm.dropRelThresh /= 10.0
+chmPrm.dropRelThresh /= 10.0
 msg(f'chmPrm = {chmPrm}...')
 chmPrm.dump()
 oracle_hm = hessmodel.oracle_calcHessModel(prob.evalFG, record_matX[:,nAnchor], record_matX[:,0:numRecords], chmPrm)
