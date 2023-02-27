@@ -12,7 +12,7 @@ sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
 #
 #
-numSuperPts = 10
+numSuperPts = 50
 maxNumRecords = numSuperPts
 #
 record_matX = np.zeros((sizeX, maxNumRecords))
@@ -65,7 +65,7 @@ sizeK = hm.matV.shape[1]
 msg(f'sizeK = {sizeK}')
 msg('')
 msg('Calling hessmodel.calcHessModel_basicOracle()...')
-chmPrm.dropRelThresh /= 10.0
+#chmPrm.dropRelThresh /= 10.0
 msg(f'chmPrm = {chmPrm}...')
 chmPrm.dump()
 oracle_hm = hessmodel.oracle_calcHessModel(prob.evalFG, record_matX[:,nAnchor], record_matX[:,0:numRecords], chmPrm)
@@ -89,7 +89,7 @@ hc, hmPSD, hmWB, hmLS = hessmodel.calcHessCurves(hm)
 oracle_vecYLaunch = np.zeros(oracle_sizeK)
 msg('')
 msg('Calling hessmodel.calcHessCurves(oracle_hm)...')
-oracle_hc, oracle_hmPSD, oracle_hmWB, oracle_debug_hmLS = hessmodel.calcHessCurves(oracle_hm)
+oracle_hc, oracle_hmPSD, oracle_hmWB, oracle_hmLS = hessmodel.calcHessCurves(oracle_hm)
 #
 msg('')
 msg(f'hc = {hc}...')
@@ -98,7 +98,7 @@ msg('')
 msg(f'oracle_hc = {oracle_hc}...')
 oracle_hc.dump()
 
-if (True):
+if (False):
 	msg('')
 	msg('')
 	msg('Spot check (to compare with old, qnj0222_test2 code)...')
@@ -116,6 +116,8 @@ if (True):
 	msg(f'    vecX = {vecX}')
 	msg(f'    f = {f}')
 	msg(f'    vecG = {vecG}')
+	# Req numSuperPts = 5?
+	assert( abs(vecG[-1]-(-0.00519074)) < 1.0e-4 )
 	msg('')
 	msg(f' Along oracle_levWB...')
 	#mu  = 7.967038851655461
@@ -130,12 +132,23 @@ if (True):
 	msg(f'    vecX = {vecX}')
 	msg(f'    f = {f}')
 	msg(f'    vecG = {vecG}')
+	assert( abs(vecG[-1]-(-0.00549702)) < 1.0e-4 )
 	msg('')
 	danutil.bye()
 
-numVals = 10
+if (False):
+	vecXOptim = hessmodel.searchHessCurve(prob.evalFG, hc)
+	fOptim, vecGOptim = prob.evalFG(vecXOptim)
+	oracle_vecXOptim = hessmodel.searchHessCurve(prob.evalFG, oracle_hc)
+	oracle_fOptim, oracle_vecGOptim = prob.evalFG(oracle_vecXOptim)
+	msg(f'min f = {min(record_vecF)}, fOptim = {fOptim}, oracle_fOptim = {oracle_fOptim}')
+	danutil.bye()
+
+numVals = 100
+#tVals = np.array(np.linspace(0.0,1.0,numVals))
+tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**4))**4
+#
 muScl = min(hc.vecLambdaWB)
-tVals = np.array(np.linspace(0.0,1.0,numVals))
 muVals = np.zeros(numVals)
 levWB_vecYVals = np.zeros((sizeK, numVals))
 levWB_dVals = np.zeros(numVals)
@@ -156,7 +169,7 @@ levWB_vecGPerpPSDVals = np.zeros((sizeX, numVals))
 levWB_vecGPerpWBVals = np.zeros((sizeX, numVals))
 for n in range(numVals):
 	t = tVals[n]
-	if ( t < 1.0e-6 ):
+	if ( t == 0.0 ):
 		muVals[n] = 0.0
 		vecY = np.zeros(sizeK)
 	else:
@@ -180,18 +193,71 @@ for n in range(numVals):
 	assert (danutil.reldiff(levWB_fVals[n], levWB_fLSVals[n]) < 1.0e-6)
 	assert (danutil.reldiff(levWB_vecGammaVals[:,n], levWB_vecGammaLSVals[:,n]) < 1.0e-6)
 	assert (danutil.reldiff(levWB_vecGPerpVals[:,n], levWB_vecGPerpLSVals[:,n]) < 1.0e-6)
+#
+oracle_muScl = min(oracle_hc.vecLambdaWB)
+oracle_muVals = np.zeros(numVals)
+oracle_levWB_vecYVals = np.zeros((oracle_sizeK, numVals))
+oracle_levWB_dVals = np.zeros(numVals)
+oracle_levWB_fVals = np.zeros(numVals)
+oracle_levWB_fActVals = np.zeros(numVals)
+oracle_levWB_fLSVals = np.zeros(numVals)
+oracle_levWB_fPSDVals = np.zeros(numVals)
+oracle_levWB_fWBVals = np.zeros(numVals)
+oracle_levWB_vecGammaActVals = np.zeros((oracle_sizeK, numVals))
+oracle_levWB_vecGammaVals = np.zeros((oracle_sizeK, numVals))
+oracle_levWB_vecGammaLSVals = np.zeros((oracle_sizeK, numVals))
+oracle_levWB_vecGammaPSDVals = np.zeros((oracle_sizeK, numVals))
+oracle_levWB_vecGammaWBVals = np.zeros((oracle_sizeK, numVals))
+oracle_levWB_vecGPerpActVals = np.zeros((sizeX, numVals))
+oracle_levWB_vecGPerpVals = np.zeros((sizeX, numVals))
+oracle_levWB_vecGPerpLSVals = np.zeros((sizeX, numVals))
+oracle_levWB_vecGPerpPSDVals = np.zeros((sizeX, numVals))
+oracle_levWB_vecGPerpWBVals = np.zeros((sizeX, numVals))
+for n in range(numVals):
+	t = tVals[n]
+	if ( t == 0.0 ):
+		oracle_muVals[n] = 0.0
+		vecY = np.zeros(oracle_sizeK)
+	else:
+		mu = oracle_muScl*((1.0/t)-1.0)
+		oracle_muVals[n] = mu
+		vecY = oracle_hc.calcYLevWBOfMu(mu)
+	oracle_levWB_vecYVals[:,n] = vecY
+	oracle_levWB_dVals[n] = norm(vecY)
+	oracle_levWB_fVals[n], oracle_levWB_vecGammaVals[:,n], oracle_levWB_vecGPerpVals[:,n] = oracle_hm.evalFGammaGPerpOfY(vecY)
+	oracle_levWB_fLSVals[n], oracle_levWB_vecGammaLSVals[:,n], oracle_levWB_vecGPerpLSVals[:,n] = oracle_hmLS.evalFGammaGPerpOfY(vecY)
+	oracle_levWB_fPSDVals[n], oracle_levWB_vecGammaPSDVals[:,n], oracle_levWB_vecGPerpPSDVals[:,n] = oracle_hmPSD.evalFGammaGPerpOfY(vecY)
+	oracle_levWB_fWBVals[n], oracle_levWB_vecGammaWBVals[:,n], oracle_levWB_vecGPerpWBVals[:,n] = oracle_hmWB.evalFGammaGPerpOfY(vecY)
+	vecX = oracle_hm.vecXA + (oracle_hm.matV @ vecY)
+	msg(f'{n} / {numVals}')
+	f, vecG = prob.evalFG(vecX)
+	vecGamma = oracle_hm.matV.T @ vecG
+	vecGPerp = vecG - (oracle_hm.matV @ vecGamma)
+	oracle_levWB_fActVals[n] = f
+	oracle_levWB_vecGammaActVals[:,n] = vecGamma[:]
+	oracle_levWB_vecGPerpActVals[:,n] = vecGPerp[:]
+	assert (danutil.reldiff(oracle_levWB_fVals[n], oracle_levWB_fLSVals[n]) < 1.0e-6)
+	assert (danutil.reldiff(oracle_levWB_vecGammaVals[:,n], oracle_levWB_vecGammaLSVals[:,n]) < 1.0e-6)
+	assert (danutil.reldiff(oracle_levWB_vecGPerpVals[:,n], oracle_levWB_vecGPerpLSVals[:,n]) < 1.0e-6)
 
 import matplotlib.pyplot as plt
 plt.plot(
   levWB_dVals, levWB_fVals, 'x-',
   levWB_dVals, levWB_fPSDVals, 'o-',
   levWB_dVals, levWB_fWBVals, 's-',
-  levWB_dVals, levWB_fActVals, '+-' )
+  levWB_dVals, levWB_fActVals, '+-',
+  oracle_levWB_dVals, oracle_levWB_fVals, 'x-',
+  oracle_levWB_dVals, oracle_levWB_fPSDVals, 'o-',
+  oracle_levWB_dVals, oracle_levWB_fWBVals, 's-',
+  oracle_levWB_dVals, oracle_levWB_fActVals, '+-' )
 plt.grid(True)
 plt.legend([
-  'f(levWB)',
-  'fLS(levWB)',
+  'fModel(levWB)',
   'fPSD(levWB)',
   'fWB(levWB)',
-  'fAct(levWB)' ])
+  'fAct(levWB)',
+  'fModel(oracle_levWB)',
+  'fPSD(oracle_levWB)',
+  'fWB(oracle_levWB)',
+  'fAct(oracle_levWB)' ])
 plt.show()

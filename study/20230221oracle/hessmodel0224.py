@@ -309,9 +309,11 @@ def calcHessCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcHessCurves_pr
 
 class searchHessCurve_prm():
 	def __init__(self):
-		self.curveSelector = "WB"
-		self.dRelTol = 1.0e-6
-		self.iterLimit = 100
+		self.curveSelector = "wb"
+		self.tMin = 0.0
+		self.tMax = 1.0
+		self.dTTol = 1.0e-6
+		self.iterLimit = 1000
 	def dump(self):
 		msg(f'Begin searchHessCurve_prm().dump...')
 		msg(f'self = {self}')
@@ -320,5 +322,24 @@ class searchHessCurve_prm():
 		msg(f'  iterLimit = {self.iterLimit}')
 		msg(f'End searchHessCurve_prm.dump().')
 def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
-	msg('ERROR: NOT IMPLEMENTED')
-	danutil.bye()
+	if (prm.curveSelector.lower() != "wb"):
+		msg('ERROR: Only curveSelector "wb" is currently supported.')
+		# Otherwise, we have to worry about the lower bound of mu.
+		return None
+	muScl = min(self.vecLambdaWB)
+	assert( muScl > 0.0 )
+	def calcXLevWBOfT(self, t):
+		if (t == 0.0):
+			return hessCurves.vecXA
+		else:
+			mu = muScl*((1.0/t) - 1.0)
+			return hessCurves.calcXLevWBOfMu(mu)
+	def fOfT( t ):
+		f, _ = funch_evalFG(calcXLevWBOfT(t))
+		# Optimization: make use of vecG. (We have to mux with the curve to get df/dt, though.)
+		#scipy.optimize.fmin(func, x0, args=(), xtol=0.0001, ftol=0.0001, maxiter=None, maxfun=None, full_output=0, disp=1, retall=0, callback=None, initial_simplex=None)
+		return f
+	msg('Calling fminbound...')
+	t = optimize.fminbound( fOfT, prm.tMin, prm.tMax, xtol=prm.dTTol, maxfun=prm.iterLimit+2, disp=1 )
+	msg(f'  t = {t}')
+	return hessCurves.calcXLevWBOfT(t)
