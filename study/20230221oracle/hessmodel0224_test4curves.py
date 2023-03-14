@@ -12,7 +12,7 @@ sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
 #
 #
-numSuperPts = 50
+numSuperPts = 200
 maxNumRecords = numSuperPts
 #
 record_matX = np.zeros((sizeX, maxNumRecords))
@@ -106,16 +106,25 @@ if (False):
 	msg(f'min f = {min(record_vecF)}, fOptim = {fOptim}, oracle_fOptim = {oracle_fOptim}')
 	danutil.bye()
 
-numVals = 100
+numVals = 200
 #tVals = np.array(np.linspace(0.0,1.0,numVals))
 #tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**3))**3
 tExpLo = 2
 tExpHi = 1
 tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**tExpLo))**tExpHi
-tVals /= 10
+#tVals /= 10
 #
 muScl = min(hc.vecLambdaWB)
 muVals = np.zeros(numVals)
+levLS_dVals  = np.zeros(numVals)
+levPSD_dVals = np.zeros(numVals)
+levWB_dVals  = np.zeros(numVals)
+floor_dVals  = np.zeros(numVals)
+levLS_fVals  = np.zeros(numVals)
+levPSD_fVals = np.zeros(numVals)
+levWB_fVals  = np.zeros(numVals)
+floor_fVals  = np.zeros(numVals)
+levWB_fLSVals = np.zeros(numVals)
 olevLS_dVals  = np.zeros(numVals)
 olevPSD_dVals = np.zeros(numVals)
 olevWB_dVals  = np.zeros(numVals)
@@ -124,9 +133,33 @@ olevLS_fVals  = np.zeros(numVals)
 olevPSD_fVals = np.zeros(numVals)
 olevWB_fVals  = np.zeros(numVals)
 ofloor_fVals  = np.zeros(numVals)
+olevWB_ofLSVals = np.zeros(numVals)
 for n in range(numVals):
 	msg(f' {n} / {numVals}...')
 	t = tVals[n]
+	if ( t == 0.0 ):
+		muVals[n] = 0.0
+		vecY_levLS  = np.zeros(sizeK)
+		vecY_levPSD = np.zeros(sizeK)
+		vecY_levWB  = np.zeros(sizeK)
+		vecY_floor  = np.zeros(sizeK)
+	else:
+		mu = muScl*((1.0/t)-1.0)
+		muVals[n] = mu
+		vecY_levLS  = hc.calcYLevLSOfMu(mu)
+		vecY_levPSD = hc.calcYLevPSDOfMu(mu)
+		vecY_levWB  = hc.calcYLevWBOfMu(mu)
+		vecY_floor  = hc.calcYFloorOfMu(mu)
+	levLS_dVals[n]  = norm(vecY_levLS)
+	levPSD_dVals[n] = norm(vecY_levPSD)
+	levWB_dVals[n]  = norm(vecY_levWB)
+	floor_dVals[n]  = norm(vecY_floor)
+	levLS_fVals[n],  _ = prob.evalFG(hm.vecXA + hm.matV @ vecY_levLS)
+	levPSD_fVals[n], _ = prob.evalFG(hm.vecXA + hm.matV @ vecY_levPSD)
+	levWB_fVals[n],  _ = prob.evalFG(hm.vecXA + hm.matV @ vecY_levWB)
+	floor_fVals[n],  _ = prob.evalFG(hm.vecXA + hm.matV @ vecY_floor)
+	levWB_fLSVals[n], _, _ = hm.evalFGammaGPerpOfY( vecY_levWB )
+	#
 	if ( t == 0.0 ):
 		muVals[n] = 0.0
 		vecY_levLS  = np.zeros(oracle_sizeK)
@@ -148,19 +181,34 @@ for n in range(numVals):
 	olevPSD_fVals[n], _ = prob.evalFG(oracle_hm.vecXA + oracle_hm.matV @ vecY_levPSD)
 	olevWB_fVals[n],  _ = prob.evalFG(oracle_hm.vecXA + oracle_hm.matV @ vecY_levWB)
 	ofloor_fVals[n],  _ = prob.evalFG(oracle_hm.vecXA + oracle_hm.matV @ vecY_floor)
+	olevWB_ofLSVals[n], _, _ = oracle_hm.evalFGammaGPerpOfY( vecY_levWB )
 
 msgtime()
 import matplotlib.pyplot as plt
 dWBNewt = olevWB_dVals[-1]
 dVizMax = 2.0*dWBNewt
-plt.plot( olevLS_dVals[ olevLS_dVals<dVizMax ], olevLS_fVals[ olevLS_dVals<dVizMax ], 's-', markersize=16 )
-plt.plot( olevPSD_dVals[olevPSD_dVals<dVizMax], olevPSD_fVals[olevPSD_dVals<dVizMax], 'o-', markersize=13 )
-plt.plot( olevWB_dVals, olevWB_fVals, 'x-', markersize=10 )
-plt.plot( ofloor_dVals[ofloor_dVals<dVizMax], ofloor_fVals[ofloor_dVals<dVizMax], '+-', markersize=7 )
+plt.plot( levWB_dVals, levWB_fLSVals, '*-', markersize=23 )
+plt.plot( levLS_dVals[ levLS_dVals<dVizMax ], levLS_fVals[ levLS_dVals<dVizMax ], 's-', markersize=21 )
+plt.plot( levPSD_dVals[levPSD_dVals<dVizMax], levPSD_fVals[levPSD_dVals<dVizMax], 'o-', markersize=19 )
+plt.plot( levWB_dVals, levWB_fVals, 'x-', markersize=17 )
+plt.plot( floor_dVals[ floor_dVals<dVizMax], floor_fVals[ floor_dVals<dVizMax ], '+-', markersize=15 )
+plt.plot( olevWB_dVals, olevWB_ofLSVals, '*-', markersize=13 )
+plt.plot( olevLS_dVals[ olevLS_dVals<dVizMax ], olevLS_fVals[ olevLS_dVals<dVizMax ], 's-', markersize=11 )
+plt.plot( olevPSD_dVals[olevPSD_dVals<dVizMax], olevPSD_fVals[olevPSD_dVals<dVizMax], 'o-', markersize=9 )
+plt.plot( olevWB_dVals, olevWB_fVals, 'x-', markersize=7 )
+plt.plot( ofloor_dVals[ ofloor_dVals<dVizMax ], ofloor_fVals[ ofloor_dVals<dVizMax ], '+-', markersize=5 )
 plt.grid(True)
 plt.legend([
+  'fLS (LevWB)',
+  'f (LevLS)',
+  'f (LevPSD)',
+  'f (LevWB)',
+  'f (Floor)',
+  'ofLS (oLevWB)',
   'f (oLevLS)',
   'f (oLevPSD)',
   'f (oLevWB)',
   'f (oFloor)' ])
+plt.xlabel('||delta||')
+plt.ylabel('F')
 plt.show()
