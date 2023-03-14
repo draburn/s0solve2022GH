@@ -329,7 +329,7 @@ def calcHessCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcHessCurves_pr
 
 class searchHessCurve_prm():
 	def __init__(self):
-		self.curveSelector = "wb"
+		self.curveSelector = "floor"
 		self.tMin = 0.0
 		self.tMax = 1.0
 		self.dTTol = 1.0e-6
@@ -338,28 +338,35 @@ class searchHessCurve_prm():
 		msg(f'Begin searchHessCurve_prm().dump...')
 		msg(f'self = {self}')
 		msg(f'  curveSelector = {self.curveSelector}')
-		msg(f'  dRelTol = {self.dRelTol}')
+		msg(f'  dTTol = {self.dTTol}')
 		msg(f'  iterLimit = {self.iterLimit}')
 		msg(f'End searchHessCurve_prm.dump().')
 def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
-	if (prm.curveSelector.lower() != "wb"):
-		msg('ERROR: Only curveSelector "wb" is currently supported.')
-		# Otherwise, we have to worry about the lower bound of mu.
+	if (prm.curveSelector.lower() == "floor"):
+		funchYOfMu = hessCurves.calcYFloorOfMu
+	elif (prm.curveSelector.lower() == "ls"):
+		funchYOfMu = hessCurves.calcYLevLSOfMu
+	elif (prm.curveSelector.lower() == "psd"):
+		funchYOfMu = hessCurves.calcYLevPSDOfMu
+	elif (prm.curveSelector.lower() == "wb"):
+		funchYOfMu = hessCurves.calcYLevWBOfMu
+	else:
+		msg(f'ERROR: unsupported value of prm.curveSelector.lower() ({prm.curveSelector.lower()}).')
 		return None
-	muScl = min(self.vecLambdaWB)
+	muScl = min(hessCurves.vecLambdaWB)
 	assert( muScl > 0.0 )
-	def calcXLevWBOfT(self, t):
+	def xOfT(t):
 		if (t == 0.0):
 			return hessCurves.vecXA
 		else:
 			mu = muScl*((1.0/t) - 1.0)
-			return hessCurves.calcXLevWBOfMu(mu)
+			return hessCurves.vecXA + (hessCurves.matV @ funchYOfMu(mu))
 	def fOfT( t ):
-		f, _ = funch_evalFG(calcXLevWBOfT(t))
+		f, _ = funch_evalFG(xOfT(t))
 		# Optimization: make use of vecG. (We have to mux with the curve to get df/dt, though.)
 		#scipy.optimize.fmin(func, x0, args=(), xtol=0.0001, ftol=0.0001, maxiter=None, maxfun=None, full_output=0, disp=1, retall=0, callback=None, initial_simplex=None)
 		return f
 	msg('Calling fminbound...')
 	t = optimize.fminbound( fOfT, prm.tMin, prm.tMax, xtol=prm.dTTol, maxfun=prm.iterLimit+2, disp=1 )
 	msg(f'  t = {t}')
-	return hessCurves.calcXLevWBOfT(t)
+	return xOfT(t)

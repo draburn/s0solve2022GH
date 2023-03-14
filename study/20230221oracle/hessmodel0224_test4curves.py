@@ -12,7 +12,7 @@ sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
 #
 #
-numSuperPts = 200
+numSuperPts = 5
 maxNumRecords = numSuperPts
 #
 record_matX = np.zeros((sizeX, maxNumRecords))
@@ -107,13 +107,13 @@ if (False):
 	msg(f'min f = {min(record_vecF)}, fOptim = {fOptim}, oracle_fOptim = {oracle_fOptim}')
 	danutil.bye()
 
-numVals = 200
+numVals = 100
 #tVals = np.array(np.linspace(0.0,1.0,numVals))
 #tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**3))**3
 tExpLo = 2
 tExpHi = 1
 tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**tExpLo))**tExpHi
-#tVals /= 10
+tVals /= 100
 #
 muScl = min(hc.vecLambdaWB)
 muVals = np.zeros(numVals)
@@ -183,8 +183,17 @@ for n in range(numVals):
 	olevWB_fVals[n],  _ = prob.evalFG(oracle_hm.vecXA + oracle_hm.matV @ vecY_levWB)
 	ofloor_fVals[n],  _ = prob.evalFG(oracle_hm.vecXA + oracle_hm.matV @ vecY_floor)
 	olevWB_ofLSVals[n], _, _ = oracle_hm.evalFGammaGPerpOfY( vecY_levWB )
-
 msgtime()
+
+msg('Finding min...')
+shcPrm = hessmodel.searchHessCurve_prm()
+msg(f'shcPrm = {shcPrm}...')
+shcPrm.dump()
+found_vecX_floor = hessmodel.searchHessCurve( prob.evalFG, hc, shcPrm )
+found_d = norm(found_vecX_floor-hm.vecXA)
+found_f, _ = prob.evalFG(found_vecX_floor)
+msgtime()
+
 import matplotlib.pyplot as plt
 dWBNewt = olevWB_dVals[-1]
 dVizMax = 2.0*dWBNewt
@@ -198,6 +207,7 @@ plt.plot( olevLS_dVals[ olevLS_dVals<dVizMax ], olevLS_fVals[ olevLS_dVals<dVizM
 plt.plot( olevPSD_dVals[olevPSD_dVals<dVizMax], olevPSD_fVals[olevPSD_dVals<dVizMax], 'o-', markersize=9 )
 plt.plot( olevWB_dVals, olevWB_fVals, 'x-', markersize=7 )
 plt.plot( ofloor_dVals[ ofloor_dVals<dVizMax ], ofloor_fVals[ ofloor_dVals<dVizMax ], '+-', markersize=5 )
+plt.plot( found_d, found_f, 'p', markersize=10 )
 plt.grid(True)
 plt.legend([
   'fLS (LevWB)',
@@ -209,7 +219,8 @@ plt.legend([
   'f (oLevLS)',
   'f (oLevPSD)',
   'f (oLevWB)',
-  'f (oFloor)' ])
+  'f (oFloor)',
+  'f (fFloor)' ])
 plt.xlabel('||delta||')
 plt.ylabel('F')
 plt.show()

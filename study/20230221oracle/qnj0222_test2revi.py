@@ -2,8 +2,8 @@ import danutil
 from danutil import msg, msgtime
 import numpy as np
 from numpy.linalg import norm
-#import demoproblem0221 as prob
-import pytorchCIFAR10demo as prob
+import demoproblem0221 as prob
+#import pytorchCIFAR10demo as prob
 import qnj0222 as qnj
 
 msgtime()
