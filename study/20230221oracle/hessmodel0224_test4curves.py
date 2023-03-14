@@ -66,6 +66,7 @@ msg(f'sizeK = {sizeK}')
 msg('')
 msg('Calling hessmodel.calcHessModel_basicOracle()...')
 chmPrm.dropRelThresh /= 10.0
+#chmPrm.epsRelFD = 1.0e-1 # DRaburn 2023-03-13-2100
 msg(f'chmPrm = {chmPrm}...')
 chmPrm.dump()
 oracle_hm = hessmodel.oracle_calcHessModel(prob.evalFG, record_matX[:,nAnchor], record_matX[:,0:numRecords], chmPrm)
