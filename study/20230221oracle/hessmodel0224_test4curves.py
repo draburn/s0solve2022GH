@@ -2,8 +2,8 @@ import danutil
 from danutil import msg, msgtime
 import numpy as np
 from numpy.linalg import norm
-import demoproblem0221 as prob
-#import pytorchCIFAR10demo as prob
+#import demoproblem0221 as prob
+import pytorchCIFAR10demo as prob
 import hessmodel0224 as hessmodel
 
 msgtime()
@@ -12,7 +12,7 @@ sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
 #
 #
-numSuperPts = 5
+numSuperPts = 50
 maxNumRecords = numSuperPts
 #
 record_matX = np.zeros((sizeX, maxNumRecords))
@@ -106,9 +106,13 @@ if (False):
 	msg(f'min f = {min(record_vecF)}, fOptim = {fOptim}, oracle_fOptim = {oracle_fOptim}')
 	danutil.bye()
 
-numVals = 200
+numVals = 100
 #tVals = np.array(np.linspace(0.0,1.0,numVals))
-tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**3))**3
+#tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**3))**3
+tExpLo = 2
+tExpHi = 1
+tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**tExpLo))**tExpHi
+tVals /= 10
 #
 muScl = min(hc.vecLambdaWB)
 muVals = np.zeros(numVals)
@@ -121,6 +125,7 @@ olevPSD_fVals = np.zeros(numVals)
 olevWB_fVals  = np.zeros(numVals)
 ofloor_fVals  = np.zeros(numVals)
 for n in range(numVals):
+	msg(f' {n} / {numVals}...')
 	t = tVals[n]
 	if ( t == 0.0 ):
 		muVals[n] = 0.0
@@ -139,20 +144,19 @@ for n in range(numVals):
 	olevPSD_dVals[n] = norm(vecY_levPSD)
 	olevWB_dVals[n]  = norm(vecY_levWB)
 	ofloor_dVals[n]  = norm(vecY_floor)
-	olevLS_fVals[n], _  = prob.evalFG(oracle_hm.vecXA + oracle_hm.matV @ vecY_levLS)
+	olevLS_fVals[n],  _ = prob.evalFG(oracle_hm.vecXA + oracle_hm.matV @ vecY_levLS)
 	olevPSD_fVals[n], _ = prob.evalFG(oracle_hm.vecXA + oracle_hm.matV @ vecY_levPSD)
-	olevWB_fVals[n], _  = prob.evalFG(oracle_hm.vecXA + oracle_hm.matV @ vecY_levWB)
-	ofloor_fVals[n], _  = prob.evalFG(oracle_hm.vecXA + oracle_hm.matV @ vecY_floor)
+	olevWB_fVals[n],  _ = prob.evalFG(oracle_hm.vecXA + oracle_hm.matV @ vecY_levWB)
+	ofloor_fVals[n],  _ = prob.evalFG(oracle_hm.vecXA + oracle_hm.matV @ vecY_floor)
 
 msgtime()
 import matplotlib.pyplot as plt
 dWBNewt = olevWB_dVals[-1]
 dVizMax = 2.0*dWBNewt
-plt.plot(
-  olevLS_dVals[olevLS_dVals<dVizMax],   olevLS_fVals[olevLS_dVals<dVizMax],   's-',
-  olevPSD_dVals[olevPSD_dVals<dVizMax], olevPSD_fVals[olevPSD_dVals<dVizMax], '+-',
-  olevWB_dVals,  olevWB_fVals, '.-',
-  ofloor_dVals[ofloor_dVals<dVizMax],  ofloor_fVals[ofloor_dVals<dVizMax], '-' )
+plt.plot( olevLS_dVals[ olevLS_dVals<dVizMax ], olevLS_fVals[ olevLS_dVals<dVizMax ], 's-', markersize=16 )
+plt.plot( olevPSD_dVals[olevPSD_dVals<dVizMax], olevPSD_fVals[olevPSD_dVals<dVizMax], 'o-', markersize=13 )
+plt.plot( olevWB_dVals, olevWB_fVals, 'x-', markersize=10 )
+plt.plot( ofloor_dVals[ofloor_dVals<dVizMax], ofloor_fVals[ofloor_dVals<dVizMax], '+-', markersize=7 )
 plt.grid(True)
 plt.legend([
   'f (oLevLS)',
