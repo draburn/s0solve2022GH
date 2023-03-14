@@ -12,7 +12,7 @@ sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
 #
 #
-numSuperPts = 5
+numSuperPts = 100
 maxNumRecords = numSuperPts
 #
 record_matX = np.zeros((sizeX, maxNumRecords))
@@ -113,7 +113,7 @@ numVals = 100
 tExpLo = 2
 tExpHi = 1
 tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**tExpLo))**tExpHi
-tVals /= 100
+#tVals /= 100
 #
 muScl = min(hc.vecLambdaWB)
 muVals = np.zeros(numVals)
@@ -187,11 +187,36 @@ msgtime()
 
 msg('Finding min...')
 shcPrm = hessmodel.searchHessCurve_prm()
+#
+if (False):
+	shcPrm.curveSelector = "ls"
+	msg(f'shcPrm = {shcPrm}...')
+	shcPrm.dump()
+	levLSMin_vecX = hessmodel.searchHessCurve( prob.evalFG, hc, shcPrm )
+	levLSMin_d = norm(levLSMin_vecX-hm.vecXA)
+	levLSMin_f, _ = prob.evalFG(levLSMin_vecX)
+	#
+	shcPrm.curveSelector = "psd"
+	msg(f'shcPrm = {shcPrm}...')
+	shcPrm.dump()
+	levPSDMin_vecX = hessmodel.searchHessCurve( prob.evalFG, hc, shcPrm )
+	levPSDMin_d = norm(levPSDMin_vecX-hm.vecXA)
+	levPSDMin_f, _ = prob.evalFG(levPSDMin_vecX)
+#
+shcPrm.curveSelector = "wb"
 msg(f'shcPrm = {shcPrm}...')
 shcPrm.dump()
-found_vecX_floor = hessmodel.searchHessCurve( prob.evalFG, hc, shcPrm )
-found_d = norm(found_vecX_floor-hm.vecXA)
-found_f, _ = prob.evalFG(found_vecX_floor)
+levWBMin_vecX = hessmodel.searchHessCurve( prob.evalFG, hc, shcPrm )
+levWBMin_d = norm(levWBMin_vecX-hm.vecXA)
+levWBMin_f, _ = prob.evalFG(levWBMin_vecX)
+#
+shcPrm.curveSelector = "floor"
+msg(f'shcPrm = {shcPrm}...')
+shcPrm.dump()
+floorMin_vecX = hessmodel.searchHessCurve( prob.evalFG, hc, shcPrm )
+floorMin_d = norm(floorMin_vecX-hm.vecXA)
+floorMin_f, _ = prob.evalFG(floorMin_vecX)
+#
 msgtime()
 
 import matplotlib.pyplot as plt
@@ -207,7 +232,8 @@ plt.plot( olevLS_dVals[ olevLS_dVals<dVizMax ], olevLS_fVals[ olevLS_dVals<dVizM
 plt.plot( olevPSD_dVals[olevPSD_dVals<dVizMax], olevPSD_fVals[olevPSD_dVals<dVizMax], 'o-', markersize=9 )
 plt.plot( olevWB_dVals, olevWB_fVals, 'x-', markersize=7 )
 plt.plot( ofloor_dVals[ ofloor_dVals<dVizMax ], ofloor_fVals[ ofloor_dVals<dVizMax ], '+-', markersize=5 )
-plt.plot( found_d, found_f, 'p', markersize=10 )
+plt.plot( levWBMin_d, levWBMin_f, 'p', markersize=12 )
+plt.plot( floorMin_d, floorMin_f, 'p', markersize=8 )
 plt.grid(True)
 plt.legend([
   'fLS (LevWB)',
@@ -220,7 +246,8 @@ plt.legend([
   'f (oLevPSD)',
   'f (oLevWB)',
   'f (oFloor)',
-  'f (fFloor)' ])
+  'f (LevWBMin)',
+  'f (FloorMin)' ])
 plt.xlabel('||delta||')
 plt.ylabel('F')
 plt.show()
