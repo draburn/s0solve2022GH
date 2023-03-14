@@ -87,26 +87,45 @@ class hessCurvesType():
 		msg(f'  vecLambdaPSD = {self.vecLambdaPSD}')
 		msg(f'  vecLambdaWB = {self.vecLambdaWB}')
 		msg(f'End hessCurvesType.dump().')
+	# DRaburn 2023-03-13:
+	#  Re-defining calcYLevLSOfMu() and calcYLevPSDOfMu()
+	#  so that an input mu of 0.0 is always end of curve.
+	#  Previously, end would be larger of { 0.0, -mineig }.
 	def calcYLevLSOfMu(self, mu):
-		if ( min(self.vecLambdaLS) + mu <= 0.0 ):
-			msg(f'ERROR: mu = {mu} and min(self.vecLambdaLS) + mu = {min(self.vecLambdaLS) + mu}')
-			return None
-		vecZeta = self.vecPhi / (self.vecLambdaLS + mu)
+		EPS_WB0 = 1.0e-6
+		EPS_WB1 = 1.0e-6
+		vecLambda = self.vecLambdaLS
+		mu1 = mu
+		if ( mu1 + min(vecLambda) <= 0.0 ):
+			mu1 = abs(min(vecLambda)) + EPS_WB0 + (EPS_WB1 * max(abs(vecLambda)))
+		vecZeta = self.vecPhi / (vecLambda + mu1)
 		vecY = self.vecYLaunch + self.vecS * (self.matPsi @ vecZeta)
 		return vecY
 	def calcYLevPSDOfMu(self, mu):
-		if ( min(self.vecLambdaPSD) + mu <= 0.0 ):
-			msg(f'ERROR: mu = {mu} and min(self.vecLambdaPSD) + mu = {min(self.vecLambdaPSD) + mu}')
-			return None
-		vecZeta = self.vecPhi / (self.vecLambdaPSD + mu)
+		EPS_WB0 = 1.0e-6
+		EPS_WB1 = 1.0e-6
+		vecLambda = self.vecLambdaPSD
+		mu1 = mu
+		if ( mu1 + min(vecLambda) <= 0.0 ):
+			mu1 = abs(min(vecLambda)) + EPS_WB0 + (EPS_WB1 * max(abs(vecLambda)))
+		vecZeta = self.vecPhi / (vecLambda + mu1)
 		vecY = self.vecYLaunch + self.vecS * (self.matPsi @ vecZeta)
 		return vecY
 	def calcYLevWBOfMu(self, mu):
-		if ( min(self.vecLambdaWB) + mu <= 0.0 ):
-			msg(f'ERROR: mu = {mu} and min(self.vecLambdaWB) + mu = {min(self.vecLambdaWB) + mu}')
-			assert( min(self.vecLambdaWB) > 0.0 )
-			return None
+		assert( mu + min(self.vecLambdaWB) > 0.0 )
 		vecZeta = self.vecPhi / (self.vecLambdaWB + mu)
+		vecY = self.vecYLaunch + self.vecS * (self.matPsi @ vecZeta)
+		return vecY
+	def calcYFloorOfMu(self, mu):
+		EPS_WB0 = 1.0e-6
+		EPS_WB1 = 1.0e-6
+		vecLambda = self.vecLambdaLS
+		mu1 = mu
+		if ( max( mu1, min(vecLambda) ) <= 0.0 ):
+			mu1 = EPS_WB0 + (EPS_WB1 * max(abs(vecLambda)))
+		vecMu = vecLambda.copy()
+		vecMu[vecMu<mu1] = mu1
+		vecZeta = self.vecPhi / vecMu
 		vecY = self.vecYLaunch + self.vecS * (self.matPsi @ vecZeta)
 		return vecY
 	def calcXLevLSOfMu(self, mu):
