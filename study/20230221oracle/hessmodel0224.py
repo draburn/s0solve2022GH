@@ -73,6 +73,9 @@ class hessCurvesType():
 		self.vecLambdaLS = None # "LS" = "launch, scaled"
 		self.vecLambdaPSD = None # "PSD" = "positive-semi-definite" (+LS)
 		self.vecLambdaWB = None # "WB" = "well-behaved" = strictly pos-def and fMin >= 0.0 (+LS)
+		self.tCauchyLS = None
+		self.tCauchyPSD = None
+		self.tCauchyWB = None
 	def dump(self):
 		msg(f'Begin hessCurvesType().dump...')
 		msg(f'self = {self}')
@@ -86,6 +89,9 @@ class hessCurvesType():
 		msg(f'  vecLambdaLS = {self.vecLambdaLS}')
 		msg(f'  vecLambdaPSD = {self.vecLambdaPSD}')
 		msg(f'  vecLambdaWB = {self.vecLambdaWB}')
+		msg(f'  tCauchyLS = {self.tCauchyLS}')
+		msg(f'  tCauchyPSD = {self.tCauchyPSD}')
+		msg(f'  tCauchyWB = {self.tCauchyWB}')
 		msg(f'End hessCurvesType.dump().')
 	# DRaburn 2023-03-13:
 	#  Re-defining calcYLevLSOfMu() and calcYLevPSDOfMu()
@@ -134,6 +140,12 @@ class hessCurvesType():
 		vecZeta = self.vecPhi / vecMu
 		vecY = self.vecYLaunch + self.vecS * (self.matPsi @ vecZeta)
 		return vecY
+	def calcYCauchyLSOfT(self, t):
+		return self.vecYLaunch + ((t*self.tCauchyLS) * self.vecS * (self.matPsi @ self.vecPhi))
+	def calcYCauchyPSDOfT(self, t):
+		return self.vecYLaunch + ((t*self.tCauchyPSD) * self.vecS * (self.matPsi @ self.vecPhi))
+	def calcYCauchyWBOfT(self, t):
+		return self.vecYLaunch + ((t*self.tCauchyWB) * self.vecS * (self.matPsi @ self.vecPhi))
 	def calcXLevLSOfMu(self, mu):
 		return self.vecXA + (self.matV @ self.calcYLevLSOfMu(mu))
 	def calcXLevPSDOfMu(self, mu):
@@ -328,6 +340,12 @@ def calcHessCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcHessCurves_pr
 	#
 	hessModelWB = hessModelLS.copy()
 	hessModelWB.matH = danutil.symm( (( matPsi @ np.diag(vecLambdaWB) @ matPsi.T )/vecS).T / vecS )
+	#
+	# DRaburn 2023-03-14:
+	#  Do calculations for Cauchy.
+	hessCurves.tCauchyLS  = danutil.linishrootOfQuad( (vecPhi.T @ (vecLambdaLS  * vecPhi))/2.0, -vecPhi.T @ vecPhi, hessModel.fA )
+	hessCurves.tCauchyPSD = danutil.linishrootOfQuad( (vecPhi.T @ (vecLambdaPSD * vecPhi))/2.0, -vecPhi.T @ vecPhi, hessModel.fA )
+	hessCurves.tCauchyWB  = danutil.linishrootOfQuad( (vecPhi.T @ (vecLambdaWB  * vecPhi))/2.0, -vecPhi.T @ vecPhi, hessModel.fA )
 	#
 	# Note that hessModelLS should behave identically to hessModel, just with a different anchor.
 	return hessCurves, hessModelPSD, hessModelWB, hessModelLS
