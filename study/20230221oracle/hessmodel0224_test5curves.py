@@ -12,7 +12,7 @@ sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
 #
 #
-numSuperPts = 5
+numSuperPts = 100
 maxNumRecords = numSuperPts
 #
 record_matX = np.zeros((sizeX, maxNumRecords))
@@ -64,21 +64,23 @@ hm = hessmodel.calcHessModel(
 sizeK = hm.matV.shape[1]
 msg(f'sizeK = {sizeK}')
 msg('')
-msg('Calling hessmodel.calcHessModel_basicOracle()...')
-chmPrm.dropRelThresh /= 10.0
-#chmPrm.epsRelFD = 1.0e-1 # DRaburn 2023-03-13-2100
-msg(f'chmPrm = {chmPrm}...')
-chmPrm.dump()
-oracle_hm = hessmodel.oracle_calcHessModel(prob.evalFG, record_matX[:,nAnchor], record_matX[:,0:numRecords], chmPrm)
-oracle_sizeK = oracle_hm.matV.shape[1]
-msg(f'oracle_sizeK = {oracle_sizeK}')
-#
-msg('')
-msg(f'hm = {hm}...')
-hm.dump()
-msg('')
-msg(f'oracle_hm = {oracle_hm}...')
-oracle_hm.dump()
+calcOracle = False
+if (calcOracle):
+	msg('Calling hessmodel.calcHessModel_basicOracle()...')
+	chmPrm.dropRelThresh /= 10.0
+	#chmPrm.epsRelFD = 1.0e-1 # DRaburn 2023-03-13-2100
+	msg(f'chmPrm = {chmPrm}...')
+	chmPrm.dump()
+	oracle_hm = hessmodel.oracle_calcHessModel(prob.evalFG, record_matX[:,nAnchor], record_matX[:,0:numRecords], chmPrm)
+	oracle_sizeK = oracle_hm.matV.shape[1]
+	msg(f'oracle_sizeK = {oracle_sizeK}')
+	#
+	msg('')
+	msg(f'hm = {hm}...')
+	hm.dump()
+	msg('')
+	msg(f'oracle_hm = {oracle_hm}...')
+	oracle_hm.dump()
 if (False):
 	msg('')
 	msg(f'hm.matV.T @ prob.matH @ hm.matV = ...\n{hm.matV.T @ prob.matH @ hm.matV}')
@@ -87,17 +89,17 @@ msg('')
 msg('Calling hessmodel.calcHessCurves(hm)...')
 hc, hmPSD, hmWB, hmLS = hessmodel.calcHessCurves(hm)
 # Note that hmLS should match hm with a shifted anchor.
-oracle_vecYLaunch = np.zeros(oracle_sizeK)
-msg('')
-msg('Calling hessmodel.calcHessCurves(oracle_hm)...')
-oracle_hc, oracle_hmPSD, oracle_hmWB, oracle_hmLS = hessmodel.calcHessCurves(oracle_hm)
-#
 msg('')
 msg(f'hc = {hc}...')
 hc.dump()
-msg('')
-msg(f'oracle_hc = {oracle_hc}...')
-oracle_hc.dump()
+if (calcOracle):
+	oracle_vecYLaunch = np.zeros(oracle_sizeK)
+	msg('')
+	msg('Calling hessmodel.calcHessCurves(oracle_hm)...')
+	oracle_hc, oracle_hmPSD, oracle_hmWB, oracle_hmLS = hessmodel.calcHessCurves(oracle_hm)
+	msg('')
+	msg(f'oracle_hc = {oracle_hc}...')
+	oracle_hc.dump()
 
 if (False):
 	vecXOptim = hessmodel.searchHessCurve(prob.evalFG, hc)
@@ -113,24 +115,19 @@ numVals = 100
 tExpLo = 2
 tExpHi = 1
 tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**tExpLo))**tExpHi
-tVals /= 100
+#tVals /= 100
+tMax_cauchy = 1.0
 #
 muScl = min(hc.vecLambdaWB)
 muVals = np.zeros(numVals)
-grad_dVals = np.zeros(numVals)
-grad_fVals = np.zeros(numVals)
 levLS_dVals = np.zeros(numVals)
 levLS_fLSVals = np.zeros(numVals)
 levLS_fVals = np.zeros(numVals)
 floor_dVals = np.zeros(numVals)
 floor_fVals = np.zeros(numVals)
 floor_fWBVals = np.zeros(numVals)
-olevLS_dVals = np.zeros(numVals)
-olevLS_ofLSVals = np.zeros(numVals)
-olevLS_fVals = np.zeros(numVals)
-ofloor_dVals = np.zeros(numVals)
-ofloor_fVals = np.zeros(numVals)
-ofloor_ofWBVals = np.zeros(numVals)
+ccywb_dVals = np.zeros(numVals)
+ccywb_fVals = np.zeros(numVals)
 for n in range(numVals):
 	msg(f' {n} / {numVals}...')
 	t = tVals[n]
@@ -143,50 +140,34 @@ for n in range(numVals):
 		muVals[n] = mu
 		vecY_levLS  = hc.calcYLevLSOfMu(mu)
 		vecY_floor  = hc.calcYFloorOfMu(mu)
-	levLS_dVals[n]  = norm(vecY_levLS)
-	floor_dVals[n]  = norm(vecY_floor)
-	levLS_fVals[n],  _ = prob.evalFG(hm.vecXA + hm.matV @ vecY_levLS)
-	floor_fVals[n],  _ = prob.evalFG(hm.vecXA + hm.matV @ vecY_floor)
+	vecY_ccywb = hc.calcYCauchyWBOfT( tMax_cauchy*(n/(numVals-1.0))**tExpLo )
+	vecX_levLS = hm.vecXA + hm.matV @ vecY_levLS
+	vecX_floor = hm.vecXA + hm.matV @ vecY_floor
+	vecX_ccywb = hm.vecXA + hm.matV @ vecY_ccywb
+	levLS_dVals[n] = norm(vecX_levLS - hm.vecXA)
+	floor_dVals[n] = norm(vecX_floor - hm.vecXA)
+	ccywb_dVals[n] = norm(vecX_ccywb - hm.vecXA)
+	levLS_fVals[n],  _ = prob.evalFG(vecX_levLS)
+	floor_fVals[n],  _ = prob.evalFG(vecX_floor)
+	ccywb_fVals[n],  _ = prob.evalFG(vecX_ccywb)
 	levLS_fLSVals[n], _, _ = hm.evalFGammaGPerpOfY( vecY_levLS )
 	floor_fWBVals[n], _, _ = hmWB.evalFGammaGPerpOfY( vecY_floor )
-	#
-	if ( t == 0.0 ):
-		muVals[n] = 0.0
-		vecY_levLS  = np.zeros(oracle_sizeK)
-		vecY_floor  = np.zeros(oracle_sizeK)
-	else:
-		mu = muScl*((1.0/t)-1.0)
-		muVals[n] = mu
-		vecY_levLS  = oracle_hc.calcYLevLSOfMu(mu)
-		vecY_floor  = oracle_hc.calcYFloorOfMu(mu)
-	olevLS_dVals[n]  = norm(vecY_levLS)
-	ofloor_dVals[n]  = norm(vecY_floor)
-	olevLS_fVals[n],  _ = prob.evalFG(oracle_hm.vecXA + oracle_hm.matV @ vecY_levLS)
-	ofloor_fVals[n],  _ = prob.evalFG(oracle_hm.vecXA + oracle_hm.matV @ vecY_floor)
-	olevLS_ofLSVals[n], _, _ = oracle_hm.evalFGammaGPerpOfY( vecY_levLS )
-	ofloor_ofWBVals[n], _, _ = oracle_hmWB.evalFGammaGPerpOfY( vecY_floor )
 msgtime()
 
 import matplotlib.pyplot as plt
-dVizMax = 2.0*max([ floor_dVals[-1], ofloor_dVals[-1] ])
+dVizMax = 2.0*floor_dVals[-1]
 plt.plot( levLS_dVals[levLS_dVals<dVizMax], levLS_fLSVals[levLS_dVals<dVizMax], 'o-', markersize=28 )
 plt.plot( levLS_dVals[levLS_dVals<dVizMax], levLS_fVals[levLS_dVals<dVizMax], 'o-', markersize=24 )
 plt.plot( floor_dVals, floor_fWBVals, 's-', markersize=22 )
 plt.plot( floor_dVals, floor_fVals, 's-', markersize=18 )
-plt.plot( olevLS_dVals[olevLS_dVals<dVizMax], olevLS_ofLSVals[olevLS_dVals<dVizMax], '^-', markersize=16 )
-plt.plot( olevLS_dVals[olevLS_dVals<dVizMax], olevLS_fVals[olevLS_dVals<dVizMax], '^-', markersize=12 )
-plt.plot( ofloor_dVals, ofloor_ofWBVals, 'v-', markersize=10 )
-plt.plot( ofloor_dVals, ofloor_fVals, 'v-', markersize=6 )
+plt.plot( ccywb_dVals, ccywb_fVals, '^-', markersize=16 )
 plt.grid(True)
 plt.legend([
   'LevLS, LS model',
   'LevLS, actual',
   'Floor, WB model',
   'Floor, actual',
-  'oLevLS, oLS model',
-  'oLevLS, actual',
-  'oFloor, oWB model',
-  'oFloor, actual' ])
+  'Cauchy, actual' ])
 plt.xlabel('||delta||')
 plt.ylabel('F')
 plt.show()

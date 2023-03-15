@@ -117,8 +117,6 @@ tVals /= 100
 #
 muScl = min(hc.vecLambdaWB)
 muVals = np.zeros(numVals)
-grad_dVals = np.zeros(numVals)
-grad_fVals = np.zeros(numVals)
 levLS_dVals = np.zeros(numVals)
 levLS_fLSVals = np.zeros(numVals)
 levLS_fVals = np.zeros(numVals)
