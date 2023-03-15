@@ -126,8 +126,12 @@ levLS_fVals = np.zeros(numVals)
 floor_dVals = np.zeros(numVals)
 floor_fVals = np.zeros(numVals)
 floor_fWBVals = np.zeros(numVals)
+ccyls_dVals = np.zeros(numVals)
+ccyls_fVals = np.zeros(numVals)
+ccyls_fLSVals = np.zeros(numVals)
 ccywb_dVals = np.zeros(numVals)
 ccywb_fVals = np.zeros(numVals)
+ccywb_fWBVals = np.zeros(numVals)
 for n in range(numVals):
 	msg(f' {n} / {numVals}...')
 	t = tVals[n]
@@ -140,18 +144,24 @@ for n in range(numVals):
 		muVals[n] = mu
 		vecY_levLS  = hc.calcYLevLSOfMu(mu)
 		vecY_floor  = hc.calcYFloorOfMu(mu)
+	vecY_ccyls = hc.calcYCauchyLSOfT( tMax_cauchy*(n/(numVals-1.0))**tExpLo )
 	vecY_ccywb = hc.calcYCauchyWBOfT( tMax_cauchy*(n/(numVals-1.0))**tExpLo )
 	vecX_levLS = hm.vecXA + hm.matV @ vecY_levLS
 	vecX_floor = hm.vecXA + hm.matV @ vecY_floor
+	vecX_ccyls = hm.vecXA + hm.matV @ vecY_ccyls
 	vecX_ccywb = hm.vecXA + hm.matV @ vecY_ccywb
 	levLS_dVals[n] = norm(vecX_levLS - hm.vecXA)
 	floor_dVals[n] = norm(vecX_floor - hm.vecXA)
+	ccyls_dVals[n] = norm(vecX_ccyls - hm.vecXA)
 	ccywb_dVals[n] = norm(vecX_ccywb - hm.vecXA)
 	levLS_fVals[n],  _ = prob.evalFG(vecX_levLS)
 	floor_fVals[n],  _ = prob.evalFG(vecX_floor)
+	ccyls_fVals[n],  _ = prob.evalFG(vecX_ccyls)
 	ccywb_fVals[n],  _ = prob.evalFG(vecX_ccywb)
 	levLS_fLSVals[n], _, _ = hm.evalFGammaGPerpOfY( vecY_levLS )
 	floor_fWBVals[n], _, _ = hmWB.evalFGammaGPerpOfY( vecY_floor )
+	ccyls_fLSVals[n], _, _ = hm.evalFGammaGPerpOfY( vecY_ccyls )
+	ccywb_fWBVals[n], _, _ = hmWB.evalFGammaGPerpOfY( vecY_ccywb )
 msgtime()
 
 import matplotlib.pyplot as plt
@@ -160,14 +170,20 @@ plt.plot( levLS_dVals[levLS_dVals<dVizMax], levLS_fLSVals[levLS_dVals<dVizMax], 
 plt.plot( levLS_dVals[levLS_dVals<dVizMax], levLS_fVals[levLS_dVals<dVizMax], 'o-', markersize=24 )
 plt.plot( floor_dVals, floor_fWBVals, 's-', markersize=22 )
 plt.plot( floor_dVals, floor_fVals, 's-', markersize=18 )
-plt.plot( ccywb_dVals, ccywb_fVals, '^-', markersize=16 )
+plt.plot( ccyls_dVals, ccyls_fLSVals, '^-', markersize=16 )
+plt.plot( ccyls_dVals, ccyls_fVals, '^-', markersize=12 )
+plt.plot( ccywb_dVals, ccywb_fWBVals, 'v-', markersize=10 )
+plt.plot( ccywb_dVals, ccywb_fVals, 'v-', markersize=6 )
 plt.grid(True)
 plt.legend([
   'LevLS, LS model',
   'LevLS, actual',
   'Floor, WB model',
   'Floor, actual',
-  'Cauchy, actual' ])
+  'CcyLS, LS Model',
+  'CcyLS, actual',
+  'CcyWB, WB Model',
+  'CcyWB, actual' ])
 plt.xlabel('||delta||')
 plt.ylabel('F')
 plt.show()
