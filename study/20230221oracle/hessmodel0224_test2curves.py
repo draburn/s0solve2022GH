@@ -12,7 +12,7 @@ sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
 #
 #
-numSuperPts = 100
+numSuperPts = 5
 maxNumRecords = numSuperPts
 #
 record_matX = np.zeros((sizeX, maxNumRecords))
@@ -113,141 +113,80 @@ numVals = 100
 tExpLo = 2
 tExpHi = 1
 tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**tExpLo))**tExpHi
-#tVals /= 100
+tVals /= 100
 #
 muScl = min(hc.vecLambdaWB)
 muVals = np.zeros(numVals)
-levLS_dVals  = np.zeros(numVals)
-levPSD_dVals = np.zeros(numVals)
-levWB_dVals  = np.zeros(numVals)
-floor_dVals  = np.zeros(numVals)
-levLS_fVals  = np.zeros(numVals)
-levPSD_fVals = np.zeros(numVals)
-levWB_fVals  = np.zeros(numVals)
-floor_fVals  = np.zeros(numVals)
-levWB_fLSVals = np.zeros(numVals)
-olevLS_dVals  = np.zeros(numVals)
-olevPSD_dVals = np.zeros(numVals)
-olevWB_dVals  = np.zeros(numVals)
-ofloor_dVals  = np.zeros(numVals)
-olevLS_fVals  = np.zeros(numVals)
-olevPSD_fVals = np.zeros(numVals)
-olevWB_fVals  = np.zeros(numVals)
-ofloor_fVals  = np.zeros(numVals)
-olevWB_ofLSVals = np.zeros(numVals)
+grad_dVals = np.zeros(numVals)
+grad_fVals = np.zeros(numVals)
+levLS_dVals = np.zeros(numVals)
+levLS_fLSVals = np.zeros(numVals)
+levLS_fVals = np.zeros(numVals)
+floor_dVals = np.zeros(numVals)
+floor_fVals = np.zeros(numVals)
+floor_fWBVals = np.zeros(numVals)
+olevLS_dVals = np.zeros(numVals)
+olevLS_ofLSVals = np.zeros(numVals)
+olevLS_fVals = np.zeros(numVals)
+ofloor_dVals = np.zeros(numVals)
+ofloor_fVals = np.zeros(numVals)
+ofloor_ofWBVals = np.zeros(numVals)
 for n in range(numVals):
 	msg(f' {n} / {numVals}...')
 	t = tVals[n]
 	if ( t == 0.0 ):
 		muVals[n] = 0.0
 		vecY_levLS  = np.zeros(sizeK)
-		vecY_levPSD = np.zeros(sizeK)
-		vecY_levWB  = np.zeros(sizeK)
 		vecY_floor  = np.zeros(sizeK)
 	else:
 		mu = muScl*((1.0/t)-1.0)
 		muVals[n] = mu
 		vecY_levLS  = hc.calcYLevLSOfMu(mu)
-		vecY_levPSD = hc.calcYLevPSDOfMu(mu)
-		vecY_levWB  = hc.calcYLevWBOfMu(mu)
 		vecY_floor  = hc.calcYFloorOfMu(mu)
 	levLS_dVals[n]  = norm(vecY_levLS)
-	levPSD_dVals[n] = norm(vecY_levPSD)
-	levWB_dVals[n]  = norm(vecY_levWB)
 	floor_dVals[n]  = norm(vecY_floor)
 	levLS_fVals[n],  _ = prob.evalFG(hm.vecXA + hm.matV @ vecY_levLS)
-	levPSD_fVals[n], _ = prob.evalFG(hm.vecXA + hm.matV @ vecY_levPSD)
-	levWB_fVals[n],  _ = prob.evalFG(hm.vecXA + hm.matV @ vecY_levWB)
 	floor_fVals[n],  _ = prob.evalFG(hm.vecXA + hm.matV @ vecY_floor)
-	levWB_fLSVals[n], _, _ = hm.evalFGammaGPerpOfY( vecY_levWB )
+	levLS_fLSVals[n], _, _ = hm.evalFGammaGPerpOfY( vecY_levLS )
+	floor_fWBVals[n], _, _ = hmWB.evalFGammaGPerpOfY( vecY_floor )
 	#
 	if ( t == 0.0 ):
 		muVals[n] = 0.0
 		vecY_levLS  = np.zeros(oracle_sizeK)
-		vecY_levPSD = np.zeros(oracle_sizeK)
-		vecY_levWB  = np.zeros(oracle_sizeK)
 		vecY_floor  = np.zeros(oracle_sizeK)
 	else:
 		mu = muScl*((1.0/t)-1.0)
 		muVals[n] = mu
 		vecY_levLS  = oracle_hc.calcYLevLSOfMu(mu)
-		vecY_levPSD = oracle_hc.calcYLevPSDOfMu(mu)
-		vecY_levWB  = oracle_hc.calcYLevWBOfMu(mu)
 		vecY_floor  = oracle_hc.calcYFloorOfMu(mu)
 	olevLS_dVals[n]  = norm(vecY_levLS)
-	olevPSD_dVals[n] = norm(vecY_levPSD)
-	olevWB_dVals[n]  = norm(vecY_levWB)
 	ofloor_dVals[n]  = norm(vecY_floor)
 	olevLS_fVals[n],  _ = prob.evalFG(oracle_hm.vecXA + oracle_hm.matV @ vecY_levLS)
-	olevPSD_fVals[n], _ = prob.evalFG(oracle_hm.vecXA + oracle_hm.matV @ vecY_levPSD)
-	olevWB_fVals[n],  _ = prob.evalFG(oracle_hm.vecXA + oracle_hm.matV @ vecY_levWB)
 	ofloor_fVals[n],  _ = prob.evalFG(oracle_hm.vecXA + oracle_hm.matV @ vecY_floor)
-	olevWB_ofLSVals[n], _, _ = oracle_hm.evalFGammaGPerpOfY( vecY_levWB )
-msgtime()
-
-msg('Finding min...')
-shcPrm = hessmodel.searchHessCurve_prm()
-#
-if (False):
-	shcPrm.curveSelector = "ls"
-	msg(f'shcPrm = {shcPrm}...')
-	shcPrm.dump()
-	levLSMin_vecX = hessmodel.searchHessCurve( prob.evalFG, hc, shcPrm )
-	levLSMin_d = norm(levLSMin_vecX-hm.vecXA)
-	levLSMin_f, _ = prob.evalFG(levLSMin_vecX)
-	#
-	shcPrm.curveSelector = "psd"
-	msg(f'shcPrm = {shcPrm}...')
-	shcPrm.dump()
-	levPSDMin_vecX = hessmodel.searchHessCurve( prob.evalFG, hc, shcPrm )
-	levPSDMin_d = norm(levPSDMin_vecX-hm.vecXA)
-	levPSDMin_f, _ = prob.evalFG(levPSDMin_vecX)
-#
-shcPrm.curveSelector = "wb"
-msg(f'shcPrm = {shcPrm}...')
-shcPrm.dump()
-levWBMin_vecX = hessmodel.searchHessCurve( prob.evalFG, hc, shcPrm )
-levWBMin_d = norm(levWBMin_vecX-hm.vecXA)
-levWBMin_f, _ = prob.evalFG(levWBMin_vecX)
-#
-shcPrm.curveSelector = "floor"
-msg(f'shcPrm = {shcPrm}...')
-shcPrm.dump()
-floorMin_vecX = hessmodel.searchHessCurve( prob.evalFG, hc, shcPrm )
-floorMin_d = norm(floorMin_vecX-hm.vecXA)
-floorMin_f, _ = prob.evalFG(floorMin_vecX)
-#
+	olevLS_ofLSVals[n], _, _ = oracle_hm.evalFGammaGPerpOfY( vecY_levLS )
+	ofloor_ofWBVals[n], _, _ = oracle_hmWB.evalFGammaGPerpOfY( vecY_floor )
 msgtime()
 
 import matplotlib.pyplot as plt
-dWBNewt = olevWB_dVals[-1]
-dVizMax = 2.0*dWBNewt
-plt.plot( levWB_dVals, levWB_fLSVals, '*-', markersize=23 )
-plt.plot( levLS_dVals[ levLS_dVals<dVizMax ], levLS_fVals[ levLS_dVals<dVizMax ], 's-', markersize=21 )
-plt.plot( levPSD_dVals[levPSD_dVals<dVizMax], levPSD_fVals[levPSD_dVals<dVizMax], 'o-', markersize=19 )
-plt.plot( levWB_dVals, levWB_fVals, 'x-', markersize=17 )
-plt.plot( floor_dVals[ floor_dVals<dVizMax], floor_fVals[ floor_dVals<dVizMax ], '+-', markersize=15 )
-plt.plot( olevWB_dVals, olevWB_ofLSVals, '*-', markersize=13 )
-plt.plot( olevLS_dVals[ olevLS_dVals<dVizMax ], olevLS_fVals[ olevLS_dVals<dVizMax ], 's-', markersize=11 )
-plt.plot( olevPSD_dVals[olevPSD_dVals<dVizMax], olevPSD_fVals[olevPSD_dVals<dVizMax], 'o-', markersize=9 )
-plt.plot( olevWB_dVals, olevWB_fVals, 'x-', markersize=7 )
-plt.plot( ofloor_dVals[ ofloor_dVals<dVizMax ], ofloor_fVals[ ofloor_dVals<dVizMax ], '+-', markersize=5 )
-plt.plot( levWBMin_d, levWBMin_f, 'p', markersize=12 )
-plt.plot( floorMin_d, floorMin_f, 'p', markersize=8 )
+dVizMax = 2.0*max([ floor_dVals[-1], ofloor_dVals[-1] ])
+plt.plot( levLS_dVals[levLS_dVals<dVizMax], levLS_fLSVals[levLS_dVals<dVizMax], 'o-', markersize=28 )
+plt.plot( levLS_dVals[levLS_dVals<dVizMax], levLS_fVals[levLS_dVals<dVizMax], 'o-', markersize=24 )
+plt.plot( floor_dVals, floor_fWBVals, 's-', markersize=22 )
+plt.plot( floor_dVals, floor_fVals, 's-', markersize=18 )
+plt.plot( olevLS_dVals[olevLS_dVals<dVizMax], olevLS_ofLSVals[olevLS_dVals<dVizMax], '^-', markersize=16 )
+plt.plot( olevLS_dVals[olevLS_dVals<dVizMax], olevLS_fVals[olevLS_dVals<dVizMax], '^-', markersize=12 )
+plt.plot( ofloor_dVals, ofloor_ofWBVals, 'v-', markersize=10 )
+plt.plot( ofloor_dVals, ofloor_fVals, 'v-', markersize=6 )
 plt.grid(True)
 plt.legend([
-  'fLS (LevWB)',
-  'f (LevLS)',
-  'f (LevPSD)',
-  'f (LevWB)',
-  'f (Floor)',
-  'ofLS (oLevWB)',
-  'f (oLevLS)',
-  'f (oLevPSD)',
-  'f (oLevWB)',
-  'f (oFloor)',
-  'f (LevWBMin)',
-  'f (FloorMin)' ])
+  'LevLS, LS model',
+  'LevLS, actual',
+  'Floor, WB model',
+  'Floor, actual',
+  'oLevLS, oLS model',
+  'oLevLS, actual',
+  'oFloor, oWB model',
+  'oFloor, actual' ])
 plt.xlabel('||delta||')
 plt.ylabel('F')
 plt.show()

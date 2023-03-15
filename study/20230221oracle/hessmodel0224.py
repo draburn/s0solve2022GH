@@ -116,7 +116,7 @@ class hessCurvesType():
 		vecZeta = self.vecPhi / (self.vecLambdaWB + mu)
 		vecY = self.vecYLaunch + self.vecS * (self.matPsi @ vecZeta)
 		return vecY
-	def calcYFloorOfMu(self, mu):
+	def calcYFloorOfMu_noZeroMin(self, mu):
 		EPS_WB0 = 1.0e-6
 		EPS_WB1 = 1.0e-6
 		vecLambda = self.vecLambdaLS
@@ -125,6 +125,12 @@ class hessCurvesType():
 			mu1 = EPS_WB0 + (EPS_WB1 * max(abs(vecLambda)))
 		vecMu = vecLambda.copy()
 		vecMu[vecMu<mu1] = mu1
+		vecZeta = self.vecPhi / vecMu
+		vecY = self.vecYLaunch + self.vecS * (self.matPsi @ vecZeta)
+		return vecY
+	def calcYFloorOfMu(self, mu):
+		vecMu = self.vecLambdaWB.copy()
+		vecMu[vecMu<mu] = mu
 		vecZeta = self.vecPhi / vecMu
 		vecY = self.vecYLaunch + self.vecS * (self.matPsi @ vecZeta)
 		return vecY
