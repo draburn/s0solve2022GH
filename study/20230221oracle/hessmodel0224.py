@@ -303,9 +303,14 @@ def calcHessCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcHessCurves_pr
 		vecLambdaWB = vecLambdaLS.copy()
 		vecLambdaWB[vecLambdaWB < lambdaWBFloor] = lambdaWBFloor
 	else:
+		msg('\n\n\n')
+		msg('********************************************************************************')
 		msg(f'WARNING: fLS <= 0.0 (fLS = {fLS} while fA = {hessModel.fA}).')
 		msg(f'  Please consider a different launch point.')
 		msg(f'  Setting every element of vecLambdaWB to a large negative value.')
+		msg('********************************************************************************')
+		msg('\n\n\n')
+		vecLambdaWB = vecLambdaLS.copy()
 		vecLambdaWB[:] = -1.0E10
 	#
 	hessCurves = hessCurvesType()

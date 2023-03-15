@@ -12,7 +12,7 @@ sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
 #
 #
-numSuperPts = 100
+numSuperPts = 5
 maxNumRecords = numSuperPts
 #
 record_matX = np.zeros((sizeX, maxNumRecords))
@@ -92,6 +92,19 @@ hc, hmPSD, hmWB, hmLS = hessmodel.calcHessCurves(hm)
 msg('')
 msg(f'hc = {hc}...')
 hc.dump()
+
+vecYShift = hc.calcYLevLSOfMu(2.0*max(abs(hc.vecLambdaLS)))
+msg('')
+msg(f'vecYShift = {vecYShift}')
+msg('Calling hessmodel.calcHessCurves(hm, vecYLaunch=vecYShift)...')
+hc2, hmPSD2, hmWB2, hmLS2 = hessmodel.calcHessCurves(hm, vecYLaunch=vecYShift)
+#hc2, hmPSD2, hmWB2, hmLS2 = hessmodel.calcHessCurves(hm, vecYLaunch=vecYShift)
+msg('')
+msg(f'hc2 = {hc2}...')
+hc.dump()
+
+
+
 if (calcOracle):
 	oracle_vecYLaunch = np.zeros(oracle_sizeK)
 	msg('')
@@ -115,75 +128,61 @@ numVals = 100
 tExpLo = 2
 tExpHi = 1
 tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**tExpLo))**tExpHi
-#tVals /= 100
-tMax_cauchy = 1.0
+tVals /= 100
 #
 muScl = min(hc.vecLambdaWB)
 muVals = np.zeros(numVals)
+levLS2_dVals = np.zeros(numVals)
+levLS2_fVals = np.zeros(numVals)
+levLS2_fLSVals = np.zeros(numVals)
 levLS_dVals = np.zeros(numVals)
 levLS_fLSVals = np.zeros(numVals)
 levLS_fVals = np.zeros(numVals)
 floor_dVals = np.zeros(numVals)
 floor_fVals = np.zeros(numVals)
 floor_fWBVals = np.zeros(numVals)
-ccyls_dVals = np.zeros(numVals)
-ccyls_fVals = np.zeros(numVals)
-ccyls_fLSVals = np.zeros(numVals)
-ccywb_dVals = np.zeros(numVals)
-ccywb_fVals = np.zeros(numVals)
-ccywb_fWBVals = np.zeros(numVals)
 for n in range(numVals):
 	msg(f' {n} / {numVals}...')
 	t = tVals[n]
 	if ( t == 0.0 ):
 		muVals[n] = 0.0
-		vecY_levLS  = np.zeros(sizeK)
-		vecY_floor  = np.zeros(sizeK)
+		vecY_levLS2 = hc2.vecYLaunch
+		vecY_levLS  = hc.vecYLaunch
+		vecY_floor  = hc.vecYLaunch
 	else:
 		mu = muScl*((1.0/t)-1.0)
 		muVals[n] = mu
+		vecY_levLS2 = hc2.calcYLevLSOfMu(mu)
 		vecY_levLS  = hc.calcYLevLSOfMu(mu)
 		vecY_floor  = hc.calcYFloorOfMu(mu)
-	vecY_ccyls = hc.calcYCauchyLSOfT( tMax_cauchy*(n/(numVals-1.0))**tExpLo )
-	vecY_ccywb = hc.calcYCauchyWBOfT( tMax_cauchy*(n/(numVals-1.0))**tExpLo )
+	vecX_levLS2 = hm.vecXA + hm.matV @ vecY_levLS2
 	vecX_levLS = hm.vecXA + hm.matV @ vecY_levLS
 	vecX_floor = hm.vecXA + hm.matV @ vecY_floor
-	vecX_ccyls = hm.vecXA + hm.matV @ vecY_ccyls
-	vecX_ccywb = hm.vecXA + hm.matV @ vecY_ccywb
+	levLS2_dVals[n] = norm(vecX_levLS2 - hm.vecXA)
 	levLS_dVals[n] = norm(vecX_levLS - hm.vecXA)
 	floor_dVals[n] = norm(vecX_floor - hm.vecXA)
-	ccyls_dVals[n] = norm(vecX_ccyls - hm.vecXA)
-	ccywb_dVals[n] = norm(vecX_ccywb - hm.vecXA)
+	levLS2_fVals[n], _ = prob.evalFG(vecX_levLS2)
 	levLS_fVals[n],  _ = prob.evalFG(vecX_levLS)
 	floor_fVals[n],  _ = prob.evalFG(vecX_floor)
-	ccyls_fVals[n],  _ = prob.evalFG(vecX_ccyls)
-	ccywb_fVals[n],  _ = prob.evalFG(vecX_ccywb)
-	levLS_fLSVals[n], _, _ = hm.evalFGammaGPerpOfY( vecY_levLS )
-	floor_fWBVals[n], _, _ = hmWB.evalFGammaGPerpOfY( vecY_floor )
-	ccyls_fLSVals[n], _, _ = hm.evalFGammaGPerpOfY( vecY_ccyls )
-	ccywb_fWBVals[n], _, _ = hmWB.evalFGammaGPerpOfY( vecY_ccywb )
+	levLS_fLSVals[n],  _, _ = hm.evalFGammaGPerpOfY( vecY_levLS )
+	levLS2_fLSVals[n], _, _ = hm.evalFGammaGPerpOfY( vecY_levLS2 )
+	floor_fWBVals[n],  _, _ = hmWB.evalFGammaGPerpOfY( vecY_floor )
 msgtime()
 
 import matplotlib.pyplot as plt
 dVizMax = 2.0*floor_dVals[-1]
 plt.plot( levLS_dVals[levLS_dVals<dVizMax], levLS_fLSVals[levLS_dVals<dVizMax], 'o-', markersize=28 )
 plt.plot( levLS_dVals[levLS_dVals<dVizMax], levLS_fVals[levLS_dVals<dVizMax], 'o-', markersize=24 )
-plt.plot( floor_dVals, floor_fWBVals, 's-', markersize=22 )
-plt.plot( floor_dVals, floor_fVals, 's-', markersize=18 )
-plt.plot( ccyls_dVals, ccyls_fLSVals, '^-', markersize=16 )
-plt.plot( ccyls_dVals, ccyls_fVals, '^-', markersize=12 )
-plt.plot( ccywb_dVals, ccywb_fWBVals, 'v-', markersize=10 )
-plt.plot( ccywb_dVals, ccywb_fVals, 'v-', markersize=6 )
+#plt.plot( floor_dVals, floor_fWBVals, 's-', markersize=22 )
+#plt.plot( floor_dVals, floor_fVals, 's-', markersize=18 )
+plt.plot( levLS2_dVals[levLS2_dVals<dVizMax], levLS2_fLSVals[levLS2_dVals<dVizMax], '*-', markersize=16 )
+plt.plot( levLS2_dVals[levLS2_dVals<dVizMax], levLS2_fVals[levLS2_dVals<dVizMax], '*-', markersize=12 )
 plt.grid(True)
 plt.legend([
   'LevLS, LS model',
   'LevLS, actual',
-  'Floor, WB model',
-  'Floor, actual',
-  'CcyLS, LS Model',
-  'CcyLS, actual',
-  'CcyWB, WB Model',
-  'CcyWB, actual' ])
+  'LevLS2, LS Model',
+  'LevLS2, actual' ])
 plt.xlabel('||delta||')
 plt.ylabel('F')
 plt.show()
