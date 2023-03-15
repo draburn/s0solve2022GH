@@ -75,9 +75,33 @@ def utorthdrop( matA, dropRelThresh, dropAbsThresh ):
 
 def symm( matA ):
 	return (matA.T + matA)/2.0
+# End symm().
 
 def bye():
 	print(f'[{inspect.stack()[1].filename}.{inspect.stack()[1].lineno:05d}]')
 	print(f'[{inspect.stack()[1].filename}.{inspect.stack()[1].lineno:05d}] It is {time.asctime()}; time since start is {time.time()-danutil_import_time:0.3f}s.')
 	print(f'[{inspect.stack()[1].filename}.{inspect.stack()[1].lineno:05d}] Goodbye.')
 	exit()
+# End bye().
+
+def linishrootOfQuad( a, b, c, tol=1.0E-6 ):
+	# Find "linish root" of "y = a*(x^2) + b*x + c";
+	# this is the root that corresponds to the a = 0 solution;
+	# if there is no root, this returns the extremum.
+	if ( 0.0 == b ):
+		# We have no "forward" direction.
+		if ( a*c >= 0.0 ):
+			# We're at the extremum and there's no root.
+			return 0.0
+		msg('WARNING: Ambiguous direction. Returning positive root.')
+		return np.sqrt(abs(c/a))
+	discrim = (b*b) - (4.0*a*c)
+	if ( discrim < 0.0 ):
+		# No root; return extremum.
+		return -b/(2.0*a)
+	if ( abs(a*c) < tol*(b*b) ):
+		# Use near-linear model.
+		return -c*( 1.0 - ((a*c)/(b*b)) )/b
+	# Use general quadratic model.
+	return b*( np.sqrt(1.0 - ((4.0*a*c)/(b*b))) - 1.0 )/(2.0*a)
+# End linishrootOfQuad().
