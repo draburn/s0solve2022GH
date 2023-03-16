@@ -12,7 +12,7 @@ sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
 #
 #
-numSuperPts = 100
+numSuperPts = 5
 maxNumRecords = numSuperPts
 #
 record_matX = np.zeros((sizeX, maxNumRecords))
@@ -107,13 +107,13 @@ if (False):
 	msg(f'min f = {min(record_vecF)}, fOptim = {fOptim}, oracle_fOptim = {oracle_fOptim}')
 	danutil.bye()
 
-numVals = 100
+numVals = 200
 #tVals = np.array(np.linspace(0.0,1.0,numVals))
 #tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**3))**3
-tExpLo = 2
+tExpLo = 1
 tExpHi = 1
 tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**tExpLo))**tExpHi
-#tVals /= 100
+tVals /= 100
 #
 muScl = min(hc.vecLambdaWB)
 muVals = np.zeros(numVals)
@@ -188,7 +188,11 @@ msgtime()
 msg('Finding min...')
 shcPrm = hessmodel.searchHessCurve_prm()
 #
-if (False):
+levLSMin_vecX = np.zeros(sizeX)
+levPSDMin_vecX = np.zeros(sizeX)
+levWBMin_vecX = np.zeros(sizeX)
+floorMin_vecX = np.zeros(sizeX)
+if (True):
 	shcPrm.curveSelector = "ls"
 	msg(f'shcPrm = {shcPrm}...')
 	shcPrm.dump()
@@ -222,18 +226,21 @@ msgtime()
 import matplotlib.pyplot as plt
 dWBNewt = olevWB_dVals[-1]
 dVizMax = 2.0*dWBNewt
-plt.plot( levWB_dVals, levWB_fLSVals, '*-', markersize=23 )
+plt.plot( levWB_dVals, levWB_fLSVals, 'p-', markersize=23 )
 plt.plot( levLS_dVals[ levLS_dVals<dVizMax ], levLS_fVals[ levLS_dVals<dVizMax ], 's-', markersize=21 )
 plt.plot( levPSD_dVals[levPSD_dVals<dVizMax], levPSD_fVals[levPSD_dVals<dVizMax], 'o-', markersize=19 )
-plt.plot( levWB_dVals, levWB_fVals, 'x-', markersize=17 )
-plt.plot( floor_dVals[ floor_dVals<dVizMax], floor_fVals[ floor_dVals<dVizMax ], '+-', markersize=15 )
-plt.plot( olevWB_dVals, olevWB_ofLSVals, '*-', markersize=13 )
+plt.plot( levWB_dVals, levWB_fVals, '^-', markersize=17 )
+plt.plot( floor_dVals[ floor_dVals<dVizMax], floor_fVals[ floor_dVals<dVizMax ], 'v-', markersize=15 )
+plt.plot( olevWB_dVals, olevWB_ofLSVals, 'p-', markersize=13 )
 plt.plot( olevLS_dVals[ olevLS_dVals<dVizMax ], olevLS_fVals[ olevLS_dVals<dVizMax ], 's-', markersize=11 )
 plt.plot( olevPSD_dVals[olevPSD_dVals<dVizMax], olevPSD_fVals[olevPSD_dVals<dVizMax], 'o-', markersize=9 )
-plt.plot( olevWB_dVals, olevWB_fVals, 'x-', markersize=7 )
-plt.plot( ofloor_dVals[ ofloor_dVals<dVizMax ], ofloor_fVals[ ofloor_dVals<dVizMax ], '+-', markersize=5 )
-plt.plot( levWBMin_d, levWBMin_f, 'p', markersize=12 )
-plt.plot( floorMin_d, floorMin_f, 'p', markersize=8 )
+plt.plot( olevWB_dVals, olevWB_fVals, '^-', markersize=7 )
+plt.plot( ofloor_dVals[ ofloor_dVals<dVizMax ], ofloor_fVals[ ofloor_dVals<dVizMax ], 'v-', markersize=5 )
+plt.plot( 0, 0 )
+plt.plot( levLSMin_d, levLSMin_f, '*', markersize=31 )
+plt.plot( levPSDMin_d, levPSDMin_f, '*', markersize=29 )
+plt.plot( levWBMin_d, levWBMin_f, '*', markersize=27 )
+plt.plot( floorMin_d, floorMin_f, '*', markersize=25 )
 plt.grid(True)
 plt.legend([
   'fLS (LevWB)',
@@ -246,6 +253,9 @@ plt.legend([
   'f (oLevPSD)',
   'f (oLevWB)',
   'f (oFloor)',
+  '-',
+  'f (LevLSMin)',
+  'f (LevPSDMin)',
   'f (LevWBMin)',
   'f (FloorMin)' ])
 plt.xlabel('||delta||')

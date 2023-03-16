@@ -102,8 +102,9 @@ class hessCurvesType():
 		EPS_WB1 = 1.0e-6
 		vecLambda = self.vecLambdaLS
 		mu1 = mu
-		if ( mu1 + min(vecLambda) <= 0.0 ):
-			mu1 = abs(min(vecLambda)) + EPS_WB0 + (EPS_WB1 * max(abs(vecLambda)))
+		muThresh = EPS_WB0 + EPS_WB1*max(abs(vecLambda))
+		if ( min(vecLambda) <= muThresh ):
+			mu1 += abs(min(vecLambda)) + muThresh
 		vecZeta = self.vecPhi / (vecLambda + mu1)
 		vecY = self.vecYLaunch + self.vecS * (self.matPsi @ vecZeta)
 		return vecY
@@ -112,8 +113,9 @@ class hessCurvesType():
 		EPS_WB1 = 1.0e-6
 		vecLambda = self.vecLambdaPSD
 		mu1 = mu
-		if ( mu1 + min(vecLambda) <= 0.0 ):
-			mu1 = abs(min(vecLambda)) + EPS_WB0 + (EPS_WB1 * max(abs(vecLambda)))
+		muThresh = EPS_WB0 + EPS_WB1*max(abs(vecLambda))
+		if ( min(vecLambda) <= muThresh ):
+			mu1 += abs(min(vecLambda)) + muThresh
 		vecZeta = self.vecPhi / (vecLambda + mu1)
 		vecY = self.vecYLaunch + self.vecS * (self.matPsi @ vecZeta)
 		return vecY
@@ -127,8 +129,9 @@ class hessCurvesType():
 		EPS_WB1 = 1.0e-6
 		vecLambda = self.vecLambdaLS
 		mu1 = mu
-		if ( max( mu1, min(vecLambda) ) <= 0.0 ):
-			mu1 = EPS_WB0 + (EPS_WB1 * max(abs(vecLambda)))
+		muThresh = EPS_WB0 + EPS_WB1*max(abs(vecLambda))
+		if ( min(vecLambda) <= muThresh ):
+			mu1 += abs(min(vecLambda)) + muThresh
 		vecMu = vecLambda.copy()
 		vecMu[vecMu<mu1] = mu1
 		vecZeta = self.vecPhi / vecMu
