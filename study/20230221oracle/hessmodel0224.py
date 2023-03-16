@@ -402,3 +402,33 @@ def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
 	t = optimize.fminbound( fOfT, prm.tMin, prm.tMax, xtol=prm.dTTol, maxfun=prm.iterLimit+2, disp=1 )
 	msg(f'  t = {t}')
 	return xOfT(t)
+def multiSearchHessCurve( funch_evalFG, hessCurves ):
+	shcPrm = searchHessCurve_prm()
+	shcPrm.curveSelector = "floor"
+	vecXFloor = searchHessCurve( funch_evalFG, hessCurves, shcPrm )
+	fFloor = funch_evalFG(vecXFloor)
+	shcPrm.curveSelector = "ls"
+	vecXLS = searchHessCurve( funch_evalFG, hessCurves, shcPrm )
+	fLS = funch_evalFG(vecXLS)
+	#shcPrm.curveSelector = "psd"
+	#vecXPSD = searchHessCurve( funch_evalFG, hessCurves, shcPrm )
+	#fPSD = funch_evalFG(vecXPSD)
+	#shcPrm.curveSelector = "wb"
+	#vecXWB = searchHessCurve( funch_evalFG, hessCurves, shcPrm )
+	#fWB = funch_evalFG(vecXWB)
+	#
+	vecX = vecXFloor
+	f = fFloor
+	if ( fLS < f ):
+		vecX = vecXLS
+		f = fLS
+	#if ( fPSD < f ):
+	#	vecX = vecXPSD
+	#	f = fPSD
+	#if ( fWB < f ):
+	#	vecX = vecXWB
+	#	f = fWB
+	return vecX
+
+#def multiOracle( funch_evalFG, vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, record_matG, chmPrm=calcHessModel_prm() ):
+#, vecYLaunch=None, vecS=None, prm=calcHessCurves_prm() ):

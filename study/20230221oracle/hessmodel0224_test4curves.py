@@ -107,7 +107,7 @@ if (False):
 	msg(f'min f = {min(record_vecF)}, fOptim = {fOptim}, oracle_fOptim = {oracle_fOptim}')
 	danutil.bye()
 
-numVals = 200
+numVals = 20
 #tVals = np.array(np.linspace(0.0,1.0,numVals))
 #tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**3))**3
 tExpLo = 1
@@ -188,38 +188,42 @@ msgtime()
 msg('Finding min...')
 shcPrm = hessmodel.searchHessCurve_prm()
 #
-levLSMin_vecX = np.zeros(sizeX)
-levPSDMin_vecX = np.zeros(sizeX)
-levWBMin_vecX = np.zeros(sizeX)
-floorMin_vecX = np.zeros(sizeX)
+levLSMin_vecX = hm.vecXA.copy()
+levPSDMin_vecX = hm.vecXA.copy()
+levWBMin_vecX = hm.vecXA.copy()
+floorMin_vecX = hm.vecXA.copy()
 if (True):
 	shcPrm.curveSelector = "ls"
 	msg(f'shcPrm = {shcPrm}...')
 	shcPrm.dump()
-	levLSMin_vecX = hessmodel.searchHessCurve( prob.evalFG, hc, shcPrm )
+	#levLSMin_vecX = hessmodel.searchHessCurve( prob.evalFG, hc, shcPrm )
 	levLSMin_d = norm(levLSMin_vecX-hm.vecXA)
 	levLSMin_f, _ = prob.evalFG(levLSMin_vecX)
 	#
 	shcPrm.curveSelector = "psd"
 	msg(f'shcPrm = {shcPrm}...')
 	shcPrm.dump()
-	levPSDMin_vecX = hessmodel.searchHessCurve( prob.evalFG, hc, shcPrm )
+	#levPSDMin_vecX = hessmodel.searchHessCurve( prob.evalFG, hc, shcPrm )
 	levPSDMin_d = norm(levPSDMin_vecX-hm.vecXA)
 	levPSDMin_f, _ = prob.evalFG(levPSDMin_vecX)
 #
 shcPrm.curveSelector = "wb"
 msg(f'shcPrm = {shcPrm}...')
 shcPrm.dump()
-levWBMin_vecX = hessmodel.searchHessCurve( prob.evalFG, hc, shcPrm )
+#levWBMin_vecX = hessmodel.searchHessCurve( prob.evalFG, hc, shcPrm )
 levWBMin_d = norm(levWBMin_vecX-hm.vecXA)
 levWBMin_f, _ = prob.evalFG(levWBMin_vecX)
 #
 shcPrm.curveSelector = "floor"
 msg(f'shcPrm = {shcPrm}...')
 shcPrm.dump()
-floorMin_vecX = hessmodel.searchHessCurve( prob.evalFG, hc, shcPrm )
+#floorMin_vecX = hessmodel.searchHessCurve( prob.evalFG, hc, shcPrm )
 floorMin_d = norm(floorMin_vecX-hm.vecXA)
 floorMin_f, _ = prob.evalFG(floorMin_vecX)
+#
+oracle_vecX = hessmodel.multiSearchHessCurve( prob.evalFG, oracle_hc )
+oracle_d = norm(oracle_vecX-oracle_hm.vecXA)
+oracle_f, _ = prob.evalFG(oracle_vecX)
 #
 msgtime()
 
@@ -241,6 +245,7 @@ plt.plot( levLSMin_d, levLSMin_f, '*', markersize=31 )
 plt.plot( levPSDMin_d, levPSDMin_f, '*', markersize=29 )
 plt.plot( levWBMin_d, levWBMin_f, '*', markersize=27 )
 plt.plot( floorMin_d, floorMin_f, '*', markersize=25 )
+plt.plot( oracle_d, oracle_f, '*', markersize=20 )
 plt.grid(True)
 plt.legend([
   'fLS (LevWB)',
@@ -257,7 +262,8 @@ plt.legend([
   'f (LevLSMin)',
   'f (LevPSDMin)',
   'f (LevWBMin)',
-  'f (FloorMin)' ])
+  'f (FloorMin)',
+  'f (oracleMin)' ])
 plt.xlabel('||delta||')
 plt.ylabel('F')
 plt.show()
