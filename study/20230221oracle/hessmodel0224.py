@@ -430,5 +430,41 @@ def multiSearchHessCurve( funch_evalFG, hessCurves ):
 	#	f = fWB
 	return vecX
 
-#def multiOracle( funch_evalFG, vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, record_matG, chmPrm=calcHessModel_prm() ):
-#, vecYLaunch=None, vecS=None, prm=calcHessCurves_prm() ):
+class multiOracleMin_prm():
+	def __init__(self):
+		dummy = None
+	def dump(self):
+		msg(f'Begin multiOracleMin_prm.dump...')
+		msg(f'self = {self}')
+		msg(f'  dummy = {self.dummy}')
+		msg(f'End multiOracleMin_prm.dump().')
+def multiOracleMin(
+  funch_evalFG,
+  vecXAnchor,
+  fAnchor,
+  vecGAnchor,
+  record_matX,
+  record_vecF,
+  record_matG,
+  vecXLaunch = None,
+  prm = multiOracleMin_prm() ):
+	if ( vecXLaunch is None ):
+		vecXLaunch = vecXAnchor.copy()
+	mortal_chmPrm = calcHessModel_prm()
+	oracle_chmPrm = calcHessModel_prm()
+	oracle_chmPrm.dropRelThresh /= 10.0
+	mortal_hm = calcHessModel( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, record_matG, mortal_chmPrm )
+	oracle_hm = oracle_calcHessModel( funch_evalFG, vecXAnchor, record_matX, oracle_chmPrm )
+	mortal_vecYLaunch = mortal_hm.matV.T @ ( vecXLaunch - mortal_hm.vecXA )
+	oracle_vecYLaunch = oracle_hm.matV.T @ ( vecXLaunch - oracle_hm.vecXA )
+	mortal_hc, _, _, _ = calcHessCurves( mortal_hm )
+	oracle_hc, _, _, _ = calcHessCurves( oracle_hm )
+	mortal_vecX = multiSearchHessCurve( funch_evalFG, mortal_hc )
+	oracle_vecX = multiSearchHessCurve( funch_evalFG, oracle_hc )
+	mortal_f = funch_evalFG(mortal_vecX)
+	oracle_f = funch_evalFG(oracle_vecX)
+	if ( oracle_f < mortal_f ):
+		return oracle_vecX
+	else:
+		return mortal_vecX
+# End multiOracleMin()

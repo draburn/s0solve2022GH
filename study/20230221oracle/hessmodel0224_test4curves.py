@@ -221,7 +221,15 @@ shcPrm.dump()
 floorMin_d = norm(floorMin_vecX-hm.vecXA)
 floorMin_f, _ = prob.evalFG(floorMin_vecX)
 #
-oracle_vecX = hessmodel.multiSearchHessCurve( prob.evalFG, oracle_hc )
+#oracle_vecX = hessmodel.multiSearchHessCurve( prob.evalFG, oracle_hc )
+oracle_vecX = hessmodel.multiOracleMin(
+  prob.evalFG,
+  record_matX[:,nAnchor],
+  record_vecF[nAnchor],
+  record_matG[:,nAnchor],
+  record_matX[:,0:numRecords],
+  record_vecF[0:numRecords],
+  record_matG[:,0:numRecords] )
 oracle_d = norm(oracle_vecX-oracle_hm.vecXA)
 oracle_f, _ = prob.evalFG(oracle_vecX)
 #
