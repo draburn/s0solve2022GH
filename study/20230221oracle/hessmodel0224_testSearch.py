@@ -12,7 +12,7 @@ sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
 #
 #
-numSuperPts = 5
+numSuperPts = 200
 maxNumRecords = numSuperPts
 #
 record_matX = np.zeros((sizeX, maxNumRecords))
@@ -78,32 +78,42 @@ msg('')
 msg(f'hc = {hc}...')
 hc.dump()
 
-numVals = 20
+numVals = 100
 #tVals = np.array(np.linspace(0.0,1.0,numVals))
 #tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**3))**3
 tExpLo = 1
 tExpHi = 1
 tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**tExpLo))**tExpHi
-tVals /= 100
+#tVals /= 100
 #
 muScl = min(hc.vecLambdaWB)
 muVals = np.zeros(numVals)
 levLS_dVals  = np.zeros(numVals)
 levLS_fVals  = np.zeros(numVals)
 levLS_fLSVals = np.zeros(numVals)
+floor_dVals  = np.zeros(numVals)
+floor_fVals  = np.zeros(numVals)
+floor_fWBVals = np.zeros(numVals)
 for n in range(numVals):
 	msg(f' {n} / {numVals}...')
 	t = tVals[n]
 	if ( t == 0.0 ):
 		muVals[n] = 0.0
-		vecY_levLS  = hc.vecYLaunch.copy()
+		vecY_levLS = hc.vecYLaunch.copy()
+		vecY_floor = hc.vecYLaunch.copy()
 	else:
 		mu = muScl*((1.0/t)-1.0)
 		muVals[n] = mu
-		vecY_levLS  = hc.calcYLevLSOfMu(mu)
-	levLS_dVals[n] = norm(vecY_levLS)
-	levLS_fVals[n],  _ = prob.evalFG(hm.vecXA + hm.matV @ vecY_levLS)
+		vecY_levLS = hc.calcYLevLSOfMu(mu)
+		vecY_floor = hc.calcYFloorOfMu(mu)
+	vecX_levLS = hm.vecXA + hm.matV @ vecY_levLS
+	vecX_floor = hm.vecXA + hm.matV @ vecY_floor
+	levLS_dVals[n] = norm(vecX_levLS - hm.vecXA)
+	levLS_fVals[n],  _ = prob.evalFG(vecX_levLS)
 	levLS_fLSVals[n], _, _ = hm.evalFGammaGPerpOfY( vecY_levLS )
+	floor_dVals[n] = norm(vecX_floor - hm.vecXA)
+	floor_fVals[n],  _ = prob.evalFG(vecX_floor)
+	floor_fWBVals[n], _, _ = hmWB.evalFGammaGPerpOfY( vecY_floor )
 	msg(f'{tVals[n]}, {muVals[n]}, {levLS_dVals[n]}, {levLS_fVals[n]}, {levLS_fLSVals[n]}')
 msgtime()
 
@@ -129,17 +139,48 @@ oracle_vecX = hessmodel.multiOracleMin(
 oracle_d = norm( oracle_vecX - hm.vecXA )
 oracle_f, _ = prob.evalFG(oracle_vecX)
 
+multis_vecX = hessmodel.multiSearchMin(
+  prob.evalFG,
+  record_matX[:,nAnchor],
+  record_vecF[nAnchor],
+  record_matG[:,nAnchor],
+  record_matX[:,0:numRecords],
+  record_vecF[0:numRecords],
+  record_matG[:,0:numRecords] )
+multis_d = norm( multis_vecX - hm.vecXA )
+multis_f, _ = prob.evalFG(multis_vecX)
+
+search_vecX = hessmodel.searchMin(
+  prob.evalFG,
+  record_matX[:,nAnchor],
+  record_vecF[nAnchor],
+  record_matG[:,nAnchor],
+  record_matX[:,0:numRecords],
+  record_vecF[0:numRecords],
+  record_matG[:,0:numRecords] )
+search_d = norm( search_vecX - hm.vecXA )
+search_f, _ = prob.evalFG(search_vecX)
+
+msgtime()
 import matplotlib.pyplot as plt
-plt.plot( levLS_dVals, levLS_fLSVals, 'o-', markersize=15 )
-plt.plot( levLS_dVals, levLS_fVals, 's-', markersize=10 )
-plt.plot( levLSMin_d, levLSMin_f, 'x', markersize=20 )
-plt.plot( oracle_d, oracle_f, '*', markersize=25 )
+plt.plot( levLS_dVals, levLS_fLSVals, 'o-', markersize=20 )
+plt.plot( levLS_dVals, levLS_fVals, 's-', markersize=16 )
+plt.plot( floor_dVals, floor_fWBVals, 'o-', markersize=12 )
+plt.plot( floor_dVals, floor_fVals, 's-', markersize=8 )
+plt.plot( oracle_d, oracle_f, '*', markersize=32 )
+plt.plot( multis_d, multis_f, '*', markersize=28 )
+plt.plot( levLSMin_d, levLSMin_f, '*', markersize=24 )
+plt.plot( search_d, search_f, '*', markersize=20 )
 plt.grid(True)
 plt.legend([
-  'fLS (curve)',
-  'f (curve)',
-  'f (curveMin)',
-  'f (oracle)' ])
+  'fLS (lev curve)',
+  'f (lev curve)',
+  'fWB (ef curve)',
+  'f (ef curve)',
+  'f (oracle min)',
+  'f (multiS min)',
+  'f (lev min)',
+  'f (ef min)' ])
 plt.xlabel('||delta||')
 plt.ylabel('F')
 plt.show()

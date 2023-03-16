@@ -399,6 +399,10 @@ def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
 		#scipy.optimize.fmin(func, x0, args=(), xtol=0.0001, ftol=0.0001, maxiter=None, maxfun=None, full_output=0, disp=1, retall=0, callback=None, initial_simplex=None)
 		return f
 	msg('Calling fminbound...')
+	# DRaburn 2023-03-16.
+	#  Note that this search is inefficient, not making use of gradient information.
+	#  But, this is merely for testing.
+	#  Also, because I'm not returning f, redundant calculations are needed later.
 	t = optimize.fminbound( fOfT, prm.tMin, prm.tMax, xtol=prm.dTTol, maxfun=prm.iterLimit+2, disp=1 )
 	msg(f'  t = {t}')
 	return xOfT(t)
@@ -429,6 +433,7 @@ def multiSearchHessCurve( funch_evalFG, hessCurves ):
 	#	vecX = vecXWB
 	#	f = fWB
 	return vecX
+# End searchHessCurve() etc.
 
 class multiOracleMin_prm():
 	def __init__(self):
@@ -457,8 +462,11 @@ def multiOracleMin(
 	oracle_hm = oracle_calcHessModel( funch_evalFG, vecXAnchor, record_matX, oracle_chmPrm )
 	mortal_vecYLaunch = mortal_hm.matV.T @ ( vecXLaunch - mortal_hm.vecXA )
 	oracle_vecYLaunch = oracle_hm.matV.T @ ( vecXLaunch - oracle_hm.vecXA )
-	mortal_hc, _, _, _ = calcHessCurves( mortal_hm )
-	oracle_hc, _, _, _ = calcHessCurves( oracle_hm )
+	vecS = None
+	mortal_chcPrm = calcHessCurves_prm()
+	oracle_chcPrm = calcHessCurves_prm()
+	mortal_hc, _, _, _ = calcHessCurves( mortal_hm, mortal_vecYLaunch, vecS, mortal_chcPrm )
+	oracle_hc, _, _, _ = calcHessCurves( oracle_hm, oracle_vecYLaunch, vecS, oracle_chcPrm )
 	mortal_vecX = multiSearchHessCurve( funch_evalFG, mortal_hc )
 	oracle_vecX = multiSearchHessCurve( funch_evalFG, oracle_hc )
 	mortal_f = funch_evalFG(mortal_vecX)
@@ -467,4 +475,56 @@ def multiOracleMin(
 		return oracle_vecX
 	else:
 		return mortal_vecX
-# End multiOracleMin()
+# End multiOracleMin().
+
+class multiSearchMin_prm():
+	def __init__(self):
+		dummy = None
+	def dump(self):
+		msg(f'Begin multiSearchMin_prm.dump...')
+		msg(f'self = {self}')
+		msg(f'  dummy = {self.dummy}')
+		msg(f'End multiSearchMin_prm.dump().')
+def multiSearchMin(
+  funch_evalFG,
+  vecXAnchor,
+  fAnchor,
+  vecGAnchor,
+  record_matX,
+  record_vecF,
+  record_matG,
+  vecXLaunch = None,
+  prm = multiSearchMin_prm() ):
+	if ( vecXLaunch is None ):
+		vecXLaunch = vecXAnchor.copy()
+	chmPrm = calcHessModel_prm()
+	hm = calcHessModel( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, record_matG, chmPrm )
+	vecYLaunch = hm.matV.T @ ( vecXLaunch - hm.vecXA )
+	vecS = None
+	chcPrm = calcHessCurves_prm()
+	hc, _, _, _ = calcHessCurves( hm, vecYLaunch, vecS, chcPrm )
+	vecX = multiSearchHessCurve( funch_evalFG, hc )
+	return vecX
+# End multiSearchMin().
+
+def searchMin(
+  funch_evalFG,
+  vecXAnchor,
+  fAnchor,
+  vecGAnchor,
+  record_matX,
+  record_vecF,
+  record_matG,
+  vecXLaunch = None,
+  chmPrm = calcHessModel_prm(),
+  chcPrm = calcHessCurves_prm(),
+  shcPrm = searchHessCurve_prm() ):
+	if ( vecXLaunch is None ):
+		vecXLaunch = vecXAnchor.copy()
+	hm = calcHessModel( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, record_matG, chmPrm )
+	vecYLaunch = hm.matV.T @ ( vecXLaunch - hm.vecXA )
+	vecS = None
+	hc, _, _, _ = calcHessCurves( hm, vecYLaunch, vecS, chcPrm )
+	vecX = searchHessCurve( funch_evalFG, hc, shcPrm )
+	return vecX
+# End searchMin().
