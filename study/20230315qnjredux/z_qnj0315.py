@@ -3,16 +3,17 @@ import danutil
 from danutil import msg, msgtime
 import numpy as np
 from numpy.linalg import norm
+import hessmodel0316 as hessmodel
 
 startTime = time.time()
-justTest = True
+justTest = False
 msg(f'justTest = {justTest}')
 if (justTest):
 	import demoproblem0221 as prob
-	maxNumSteps = 10
+	maxNumSteps = 7
 else:
 	import pytorchCIFAR10demo as prob
-	maxNumSteps = 100
+	maxNumSteps = 10
 vecX0 = prob.genVecX0()
 sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
@@ -23,11 +24,14 @@ sgdPrm.momentumCoefficient = 0.9
 msg(f'sgdPrm = {sgdPrm}...')
 sgdPrm.dump()
 
-maxNumRecords = 100
+maxNumRecords = maxNumSteps
 record_matX = np.zeros((sizeX, maxNumRecords))
 record_vecF = np.zeros(maxNumRecords)
 record_matG = np.zeros((sizeX, maxNumRecords))
 numRecords = 0
+
+useSMOP = True
+msg(f'useSMOP = {useSMOP}')
 
 vecXSeed = vecX0.copy()
 vecPSeed = vecP0.copy()
@@ -37,6 +41,7 @@ print('[')
 for stepIndex in range(maxNumSteps):
 	# Perform feval.
 	vecXHarvest, vecPHarvest, f, sgdDat = prob.evalSGD(vecXSeed, vecPSeed, sgdPrm)
+	assert ( f >= 0.0 )
 	print(f'[{time.time()-startTime:8.2f}, {stepIndex:5d}, {f:10.3e}, {norm(sgdDat.statsDat.avg_vecG[:]):10.3e}]')
 	#
 	# Add to records.
@@ -53,8 +58,21 @@ for stepIndex in range(maxNumSteps):
 	record_matG[:,0] = sgdDat.statsDat.avg_vecG[:]
 	#
 	# Prepare for next iteration.
-	vecXSeed[:] = vecXHarvest[:]
-	vecPSeed[:] = vecPHarvest[:]
+	if (useSMOP):
+		nAnchor = 0
+		vecXSeed, vecPSeed =  hessmodel.searchMin_sgd_oracleP(
+		  prob.evalFG,
+		  record_matX[:,nAnchor],
+		  record_vecF[nAnchor],
+		  record_matG[:,nAnchor],
+		  record_matX[:,0:numRecords],
+		  record_vecF[0:numRecords],
+		  record_matG[:,0:numRecords],
+		  vecXHarvest,
+		  vecPHarvest )
+	else:
+		vecXSeed[:] = vecXHarvest[:]
+		vecPSeed[:] = vecPHarvest[:]
 # End main loop.
 print(']')
 msg('Finished main loop.')

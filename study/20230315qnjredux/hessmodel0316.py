@@ -178,7 +178,7 @@ def calcHessModel( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, re
 	matV, vecKeep = danutil.utorthdrop(matD, prm.dropRelThresh, prm.dropAbsThresh)
 	sizeK = matV.shape[1]
 	if ( 0 == sizeK ):
-		msg('ERROR: sizeK is zero.')
+		#msg('ERROR: sizeK is zero.')
 		return None
 	#
 	vecGammaA = matV.T @ vecGAnchor
@@ -205,7 +205,7 @@ def oracle_calcHessModel( funch_evalFG, vecXAnchor, record_matX, prm=calcHessMod
 	matV, vecKeep = danutil.utorthdrop(matD, prm.dropRelThresh, prm.dropAbsThresh)
 	sizeK = matV.shape[1]
 	if ( 0 == sizeK ):
-		msg('ERROR: sizeK is zero.')
+		#msg('ERROR: sizeK is zero.')
 		return None
 	#
 	fAnchor, vecGAnchor = funch_evalFG(vecXAnchor)
@@ -281,7 +281,8 @@ def calcHessCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcHessCurves_pr
 	if (vecYLaunch is None):
 		vecYLaunch = np.zeros(sizeK)
 	else:
-		msg('WARNING: Use of non-zero vecYLaunch has not been tested.')
+		pass
+		#msg('WARNING: Use of non-zero vecYLaunch has not been tested.')
 	if (vecS is None):
 		vecS = np.ones(sizeK)
 	else:
@@ -333,7 +334,7 @@ def calcHessCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcHessCurves_pr
 	# Note that we are NOT doing the anchor shift for the hessCurves.
 	# DRaburn 2023-02-25:
 	#  Actually, it'd be nice to undo this.
-	msg('NOTE: vecXA (anchor) is shifted for modified Hessian models.')
+	#msg('NOTE: vecXA (anchor) is shifted for modified Hessian models.')
 	# Note "hessModelLS" is merely for debug.
 	hessModelLS = hessModel.copy()
 	hessModelLS.vecXA = hessCurves.vecXA.copy()
@@ -398,13 +399,13 @@ def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
 		# Optimization: make use of vecG. (We have to mux with the curve to get df/dt, though.)
 		#scipy.optimize.fmin(func, x0, args=(), xtol=0.0001, ftol=0.0001, maxiter=None, maxfun=None, full_output=0, disp=1, retall=0, callback=None, initial_simplex=None)
 		return f
-	msg('Calling fminbound...')
+	#msg('Calling fminbound...')
 	# DRaburn 2023-03-16.
 	#  Note that this search is inefficient, not making use of gradient information.
 	#  But, this is merely for testing.
 	#  Also, because I'm not returning f, redundant calculations are needed later.
 	t = optimize.fminbound( fOfT, prm.tMin, prm.tMax, xtol=prm.dTTol, maxfun=prm.iterLimit+2, disp=1 )
-	msg(f'  t = {t}')
+	#msg(f'  t = {t}')
 	return xOfT(t)
 def multiSearchHessCurve( funch_evalFG, hessCurves ):
 	shcPrm = searchHessCurve_prm()
@@ -544,15 +545,16 @@ def searchMin_sgd_oracleP(
   chmPrm = calcHessModel_prm(),
   chcPrm = calcHessCurves_prm(),
   shcPrm = searchHessCurve_prm() ):
-	vecXLand = vecXLaunch.copy()
-	vecPLand = vecPLaunch.copy()
 	numRecords = record_matX.shape[1]
 	if ( 0 == numRecords ):
-		return vecXLand, vecPLand
+		return vecXLaunch.copy(), vecPLaunch.copy()
 	hm = calcHessModel( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, record_matG, chmPrm )
-	sizeK = hm.matV.shape[1]
+	if ( hm is None ):
+		sizeK = 0
+	else:
+		sizeK = hm.matV.shape[1]
 	if ( 0 == sizeK ):
-		return vecXLand, vecPLand
+		return vecXLaunch.copy(), vecPLaunch.copy()
 	vecYLaunch = hm.matV.T @ ( vecXLaunch - hm.vecXA )
 	vecS = None
 	hc, hmPSD, hmWB, hmLS = calcHessCurves( hm, vecYLaunch, vecS, chcPrm )
