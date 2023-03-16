@@ -12,7 +12,7 @@ sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
 #
 #
-numSuperPts = 200
+numSuperPts = 5
 maxNumRecords = numSuperPts
 #
 record_matX = np.zeros((sizeX, maxNumRecords))
@@ -78,13 +78,13 @@ msg('')
 msg(f'hc = {hc}...')
 hc.dump()
 
-numVals = 100
+numVals = 20
 #tVals = np.array(np.linspace(0.0,1.0,numVals))
 #tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**3))**3
 tExpLo = 1
 tExpHi = 1
 tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**tExpLo))**tExpHi
-#tVals /= 100
+tVals /= 100
 #
 muScl = min(hc.vecLambdaWB)
 muVals = np.zeros(numVals)
@@ -128,25 +128,31 @@ levLSMin_f, _ = prob.evalFG(levLSMin_vecX)
 #
 msgtime()
 
-oracle_vecX = hessmodel.multiOracleMin(
-  prob.evalFG,
-  record_matX[:,nAnchor],
-  record_vecF[nAnchor],
-  record_matG[:,nAnchor],
-  record_matX[:,0:numRecords],
-  record_vecF[0:numRecords],
-  record_matG[:,0:numRecords] )
+if (False):
+	oracle_vecX = hessmodel.multiOracleMin(
+	  prob.evalFG,
+	  record_matX[:,nAnchor],
+	  record_vecF[nAnchor],
+	  record_matG[:,nAnchor],
+	  record_matX[:,0:numRecords],
+	  record_vecF[0:numRecords],
+	  record_matG[:,0:numRecords] )
+else:
+	oracle_vecX = hm.vecXA
 oracle_d = norm( oracle_vecX - hm.vecXA )
 oracle_f, _ = prob.evalFG(oracle_vecX)
 
-multis_vecX = hessmodel.multiSearchMin(
-  prob.evalFG,
-  record_matX[:,nAnchor],
-  record_vecF[nAnchor],
-  record_matG[:,nAnchor],
-  record_matX[:,0:numRecords],
-  record_vecF[0:numRecords],
-  record_matG[:,0:numRecords] )
+if (False):
+	multis_vecX = hessmodel.multiSearchMin(
+	  prob.evalFG,
+	  record_matX[:,nAnchor],
+	  record_vecF[nAnchor],
+	  record_matG[:,nAnchor],
+	  record_matX[:,0:numRecords],
+	  record_vecF[0:numRecords],
+	  record_matG[:,0:numRecords] )
+else:
+	multis_vecX = hm.vecXA
 multis_d = norm( multis_vecX - hm.vecXA )
 multis_f, _ = prob.evalFG(multis_vecX)
 
@@ -161,6 +167,19 @@ search_vecX = hessmodel.searchMin(
 search_d = norm( search_vecX - hm.vecXA )
 search_f, _ = prob.evalFG(search_vecX)
 
+smop_vecX, smop_vecP = hessmodel.searchMin_sgd_oracleP(
+  prob.evalFG,
+  record_matX[:,nAnchor],
+  record_vecF[nAnchor],
+  record_matG[:,nAnchor],
+  record_matX[:,0:numRecords],
+  record_vecF[0:numRecords],
+  record_matG[:,0:numRecords],
+  vecXHarvest,
+  vecPHarvest )
+smop_d = norm( smop_vecX - vecXHarvest ) #Hacky
+smop_f, smop_vecG = prob.evalFG(smop_vecX)
+
 msgtime()
 import matplotlib.pyplot as plt
 plt.plot( levLS_dVals, levLS_fLSVals, 'o-', markersize=20 )
@@ -171,6 +190,7 @@ plt.plot( oracle_d, oracle_f, '*', markersize=32 )
 plt.plot( multis_d, multis_f, '*', markersize=28 )
 plt.plot( levLSMin_d, levLSMin_f, '*', markersize=24 )
 plt.plot( search_d, search_f, '*', markersize=20 )
+plt.plot( smop_d, smop_f, '*', markersize=16 )
 plt.grid(True)
 plt.legend([
   'fLS (lev curve)',
@@ -180,7 +200,8 @@ plt.legend([
   'f (oracle min)',
   'f (multiS min)',
   'f (lev min)',
-  'f (ef min)' ])
+  'f (ef min)',
+  'f (smop)' ])
 plt.xlabel('||delta||')
 plt.ylabel('F')
 plt.show()

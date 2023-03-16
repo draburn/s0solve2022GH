@@ -528,3 +528,44 @@ def searchMin(
 	vecX = searchHessCurve( funch_evalFG, hc, shcPrm )
 	return vecX
 # End searchMin().
+
+# _oracleP: oracle wrt calculating vecPLand.
+# This is a bit beyond "hessmodel", in "qnj" territory.
+def searchMin_sgd_oracleP(
+  funch_evalFG,
+  vecXAnchor,
+  fAnchor,
+  vecGAnchor,
+  record_matX,
+  record_vecF,
+  record_matG,
+  vecXLaunch,
+  vecPLaunch,
+  chmPrm = calcHessModel_prm(),
+  chcPrm = calcHessCurves_prm(),
+  shcPrm = searchHessCurve_prm() ):
+	vecXLand = vecXLaunch.copy()
+	vecPLand = vecPLaunch.copy()
+	numRecords = record_matX.shape[1]
+	if ( 0 == numRecords ):
+		return vecXLand, vecPLand
+	hm = calcHessModel( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, record_matG, chmPrm )
+	sizeK = hm.matV.shape[1]
+	if ( 0 == sizeK ):
+		return vecXLand, vecPLand
+	vecYLaunch = hm.matV.T @ ( vecXLaunch - hm.vecXA )
+	vecS = None
+	hc, hmPSD, hmWB, hmLS = calcHessCurves( hm, vecYLaunch, vecS, chcPrm )
+	# Note: hmLS should functionally match hm.
+	vecXLand = searchHessCurve( funch_evalFG, hc, shcPrm )
+	
+	# We'll use oracle/extra info for vecPLand...
+	fLaunch, vecGLaunch = funch_evalFG( vecXLaunch )
+	assert (vecGLaunch @ vecGLaunch > 0.0 )
+	a = ( vecPLaunch @ vecGLaunch ) / (vecGLaunch @ vecGLaunch)
+	vecB = vecPLaunch - (a*vecGLaunch)
+	assert( norm(vecGLaunch @ vecB) <= 1.0e-6*(norm(vecGLaunch) * norm(vecB)) )
+	fLand, vecGLand = funch_evalFG( vecXLand )
+	alphaF = fLand/fLaunch
+	vecPLand = (a*vecGLand) + (alphaF*vecB)
+	return vecXLand, vecPLand
