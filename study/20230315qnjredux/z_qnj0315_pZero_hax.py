@@ -34,25 +34,32 @@ numRecords = 0
 useSMOP = True
 msg(f'useSMOP = {useSMOP}')
 
-sgdPrmFOnly = sgdPrm.copy()
-sgdPrmFOnly.doStats = False
-sgdPrmFOnly.doStore = False
-sgdPrm.storageSize = 0
+usePReset = False
+if (usePReset):
+	sgdPrmFOnly = sgdPrm.copy()
+	sgdPrmFOnly.doStats = False
+	sgdPrmFOnly.doStore = False
+	sgdPrm.storageSize = 0
+	msg(f'sgdPrmFOnly = {sgdPrmFOnly}...')
+	sgdPrmFOnly.dump()
+	def funch_evalFG( x ):
+		_, _, f, _ = prob.evalSGD(x, np.zeros(sizeX), sgdPrmFOnly)
+		return f, np.ones(sizeX)
+else:
+	def funch_evalFG( x ):
+		_, _, f, d = prob.evalSGD(x, np.zeros(sizeX), sgdPrm)
+		return f, d.statsDat.avg_vecG
+
 chmPrm = hessmodel.calcHessModel_prm()
 chcPrm = hessmodel.calcHessCurves_prm()
 shcPrm = hessmodel.searchHessCurve_prm()
 #shcPrm.tMax = 0.1
-msg(f'sgdPrmFOnly = {sgdPrmFOnly}...')
-sgdPrmFOnly.dump()
 msg(f'chmPrm = {chmPrm}...')
 chmPrm.dump()
 msg(f'chcPrm = {chcPrm}...')
 chcPrm.dump()
 msg(f'shcPrm = {shcPrm}...')
 shcPrm.dump()
-def funch_evalFG( x ):
-	_, _, f, _ = prob.evalSGD(x, np.zeros(sizeX), sgdPrmFOnly)
-	return f, np.ones(sizeX)
 
 vecXSeed = vecX0.copy()
 vecPSeed = vecP0.copy()
@@ -61,7 +68,8 @@ print('')
 print('[')
 for stepIndex in range(maxNumSteps):
 	# Perform feval.
-	vecPSeed[:] = 0.0
+	if (usePReset):
+		vecPSeed[:] = 0.0
 	vecXHarvest, vecPHarvest, f, sgdDat = prob.evalSGD(vecXSeed, vecPSeed, sgdPrm)
 	print(f'[{time.time()-startTime:8.2f}, {stepIndex:5d}, {f:10.3e}, {norm(sgdDat.statsDat.avg_vecG[:]):10.3e}]')
 	assert( f < 100.0 )
