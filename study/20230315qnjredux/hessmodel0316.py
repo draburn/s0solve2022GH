@@ -400,6 +400,19 @@ def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
 		# Optimization: make use of vecG. (We have to mux with the curve to get df/dt, though.)
 		#scipy.optimize.fmin(func, x0, args=(), xtol=0.0001, ftol=0.0001, maxiter=None, maxfun=None, full_output=0, disp=1, retall=0, callback=None, initial_simplex=None)
 		return f
+
+	# DRaburn 2023-03-16.
+	#  fminbound() does not do what I need. Enough of this.
+	f0 = fOfT(0.0)
+	t1 = 1.0
+	for n in range(30):
+		f1 = fOfT(t1)
+		if ( f1 <= f0 ):
+			return xOfT(t1)
+		t1 /= 2.0
+	msg('ERROR: Failed to reduce f')
+	return xOfT(0.0)
+	
 	#msg('Calling fminbound...')
 	# DRaburn 2023-03-16.
 	#  Note that this search is inefficient, not making use of gradient information.

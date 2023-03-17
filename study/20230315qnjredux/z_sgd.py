@@ -5,14 +5,14 @@ import numpy as np
 from numpy.linalg import norm
 
 startTime = time.time()
-justTest = True
+justTest = False
 msg(f'justTest = {justTest}')
 if (justTest):
 	import demoproblem0221 as prob
 	maxNumSteps = 10
 else:
 	import pytorchCIFAR10demo as prob
-	maxNumSteps = 100
+	maxNumSteps = 500
 vecX0 = prob.genVecX0()
 sizeX = vecX0.shape[0]
 vecP0 = np.zeros(sizeX)
