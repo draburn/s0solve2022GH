@@ -138,8 +138,9 @@ class hessCurvesType():
 		vecY = self.vecYLaunch + self.vecS * (self.matPsi @ vecZeta)
 		return vecY
 	def calcYFloorOfMu(self, mu):
+		mu1 = mu + min(self.vecLambdaWB)
 		vecMu = self.vecLambdaWB.copy()
-		vecMu[vecMu<mu] = mu
+		vecMu[vecMu<mu1] = mu1
 		vecZeta = self.vecPhi / vecMu
 		vecY = self.vecYLaunch + self.vecS * (self.matPsi @ vecZeta)
 		return vecY
@@ -404,8 +405,21 @@ def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
 	#  Note that this search is inefficient, not making use of gradient information.
 	#  But, this is merely for testing.
 	#  Also, because I'm not returning f, redundant calculations are needed later.
-	t = optimize.fminbound( fOfT, prm.tMin, prm.tMax, xtol=prm.dTTol, maxfun=prm.iterLimit+2, disp=1 )
-	#msg(f'  t = {t}')
+	# DRaburn 2023-03-16.
+	#  optimize.fminbound() can't handle NaN and other exceptions? Really?
+	t0 = prm.tMin
+	t1 = prm.tMax
+	f0 = fOfT(t0)
+	f1 = fOfT(t1)
+	for n in range(20):
+		if ( f1 <= 10.0*f0 ):
+			break
+		t1 = t0 + (t1-t0)/2.0
+		f1 = fOfT(t1)
+	assert ( f1 <= 100.0*f0 )
+	t = optimize.fminbound( fOfT, t0, t1, xtol=prm.dTTol, maxfun=prm.iterLimit+2, disp=1 )
+	f = fOfT(t)
+	#msg(f'{t0}, {t}, {t1}; {f0}, {f}, {f1}')
 	return xOfT(t)
 def multiSearchHessCurve( funch_evalFG, hessCurves ):
 	shcPrm = searchHessCurve_prm()
@@ -580,4 +594,5 @@ def searchMin_sgd_oracleP(
 	fLand, vecGLand = funch_evalFG( vecXLand )
 	alphaF = fLand/fLaunch
 	vecPLand = (a*vecGLand) + (alphaF*vecB)
+	#msg(f'{norm(vecXLand - vecXLaunch)}, {fLaunch}, {fLand}')
 	return vecXLand, vecPLand, smopDat

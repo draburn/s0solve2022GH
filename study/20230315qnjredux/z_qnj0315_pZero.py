@@ -41,7 +41,7 @@ sgdPrm.storageSize = 0
 chmPrm = hessmodel.calcHessModel_prm()
 chcPrm = hessmodel.calcHessCurves_prm()
 shcPrm = hessmodel.searchHessCurve_prm()
-shcPrm.tMax = 0.1
+#shcPrm.tMax = 0.1
 msg(f'sgdPrmFOnly = {sgdPrmFOnly}...')
 sgdPrmFOnly.dump()
 msg(f'chmPrm = {chmPrm}...')
@@ -77,13 +77,12 @@ for stepIndex in range(maxNumSteps):
 	record_matG[:,0] = sgdDat.statsDat.avg_vecG[:]
 	#
 	# Prepare for next iteration.
-	#if (useSMOP and (0==((stepIndex+1)%10))):
-	if (useSMOP):
+	if (useSMOP and (0==((stepIndex+1)%10))):
 		def funch_evalFG( x ):
 			_, _, f, _ = prob.evalSGD(x, np.zeros(sizeX), sgdPrmFOnly)
 			return f, np.ones(sizeX)
 		nAnchor = 0
-		vecXSeed, vecPSeed = hessmodel.searchMin_sgd_oracleP(
+		vecXSeed, vecPSeed, _ = hessmodel.searchMin_sgd_oracleP(
 		  funch_evalFG,
 		  record_matX[:,nAnchor],
 		  record_vecF[nAnchor],
