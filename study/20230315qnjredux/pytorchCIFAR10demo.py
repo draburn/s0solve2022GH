@@ -222,7 +222,16 @@ class evalSGD_prm():
 		msg(f'  momentumCoeff = {self.momentumCoeff}')
 		msg(f'  doStats = {self.doStats}')
 		msg(f'  doStore = {self.doStore}')
+		msg(f'  storageSize = {self.storageSize}')
 		msg(f'End evalSGD_prm.dump().')
+	def copy(self):
+		cp = evalSGD_prm()
+		cp.learningRate = self.learningRate
+		cp.momentumCoeff = self.momentumCoeff
+		cp.doStats = self.doStats
+		cp.doStore = self.doStore
+		cp.storageSize = self.storageSize
+		return cp
 class evalSGD_statsDat():
 	def __init__(self):
 		self.numSteps = 0
