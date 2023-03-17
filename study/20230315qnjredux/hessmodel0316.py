@@ -410,12 +410,12 @@ def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
 	#  fminbound() does not do what I need. Enough of this.
 	f0 = fOfT(0.0)
 	t1 = 1.0
-	for n in range(30):
+	for n in range(30): # Reduce this.
 		f1 = fOfT(t1)
 		if ( f1 <= f0 ):
 			return xOfT(t1)
 		t1 /= 2.0
-	msg('ERROR: Failed to reduce f')
+	#msg('ERROR: Failed to reduce f')
 	return xOfT(0.0)
 	
 	#msg('Calling fminbound...')
@@ -651,6 +651,13 @@ def searchMin_sgd(
 	vecXLand = searchHessCurve( funch_evalFG, hc, shcPrm )
 	
 	funch_evalFG = None # Don't oracle past here!
+	# DRaburn 2023-03-17: Second attempt, only keep perp part.
+	fLaunch, vecGLaunch = hm.evalFGOfProjX( vecXLaunch )
+	fLand, vecGLand = hm.evalFGOfProjX( vecXLand )
+	vecPLand = (fLand/fLaunch)*( vecPLaunch - (hm.matV @ (hm.matV.T @ vecPLaunch)) )
+	return vecXLand, vecPLand, smopDat
+	
+	# DRaburn 2023-03-17: First attempt, below doesn't work...
 	# We need to get a suitable vecPLand...
 	fLaunch, vecGLaunch = hm.evalFGOfProjX( vecXLaunch )
 	assert (vecGLaunch @ vecGLaunch > 0.0 )
