@@ -81,7 +81,8 @@ for stepIndex in range(maxNumSteps):
 	record_matG[:,0] = sgdDat.statsDat.avg_vecG[:]
 	#
 	# Prepare for next iteration.
-	if (useSMOP and (0==((stepIndex+1)%10))):
+	#if (useSMOP and (0==((stepIndex+1)%10))):
+	if (useSMOP):
 		nAnchor = 0
 		vecXSeed, vecPSeed, smopDat = hessmodel.searchMin_sgd_oracleP(
 		  funch_evalFG,

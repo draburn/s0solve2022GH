@@ -419,7 +419,7 @@ def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
 	assert ( f1 <= 100.0*f0 )
 	t = optimize.fminbound( fOfT, t0, t1, xtol=prm.dTTol, maxfun=prm.iterLimit+2, disp=1 )
 	f = fOfT(t)
-	#msg(f'{t0}, {t}, {t1}; {f0}, {f}, {f1}')
+	msg(f'{t0}, {t}, {t1}; {f0}, {f}, {f1}')
 	return xOfT(t)
 def multiSearchHessCurve( funch_evalFG, hessCurves ):
 	shcPrm = searchHessCurve_prm()
