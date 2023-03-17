@@ -49,6 +49,11 @@ else:
 	def funch_evalFG( x ):
 		_, _, f, d = prob.evalSGD(x, np.zeros(sizeX), sgdPrm)
 		return f, d.statsDat.avg_vecG
+useOracleP = False
+if (useOracleP):
+	funch_jump = hessmodel.searchMin_sgd_oracleP
+else:
+	funch_jump = hessmodel.searchMin_sgd
 
 chmPrm = hessmodel.calcHessModel_prm()
 chcPrm = hessmodel.calcHessCurves_prm()
@@ -93,7 +98,7 @@ for stepIndex in range(maxNumSteps):
 	#if (useSMOP and (0==((stepIndex+1)%10))):
 	if (useSMOP):
 		nAnchor = 0
-		vecXSeed, vecPSeed, smopDat = hessmodel.searchMin_sgd_oracleP(
+		vecXSeed, vecPSeed, smopDat = funch_jump(
 		  funch_evalFG,
 		  record_matX[:,nAnchor],
 		  record_vecF[nAnchor],
@@ -123,7 +128,7 @@ numVals = 200
 tExpLo = 1
 tExpHi = 1
 tVals = 1.0 - (1.0-(np.array(np.linspace(0.0,1.0,numVals))**tExpLo))**tExpHi
-tVals /= 10.0
+#tVals /= 10.0
 muScl = min(hc.vecLambdaWB)
 muVals = np.zeros(numVals)
 levLS_dVals  = np.zeros(numVals)

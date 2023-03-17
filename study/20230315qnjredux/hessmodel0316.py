@@ -54,7 +54,7 @@ class hessModelType():
 		vecGPerp = self.vecGPerpA + (self.matW @ vecY)
 		return f, vecGamma, vecGPerp
 	def evalFGOfProjX(self, vecX):
-		vecY = self.getYOfProjX(vecX)
+		vecY = self.evalYOfProjX(vecX)
 		f, vecGamma, vecGPerp = self.evalFGammaGPerpOfY(vecY)
 		vecG = (self.matV @ vecGamma) + vecGPerp
 		return f, vecG
@@ -252,7 +252,7 @@ def oracle_calcHessModel( funch_evalFG, vecXAnchor, record_matX, prm=calcHessMod
 class calcHessCurves_prm():
 	def __init__(self):
 		self.epsRelWB = 1.0e-6
-		self.adjustFForLaunch = True
+		self.adjustFForLaunch = False
 	def dump(self):
 		msg(f'Begin calcHessCurves_prm().dump...')
 		msg(f'self = {self}')
@@ -610,6 +610,54 @@ def searchMin_sgd_oracleP(
 	vecB = vecPLaunch - (a*vecGLaunch)
 	assert( norm(vecGLaunch @ vecB) <= 1.0e-6*(norm(vecGLaunch) * norm(vecB)) )
 	fLand, vecGLand = funch_evalFG( vecXLand )
+	alphaF = fLand/fLaunch
+	vecPLand = (a*vecGLand) + (alphaF*vecB)
+	#msg(f'{norm(vecXLand - vecXLaunch)}, {fLaunch}, {fLand}')
+	return vecXLand, vecPLand, smopDat
+def searchMin_sgd(
+  funch_evalFG,
+  vecXAnchor,
+  fAnchor,
+  vecGAnchor,
+  record_matX,
+  record_vecF,
+  record_matG,
+  vecXLaunch,
+  vecPLaunch,
+  chmPrm = calcHessModel_prm(),
+  chcPrm = calcHessCurves_prm(),
+  shcPrm = searchHessCurve_prm() ):
+	smopDat = smop_dat()
+	numRecords = record_matX.shape[1]
+	if ( 0 == numRecords ):
+		return vecXLaunch.copy(), vecPLaunch.copy()
+	hm = calcHessModel( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, record_matG, chmPrm )
+	smopDat.hm = hm
+	if ( hm is None ):
+		sizeK = 0
+	else:
+		sizeK = hm.matV.shape[1]
+	if ( 0 == sizeK ):
+		return vecXLaunch.copy(), vecPLaunch.copy(), smopDat
+	vecYLaunch = hm.matV.T @ ( vecXLaunch - hm.vecXA )
+	smopDat.vecYLaunch = vecYLaunch
+	vecS = None
+	hc, hmPSD, hmWB, hmLS = calcHessCurves( hm, vecYLaunch, vecS, chcPrm )
+	smopDat.hc = hc
+	smopDat.hmPSD = hmPSD
+	smopDat.hmWB = hmWB
+	smopDat.hmLS = hmLS
+	# Note: hmLS should functionally match hm.
+	vecXLand = searchHessCurve( funch_evalFG, hc, shcPrm )
+	
+	funch_evalFG = None # Don't oracle past here!
+	# We need to get a suitable vecPLand...
+	fLaunch, vecGLaunch = hm.evalFGOfProjX( vecXLaunch )
+	assert (vecGLaunch @ vecGLaunch > 0.0 )
+	a = ( vecPLaunch @ vecGLaunch ) / (vecGLaunch @ vecGLaunch)
+	vecB = vecPLaunch - (a*vecGLaunch)
+	assert( norm(vecGLaunch @ vecB) <= 1.0e-6*(norm(vecGLaunch) * norm(vecB)) )
+	fLand, vecGLand = hm.evalFGOfProjX( vecXLand )
 	alphaF = fLand/fLaunch
 	vecPLand = (a*vecGLand) + (alphaF*vecB)
 	#msg(f'{norm(vecXLand - vecXLaunch)}, {fLaunch}, {fLand}')
