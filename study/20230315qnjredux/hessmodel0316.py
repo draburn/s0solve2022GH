@@ -532,6 +532,9 @@ def searchMin(
 
 # _oracleP: oracle wrt calculating vecPLand.
 # This is a bit beyond "hessmodel", in "qnj" territory.
+class smop_dat():
+	def __init(self):
+		pass
 def searchMin_sgd_oracleP(
   funch_evalFG,
   vecXAnchor,
@@ -545,19 +548,26 @@ def searchMin_sgd_oracleP(
   chmPrm = calcHessModel_prm(),
   chcPrm = calcHessCurves_prm(),
   shcPrm = searchHessCurve_prm() ):
+	smopDat = smop_dat()
 	numRecords = record_matX.shape[1]
 	if ( 0 == numRecords ):
 		return vecXLaunch.copy(), vecPLaunch.copy()
 	hm = calcHessModel( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, record_matG, chmPrm )
+	smopDat.hm = hm
 	if ( hm is None ):
 		sizeK = 0
 	else:
 		sizeK = hm.matV.shape[1]
 	if ( 0 == sizeK ):
-		return vecXLaunch.copy(), vecPLaunch.copy()
+		return vecXLaunch.copy(), vecPLaunch.copy(), smopDat
 	vecYLaunch = hm.matV.T @ ( vecXLaunch - hm.vecXA )
+	smopDat.vecYLaunch = vecYLaunch
 	vecS = None
 	hc, hmPSD, hmWB, hmLS = calcHessCurves( hm, vecYLaunch, vecS, chcPrm )
+	smopDat.hc = hc
+	smopDat.hmPSD = hmPSD
+	smopDat.hmWB = hmWB
+	smopDat.hmLS = hmLS
 	# Note: hmLS should functionally match hm.
 	vecXLand = searchHessCurve( funch_evalFG, hc, shcPrm )
 	
@@ -570,4 +580,4 @@ def searchMin_sgd_oracleP(
 	fLand, vecGLand = funch_evalFG( vecXLand )
 	alphaF = fLand/fLaunch
 	vecPLand = (a*vecGLand) + (alphaF*vecB)
-	return vecXLand, vecPLand
+	return vecXLand, vecPLand, smopDat
