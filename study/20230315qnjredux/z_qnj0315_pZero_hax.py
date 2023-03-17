@@ -54,6 +54,7 @@ chmPrm = hessmodel.calcHessModel_prm()
 chcPrm = hessmodel.calcHessCurves_prm()
 shcPrm = hessmodel.searchHessCurve_prm()
 #shcPrm.tMax = 0.1
+chcPrm.adjustFForLaunch = False
 msg(f'chmPrm = {chmPrm}...')
 chmPrm.dump()
 msg(f'chcPrm = {chcPrm}...')

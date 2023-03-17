@@ -252,10 +252,12 @@ def oracle_calcHessModel( funch_evalFG, vecXAnchor, record_matX, prm=calcHessMod
 class calcHessCurves_prm():
 	def __init__(self):
 		self.epsRelWB = 1.0e-6
+		self.adjustFForLaunch = True
 	def dump(self):
 		msg(f'Begin calcHessCurves_prm().dump...')
 		msg(f'self = {self}')
 		msg(f'  epsRelWB = {self.epsRelWB}')
+		msg(f'  adjustFForLaunch = {self.adjustFForLaunch}')
 		msg(f'End calcHessCurves_prm.dump().')
 def calcHessCurves__calcLambdaWBFloor( f0, vecPhi, vecLambda, fFloor, epsRelWB ):
 	assert (f0 > fFloor)
@@ -291,7 +293,10 @@ def calcHessCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcHessCurves_pr
 	assert (min(vecS) > 0.0)
 	#
 	# Move to launch point, scale, and get eigen-factorization.
-	fLS = hessModel.fA + (vecYLaunch @ hessModel.vecGammaA) + ((vecYLaunch @ hessModel.matH @ vecYLaunch)/2.0)
+	if (prm.adjustFForLaunch):
+		fLS = hessModel.fA + (vecYLaunch @ hessModel.vecGammaA) + ((vecYLaunch @ hessModel.matH @ vecYLaunch)/2.0)
+	else:
+		fLS = hessModel.fA
 	vecGammaLS = (hessModel.vecGammaA + (hessModel.matH @ vecYLaunch)) * vecS
 	matHLS = danutil.symm((hessModel.matH * vecS).T * vecS)
 	vecLambdaCmplx, matPsi = np.linalg.eig(matHLS)
