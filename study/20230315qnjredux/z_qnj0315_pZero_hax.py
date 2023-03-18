@@ -6,6 +6,7 @@ from numpy.linalg import norm
 import hessmodel0316 as hessmodel
 
 startTime = time.time()
+msgtime()
 justTest = False
 msg(f'justTest = {justTest}')
 if (justTest):
@@ -77,7 +78,7 @@ for stepIndex in range(maxNumSteps):
 	if (usePReset):
 		vecPSeed[:] = 0.0
 	vecXHarvest, vecPHarvest, f, sgdDat = prob.evalSGD(vecXSeed, vecPSeed, sgdPrm)
-	print(f'[{time.time()-startTime:8.2f}, {stepIndex:5d}, {f:10.3e}, {norm(sgdDat.statsDat.avg_vecG[:]):10.3e}]')
+	#print(f'[{time.time()-startTime:8.2f}, {stepIndex:5d}, {f:10.3e}, {norm(sgdDat.statsDat.avg_vecG[:]):10.3e}]')
 	assert( f < 100.0 )
 	assert ( f >= 0.0 )
 	#
@@ -94,6 +95,7 @@ for stepIndex in range(maxNumSteps):
 		record_vecF[0] = f
 	record_matG[:,0] = sgdDat.statsDat.avg_vecG[:]
 	#
+	deltaSGD = norm(vecXHarvest - vecXSeed)
 	# Prepare for next iteration.
 	#if (useSMOP and (0==((stepIndex+1)%10))):
 	if (useSMOP):
@@ -111,13 +113,18 @@ for stepIndex in range(maxNumSteps):
 		  chmPrm,
 		  chcPrm,
 		  shcPrm )
+		tQNJ = smopDat.t
 	else:
 		vecXSeed[:] = vecXHarvest[:]
 		vecPSeed[:] = vecPHarvest[:]
+		tQNJ = 0.0
+	deltaQNJ = norm(vecXSeed - vecXHarvest)
+	print(f'[{time.time()-startTime:8.2f}, {stepIndex:5d}, {f:10.3e}, {norm(sgdDat.statsDat.avg_vecG[:]):10.3e}, {deltaSGD:10.3e}, {deltaQNJ:10.3e}, {tQNJ:10.3e}]')
 # End main loop.
 print('];')
 msg('Finished main loop.')
 
+danutil.bye()
 
 import matplotlib.pyplot as plt
 hc = smopDat.hc
