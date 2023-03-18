@@ -373,14 +373,14 @@ class searchHessCurve_prm():
 		self.tMax = 1.0
 		self.dTTol = 1.0e-6
 		self.iterLimit = 1000
-		self.returnT = False
+		self.returnTAndMu = False
 	def dump(self):
 		msg(f'Begin searchHessCurve_prm().dump...')
 		msg(f'self = {self}')
 		msg(f'  curveSelector = {self.curveSelector}')
 		msg(f'  dTTol = {self.dTTol}')
 		msg(f'  iterLimit = {self.iterLimit}')
-		msg(f'  returnT = {self.returnT}')
+		msg(f'  returnTAndMu = {self.returnTAndMu}')
 		msg(f'End searchHessCurve_prm.dump().')
 def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
 	if (prm.curveSelector.lower() == "floor"):
@@ -413,17 +413,18 @@ def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
 	f0 = fOfT(0.0)
 	t1 = 1.0
 	#for n in range(30): # Reduce this.
-	for n in range(10):
+	#for n in range(10):
+	for n in range(20):
 		f1 = fOfT(t1)
 		if ( f1 <= f0 ):
-			if (prm.returnT):
-				return xOfT(t1), t1
+			if (prm.returnTAndMu):
+				return xOfT(t1), t1, muScl*((1.0/t1)-1.0)
 			return xOfT(t1)
-		#t1 /= 2.0
-		t1 /= 5.0
+		t1 /= 2.0
+		#t1 /= 5.0
 	#msg('ERROR: Failed to reduce f')
-	if (prm.returnT):
-		return xOfT(0.0), 0.0
+	if (prm.returnTAndMu):
+		return xOfT(0.0), 0.0, -1.0
 	return xOfT(0.0)
 	
 	#msg('Calling fminbound...')
@@ -637,6 +638,7 @@ def searchMin_sgd(
   shcPrm = searchHessCurve_prm() ):
 	smopDat = smop_dat()
 	smopDat.t = 0.0
+	smopDat.mu = -1.0
 	numRecords = record_matX.shape[1]
 	if ( 0 == numRecords ):
 		return vecXLaunch.copy(), vecPLaunch.copy()
@@ -657,10 +659,11 @@ def searchMin_sgd(
 	smopDat.hmWB = hmWB
 	smopDat.hmLS = hmLS
 	# Note: hmLS should functionally match hm.
-	shcPrm.returnT = True
+	shcPrm.returnTAndMu = True
 	#vecXLand = searchHessCurve( funch_evalFG, hc, shcPrm )
-	vecXLand, t = searchHessCurve( funch_evalFG, hc, shcPrm )
+	vecXLand, t, mu = searchHessCurve( funch_evalFG, hc, shcPrm )
 	smopDat.t = t
+	smopDat.mu = mu
 	
 	funch_evalFG = None # Don't oracle past here!
 	# DRaburn 2023-03-17: Second attempt, only keep perp part.

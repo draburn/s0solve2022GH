@@ -95,10 +95,12 @@ for stepIndex in range(maxNumSteps):
 		record_vecF[0] = f
 	record_matG[:,0] = sgdDat.statsDat.avg_vecG[:]
 	#
-	deltaSGD = norm(vecXHarvest - vecXSeed)
+	deltaXSGD = norm(vecXHarvest - vecXSeed)
+	pHarvest = norm(vecPHarvest)
+	deltaPSGD = norm(vecPHarvest - vecPSeed)
 	# Prepare for next iteration.
 	#if (useSMOP and (0==((stepIndex+1)%10))):
-	if (useSMOP):
+	if (useSMOP and (stepIndex>=1) ):
 		nAnchor = 0
 		vecXSeed, vecPSeed, smopDat = funch_jump(
 		  funch_evalFG,
@@ -113,13 +115,44 @@ for stepIndex in range(maxNumSteps):
 		  chmPrm,
 		  chcPrm,
 		  shcPrm )
+		lambdaLSMin = min(smopDat.hc.vecLambdaLS)
+		lambdaLSRMS = np.sqrt(np.sum(smopDat.hc.vecLambdaLS**2))
+		lambdaLSMax = max(smopDat.hc.vecLambdaLS)
+		lambdaWBMin = min(smopDat.hc.vecLambdaWB)
+		lambdaWBRMS = np.sqrt(np.sum(smopDat.hc.vecLambdaWB**2))
+		lambdaWBMax = max(smopDat.hc.vecLambdaWB)
 		tQNJ = smopDat.t
+		muQNJ = smopDat.mu
 	else:
 		vecXSeed[:] = vecXHarvest[:]
 		vecPSeed[:] = vecPHarvest[:]
+		lambdaLSMin = 0.0
+		lambdaLSRMS = 0.0
+		lambdaLSMax = 0.0
+		lambdaWBMin = 0.0
+		lambdaWBRMS = 0.0
+		lambdaWBMax = 0.0
 		tQNJ = 0.0
-	deltaQNJ = norm(vecXSeed - vecXHarvest)
-	print(f'[{time.time()-startTime:8.2f}, {stepIndex:5d}, {f:10.3e}, {norm(sgdDat.statsDat.avg_vecG[:]):10.3e}, {deltaSGD:10.3e}, {deltaQNJ:10.3e}, {tQNJ:10.3e}]')
+		muQNJ = -1.0
+	deltaXQNJ = norm(vecXSeed - vecXHarvest)
+	print(f'[', end='')
+	print(f' {time.time()-startTime:8.2f}', end='')
+	print(f' {stepIndex:5d}  ', end='')
+	print(f' {f:8.2e}', end='')
+	print(f' {norm(sgdDat.statsDat.avg_vecG[:]):8.2e}', end='')
+	print(f' {deltaXSGD:8.2e}  ', end='')
+	print(f' {pHarvest:8.2e}', end='')
+	print(f' {deltaPSGD:8.2e}  ', end='')
+	print(f' {lambdaLSMin:9.2e}', end='')
+	print(f' {lambdaLSRMS:8.2e}', end='')
+	print(f' {lambdaLSMax:8.2e}', end='')
+	print(f' {lambdaWBMin:8.2e}', end='')
+	print(f' {lambdaWBRMS:8.2e}', end='')
+	print(f' {lambdaWBMax:8.2e}  ', end='')
+	print(f' {muQNJ:9.2e}', end='')
+	print(f' {tQNJ:8.2e}', end='')
+	print(f' {deltaXQNJ:8.2e}', end='' )
+	print(f' ]')
 # End main loop.
 print('];')
 msg('Finished main loop.')
