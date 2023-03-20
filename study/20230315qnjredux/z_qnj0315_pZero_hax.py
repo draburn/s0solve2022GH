@@ -145,7 +145,7 @@ for stepIndex in range(maxNumSteps):
 	print(f' {deltaPSGD:8.2e}  ', end='')
 	print(f' {lambdaLSMin:9.2e}', end='')
 	print(f' {lambdaLSRMS:8.2e}', end='')
-	print(f' {lambdaLSMax:8.2e}', end='')
+	print(f' {lambdaLSMax:9.2e}', end='')
 	print(f' {lambdaWBMin:8.2e}', end='')
 	print(f' {lambdaWBRMS:8.2e}', end='')
 	print(f' {lambdaWBMax:8.2e}  ', end='')
