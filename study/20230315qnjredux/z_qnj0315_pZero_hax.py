@@ -7,7 +7,7 @@ import hessmodel0316 as hessmodel
 
 startTime = time.time()
 msgtime()
-justTest = False
+justTest = True
 msg(f'justTest = {justTest}')
 if (justTest):
 	import demoproblem0221 as prob

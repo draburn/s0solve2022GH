@@ -411,7 +411,7 @@ def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
 	# DRaburn 2023-03-20.
 	#  Let's end this.
 	#zzz
-	t1, f1 = btSearch( fOfT, 0.0, 1.0 )
+	t1, f1 = findMin( fOfT, 0.0, 1.0 )
 	msg(f'FOUND: {t1:15.9e}, {f1:15.9e}')
 	#if ( t1 < 1.0e-7 or 1.0-t1 < 1.0e-7 ):
 	if (False):
@@ -721,10 +721,10 @@ def searchMin_sgd(
 	#msg(f'{norm(vecXLand - vecXLaunch)}, {fLaunch}, {fLand}')
 	return vecXLand, vecPLand, smopDat
 
-class btSearch_prm():
+class findMin_prm():
 	def __init__(self):
 		self.xTol = 1.0e-5
-def btSearch( funch_evalFOfT, xLo, xHi, prm=btSearch_prm() ):
+def findMin( funch_evalFOfT, xLo, xHi, prm=findMin_prm() ):
 	xL = xLo
 	xR = xHi
 	fL = funch_evalFOfT(xL)
@@ -794,4 +794,4 @@ def btSearch( funch_evalFOfT, xLo, xHi, prm=btSearch_prm() ):
 		fTemp = None
 	msg('ERROR: Failed to converge.')
 	return xL, fL
-# End btSearch()
+# End findMin().
