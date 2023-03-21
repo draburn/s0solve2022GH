@@ -412,9 +412,9 @@ def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
 	#  Let's end this.
 	#zzz
 	t1, f1 = btSearch( fOfT, 0.0, 1.0 )
-	msg(f'FOUND(ISH): {t1:9.3e}, {f1:9.3e}')
+	msg(f'FOUND: {t1:15.9e}, {f1:15.9e}')
 	#if ( t1 < 1.0e-7 or 1.0-t1 < 1.0e-7 ):
-	if (True):
+	if (False):
 		msg('Generating plot...')
 		numPts = 20
 		tVals = np.linspace(0.00, 1.00, numPts)
@@ -729,21 +729,22 @@ def btSearch( funch_evalFOfT, xLo, xHi, prm=btSearch_prm() ):
 		xC = (xL+xR)/2.0
 		fC = funch_evalFOfT(xC)
 	else:
-		for n in range(30):
+		for n in range(10):
 			xC = xL + (xR-xL)/10.0
 			fC = funch_evalFOfT(xC)
+			#msg(f'{n:2d}: {xL:9.3e}, {xC:9.3e}, {xR:9.3e};  {xL-xC:9.3e}, {xR-xC:9.3e};  {fL:9.3e}, {fC:9.3e}, {fR:9.3e};  {fL-fC:10.3e}, {fR-fC:10.3e}')
+			msg(f'{n:2d}: {xL:15.9e}, {xC:15.9e}, {xR:15.9e};  {fL:15.9e}, {fC:15.9e}, {fR:15.9e}')
 			if ( fC < fL ):
 				break
 			xR = xC
 			fR = fC
-			xC = None
-			fC = None
 		if ( fC >= fL ):
-			msg(f'{xL:9.3e}, {xC:9.3e}, {xR:9.3e};  {xL-xC:9.3e}, {xR-xC:9.3e};  {fL:9.3e}, {fC:9.3e}, {fR:9.3e};  {fL-fC:10.3e}, {fR-fC:10.3e}')
+			#msg(f'{xL:9.3e}, {xC:9.3e}, {xR:9.3e};  {xL-xC:9.3e}, {xR-xC:9.3e};  {fL:9.3e}, {fC:9.3e}, {fR:9.3e};  {fL-fC:10.3e}, {fR-fC:10.3e}')
 			msg('EXCEPTION: Failed to reduce f with small step.')
 			return xL, fL
 	for n in range(50):
-		msg(f'{n:2d}: {xL:9.3e}, {xC:9.3e}, {xR:9.3e};  {xL-xC:9.3e}, {xR-xC:9.3e};  {fL:9.3e}, {fC:9.3e}, {fR:9.3e};  {fL-fC:10.3e}, {fR-fC:10.3e}')
+		#msg(f'{n:2d}: {xL:9.3e}, {xC:9.3e}, {xR:9.3e};  {xL-xC:9.3e}, {xR-xC:9.3e};  {fL:9.3e}, {fC:9.3e}, {fR:9.3e};  {fL-fC:10.3e}, {fR-fC:10.3e}')
+		msg(f'{n:2d}: {xL:15.9e}, {xC:15.9e}, {xR:15.9e};  {fL:15.9e}, {fC:15.9e}, {fR:15.9e}')
 		assert( xL < xC )
 		assert( xC < xR )
 		if ( fC >= fL ):
@@ -757,7 +758,8 @@ def btSearch( funch_evalFOfT, xLo, xHi, prm=btSearch_prm() ):
 			#xTemp = (xR+xC)/2.0
 			xTemp = xC + (xR-xC)/3.0
 			fTemp = funch_evalFOfT(xTemp)
-			msg(f'    {xTemp:9.3e};  {xTemp-xC:9.3e};  {fTemp:9.3e};  {fTemp-fC:9.3e}')
+			#msg(f'    {xTemp:9.3e};  {xTemp-xC:9.3e};  {fTemp:9.3e};  {fTemp-fC:9.3e}')
+			msg(f'    {xTemp:15.9e}; {fTemp:15.9e}')
 			if ( fTemp < fC ):
 				# C -> L, Temp -> C
 				xL = xC
@@ -772,7 +774,8 @@ def btSearch( funch_evalFOfT, xLo, xHi, prm=btSearch_prm() ):
 			#xTemp = (xL+xC)/2.0
 			xTemp = xC + (xL-xC)/3.0
 			fTemp = funch_evalFOfT(xTemp)
-			msg(f'    {xTemp:9.3e};  {xTemp-xC:9.3e};  {fTemp:9.3e};  {fTemp-fC:9.3e}')
+			#msg(f'    {xTemp:9.3e};  {xTemp-xC:9.3e};  {fTemp:9.3e};  {fTemp-fC:9.3e}')
+			msg(f'    {xTemp:15.9e}; {fTemp:15.9e}')
 			if ( fTemp < fC ):
 				# C -> R, Temp ->C
 				xR = xC

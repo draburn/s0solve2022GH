@@ -135,7 +135,8 @@ for stepIndex in range(maxNumSteps):
 		tQNJ = 0.0
 		muQNJ = -1.0
 	deltaXQNJ = norm(vecXSeed - vecXHarvest)
-	print(f'[', end='')
+	#print(f'[', end='')
+	msg(f'[', end='')
 	print(f' {time.time()-startTime:8.2f}', end='')
 	print(f' {stepIndex:5d}  ', end='')
 	print(f' {f:8.2e}', end='')
