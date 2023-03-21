@@ -398,7 +398,7 @@ def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
 	assert( muScl > 0.0 )
 	def xOfT(t):
 		if (t == 0.0):
-			return hessCurves.vecXA
+			return hessCurves.vecXA + (hessCurves.matV @ hessCurves.vecYLaunch )
 		else:
 			mu = muScl*((1.0/t) - 1.0)
 			return hessCurves.vecXA + (hessCurves.matV @ funchYOfMu(mu))
@@ -407,7 +407,38 @@ def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
 		# Optimization: make use of vecG. (We have to mux with the curve to get df/dt, though.)
 		#scipy.optimize.fmin(func, x0, args=(), xtol=0.0001, ftol=0.0001, maxiter=None, maxfun=None, full_output=0, disp=1, retall=0, callback=None, initial_simplex=None)
 		return f
-
+	
+	# DRaburn 2023-03-20.
+	#  Let's end this.
+	#zzz
+	t1, f1 = btSearch( fOfT, 0.0, 1.0 )
+	msg(f'FOUND(ISH): {t1:9.3e}, {f1:9.3e}')
+	#if ( t1 < 1.0e-7 or 1.0-t1 < 1.0e-7 ):
+	if (True):
+		msg('Generating plot...')
+		numPts = 20
+		tVals = np.linspace(0.00, 1.00, numPts)
+		fVals = np.zeros(numPts)
+		dVals = np.zeros(numPts)
+		for n in range (numPts):
+			fVals[n] = fOfT(tVals[n])
+			dVals[n] = norm(xOfT(tVals[n])-xOfT(0.0))
+			msg(f'  {n:3d}/{numPts:d} {tVals[n]:10.3e}, {dVals[n]:10.3e}, {fVals[n]:10.3e}')
+		import matplotlib.pyplot as plt
+		plt.semilogy(tVals, fVals, 'o-')
+		plt.semilogy(t1, f1, 'p', markersize=20)
+		plt.grid(True)
+		plt.show()
+	
+	if ( t1 > 0.0 ):
+		mu1 = muScl*((1.0/t1)-1.0)
+	else:
+		mu1 = 0.0
+	if (prm.returnTAndMu):
+		return xOfT(t1), t1, mu1
+	return xOfT(t1)
+	
+	
 	# DRaburn 2023-03-16.
 	#  fminbound() does not do what I need. Enough of this.
 	f0 = fOfT(0.0)
@@ -418,6 +449,7 @@ def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
 		f1 = fOfT(t1)
 		if ( f1 <= f0 ):
 			if (prm.returnTAndMu):
+				msg(f'FOUND(ISH): {t1:9.3e}, {f1:9.3e}')
 				return xOfT(t1), t1, muScl*((1.0/t1)-1.0)
 			return xOfT(t1)
 		t1 /= 2.0
@@ -684,3 +716,75 @@ def searchMin_sgd(
 	vecPLand = (a*vecGLand) + (alphaF*vecB)
 	#msg(f'{norm(vecXLand - vecXLaunch)}, {fLaunch}, {fLand}')
 	return vecXLand, vecPLand, smopDat
+
+class btSearch_prm():
+	def __init__(self):
+		self.xTol = 1.0e-5
+def btSearch( funch_evalFOfT, xLo, xHi, prm=btSearch_prm() ):
+	xL = xLo
+	xR = xHi
+	fL = funch_evalFOfT(xL)
+	fR = funch_evalFOfT(xR)
+	if ( fR < fL ):
+		xC = (xL+xR)/2.0
+		fC = funch_evalFOfT(xC)
+	else:
+		for n in range(30):
+			xC = xL + (xR-xL)/10.0
+			fC = funch_evalFOfT(xC)
+			if ( fC < fL ):
+				break
+			xR = xC
+			fR = fC
+			xC = None
+			fC = None
+		if ( fC >= fL ):
+			msg(f'{xL:9.3e}, {xC:9.3e}, {xR:9.3e};  {xL-xC:9.3e}, {xR-xC:9.3e};  {fL:9.3e}, {fC:9.3e}, {fR:9.3e};  {fL-fC:10.3e}, {fR-fC:10.3e}')
+			msg('EXCEPTION: Failed to reduce f with small step.')
+			return xL, fL
+	for n in range(50):
+		msg(f'{n:2d}: {xL:9.3e}, {xC:9.3e}, {xR:9.3e};  {xL-xC:9.3e}, {xR-xC:9.3e};  {fL:9.3e}, {fC:9.3e}, {fR:9.3e};  {fL-fC:10.3e}, {fR-fC:10.3e}')
+		assert( xL < xC )
+		assert( xC < xR )
+		if ( fC >= fL ):
+			msg('EXCEPTION: Bad shape.')
+			return xL, fL
+		if ( abs(xR - xL) < prm.xTol ):
+			if ( fR < fC ):
+				return xR, fR
+			return xC, fC
+		if ( abs(xR - xC) > abs(xC - xL) ):
+			#xTemp = (xR+xC)/2.0
+			xTemp = xC + (xR-xC)/3.0
+			fTemp = funch_evalFOfT(xTemp)
+			msg(f'    {xTemp:9.3e};  {xTemp-xC:9.3e};  {fTemp:9.3e};  {fTemp-fC:9.3e}')
+			if ( fTemp < fC ):
+				# C -> L, Temp -> C
+				xL = xC
+				fL = fC
+				xC = xTemp
+				fC = fTemp
+			else:
+				# Temp -> R
+				xR = xTemp
+				fR = fTemp
+		else:
+			#xTemp = (xL+xC)/2.0
+			xTemp = xC + (xL-xC)/3.0
+			fTemp = funch_evalFOfT(xTemp)
+			msg(f'    {xTemp:9.3e};  {xTemp-xC:9.3e};  {fTemp:9.3e};  {fTemp-fC:9.3e}')
+			if ( fTemp < fC ):
+				# C -> R, Temp ->C
+				xR = xC
+				fR = fC
+				xC = xTemp
+				fC = fTemp
+			else:
+				# Temp -> L
+				xL = xTemp
+				fL = fTemp
+		xTemp = None
+		fTemp = None
+	msg('ERROR: Failed to converge.')
+	return xL, fL
+# End btSearch()
