@@ -50,7 +50,7 @@ else:
 	def funch_evalFG( x ):
 		_, _, f, d = prob.evalSGD(x, np.zeros(sizeX), sgdPrm)
 		return f, d.statsDat.avg_vecG
-useOracleP = False
+useOracleP = True
 if (useOracleP):
 	funch_jump = hessmodel.searchMin_sgd_oracleP
 else:

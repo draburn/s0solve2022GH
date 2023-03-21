@@ -622,6 +622,8 @@ def searchMin_sgd_oracleP(
   chcPrm = calcHessCurves_prm(),
   shcPrm = searchHessCurve_prm() ):
 	smopDat = smop_dat()
+	smopDat.t = 0.0
+	smopDat.mu = -1.0
 	numRecords = record_matX.shape[1]
 	if ( 0 == numRecords ):
 		return vecXLaunch.copy(), vecPLaunch.copy()
@@ -642,7 +644,9 @@ def searchMin_sgd_oracleP(
 	smopDat.hmWB = hmWB
 	smopDat.hmLS = hmLS
 	# Note: hmLS should functionally match hm.
-	vecXLand = searchHessCurve( funch_evalFG, hc, shcPrm )
+	shcPrm.returnTAndMu = True
+	#vecXLand = searchHessCurve( funch_evalFG, hc, shcPrm )
+	vecXLand, t, mu = searchHessCurve( funch_evalFG, hc, shcPrm )
 	
 	# We'll use oracle/extra info for vecPLand...
 	fLaunch, vecGLaunch = funch_evalFG( vecXLaunch )
