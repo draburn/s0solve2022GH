@@ -378,8 +378,10 @@ class searchHessCurve_prm():
 		msg(f'Begin searchHessCurve_prm().dump...')
 		msg(f'self = {self}')
 		msg(f'  curveSelector = {self.curveSelector}')
-		msg(f'  dTTol = {self.dTTol}')
-		msg(f'  iterLimit = {self.iterLimit}')
+		msg(f'  tMin = {self.tMin} (depricated?)')
+		msg(f'  tMax = {self.tMax} (depricated?)')
+		msg(f'  dTTol = {self.dTTol} (depricated?)')
+		msg(f'  iterLimit = {self.iterLimit} (depricated?)')
 		msg(f'  returnTAndMu = {self.returnTAndMu}')
 		msg(f'End searchHessCurve_prm.dump().')
 def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
@@ -646,7 +648,8 @@ def searchMin_sgd_oracleP(
 	# Note: hmLS should functionally match hm.
 	shcPrm.returnTAndMu = True
 	#vecXLand = searchHessCurve( funch_evalFG, hc, shcPrm )
-	vecXLand, t, mu = searchHessCurve( funch_evalFG, hc, shcPrm )
+	###vecXLand, t, mu = searchHessCurve( funch_evalFG, hc, shcPrm )
+	vecXLand, t, mu = searchHessCurve0321( funch_evalFG, hm, hc)
 	
 	# We'll use oracle/extra info for vecPLand...
 	fLaunch, vecGLaunch = funch_evalFG( vecXLaunch )
@@ -697,7 +700,8 @@ def searchMin_sgd(
 	# Note: hmLS should functionally match hm.
 	shcPrm.returnTAndMu = True
 	#vecXLand = searchHessCurve( funch_evalFG, hc, shcPrm )
-	vecXLand, t, mu = searchHessCurve( funch_evalFG, hc, shcPrm )
+	###vecXLand, t, mu = searchHessCurve( funch_evalFG, hc, shcPrm )
+	vecXLand, t, mu = searchHessCurve0321( funch_evalFG, hm, hc)
 	smopDat.t = t
 	smopDat.mu = mu
 	
@@ -792,6 +796,156 @@ def findMin( funch_evalFOfT, xLo, xHi, prm=findMin_prm() ):
 				fL = fTemp
 		xTemp = None
 		fTemp = None
-	msg('ERROR: Failed to converge.')
+	msg('EXCEPTION: Failed to converge within allowed iterations.')
 	return xL, fL
 # End findMin().
+
+class findZero_prm():
+	def __init__(self):
+		self.xTol = 1.0e-6
+def findZero( funch_evalFOfT, xLo, xHi, prm=findZero_prm() ):
+	msg(f'*** YAY, WE ARE CALLING findZero()! prm.xTol = {prm.xTol} ***')
+	xL = xLo
+	xR = xHi
+	fL = funch_evalFOfT(xL)
+	fR = funch_evalFOfT(xR)
+	msg(f'{xL:15.9e}, {xR:15.9e};  {fL:15.9e}, {fR:15.9e}')
+	if ( fL*fR > 0.0 ):
+		msg('EXCEPTION: Initial guesses do not (properly) bracket a zero.')
+		return xL
+	if ( 0.0 == fL ):
+		msg('EXCEPTION: Initial fL == 0.0.')
+		return xL
+	if ( 0.0 == fR ):
+		msg('EXCEPTION: Initial fR == 0.0.')
+		return xR
+	for n in range (30):
+		msg(f'{n:3d};  {xL:15.9e}, {xR:15.9e};  {fL:15.9e}, {fR:15.9e}')
+		# We'll use basic secant-bisection.
+		assert( fR > fL )
+		xTemp = ((xL*fR) - (xR*fL))/(fR - fL)
+		assert( xL <= xTemp )
+		assert( xTemp <= xR )
+		fTemp = funch_evalFOfT(xTemp)
+		msg(f'      {xTemp:15.9e}; {fTemp:15.9e}')
+		if ( 0.0 == fTemp ):
+			return xTemp
+		if ( fL * fTemp <= 0.0 ):
+			xR = xTemp
+			fR = fTemp
+		else:
+			xL = xTemp
+			fL = fTemp
+		if ( abs(xR-xL) < prm.xTol ):
+			if ( abs(fR) < abs(fL) ):
+				return xR
+			else:
+				return xL
+		# Now, bisect.
+		msg(f'{n:3d};  {xL:15.9e}, {xR:15.9e};  {fL:15.9e}, {fR:15.9e}')
+		xTemp = (xL+xR)/2.0
+		fTemp = funch_evalFOfT(xTemp)
+		msg(f'      {xTemp:15.9e}; {fTemp:15.9e}')
+		if ( 0.0 == fTemp ):
+			return xTemp
+		if ( fL * fTemp <= 0.0 ):
+			xR = xTemp
+			fR = fTemp
+		else:
+			xL = xTemp
+			fL = fTemp
+	msg('EXCEPTION: Failed to converge within allowed iterations.')
+	return xL
+# End findZero()
+
+class searchHessCurve0321_prm():
+	def __init__(self):
+		self.curveSelector = "floor"
+		#self.returnTAndMu = False
+		#self.agreementCoeff = 0.5
+		self.agreementCoeff = -1.0
+	def dump(self):
+		msg(f'Begin searchHessCurve0321_prm().dump...')
+		msg(f'self = {self}')
+		msg(f'  curveSelector = {self.curveSelector}')
+		#msg(f'  returnTAndMu = {self.returnTAndMu}')
+		msg(f'  agreementCoeff = {self.agreementCoeff}')
+		msg(f'End searchHessCurve0321_prm.dump().')
+def searchHessCurve0321( funch_evalFG, hessModel, hessCurves, prm=searchHessCurve0321_prm() ):
+	if (prm.curveSelector.lower() == "floor"):
+		funchYOfMu = hessCurves.calcYFloorOfMu
+	elif (prm.curveSelector.lower() == "ls"):
+		funchYOfMu = hessCurves.calcYLevLSOfMu
+	elif (prm.curveSelector.lower() == "psd"):
+		funchYOfMu = hessCurves.calcYLevPSDOfMu
+	elif (prm.curveSelector.lower() == "wb"):
+		funchYOfMu = hessCurves.calcYLevWBOfMu
+	else:
+		msg(f'ERROR: unsupported value of prm.curveSelector.lower() ({prm.curveSelector.lower()}).')
+		return None
+	muScl = min(hessCurves.vecLambdaWB)
+	assert( muScl > 0.0 )
+	def xOfT(t):
+		if (t == 0.0):
+			return hessCurves.vecXA + (hessCurves.matV @ hessCurves.vecYLaunch )
+		else:
+			mu = muScl*((1.0/t) - 1.0)
+			return hessCurves.vecXA + (hessCurves.matV @ funchYOfMu(mu))
+	def fOfT( t ):
+		f, _ = funch_evalFG(xOfT(t))
+		# Optimization: make use of vecG. (We have to mux with the curve to get df/dt, though.)
+		#scipy.optimize.fmin(func, x0, args=(), xtol=0.0001, ftol=0.0001, maxiter=None, maxfun=None, full_output=0, disp=1, retall=0, callback=None, initial_simplex=None)
+		return f
+	
+	t1, f1 = findMin( fOfT, 0.0, 1.0 )
+	msg(f'FOUND: {t1:15.9e}, {f1:15.9e}')
+	
+	t1_min = t1
+	f1_min = f1
+	if (prm.agreementCoeff > 0.0):
+		def zOfT( t ):
+			vecX0 = xOfT(0.0)
+			f0, _ = hessModel.evalFGOfProjX(vecX0)
+			vecX = xOfT(t)
+			fActual, _ = funch_evalFG(vecX)
+			fModel, _ = hessModel.evalFGOfProjX(vecX)
+			return fActual - fModel - (prm.agreementCoeff*f0)
+		z1 = zOfT(t1)
+		msg(f'   z1 = {z1:15.9e}')
+		if (z1 > 0.0):
+			t1 = findZero( zOfT, 0.0, t1 )
+			z1 = zOfT(t1)
+			msg(f'Found   t1 = {t1:15.9e}, z1 = {z1:15.9e}')
+		t1_zer = t1
+		#
+	if (False):
+		msg('Generating plot...')
+		numPts = 20
+		tVals = np.linspace(0.00, 1.00, numPts)
+		fVals = np.zeros(numPts)
+		mVals = np.zeros(numPts)
+		dVals = np.zeros(numPts)
+		for n in range (numPts):
+			fVals[n] = fOfT(tVals[n])
+			mVals[n], _ = hessModel.evalFGOfProjX(xOfT(tVals[n]))
+			dVals[n] = norm(xOfT(tVals[n])-xOfT(0.0))
+			msg(f'  {n:3d}/{numPts:d} {tVals[n]:10.3e}, {dVals[n]:10.3e}, {fVals[n]:10.3e}, {mVals[n]:10.3e}')
+		f1_zer = fOfT(t1_zer)
+		import matplotlib.pyplot as plt
+		plt.semilogy(tVals, fVals, 'o-')
+		plt.semilogy(tVals, mVals, 'x-')
+		plt.semilogy(t1_min, f1_min, 'p', markersize=20)
+		plt.semilogy(t1_zer, f1_zer, '*', markersize=15)
+		plt.grid(True)
+		plt.show()
+		
+	
+	if ( t1 > 0.0 ):
+		mu1 = muScl*((1.0/t1)-1.0)
+	else:
+		mu1 = 0.0
+	#if (prm.returnTAndMu):
+	#	return xOfT(t1), t1, mu1
+	#return xOfT(t1)
+	return xOfT(t1), t1, mu1
+# End searchHessCurve0321().
