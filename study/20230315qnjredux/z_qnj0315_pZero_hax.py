@@ -32,8 +32,12 @@ record_vecF = np.zeros(maxNumRecords)
 record_matG = np.zeros((sizeX, maxNumRecords))
 numRecords = 0
 
-useSMOP = True
+useSMOP = False
 msg(f'useSMOP = {useSMOP}')
+useCappedJump = True
+msg(f'useCappedJump = {useCappedJump}')
+deltaMaxCoeff = 1.0
+msg(f'deltaMaxCoeff = {deltaMaxCoeff}')
 
 usePReset = False
 if (usePReset):
@@ -123,6 +127,29 @@ for stepIndex in range(maxNumSteps):
 		lambdaWBMax = max(smopDat.hc.vecLambdaWB)
 		tQNJ = smopDat.t
 		muQNJ = smopDat.mu
+	elif (useCappedJump and useOracleP and (stepIndex>=1) ):
+		nAnchor = 0
+		vecXSeed, vecPSeed, smopDat = hessmodel.cappedJump_oracleP(
+		  funch_evalFG,
+		  record_matX[:,nAnchor],
+		  record_vecF[nAnchor],
+		  record_matG[:,nAnchor],
+		  record_matX[:,0:numRecords],
+		  record_vecF[0:numRecords],
+		  record_matG[:,0:numRecords],
+		  vecXHarvest,
+		  vecPHarvest,
+		  deltaMaxCoeff * deltaXSGD,
+		  chmPrm,
+		  chcPrm )
+		lambdaLSMin = min(smopDat.hc.vecLambdaLS)
+		lambdaLSRMS = np.sqrt(np.sum(smopDat.hc.vecLambdaLS**2))
+		lambdaLSMax = max(smopDat.hc.vecLambdaLS)
+		lambdaWBMin = min(smopDat.hc.vecLambdaWB)
+		lambdaWBRMS = np.sqrt(np.sum(smopDat.hc.vecLambdaWB**2))
+		lambdaWBMax = max(smopDat.hc.vecLambdaWB)
+		tQNJ = smopDat.t
+		muQNJ = smopDat.mu
 	else:
 		vecXSeed[:] = vecXHarvest[:]
 		vecPSeed[:] = vecPHarvest[:]
@@ -135,6 +162,7 @@ for stepIndex in range(maxNumSteps):
 		tQNJ = 0.0
 		muQNJ = -1.0
 	deltaXQNJ = norm(vecXSeed - vecXHarvest)
+	deltaPQNJ = norm(vecPSeed - vecPHarvest)
 	#print(f'[', end='')
 	msg(f'[', end='')
 	print(f' {time.time()-startTime:8.2f}', end='')
@@ -153,6 +181,7 @@ for stepIndex in range(maxNumSteps):
 	print(f' {muQNJ:9.2e}', end='')
 	print(f' {tQNJ:8.2e}', end='')
 	print(f' {deltaXQNJ:8.2e}', end='' )
+	print(f' {deltaPQNJ:8.2e}', end='' )
 	print(f' ]')
 # End main loop.
 print('];')

@@ -803,8 +803,9 @@ def findMin( funch_evalFOfT, xLo, xHi, prm=findMin_prm() ):
 class findZero_prm():
 	def __init__(self):
 		self.xTol = 1.0e-6
+		self.fTol = 1.0e-12
 def findZero( funch_evalFOfT, xLo, xHi, prm=findZero_prm() ):
-	msg(f'*** YAY, WE ARE CALLING findZero()! prm.xTol = {prm.xTol} ***')
+	#msg(f'*** YAY, WE ARE CALLING findZero()! prm.xTol = {prm.xTol} ***')
 	xL = xLo
 	xR = xHi
 	fL = funch_evalFOfT(xL)
@@ -828,7 +829,7 @@ def findZero( funch_evalFOfT, xLo, xHi, prm=findZero_prm() ):
 		assert( xTemp <= xR )
 		fTemp = funch_evalFOfT(xTemp)
 		msg(f'      {xTemp:15.9e}; {fTemp:15.9e}')
-		if ( 0.0 == fTemp ):
+		if ( abs(fTemp) < prm.fTol ):
 			return xTemp
 		if ( fL * fTemp <= 0.0 ):
 			xR = xTemp
@@ -949,3 +950,112 @@ def searchHessCurve0321( funch_evalFG, hessModel, hessCurves, prm=searchHessCurv
 	#return xOfT(t1)
 	return xOfT(t1), t1, mu1
 # End searchHessCurve0321().
+
+def getCappedJump( hessCurves, deltaMax, prm=searchHessCurve_prm() ):
+	if (prm.curveSelector.lower() == "floor"):
+		funchYOfMu = hessCurves.calcYFloorOfMu
+	elif (prm.curveSelector.lower() == "ls"):
+		funchYOfMu = hessCurves.calcYLevLSOfMu
+	elif (prm.curveSelector.lower() == "psd"):
+		funchYOfMu = hessCurves.calcYLevPSDOfMu
+	elif (prm.curveSelector.lower() == "wb"):
+		funchYOfMu = hessCurves.calcYLevWBOfMu
+	else:
+		msg(f'ERROR: unsupported value of prm.curveSelector.lower() ({prm.curveSelector.lower()}).')
+		return None
+	muScl = min(hessCurves.vecLambdaWB)
+	assert( muScl > 0.0 )
+	def xOfT(t):
+		if (t == 0.0):
+			return hessCurves.vecXA + (hessCurves.matV @ hessCurves.vecYLaunch )
+		else:
+			mu = muScl*((1.0/t) - 1.0)
+			return hessCurves.vecXA + (hessCurves.matV @ funchYOfMu(mu))
+	vecX0 = xOfT(0.0)
+	if ( deltaMax < 0.0 ):
+		return xOfT(1.0), 1.0, 0.0
+	if ( deltaMax == 0.0 ):
+		return vecX0, 0.0, 0.0
+	def zOfT(t):
+		return norm(xOfT(t)-vecX0) - deltaMax
+	if ( zOfT(1.0) <= 0.0 ):
+		return xOfT(1.0), 1.0, 0.0
+	tCapped = findZero( zOfT, 0.0, 1.0 )
+	if ( tCapped > 0.0 ):
+		muCapped = muScl*((1.0/tCapped) - 1.0)
+	else:
+		muCapped = 0.0
+	return xOfT(tCapped), tCapped, muCapped
+
+def cappedJump_oracleP(
+  funch_evalFG,
+  vecXAnchor,
+  fAnchor,
+  vecGAnchor,
+  record_matX,
+  record_vecF,
+  record_matG,
+  vecXLaunch,
+  vecPLaunch,
+  deltaMax,
+  chmPrm = calcHessModel_prm(),
+  chcPrm = calcHessCurves_prm() ):
+	smopDat = smop_dat()
+	smopDat.t = 0.0
+	smopDat.mu = -1.0
+	numRecords = record_matX.shape[1]
+	if ( 0 == numRecords ):
+		return vecXLaunch.copy(), vecPLaunch.copy()
+	hm = calcHessModel( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, record_matG, chmPrm )
+	smopDat.hm = hm
+	if ( hm is None ):
+		sizeK = 0
+	else:
+		sizeK = hm.matV.shape[1]
+	if ( 0 == sizeK ):
+		return vecXLaunch.copy(), vecPLaunch.copy(), smopDat
+	vecYLaunch = hm.matV.T @ ( vecXLaunch - hm.vecXA )
+	smopDat.vecYLaunch = vecYLaunch
+	vecS = None
+	hc, hmPSD, hmWB, hmLS = calcHessCurves( hm, vecYLaunch, vecS, chcPrm )
+	smopDat.hc = hc
+	smopDat.hmPSD = hmPSD
+	smopDat.hmWB = hmWB
+	smopDat.hmLS = hmLS
+	
+	vecXLand, t, mu = getCappedJump( hc, deltaMax )
+	
+	# Consider that vecXLaunch is not in subspace...
+	vecD = vecXLaunch - hm.vecXA
+	vecDPerp = vecD - (hm.matV @ ( hm.matV.T @ vecD ))
+	vecXLand += vecDPerp
+	
+	# HACK
+	#vecXLand = vecXLaunch
+	
+	# We'll use oracle/extra info for vecPLand...
+	fLaunch, vecGLaunch = funch_evalFG( vecXLaunch )
+	assert (vecGLaunch @ vecGLaunch > 0.0 )
+	a = ( vecPLaunch @ vecGLaunch ) / (vecGLaunch @ vecGLaunch)
+	vecB = vecPLaunch - (a*vecGLaunch)
+	assert( norm(vecGLaunch @ vecB) <= 1.0e-6*(norm(vecGLaunch) * norm(vecB)) )
+	fLand, vecGLand = funch_evalFG( vecXLand )
+	alphaF = fLand/fLaunch
+	vecPLand = (a*vecGLand) + (alphaF*vecB)
+	#msg(f'{norm(vecXLand - vecXLaunch)}, {fLaunch}, {fLand}')
+	
+	#msg(f'fLaunch = {fLaunch}')
+	#msg(f'fLand   = {fLand}')
+	#msg(f'fLand - fLaunch = {fLand - fLaunch}')
+	#msg(f'norm(vecGLaunch) = {norm(vecGLaunch)}')
+	#msg(f'norm(vecGLand)   = {norm(vecGLand)}')
+	#msg(f'norm(vecGLand - vecGLaunch) = {norm(vecGLand - vecGLaunch)}')
+	#msg(f'a = {a}')
+	#msg(f'norm(vecB) = {norm(vecB)}')
+	#msg(f'alphaF = {alphaF}')
+	
+	# HACK
+	#vecPLand = vecPLaunch
+	
+	return vecXLand, vecPLand, smopDat
+# End cappedJump_oracleP().
