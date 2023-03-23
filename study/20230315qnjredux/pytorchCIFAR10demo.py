@@ -19,7 +19,8 @@ import numpy as np
 report_initialization = True
 torch_seed = 0
 CIFAR10_root = '../../dat/CIFAR10data'
-trainset_size = 5000
+#trainset_size = 5000
+trainset_size = -1
 batch_size = 500
 placeholder_lr = 0.0
 placeholder_momentum = 0.0
@@ -131,7 +132,8 @@ transform = torchvision.transforms.Compose([
 if (trainset_size > 0):
 	full_dataset = torchvision.datasets.CIFAR10(root=CIFAR10_root, train=True, download=False, transform=transform)
 	full_num_samples = len(full_dataset)
-	msg(f'*** WARNING: Only using {trainset_size} / {full_num_samples} samples.')
+	if ( trainset_size != full_num_samples ):
+		msg(f'*** WARNING: Only using {trainset_size} / {full_num_samples} samples.')
 	trainset, dummyset = torch.utils.data.random_split(full_dataset, [trainset_size, full_num_samples-trainset_size])
 else:
 	trainset = torchvision.datasets.CIFAR10(root=CIFAR10_root, train=True, download=False, transform=transform)

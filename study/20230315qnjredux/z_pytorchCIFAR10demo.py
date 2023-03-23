@@ -23,7 +23,8 @@ msgtime()
 report_initialization = True
 torch_seed = 0
 CIFAR10_root = '../../dat/CIFAR10data'
-trainset_size = 5000
+#trainset_size = 5000
+trainset_size = -1
 batch_size = 500
 optimizer_lr = 0.01
 optimizer_momentum = 0.9
@@ -62,7 +63,8 @@ transform = torchvision.transforms.Compose([
 if (trainset_size > 0):
 	full_dataset = torchvision.datasets.CIFAR10(root=CIFAR10_root, train=True, download=False, transform=transform)
 	full_num_samples = len(full_dataset)
-	msg(f'*** WARNING: Only using {trainset_size} / {full_num_samples} samples.')
+	if ( trainset_size != full_num_samples ):
+		msg(f'*** WARNING: Only using {trainset_size} / {full_num_samples} samples.')
 	trainset, dummyset = torch.utils.data.random_split(full_dataset, [trainset_size, full_num_samples-trainset_size])
 else:
 	trainset = torchvision.datasets.CIFAR10(root=CIFAR10_root, train=True, download=False, transform=transform)
@@ -88,6 +90,7 @@ if (report_initialization):
 
 msgtime()
 # Solve.
+print('[')
 for epoch_index in range(num_epochs):
 	avg_f = 0.0
 	batch_count = 0
@@ -101,10 +104,10 @@ for epoch_index in range(num_epochs):
 		batch_count += 1
 		torch_optim_SGD.step()
 	avg_f /= batch_count
-	msg(f'[', end='')
-	print(f' {time.time()-startTime:8.2f}', end='')
-	print(f' {epoch_index:3d}  ', end='')
-	print(f' {avg_f:8.2e}', end='')
-	print(f' ]')
-# End.
+	print(f'[', end='')
+	print(f'  {time.time()-startTime:9.3f},', end='')
+	print(f'  {epoch_index:4d},', end='')
+	print(f'  {avg_f:12.6e}', end='')
+	print(f'  ]')
+print('];')
 msgtime()

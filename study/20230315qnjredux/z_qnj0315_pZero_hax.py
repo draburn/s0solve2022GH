@@ -26,6 +26,7 @@ msg(f'sgdPrm = {sgdPrm}...')
 sgdPrm.dump()
 
 maxNumRecords = 100
+#maxNumRecords = 20
 msg(f'maxNumRecords = {maxNumRecords}')
 record_matX = np.zeros((sizeX, maxNumRecords))
 record_vecF = np.zeros(maxNumRecords)
@@ -127,7 +128,7 @@ for stepIndex in range(maxNumSteps):
 		lambdaWBMax = max(smopDat.hc.vecLambdaWB)
 		tQNJ = smopDat.t
 		muQNJ = smopDat.mu
-	elif (useCappedJump and useOracleP and (stepIndex>=1) ):
+	elif (useCappedJump and useOracleP and (stepIndex>=1) and (0==((stepIndex+1)%10)) ):
 		nAnchor = 0
 		vecXSeed, vecPSeed, smopDat = hessmodel.cappedJump_oracleP(
 		  funch_evalFG,
