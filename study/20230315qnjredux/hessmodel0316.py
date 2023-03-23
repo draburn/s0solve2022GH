@@ -1059,3 +1059,75 @@ def cappedJump_oracleP(
 	
 	return vecXLand, vecPLand, smopDat
 # End cappedJump_oracleP().
+
+
+def cappedJump(
+  vecXAnchor,
+  fAnchor,
+  vecGAnchor,
+  record_matX,
+  record_vecF,
+  record_matG,
+  vecXLaunch,
+  vecPLaunch,
+  deltaMax,
+  chmPrm = calcHessModel_prm(),
+  chcPrm = calcHessCurves_prm() ):
+	smopDat = smop_dat()
+	smopDat.t = 0.0
+	smopDat.mu = -1.0
+	numRecords = record_matX.shape[1]
+	if ( 0 == numRecords ):
+		return vecXLaunch.copy(), vecPLaunch.copy()
+	hm = calcHessModel( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, record_matG, chmPrm )
+	smopDat.hm = hm
+	if ( hm is None ):
+		sizeK = 0
+	else:
+		sizeK = hm.matV.shape[1]
+	if ( 0 == sizeK ):
+		return vecXLaunch.copy(), vecPLaunch.copy(), smopDat
+	vecYLaunch = hm.matV.T @ ( vecXLaunch - hm.vecXA )
+	smopDat.vecYLaunch = vecYLaunch
+	vecS = None
+	hc, hmPSD, hmWB, hmLS = calcHessCurves( hm, vecYLaunch, vecS, chcPrm )
+	smopDat.hc = hc
+	smopDat.hmPSD = hmPSD
+	smopDat.hmWB = hmWB
+	smopDat.hmLS = hmLS
+	
+	vecXLand, t, mu = getCappedJump( hc, deltaMax )
+	
+	# Consider that vecXLaunch is not in subspace...
+	vecD = vecXLaunch - hm.vecXA
+	vecDPerp = vecD - (hm.matV @ ( hm.matV.T @ vecD ))
+	vecXLand += vecDPerp
+	
+	# HACK
+	#vecXLand = vecXLaunch
+	
+	fLaunch, vecGLaunch = hm.evalFGOfProjX( vecXLaunch )
+	assert (vecGLaunch @ vecGLaunch > 0.0 )
+	a = ( vecPLaunch @ vecGLaunch ) / (vecGLaunch @ vecGLaunch)
+	vecB = vecPLaunch - (a*vecGLaunch)
+	assert( norm(vecGLaunch @ vecB) <= 1.0e-6*(norm(vecGLaunch) * norm(vecB)) )
+	fLand, vecGLand = hm.evalFGOfProjX( vecXLand )
+	alphaF = fLand/fLaunch
+	vecPLand = (a*vecGLand) + (alphaF*vecB)
+	#msg(f'{norm(vecXLand - vecXLaunch)}, {fLaunch}, {fLand}')
+	
+	#msg(f'fLaunch = {fLaunch}')
+	#msg(f'fLand   = {fLand}')
+	#msg(f'fLand - fLaunch = {fLand - fLaunch}')
+	#msg(f'norm(vecGLaunch) = {norm(vecGLaunch)}')
+	#msg(f'norm(vecGLand)   = {norm(vecGLand)}')
+	#msg(f'norm(vecGLand - vecGLaunch) = {norm(vecGLand - vecGLaunch)}')
+	#msg(f'a = {a}')
+	#msg(f'norm(vecB) = {norm(vecB)}')
+	#msg(f'alphaF = {alphaF}')
+	
+	# HACK
+	#vecPLand = vecPLaunch
+	
+	return vecXLand, vecPLand, smopDat
+# End cappedJump_oracleP().

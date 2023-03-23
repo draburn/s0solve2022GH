@@ -55,7 +55,7 @@ else:
 	def funch_evalFG( x ):
 		_, _, f, d = prob.evalSGD(x, np.zeros(sizeX), sgdPrm)
 		return f, d.statsDat.avg_vecG
-useOracleP = True
+useOracleP = False
 if (useOracleP):
 	funch_jump = hessmodel.searchMin_sgd_oracleP
 else:
@@ -132,6 +132,28 @@ for stepIndex in range(maxNumSteps):
 		nAnchor = 0
 		vecXSeed, vecPSeed, smopDat = hessmodel.cappedJump_oracleP(
 		  funch_evalFG,
+		  record_matX[:,nAnchor],
+		  record_vecF[nAnchor],
+		  record_matG[:,nAnchor],
+		  record_matX[:,0:numRecords],
+		  record_vecF[0:numRecords],
+		  record_matG[:,0:numRecords],
+		  vecXHarvest,
+		  vecPHarvest,
+		  deltaMaxCoeff * deltaXSGD,
+		  chmPrm,
+		  chcPrm )
+		lambdaLSMin = min(smopDat.hc.vecLambdaLS)
+		lambdaLSRMS = np.sqrt(np.sum(smopDat.hc.vecLambdaLS**2))
+		lambdaLSMax = max(smopDat.hc.vecLambdaLS)
+		lambdaWBMin = min(smopDat.hc.vecLambdaWB)
+		lambdaWBRMS = np.sqrt(np.sum(smopDat.hc.vecLambdaWB**2))
+		lambdaWBMax = max(smopDat.hc.vecLambdaWB)
+		tQNJ = smopDat.t
+		muQNJ = smopDat.mu
+	elif (useCappedJump and (not useOracleP) and (stepIndex>=1) and (0==((stepIndex+1)%10)) ):
+		nAnchor = 0
+		vecXSeed, vecPSeed, smopDat = hessmodel.cappedJump(
 		  record_matX[:,nAnchor],
 		  record_vecF[nAnchor],
 		  record_matG[:,nAnchor],
