@@ -11,7 +11,7 @@ justTest = False
 msg(f'justTest = {justTest}')
 if (justTest):
 	import demoproblem0221 as prob
-	maxNumSteps = 7
+	maxNumSteps = 15
 else:
 	import pytorchCIFAR10demo as prob
 	maxNumSteps = 500
@@ -25,7 +25,7 @@ sgdPrm.momentumCoefficient = 0.9
 msg(f'sgdPrm = {sgdPrm}...')
 sgdPrm.dump()
 
-maxNumRecords = 100
+maxNumRecords = 200
 #maxNumRecords = 20
 msg(f'maxNumRecords = {maxNumRecords}')
 record_matX = np.zeros((sizeX, maxNumRecords))
@@ -73,6 +73,10 @@ chcPrm.dump()
 msg(f'shcPrm = {shcPrm}...')
 shcPrm.dump()
 
+runningTime_SGD = 0.0
+runningTime_REC = 0.0
+runningTime_QNJ = 0.0
+
 vecXSeed = vecX0.copy()
 vecPSeed = vecP0.copy()
 msg(f'Starting main loop...')
@@ -82,12 +86,16 @@ for stepIndex in range(maxNumSteps):
 	# Perform feval.
 	if (usePReset):
 		vecPSeed[:] = 0.0
+	mytic = time.time()
 	vecXHarvest, vecPHarvest, f, sgdDat = prob.evalSGD(vecXSeed, vecPSeed, sgdPrm)
+	mytoc = time.time()-mytic
+	runningTime_SGD += mytoc
 	#print(f'[{time.time()-startTime:8.2f}, {stepIndex:5d}, {f:10.3e}, {norm(sgdDat.statsDat.avg_vecG[:]):10.3e}]')
 	assert( f < 100.0 )
 	assert ( f >= 0.0 )
 	#
 	# Add to records.
+	mytic = time.time()
 	record_matX[:,1:] = record_matX[:,:-1]
 	record_matG[:,1:] = record_matG[:,:-1]
 	record_vecF[1:] = record_vecF[:-1]
@@ -99,13 +107,17 @@ for stepIndex in range(maxNumSteps):
 	else:
 		record_vecF[0] = f
 	record_matG[:,0] = sgdDat.statsDat.avg_vecG[:]
+	mytoc = time.time()-mytic
+	runningTime_REC += mytoc
 	#
 	deltaXSGD = norm(vecXHarvest - vecXSeed)
 	pHarvest = norm(vecPHarvest)
 	deltaPSGD = norm(vecPHarvest - vecPSeed)
+	mytic = time.time()
 	# Prepare for next iteration.
 	#if (useSMOP and (0==((stepIndex+1)%10))):
 	if (useSMOP and (stepIndex>=1) ):
+		danutil.bye()
 		nAnchor = 0
 		vecXSeed, vecPSeed, smopDat = funch_jump(
 		  funch_evalFG,
@@ -129,6 +141,7 @@ for stepIndex in range(maxNumSteps):
 		tQNJ = smopDat.t
 		muQNJ = smopDat.mu
 	elif (useCappedJump and useOracleP and (stepIndex>=1) and (0==((stepIndex+1)%10)) ):
+		danutil.bye()
 		nAnchor = 0
 		vecXSeed, vecPSeed, smopDat = hessmodel.cappedJump_oracleP(
 		  funch_evalFG,
@@ -151,7 +164,7 @@ for stepIndex in range(maxNumSteps):
 		lambdaWBMax = max(smopDat.hc.vecLambdaWB)
 		tQNJ = smopDat.t
 		muQNJ = smopDat.mu
-	elif (useCappedJump and (not useOracleP) and (stepIndex>=1) and (0==((stepIndex+1)%10)) ):
+	elif (useCappedJump and (not useOracleP) and (stepIndex>=1) ):
 		nAnchor = 0
 		vecXSeed, vecPSeed, smopDat = hessmodel.cappedJump(
 		  record_matX[:,nAnchor],
@@ -184,6 +197,8 @@ for stepIndex in range(maxNumSteps):
 		lambdaWBMax = 0.0
 		tQNJ = 0.0
 		muQNJ = -1.0
+	mytoc = time.time()-mytic
+	runningTime_QNJ += mytoc
 	deltaXQNJ = norm(vecXSeed - vecXHarvest)
 	deltaPQNJ = norm(vecPSeed - vecPHarvest)
 	#print(f'[', end='')
@@ -195,16 +210,19 @@ for stepIndex in range(maxNumSteps):
 	print(f' {deltaXSGD:8.2e}  ', end='')
 	print(f' {pHarvest:8.2e}', end='')
 	print(f' {deltaPSGD:8.2e}  ', end='')
-	print(f' {lambdaLSMin:9.2e}', end='')
-	print(f' {lambdaLSRMS:8.2e}', end='')
-	print(f' {lambdaLSMax:9.2e}', end='')
-	print(f' {lambdaWBMin:8.2e}', end='')
-	print(f' {lambdaWBRMS:8.2e}', end='')
-	print(f' {lambdaWBMax:8.2e}  ', end='')
-	print(f' {muQNJ:9.2e}', end='')
-	print(f' {tQNJ:8.2e}', end='')
+	#print(f' {lambdaLSMin:9.2e}', end='')
+	#print(f' {lambdaLSRMS:8.2e}', end='')
+	#print(f' {lambdaLSMax:9.2e}', end='')
+	#print(f' {lambdaWBMin:8.2e}', end='')
+	#print(f' {lambdaWBRMS:8.2e}', end='')
+	#print(f' {lambdaWBMax:8.2e}  ', end='')
+	#print(f' {muQNJ:9.2e}', end='')
+	#print(f' {tQNJ:8.2e}', end='')
 	print(f' {deltaXQNJ:8.2e}', end='' )
-	print(f' {deltaPQNJ:8.2e}', end='' )
+	print(f' {deltaPQNJ:8.2e}  ', end='' )
+	print(f' {runningTime_SGD:8.2f}', end='' )
+	print(f' {runningTime_REC:8.2f}', end='' )
+	print(f' {runningTime_QNJ:8.2f}', end='' )
 	print(f' ]')
 # End main loop.
 print('];')

@@ -1061,6 +1061,8 @@ def cappedJump_oracleP(
 # End cappedJump_oracleP().
 
 
+import time
+totalTime_calcHessModel = np.zeros(1)
 def cappedJump(
   vecXAnchor,
   fAnchor,
@@ -1079,7 +1081,12 @@ def cappedJump(
 	numRecords = record_matX.shape[1]
 	if ( 0 == numRecords ):
 		return vecXLaunch.copy(), vecPLaunch.copy()
+	mytime = time.time()
+	msg('Calling calcHessModel()...', end='')
 	hm = calcHessModel( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, record_matG, chmPrm )
+	thisTime = time.time() - mytime
+	totalTime_calcHessModel[0] += thisTime
+	print(f' Elapsed time is {thisTime:0.6f}s (running total: {totalTime_calcHessModel[0]:0.6f}s).')
 	smopDat.hm = hm
 	if ( hm is None ):
 		sizeK = 0
@@ -1130,4 +1137,4 @@ def cappedJump(
 	#vecPLand = vecPLaunch
 	
 	return vecXLand, vecPLand, smopDat
-# End cappedJump_oracleP().
+# End cappedJump().
