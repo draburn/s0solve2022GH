@@ -33,9 +33,9 @@ record_vecF = np.zeros(maxNumRecords)
 record_matG = np.zeros((sizeX, maxNumRecords))
 numRecords = 0
 
-useSMOP = False
+useSMOP = True
 msg(f'useSMOP = {useSMOP}')
-useCappedJump = True
+useCappedJump = False
 msg(f'useCappedJump = {useCappedJump}')
 deltaMaxCoeff = 1.0
 msg(f'deltaMaxCoeff = {deltaMaxCoeff}')
@@ -55,15 +55,17 @@ else:
 	def funch_evalFG( x ):
 		_, _, f, d = prob.evalSGD(x, np.zeros(sizeX), sgdPrm)
 		return f, d.statsDat.avg_vecG
-useOracleP = False
+useOracleP = True
 if (useOracleP):
 	funch_jump = hessmodel.searchMin_sgd_oracleP
 else:
 	funch_jump = hessmodel.searchMin_sgd
+msg(f'useOracleP = {useOracleP}...')
 
 chmPrm = hessmodel.calcHessModel_prm()
 chcPrm = hessmodel.calcHessCurves_prm()
 shcPrm = hessmodel.searchHessCurve_prm()
+#chmPrm.dropRelThresh = 0.01
 #shcPrm.tMax = 0.1
 chcPrm.adjustFForLaunch = False
 msg(f'chmPrm = {chmPrm}...')
@@ -115,9 +117,7 @@ for stepIndex in range(maxNumSteps):
 	deltaPSGD = norm(vecPHarvest - vecPSeed)
 	mytic = time.time()
 	# Prepare for next iteration.
-	#if (useSMOP and (0==((stepIndex+1)%10))):
 	if (useSMOP and (stepIndex>=1) ):
-		danutil.bye()
 		nAnchor = 0
 		vecXSeed, vecPSeed, smopDat = funch_jump(
 		  funch_evalFG,
@@ -140,8 +140,8 @@ for stepIndex in range(maxNumSteps):
 		lambdaWBMax = max(smopDat.hc.vecLambdaWB)
 		tQNJ = smopDat.t
 		muQNJ = smopDat.mu
-	elif (useCappedJump and useOracleP and (stepIndex>=1) and (0==((stepIndex+1)%10)) ):
-		danutil.bye()
+		sizeK = smopDat.hm.matV.shape[1]
+	elif (useCappedJump and useOracleP and (stepIndex>=1)):
 		nAnchor = 0
 		vecXSeed, vecPSeed, smopDat = hessmodel.cappedJump_oracleP(
 		  funch_evalFG,
@@ -164,6 +164,7 @@ for stepIndex in range(maxNumSteps):
 		lambdaWBMax = max(smopDat.hc.vecLambdaWB)
 		tQNJ = smopDat.t
 		muQNJ = smopDat.mu
+		sizeK = smopDat.hm.matV.shape[1]
 	elif (useCappedJump and (not useOracleP) and (stepIndex>=1) ):
 		nAnchor = 0
 		vecXSeed, vecPSeed, smopDat = hessmodel.cappedJump(
@@ -186,6 +187,7 @@ for stepIndex in range(maxNumSteps):
 		lambdaWBMax = max(smopDat.hc.vecLambdaWB)
 		tQNJ = smopDat.t
 		muQNJ = smopDat.mu
+		sizeK = smopDat.hm.matV.shape[1]
 	else:
 		vecXSeed[:] = vecXHarvest[:]
 		vecPSeed[:] = vecPHarvest[:]
@@ -197,6 +199,7 @@ for stepIndex in range(maxNumSteps):
 		lambdaWBMax = 0.0
 		tQNJ = 0.0
 		muQNJ = -1.0
+		sizeK = 0
 	mytoc = time.time()-mytic
 	runningTime_QNJ += mytoc
 	deltaXQNJ = norm(vecXSeed - vecXHarvest)
@@ -218,6 +221,7 @@ for stepIndex in range(maxNumSteps):
 	#print(f' {lambdaWBMax:8.2e}  ', end='')
 	#print(f' {muQNJ:9.2e}', end='')
 	#print(f' {tQNJ:8.2e}', end='')
+	print(f' {sizeK:3d}', end='' )
 	print(f' {deltaXQNJ:8.2e}', end='' )
 	print(f' {deltaPQNJ:8.2e}  ', end='' )
 	print(f' {runningTime_SGD:8.2f}', end='' )
