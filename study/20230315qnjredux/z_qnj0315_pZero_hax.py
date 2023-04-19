@@ -33,9 +33,9 @@ record_vecF = np.zeros(maxNumRecords)
 record_matG = np.zeros((sizeX, maxNumRecords))
 numRecords = 0
 
-useSMOP = True
+useSMOP = False
 msg(f'useSMOP = {useSMOP}')
-useCappedJump = False
+useCappedJump = True
 msg(f'useCappedJump = {useCappedJump}')
 deltaMaxCoeff = 1.0
 msg(f'deltaMaxCoeff = {deltaMaxCoeff}')
@@ -55,7 +55,7 @@ else:
 	def funch_evalFG( x ):
 		_, _, f, d = prob.evalSGD(x, np.zeros(sizeX), sgdPrm)
 		return f, d.statsDat.avg_vecG
-useOracleP = True
+useOracleP = False
 if (useOracleP):
 	funch_jump = hessmodel.searchMin_sgd_oracleP
 else:
@@ -207,10 +207,10 @@ for stepIndex in range(maxNumSteps):
 	deltaPQNJ = norm(vecPSeed - vecPHarvest)
 	#print(f'[', end='')
 	msg(f'[', end='')
-	print(f' {time.time()-startTime:8.2f}', end='')
+	print(f' {time.time()-startTime:9.2f}', end='')
 	print(f' {stepIndex:5d}  ', end='')
-	print(f' {f:8.2e}', end='')
-	print(f' {norm(sgdDat.statsDat.avg_vecG[:]):8.2e}', end='')
+	print(f' {f:12.6e}', end='')
+	print(f' {norm(sgdDat.statsDat.avg_vecG[:]):12.6e}', end='')
 	print(f' {deltaXSGD:8.2e}  ', end='')
 	print(f' {pHarvest:8.2e}', end='')
 	print(f' {deltaPSGD:8.2e}  ', end='')

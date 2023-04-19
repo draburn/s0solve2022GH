@@ -162,8 +162,8 @@ class calcHessModel_prm():
 	def __init__(self):
 		self.dropRelThresh = 1.0e-1
 		self.dropAbsThresh = 1.0e-12
-		self.fdOrder = 2
-		#self.epsRelFD = 1.0e-4 # DR 02-26: too small post "rollfix".
+		self.fdOrder = 1 # DR 2023-04-19: Changed default from 2 to 1.
+		#self.epsRelFD = 1.0e-4 # 2023-DR 02-26: too small post "rollfix".
 		self.epsRelFD = 1.0e-2
 		self.useOracleJ = False # DR 2023-04-18: Added.
 	def dump(self):
@@ -198,7 +198,7 @@ def calcHessModel( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, re
 	hessModel = hessModelType()
 	hessModel.vecXA = vecXAnchor.copy()
 	hessModel.matV = matV.copy()
-	hessModel.fA = fAnchor.copy()
+	hessModel.fA = fAnchor + 0.0
 	hessModel.vecGammaA = vecGammaA.copy()
 	hessModel.matH = matH.copy()
 	hessModel.vecGPerpA = vecGAnchor.copy() - (matV @ vecGammaA)
@@ -225,21 +225,23 @@ def oracle_calcHessModel( funch_evalFG, vecXAnchor, record_matX, prm=calcHessMod
 	matM = np.zeros((sizeX, sizeK))
 	if (1 == prm.fdOrder):
 		for k in range(sizeK):
-			msg(f'{k} / {sizeK}')
+			#msg(f'{k} / {sizeK}')
 			fP, vecGP = funch_evalFG(vecXAnchor + (epsFD*matV[:,k]))
 			#matA[:,k] = (matV.T @ (vecGP-vecGA))/epsFD # Does note require matM.
 			matM[:,k] = (vecGP - vecGAnchor)/epsFD
+			msg(f' {k} / {sizeK};  fP = {fP:8.2e}')
 	elif (2 == prm.fdOrder):
 		for k in range(sizeK):
-			msg(f'{k} / {sizeK}')
+			#msg(f'{k} / {sizeK}')
 			fP, vecGP = funch_evalFG(vecXAnchor + (epsFD*matV[:,k]))
 			fM, vecGM = funch_evalFG(vecXAnchor - (epsFD*matV[:,k]))
 			#matA[:,k] = (matV.T @ (vecGP-vecGM))/(2.0*epsFD) # Does note require matM.
 			matM[:,k] = (vecGP - vecGM)/(2.0*epsFD)
-			msg(f'  fP = {fP}')
-			msg(f'  fM = {fM}')
-			msg(f'  vecGP = {vecGP}')
-			msg(f'  vecGM = {vecGM}')
+			#msg(f'  fP = {fP}')
+			#msg(f'  fM = {fM}')
+			#msg(f'  vecGP = {vecGP}')
+			#msg(f'  vecGM = {vecGM}')
+			msg(f' {k} / {sizeK};  fP = {fP:8.2e}, fM = {fM:8.2e}')
 	#matH = (matA.T + matA)/2.0
 	matH = danutil.symm(matV.T @ matM)
 	matW = matM - (matV @ matH)
@@ -247,7 +249,7 @@ def oracle_calcHessModel( funch_evalFG, vecXAnchor, record_matX, prm=calcHessMod
 	hessModel = hessModelType()
 	hessModel.vecXA = vecXAnchor.copy()
 	hessModel.matV = matV.copy()
-	hessModel.fA = fAnchor
+	hessModel.fA = fAnchor + 0.0
 	hessModel.vecGammaA = vecGammaA.copy()
 	hessModel.matH = matH.copy()
 	hessModel.vecGPerpA = vecGAnchor.copy() - (matV @ vecGammaA)
@@ -350,7 +352,7 @@ def calcHessCurves( hessModel, vecYLaunch=None, vecS=None, prm=calcHessCurves_pr
 	# Note "hessModelLS" is merely for debug.
 	hessModelLS = hessModel.copy()
 	hessModelLS.vecXA = hessCurves.vecXA.copy()
-	hessModelLS.fA = fLS.copy()
+	hessModelLS.fA = fLS + 0.0
 	hessModelLS.vecGammaA = vecGammaLS / vecS
 	hessModelLS.vecGPerpA = hessModel.vecGPerpA + (hessModel.matW @ vecYLaunch)
 	hessModelLS.matH = danutil.symm( (( matPsi @ np.diag(vecLambdaLS) @ matPsi.T )/vecS).T / vecS )
@@ -738,6 +740,7 @@ def searchMin_sgd(
 class findMin_prm():
 	def __init__(self):
 		self.xTol = 1.0e-5
+		self.fTol = 1.0e-3 # DR 2023-04-19: Added fTol
 def findMin( funch_evalFOfT, xLo, xHi, prm=findMin_prm() ):
 	xL = xLo
 	xR = xHi
@@ -771,6 +774,9 @@ def findMin( funch_evalFOfT, xLo, xHi, prm=findMin_prm() ):
 		if ( abs(xR - xL) < prm.xTol ):
 			if ( fR < fC ):
 				return xR, fR
+			return xC, fC
+		if ( (prm.fTol) > 0.0 and (fC <= fR) and (fC <= fL) and (fC >= fR*(1.0-prm.fTol)) and (fC >= fL*(1.0-prm.fTol)) ):
+			msg('Hit fTol stopping criteria!')
 			return xC, fC
 		if ( abs(xR - xC) > abs(xC - xL) ):
 			#xTemp = (xR+xC)/2.0
