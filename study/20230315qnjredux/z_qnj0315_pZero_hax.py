@@ -68,6 +68,7 @@ shcPrm = hessmodel.searchHessCurve_prm()
 #chmPrm.dropRelThresh = 0.01
 #shcPrm.tMax = 0.1
 chcPrm.adjustFForLaunch = False
+chmPrm.useOracleJ = False
 msg(f'chmPrm = {chmPrm}...')
 chmPrm.dump()
 msg(f'chcPrm = {chcPrm}...')

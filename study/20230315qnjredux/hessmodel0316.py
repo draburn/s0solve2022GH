@@ -165,6 +165,7 @@ class calcHessModel_prm():
 		self.fdOrder = 2
 		#self.epsRelFD = 1.0e-4 # DR 02-26: too small post "rollfix".
 		self.epsRelFD = 1.0e-2
+		self.useOracleJ = False # DR 2023-04-18: Added.
 	def dump(self):
 		msg(f'Begin calcHessModel_prm().dump...')
 		msg(f'self = {self}')
@@ -172,8 +173,11 @@ class calcHessModel_prm():
 		msg(f'  dropAbsThresh = {self.dropAbsThresh}')
 		msg(f'  fdOrder = {self.fdOrder}')
 		msg(f'  epsRelFD = {self.epsRelFD}')
+		msg(f'  useOracleJ = {self.useOracleJ}')
 		msg(f'End calcHessModel_prm().dump.')
 def calcHessModel( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, record_matG, prm=calcHessModel_prm() ):
+	if (prm.useOracleJ):
+		msg(f'WARNING: prm.useOracleJ is {prm.useOracleJ}.')
 	sizeX = vecXAnchor.shape[0]
 	matD = record_matX - np.reshape(vecXAnchor, (sizeX,1)) # Autobroadcast
 	matV, vecKeep = danutil.utorthdrop(matD, prm.dropRelThresh, prm.dropAbsThresh)
@@ -201,6 +205,8 @@ def calcHessModel( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, re
 	hessModel.matW = matW.copy()
 	return hessModel
 def oracle_calcHessModel( funch_evalFG, vecXAnchor, record_matX, prm=calcHessModel_prm() ):
+	if (not prm.useOracleJ):
+		msg(f'WARNING: prm.useOracleJ is {prm.useOracleJ}.')
 	sizeX = vecXAnchor.shape[0]
 	matD = record_matX - np.reshape(vecXAnchor, (sizeX,1)) # Autobroadcast
 	matV, vecKeep = danutil.utorthdrop(matD, prm.dropRelThresh, prm.dropAbsThresh)
@@ -412,7 +418,6 @@ def searchHessCurve( funch_evalFG, hessCurves, prm=searchHessCurve_prm() ):
 	
 	# DRaburn 2023-03-20.
 	#  Let's end this.
-	#zzz
 	t1, f1 = findMin( fOfT, 0.0, 1.0 )
 	msg(f'FOUND: {t1:15.9e}, {f1:15.9e}')
 	#if ( t1 < 1.0e-7 or 1.0-t1 < 1.0e-7 ):
@@ -629,8 +634,13 @@ def searchMin_sgd_oracleP(
 	numRecords = record_matX.shape[1]
 	if ( 0 == numRecords ):
 		return vecXLaunch.copy(), vecPLaunch.copy()
-	hm = calcHessModel( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, record_matG, chmPrm )
+
+	if (chmPrm.useOracleJ):
+		hm = oracle_calcHessModel( funch_evalFG, vecXAnchor, record_matX, chmPrm )
+	else:
+		hm = calcHessModel( vecXAnchor, fAnchor, vecGAnchor, record_matX, record_vecF, record_matG, chmPrm )
 	smopDat.hm = hm
+	
 	if ( hm is None ):
 		sizeK = 0
 	else:
