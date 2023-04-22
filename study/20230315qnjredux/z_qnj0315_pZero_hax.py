@@ -33,9 +33,9 @@ record_vecF = np.zeros(maxNumRecords)
 record_matG = np.zeros((sizeX, maxNumRecords))
 numRecords = 0
 
-useSMOP = False
+useSMOP = True
 msg(f'useSMOP = {useSMOP}')
-useCappedJump = True
+useCappedJump = False
 msg(f'useCappedJump = {useCappedJump}')
 deltaMaxCoeff = 1.0
 msg(f'deltaMaxCoeff = {deltaMaxCoeff}')
@@ -55,7 +55,7 @@ else:
 	def funch_evalFG( x ):
 		_, _, f, d = prob.evalSGD(x, np.zeros(sizeX), sgdPrm)
 		return f, d.statsDat.avg_vecG
-useOracleP = False
+useOracleP = True
 if (useOracleP):
 	funch_jump = hessmodel.searchMin_sgd_oracleP
 else:
@@ -68,7 +68,7 @@ shcPrm = hessmodel.searchHessCurve_prm()
 #chmPrm.dropRelThresh = 0.01
 #shcPrm.tMax = 0.1
 chcPrm.adjustFForLaunch = False
-chmPrm.useOracleJ = False
+chmPrm.useOracleJ = True
 msg(f'chmPrm = {chmPrm}...')
 chmPrm.dump()
 msg(f'chcPrm = {chcPrm}...')
@@ -119,6 +119,7 @@ for stepIndex in range(maxNumSteps):
 	mytic = time.time()
 	# Prepare for next iteration.
 	if (useSMOP and (stepIndex>=1) ):
+		assert (not useCappedJump)
 		nAnchor = 0
 		vecXSeed, vecPSeed, smopDat = funch_jump(
 		  funch_evalFG,
@@ -143,6 +144,7 @@ for stepIndex in range(maxNumSteps):
 		muQNJ = smopDat.mu
 		sizeK = smopDat.hm.matV.shape[1]
 	elif (useCappedJump and useOracleP and (stepIndex>=1)):
+		assert (not useSMOP)
 		nAnchor = 0
 		vecXSeed, vecPSeed, smopDat = hessmodel.cappedJump_oracleP(
 		  funch_evalFG,
@@ -167,6 +169,7 @@ for stepIndex in range(maxNumSteps):
 		muQNJ = smopDat.mu
 		sizeK = smopDat.hm.matV.shape[1]
 	elif (useCappedJump and (not useOracleP) and (stepIndex>=1) ):
+		assert (not useSMOP)
 		nAnchor = 0
 		vecXSeed, vecPSeed, smopDat = hessmodel.cappedJump(
 		  record_matX[:,nAnchor],

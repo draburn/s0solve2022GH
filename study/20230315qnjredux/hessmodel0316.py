@@ -740,7 +740,8 @@ def searchMin_sgd(
 class findMin_prm():
 	def __init__(self):
 		self.xTol = 1.0e-5
-		self.fTol = 1.0e-3 # DR 2023-04-19: Added fTol
+		#self.fTol = 1.0e-3 # DR 2023-04-19: Added fTol
+		self.fTol = -1.0
 def findMin( funch_evalFOfT, xLo, xHi, prm=findMin_prm() ):
 	xL = xLo
 	xR = xHi
