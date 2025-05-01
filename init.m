@@ -1,13 +1,14 @@
 page_screen_output(0)
 %pkg load optim;
 addpath( "myutil" );
+msg(__FILE__,__LINE__,"Added path \"myutil/\".");
 %
 %my_editor = "/usr/bin/codeblocks";
 my_editor = "/usr/bin/mousepad";
 EDITOR( [my_editor ' %s'] ); % Moot if not USING_GUI; see options within GUI.
 %
 %switch 340
-switch 330
+switch 400
 case 10
 	msg(__FILE__,__LINE__,"Adding path \"study/20220222findLocMin/testfunc2021/\".");
 	addpath("study/20220222findLocMin/testfunc2021/");
@@ -72,6 +73,13 @@ case 330
 case 340
 	msg(__FILE__,__LINE__,"Adding path \"study/20230106stage/\".");
 	addpath("study/20230106stage");
+% DRaburn 2025-05-01.
+%  Let's look at a few things...
+case 400
+	msg(__FILE__,__LINE__,"Adding path \"study/20211111hotCurves/20250501ThreeDim/\".");
+	addpath("study/20211111hotCurves/20250501ThreeDim");
+	msg(__FILE__,__LINE__,"Adding path \"numopt/\".");
+	addpath("numopt");
 otherwise
 	error( "Invalid case." );
 end
