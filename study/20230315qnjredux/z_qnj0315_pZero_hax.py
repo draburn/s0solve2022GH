@@ -34,8 +34,10 @@ record_matG = np.zeros((sizeX, maxNumRecords))
 numRecords = 0
 
 useSMOP = True
+# DRraburn 2025-05-01, uncommited: useSMOP = False
 msg(f'useSMOP = {useSMOP}')
 useCappedJump = False
+# DRraburn 2025-05-01, uncommited: useCappedJump = True
 msg(f'useCappedJump = {useCappedJump}')
 deltaMaxCoeff = 1.0
 msg(f'deltaMaxCoeff = {deltaMaxCoeff}')
@@ -69,6 +71,7 @@ shcPrm = hessmodel.searchHessCurve_prm()
 #shcPrm.tMax = 0.1
 chcPrm.adjustFForLaunch = False
 chmPrm.useOracleJ = True
+# DRraburn 2025-05-01, uncommited: chmPrm.useOracleJ = False
 msg(f'chmPrm = {chmPrm}...')
 chmPrm.dump()
 msg(f'chcPrm = {chcPrm}...')

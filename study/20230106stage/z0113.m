@@ -5,7 +5,8 @@ if ( stopsignalpresent() )
 endif
 stopsig_lastTime = time();
 %[ funchFG, vecX0, prm, initDat ] = z__init0113();
-[ funchFG, vecX0, prm, initDat ] = z__init0125danmoqnjpy();
+%[ funchFG, vecX0, prm, initDat ] = z__init0125danmoqnjpy();
+[ funchFG, vecX0, prm, initDat ] = z__init20250501();
 sizeX = size(vecX0,1);
 %
 vecX = vecX0;

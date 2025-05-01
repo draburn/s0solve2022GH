@@ -153,6 +153,8 @@ num_batches_in_epoch = round( num_samples / batch_size )
 #  There may be a better way to do this, but, I don't know what it is.
 #  First, we'll create a "shared_vecX" and populate it.
 #  Then, we make the weights (and biases) in the net point to our "shared_vecX".
+# DRaburn 2025-05-01:
+#  IIRC, having shared_vecX point to the same memory as the stuff in net is an essential detail.
 shared_vecX = init_x_from_net(net)
 net.conv1.bias.data   = torch.from_numpy(np.reshape(shared_vecX[cumel_list[0]:cumel_list[1]],size_list[0]))
 net.conv1.weight.data = torch.from_numpy(np.reshape(shared_vecX[cumel_list[1]:cumel_list[2]],size_list[1]))
