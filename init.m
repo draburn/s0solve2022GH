@@ -76,10 +76,15 @@ case 340
 % DRaburn 2025-05-01.
 %  Let's look at a few things...
 case 400
-	msg(__FILE__,__LINE__,"Adding path \"study/20211111hotCurves/20250501ThreeDim/\".");
-	addpath("study/20211111hotCurves/20250501ThreeDim");
 	msg(__FILE__,__LINE__,"Adding path \"numopt/\".");
 	addpath("numopt");
+	msg(__FILE__,__LINE__,"Adding path \"common/\".");
+	msg(__FILE__,__LINE__,"A warning that \"common/vec.m shadows a built-in fuction\" is expected.");
+	addpath("common");
+	%msg(__FILE__,__LINE__,"Adding path \"study/20211111hotCurves/20250501ThreeDim/\".");
+	%addpath("study/20211111hotCurves/20250501ThreeDim");
+	msg(__FILE__,__LINE__,"Adding path \"study/20211111hotCurves/0210ThreeDim/\".");
+	addpath("study/20211111hotCurves/0210ThreeDim");
 otherwise
 	error( "Invalid case." );
 end
